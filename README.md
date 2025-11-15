@@ -91,12 +91,12 @@ asyncio.run(main())
 
 ```python
 from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
-from src.framework.mcts.config import MCTSConfig
-from src.framework.mcts.policies import HybridRolloutPolicy
+from src.framework.mcts.config import BALANCED_CONFIG
+from src.framework.mcts.policies import RandomRolloutPolicy
 
 async def run_mcts():
     # Configuration with seed for determinism
-    config = MCTSConfig.balanced(seed=42)
+    config = BALANCED_CONFIG.copy(seed=42)
 
     # Create engine
     engine = MCTSEngine(
@@ -121,18 +121,56 @@ async def run_mcts():
         rng=engine.rng,
     )
 
+    # Create rollout policy
+    rollout_policy = RandomRolloutPolicy()
+
     # Run search
     best_action, stats = await engine.search(
         root=root,
         num_iterations=100,
         action_generator=action_generator,
         state_transition=state_transition,
+        rollout_policy=rollout_policy,
     )
 
     print(f"Best Action: {best_action}")
     print(f"Cache Hit Rate: {stats['cache_hit_rate']:.2%}")
 
 asyncio.run(run_mcts())
+```
+
+### MCP Server Integration
+
+The framework includes a Model Context Protocol (MCP) server for tool integration:
+
+```bash
+# Start the MCP server
+python3 tools/mcp/server.py
+```
+
+**Available MCP Tools:**
+- `run_mcts` - Execute MCTS search with configurable parameters
+- `query_agent` - Query HRM, TRM, or MCTS agents directly
+- `get_artifact` - Retrieve stored search results
+- `list_artifacts` - List available artifacts
+- `get_config` - Get current framework configuration
+- `health_check` - Check system health
+
+**MCP Configuration (mcp_config.example.json):**
+```json
+{
+  "mcpServers": {
+    "mcts-framework": {
+      "command": "python3",
+      "args": ["tools/mcp/server.py"],
+      "cwd": "/path/to/langgraph_multi_agent_mcts",
+      "env": {
+        "LLM_PROVIDER": "lmstudio",
+        "LMSTUDIO_BASE_URL": "http://localhost:1234/v1"
+      }
+    }
+  }
+}
 ```
 
 ## Architecture
@@ -165,11 +203,18 @@ langgraph_multi_agent_mcts/
 │   │   └── profiling.py        # Performance profiling
 │   └── storage/
 │       └── s3_client.py        # Async S3 with retries
+├── tools/
+│   ├── mcp/
+│   │   └── server.py           # MCP server with async tools
+│   └── cli/                    # CLI entrypoints
 ├── tests/                      # Test suite
+│   ├── fixtures/               # Test fixtures
+│   └── test_e2e_providers.py   # E2E provider tests
 ├── examples/                   # Usage examples
 ├── docs/                       # Documentation
 ├── .github/workflows/ci.yml    # CI/CD pipeline
 ├── pyproject.toml              # Project configuration
+├── mcp_config.example.json     # MCP server configuration template
 └── .env.example                # Environment template
 ```
 
