@@ -76,6 +76,11 @@ class Settings(BaseSettings):
         description="LM Studio API base URL for local inference"
     )
 
+    LMSTUDIO_MODEL: Optional[str] = Field(
+        default=None,
+        description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)"
+    )
+
     # MCTS Configuration with bounds validation
     MCTS_ITERATIONS: int = Field(
         default=100,
