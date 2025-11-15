@@ -3,10 +3,10 @@
     "mcts-framework": {
       "command": "python3",
       "args": ["tools/mcp/server.py"],
-      "cwd": "/Users/iancruickshank/langgraph_multi_agent_mcts",
+      "cwd": "/path/to/langgraph_multi_agent_mcts",
       "env": {
         "LLM_PROVIDER": "lmstudio",
-        "LMSTUDIO_BASE_URL": "http://192.168.4.46:1234/v1",
+        "LMSTUDIO_BASE_URL": "http://localhost:1234/v1",
         "LMSTUDIO_MODEL": "liquid/lfm2-1.2b",
         "MCTS_ITERATIONS": "100",
         "MCTS_C": "1.414",

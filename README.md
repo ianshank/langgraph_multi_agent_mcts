@@ -156,7 +156,7 @@ python3 tools/mcp/server.py
 - `get_config` - Get current framework configuration
 - `health_check` - Check system health
 
-**MCP Configuration (mcp_config.json):**
+**MCP Configuration (mcp_config.example.json):**
 ```json
 {
   "mcpServers": {
@@ -214,7 +214,7 @@ langgraph_multi_agent_mcts/
 ├── docs/                       # Documentation
 ├── .github/workflows/ci.yml    # CI/CD pipeline
 ├── pyproject.toml              # Project configuration
-├── mcp_config.json             # MCP server configuration
+├── mcp_config.example.json     # MCP server configuration template
 └── .env.example                # Environment template
 ```
 

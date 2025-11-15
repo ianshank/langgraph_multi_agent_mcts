@@ -15,7 +15,6 @@ from pathlib import Path
 # Add project root to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.config.settings import reset_settings
 import os
 
 
@@ -36,7 +35,7 @@ async def test_provider(provider: str, model: str = None) -> dict:
         if provider == "lmstudio":
             client = create_client(
                 provider="lmstudio",
-                base_url=os.environ.get("LMSTUDIO_BASE_URL", "http://192.168.4.46:1234/v1"),
+                base_url=os.environ.get("LMSTUDIO_BASE_URL", "http://localhost:1234/v1"),
                 model=model or os.environ.get("LMSTUDIO_MODEL", "liquid/lfm2-1.2b"),
                 timeout=120.0,
                 max_retries=2,

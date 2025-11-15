@@ -274,7 +274,7 @@ C4Deployment
     }
 
     Rel(mcp_client, venv, "JSON-RPC over stdio")
-    Rel(venv, lmstudio, "HTTP/REST", "192.168.4.46:1234")
+    Rel(venv, lmstudio, "HTTP/REST", "localhost:1234")
     Rel(venv, openai_api, "HTTPS/REST")
     Rel(venv, anthropic_api, "HTTPS/REST")
     Rel(venv, aws_s3, "HTTPS/S3 Protocol")

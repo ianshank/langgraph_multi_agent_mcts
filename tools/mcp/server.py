@@ -91,7 +91,6 @@ class MCPServer:
     def __init__(self):
         self.artifacts: dict[str, dict] = {}
         self.run_history: list[dict] = []
-        self._framework = None
         self._llm_client = None
 
     async def initialize(self):
@@ -171,7 +170,7 @@ class MCPServer:
 
         try:
             from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
-            from src.framework.mcts.policies import HybridRolloutPolicy, RandomRolloutPolicy
+            from src.framework.mcts.policies import RandomRolloutPolicy
 
             # Create engine with seed
             engine = MCTSEngine(
@@ -324,14 +323,7 @@ class MCPServer:
             settings = get_settings()
             return {
                 "success": True,
-                "config": settings.safe_dict() if hasattr(settings, 'safe_dict') else {
-                    "llm_provider": settings.LLM_PROVIDER,
-                    "mcts_iterations": settings.MCTS_ITERATIONS,
-                    "mcts_c": settings.MCTS_C,
-                    "seed": getattr(settings, 'SEED', None),
-                    "log_level": settings.LOG_LEVEL,
-                    "lmstudio_base_url": settings.LMSTUDIO_BASE_URL,
-                },
+                "config": settings.safe_dict(),
             }
         except Exception as e:
             return {"success": False, "error": str(e)}
@@ -405,9 +397,14 @@ class MCPServer:
             "params": {"serverInfo": {"name": "mcts-framework", "version": "0.1.0"}}
         }), flush=True)
 
+        loop = asyncio.get_running_loop()
+        reader = asyncio.StreamReader()
+        protocol = asyncio.StreamReaderProtocol(reader)
+        await loop.connect_read_pipe(lambda: protocol, sys.stdin)
+
         while True:
             try:
-                line = await asyncio.get_event_loop().run_in_executor(None, sys.stdin.readline)
+                line = await reader.readline()
                 if not line:
                     break
 
