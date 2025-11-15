@@ -1,0 +1,46 @@
+# Multi-Agent MCTS Framework Dependencies
+
+# Core async HTTP client
+httpx>=0.25.0
+
+# Retry logic
+tenacity>=8.2.0
+
+# LangGraph and LangChain (existing dependencies)
+langgraph>=0.0.20
+langchain>=0.1.0
+langchain-openai>=0.0.2
+
+# Vector stores
+chromadb>=0.4.0
+faiss-cpu>=1.7.4
+
+# Data validation
+pydantic>=2.0.0
+
+# System monitoring (for observability)
+psutil>=5.9.0
+
+# Async AWS S3 client (for storage)
+aioboto3>=12.0.0
+botocore>=1.31.0
+
+# OpenTelemetry - Tracing
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-otlp-proto-grpc>=1.20.0
+opentelemetry-instrumentation-httpx>=0.42b0
+
+# Optional: Prometheus metrics
+# prometheus-client>=0.18.0
+
+# Type checking (optional, for development)
+# mypy>=1.0.0
+# types-requests>=2.31.0
+# types-psutil>=5.9.0
+
+# Testing (optional)
+# pytest>=7.4.0
+# pytest-asyncio>=0.21.0
+# pytest-cov>=4.1.0
+# pytest-mock>=3.11.0
