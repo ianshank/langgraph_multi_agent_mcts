@@ -11,7 +11,6 @@ This script tests:
 
 import os
 import sys
-from datetime import datetime
 
 
 def check_package_installed():
@@ -245,18 +244,18 @@ def main():
     # Run tests if package is available
     if package_ok:
         store_ok = test_pinecone_store()
-        norm_ok = test_vector_normalization()
+        _norm_ok = test_vector_normalization()  # noqa: F841 - test result logged
     else:
         print("\n3. Skipping PineconeVectorStore tests (package not installed)")
         print("4. Skipping normalization tests")
         store_ok = False
-        norm_ok = True  # Normalization doesn't require Pinecone
-    
+        _norm_ok = True  # noqa: F841 - Normalization doesn't require Pinecone
+
     # Summary
     print("\n" + "=" * 60)
     print("SUMMARY")
     print("=" * 60)
-    
+
     all_ok = package_ok and env_ok and store_ok
     
     if all_ok:

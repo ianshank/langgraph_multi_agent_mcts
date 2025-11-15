@@ -12,7 +12,7 @@ Run this script to check the status of all integrations at once.
 import os
 import sys
 from datetime import datetime
-from typing import Dict, Tuple, Optional
+from typing import Dict, Tuple
 
 
 class Colors:
@@ -169,8 +169,8 @@ def check_braintrust() -> Tuple[bool, bool, Dict[str, any]]:
         with open("src/training/train_rnn.py", "r") as f:
             if "BraintrustTracker" in f.read():
                 print_status("OK", "Integrated in RNN training script", "Use --use_braintrust flag")
-    except:
-        pass
+    except (OSError, IOError):
+        pass  # File may not exist in all environments
     
     return results["installed"], results["configured"] and results["connected"], results
 
@@ -217,7 +217,7 @@ def check_wandb() -> Tuple[bool, bool, Dict[str, any]]:
         from contextlib import redirect_stdout, redirect_stderr
         
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
-            run = wandb.init(
+            _run = wandb.init(  # noqa: F841 - run object managed by wandb.finish()
                 project="verification-test",
                 mode="offline",
                 config={"test": True}
@@ -245,8 +245,8 @@ def check_wandb() -> Tuple[bool, bool, Dict[str, any]]:
         with open("src/training/train_bert_lora.py", "r") as f:
             if "wandb" in f.read().lower():
                 print_status("OK", "Compatible with BERT training", "Set report_to='wandb' in TrainingArguments")
-    except:
-        pass
+    except (OSError, IOError):
+        pass  # File may not exist in all environments
     
     return results["installed"], results["configured"], results
 

@@ -30,11 +30,11 @@ def verify_braintrust():
         import braintrust
         print("   [OK] braintrust package is installed")
         print(f"   Version: {braintrust.__version__ if hasattr(braintrust, '__version__') else 'Unknown'}")
-        BRAINTRUST_AVAILABLE = True
+        _BRAINTRUST_AVAILABLE = True  # noqa: F841 - variable used to track state
     except ImportError:
         print("   [INFO] braintrust package not installed")
         print("   To install: pip install braintrust")
-        BRAINTRUST_AVAILABLE = False
+        _BRAINTRUST_AVAILABLE = False  # noqa: F841 - variable used to track state
         return False
     
     # Check environment configuration
@@ -135,11 +135,11 @@ def verify_wandb():
         import wandb
         print("   [OK] wandb package is installed")
         print(f"   Version: {wandb.__version__}")
-        WANDB_AVAILABLE = True
+        _WANDB_AVAILABLE = True  # noqa: F841 - variable used to track state
     except ImportError:
         print("   [INFO] wandb package not installed")
         print("   To install: pip install wandb")
-        WANDB_AVAILABLE = False
+        _WANDB_AVAILABLE = False  # noqa: F841 - variable used to track state
         return False
     
     # Check environment configuration
@@ -159,7 +159,7 @@ def verify_wandb():
         
         # Initialize in offline mode for testing
         print("   Initializing run in offline mode...")
-        run = wandb.init(
+        _run = wandb.init(  # noqa: F841 - run object managed by wandb.finish()
             project="langgraph-mcts-verification",
             name=f"verify_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
             config={
@@ -169,7 +169,7 @@ def verify_wandb():
             },
             mode="offline"  # Offline mode for testing
         )
-        
+
         print("   [OK] Wandb run initialized")
         
         # Log some test metrics
