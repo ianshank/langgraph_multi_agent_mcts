@@ -70,6 +70,21 @@ class Settings(BaseSettings):
         description="Anthropic API key (required if using Anthropic provider)"
     )
 
+    BRAINTRUST_API_KEY: Optional[SecretStr] = Field(
+        default=None,
+        description="Braintrust API key for experiment tracking (optional)"
+    )
+
+    PINECONE_API_KEY: Optional[SecretStr] = Field(
+        default=None,
+        description="Pinecone API key for vector storage (optional)"
+    )
+
+    PINECONE_HOST: Optional[str] = Field(
+        default=None,
+        description="Pinecone host URL (e.g., https://index.svc.environment.pinecone.io)"
+    )
+
     # Local LLM Configuration
     LMSTUDIO_BASE_URL: Optional[str] = Field(
         default="http://localhost:1234/v1",
@@ -189,6 +204,43 @@ class Settings(BaseSettings):
                 raise ValueError("Anthropic API key appears to be too short")
         return v
 
+    @field_validator("BRAINTRUST_API_KEY")
+    @classmethod
+    def validate_braintrust_key_format(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+        """Validate Braintrust API key format without exposing the value."""
+        if v is not None:
+            secret_value = v.get_secret_value()
+            # Check for obviously invalid patterns
+            if secret_value in ("", "your-api-key-here", "REPLACE_ME"):
+                raise ValueError("Braintrust API key appears to be a placeholder value")
+            if len(secret_value) < 20:
+                raise ValueError("Braintrust API key appears to be too short")
+        return v
+
+    @field_validator("PINECONE_API_KEY")
+    @classmethod
+    def validate_pinecone_key_format(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+        """Validate Pinecone API key format without exposing the value."""
+        if v is not None:
+            secret_value = v.get_secret_value()
+            # Check for obviously invalid patterns
+            if secret_value in ("", "your-api-key-here", "REPLACE_ME"):
+                raise ValueError("Pinecone API key appears to be a placeholder value")
+            if len(secret_value) < 20:
+                raise ValueError("Pinecone API key appears to be too short")
+        return v
+
+    @field_validator("PINECONE_HOST")
+    @classmethod
+    def validate_pinecone_host(cls, v: Optional[str]) -> Optional[str]:
+        """Validate Pinecone host URL format."""
+        if v is not None and v != "":
+            if not v.startswith("https://"):
+                raise ValueError("Pinecone host must start with https://")
+            if "pinecone.io" not in v:
+                raise ValueError("Pinecone host should be a valid pinecone.io URL")
+        return v
+
     @field_validator("LMSTUDIO_BASE_URL")
     @classmethod
     def validate_lmstudio_url(cls, v: Optional[str]) -> Optional[str]:
@@ -279,7 +331,31 @@ class Settings(BaseSettings):
             data["OPENAI_API_KEY"] = "***MASKED***"
         if "ANTHROPIC_API_KEY" in data and data["ANTHROPIC_API_KEY"]:
             data["ANTHROPIC_API_KEY"] = "***MASKED***"
+        if "BRAINTRUST_API_KEY" in data and data["BRAINTRUST_API_KEY"]:
+            data["BRAINTRUST_API_KEY"] = "***MASKED***"
+        if "PINECONE_API_KEY" in data and data["PINECONE_API_KEY"]:
+            data["PINECONE_API_KEY"] = "***MASKED***"
         return data
+
+    def get_braintrust_api_key(self) -> Optional[str]:
+        """
+        Get the Braintrust API key if configured.
+
+        Returns the secret value - use with caution to avoid logging.
+        """
+        if self.BRAINTRUST_API_KEY:
+            return self.BRAINTRUST_API_KEY.get_secret_value()
+        return None
+
+    def get_pinecone_api_key(self) -> Optional[str]:
+        """
+        Get the Pinecone API key if configured.
+
+        Returns the secret value - use with caution to avoid logging.
+        """
+        if self.PINECONE_API_KEY:
+            return self.PINECONE_API_KEY.get_secret_value()
+        return None
 
     def __repr__(self) -> str:
         """Safe string representation that doesn't expose secrets."""

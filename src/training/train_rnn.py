@@ -23,6 +23,14 @@ from src.agents.meta_controller.rnn_controller import (
 )
 from src.training.data_generator import MetaControllerDataGenerator
 
+# Braintrust integration (optional)
+try:
+    from src.observability.braintrust_tracker import create_training_tracker, BraintrustTracker
+    BRAINTRUST_AVAILABLE = True
+except ImportError:
+    BRAINTRUST_AVAILABLE = False
+    BraintrustTracker = None  # type: ignore
+
 
 class RNNTrainer:
     """
@@ -73,6 +81,7 @@ class RNNTrainer:
         early_stopping_patience: int = 3,
         seed: int = 42,
         device: Optional[str] = None,
+        braintrust_tracker: Optional[Any] = None,
     ) -> None:
         """
         Initialize the RNN trainer.
@@ -89,6 +98,7 @@ class RNNTrainer:
             seed: Random seed for reproducibility. Defaults to 42.
             device: Device to run training on ('cpu', 'cuda', 'mps').
                 If None, auto-detects best available device.
+            braintrust_tracker: Optional BraintrustTracker for experiment tracking.
         """
         # Store hyperparameters
         self.hidden_dim = hidden_dim
@@ -141,6 +151,25 @@ class RNNTrainer:
         # Setup loss function
         self.criterion = nn.CrossEntropyLoss()
         self.logger.info("Loss function: CrossEntropyLoss")
+
+        # Braintrust experiment tracking (optional)
+        self.braintrust_tracker = braintrust_tracker
+        if self.braintrust_tracker and hasattr(self.braintrust_tracker, 'is_available'):
+            if self.braintrust_tracker.is_available:
+                self.logger.info("Braintrust experiment tracking enabled")
+                self.braintrust_tracker.log_hyperparameters({
+                    "hidden_dim": hidden_dim,
+                    "num_layers": num_layers,
+                    "dropout": dropout,
+                    "learning_rate": lr,
+                    "batch_size": batch_size,
+                    "max_epochs": epochs,
+                    "early_stopping_patience": early_stopping_patience,
+                    "seed": seed,
+                    "device": str(self.device),
+                })
+            else:
+                self.logger.info("Braintrust tracker provided but not available")
 
     def _setup_logging(self) -> None:
         """
@@ -394,6 +423,15 @@ class RNNTrainer:
                 f"Val Accuracy: {val_accuracy:.4f}"
             )
 
+            # Log to Braintrust if available
+            if self.braintrust_tracker and hasattr(self.braintrust_tracker, 'log_epoch_summary'):
+                self.braintrust_tracker.log_epoch_summary(
+                    epoch=epoch,
+                    train_loss=train_loss,
+                    val_loss=val_loss,
+                    val_accuracy=val_accuracy,
+                )
+
             # Check for improvement
             if val_loss < best_val_loss:
                 best_val_loss = val_loss
@@ -451,6 +489,19 @@ class RNNTrainer:
         self.logger.info(f"Best epoch: {best_epoch}")
         self.logger.info(f"Best validation loss: {best_val_loss:.4f}")
         self.logger.info(f"Best validation accuracy: {best_val_accuracy:.4f}")
+
+        # Log final model artifact to Braintrust
+        if self.braintrust_tracker and hasattr(self.braintrust_tracker, 'log_model_artifact'):
+            self.braintrust_tracker.log_model_artifact(
+                model_path=str(save_path) if save_path else "in_memory",
+                model_type="rnn",
+                metrics={
+                    "best_val_loss": best_val_loss,
+                    "best_val_accuracy": best_val_accuracy,
+                    "best_epoch": float(best_epoch),
+                    "total_epochs": float(len(train_losses)),
+                },
+            )
 
         return history
 
@@ -679,6 +730,19 @@ def main() -> None:
         help="Path to save the trained model",
     )
 
+    # Experiment tracking
+    parser.add_argument(
+        "--use_braintrust",
+        action="store_true",
+        help="Enable Braintrust experiment tracking",
+    )
+    parser.add_argument(
+        "--experiment_name",
+        type=str,
+        default=None,
+        help="Custom experiment name for Braintrust (auto-generated if not provided)",
+    )
+
     args = parser.parse_args()
 
     # Setup logging for main
@@ -736,6 +800,31 @@ def main() -> None:
         logger.info(f"Test set size: {splits['X_test'].shape[0]}")
         logger.info("")
 
+        # Initialize Braintrust tracker if enabled
+        braintrust_tracker = None
+        if args.use_braintrust and BRAINTRUST_AVAILABLE:
+            logger.info("Initializing Braintrust experiment tracker...")
+            braintrust_tracker = create_training_tracker(
+                model_type="rnn",
+                config={
+                    "hidden_dim": args.hidden_dim,
+                    "num_layers": args.num_layers,
+                    "dropout": args.dropout,
+                    "lr": args.lr,
+                    "batch_size": args.batch_size,
+                    "epochs": args.epochs,
+                    "patience": args.patience,
+                    "seed": args.seed,
+                    "num_samples": args.num_samples,
+                },
+            )
+            if braintrust_tracker.is_available:
+                logger.info("Braintrust experiment tracking enabled")
+            else:
+                logger.info("Braintrust not available (check API key)")
+        elif args.use_braintrust and not BRAINTRUST_AVAILABLE:
+            logger.warning("Braintrust requested but not installed. Install with: pip install braintrust")
+
         # Initialize trainer
         logger.info("Initializing trainer...")
         trainer = RNNTrainer(
@@ -747,6 +836,7 @@ def main() -> None:
             epochs=args.epochs,
             early_stopping_patience=args.patience,
             seed=args.seed,
+            braintrust_tracker=braintrust_tracker,
         )
         logger.info("")
 
@@ -821,6 +911,12 @@ def main() -> None:
                 f"Precision={metrics['precision']:.4f}, "
                 f"Recall={metrics['recall']:.4f}"
             )
+
+        # End Braintrust experiment
+        if braintrust_tracker and hasattr(braintrust_tracker, 'end_experiment'):
+            experiment_url = braintrust_tracker.end_experiment()
+            if experiment_url:
+                logger.info(f"Braintrust experiment URL: {experiment_url}")
 
         logger.info("=" * 60)
         logger.info("Training completed successfully!")
