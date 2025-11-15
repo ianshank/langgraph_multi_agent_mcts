@@ -1,0 +1,25 @@
+graph TB
+  user[Developer / Operator]:::person
+  system[LangGraph Multi‑Agent MCTS Framework]:::system
+
+  subgraph External Systems
+    openai[OpenAI API]
+    anthropic[Anthropic API]
+    lmstudio[LM Studio (Local LLM)]
+    pinecone[(Pinecone Vector DB)]
+    braintrust[Braintrust]
+    wandb[Weights & Biases]
+    s3[(S3 Object Storage)]
+  end
+
+  user -- runs demos/tests/training --> system
+  system -- prompts/completions --> openai
+  system -- prompts/completions --> anthropic
+  system -- prompts/completions --> lmstudio
+  system -- upsert/query 10D vectors --> pinecone
+  system -- experiments/metrics --> braintrust
+  system -- runs/metrics/artifacts --> wandb
+  system -- model checkpoints/artifacts --> s3
+
+  classDef person fill:#ffd,stroke:#333
+  classDef system fill:#bdf,stroke:#333

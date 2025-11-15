@@ -1,3 +1,162 @@
+# Architecture Overview (C4 Views + Neural Network Diagrams)
+
+This document provides a high-level C4 model (Context, Containers, Components, and a key Sequence) plus detailed neural network diagrams for the meta-controller implementations.
+
+## System Context (C1)
+
+Mermaid:
+
+```mermaid
+graph TB
+  user[Developer / Operator]:::person
+  system[LangGraph Multi‑Agent MCTS Framework]:::system
+
+  subgraph External Systems
+    openai[OpenAI API]
+    anthropic[Anthropic API]
+    lmstudio[LM Studio (Local LLM)]
+    pinecone[(Pinecone Vector DB)]
+    braintrust[Braintrust]
+    wandb[Weights & Biases]
+    s3[(S3 Object Storage)]
+  end
+
+  user -- runs demos/tests/training --> system
+  system -- prompts/completions --> openai
+  system -- prompts/completions --> anthropic
+  system -- prompts/completions --> lmstudio
+  system -- upsert/query 10D vectors --> pinecone
+  system -- experiments/metrics --> braintrust
+  system -- runs/metrics/artifacts --> wandb
+  system -- model checkpoints/artifacts --> s3
+
+  classDef person fill:#ffd,stroke:#333
+  classDef system fill:#bdf,stroke:#333
+```
+
+Image export:
+![C1 System Context](./img/c1_system_context.png)
+
+## Containers (C2)
+
+Mermaid:
+
+```mermaid
+graph TB
+  cli[CLI/Demos/Tests\n- demos/neural_meta_controller_demo.py\n- tests/*]:::app
+  training[Training Pipelines\n- src/training/train_rnn.py\n- src/training/train_bert_lora.py]:::app
+  framework[Core Framework\n- src/framework/*]:::core
+  agents[Meta‑Controllers\n- src/agents/meta_controller/*]:::core
+  adapters[LLM Adapters\n- src/adapters/llm/*]:::core
+  storage[Storage\n- src/storage/s3_client.py\n- src/storage/pinecone_store.py]:::infra
+  observ[Observability\n- src/observability/*]:::infra
+  config[Configuration\n- src/config/settings.py]:::infra
+  tools[MCP Server\n- tools/mcp/server.py]:::app
+
+  cli --> agents
+  cli --> training
+  training --> agents
+  agents --> adapters
+  agents --> storage
+  agents --> observ
+  framework --- agents
+  framework --- adapters
+  framework --- storage
+  framework --- observ
+  training --> observ
+  config --> agents
+  config --> adapters
+  config --> storage
+  config --> observ
+  tools --> framework
+
+  classDef app fill:#e7f7ff,stroke:#333
+  classDef core fill:#d7ffd7,stroke:#333
+  classDef infra fill:#fff1cc,stroke:#333
+```
+
+Image export:
+![C2 Containers](./img/c2_containers.png)
+
+## Components (C3)
+
+Mermaid:
+
+```mermaid
+graph TB
+  subgraph Meta‑Controller
+    utils[utils.py\nnormalize_features(10D)\nfeatures_to_text()]:::code
+    rnn[RNNMetaController\nGRU(hidden_dim, num_layers)\nDropout -> Linear(3)]:::code
+    bert[BERTMetaController\nHF AutoModelForSeqCls\nOptional LoRA(r=4, alpha=16)]:::code
+  end
+
+  subgraph Integrations
+    pstore[PineconeVectorStore\nVECTOR_DIMENSION=10\nupsert/query in namespace]:::code
+    btracker[BraintrustTracker\nexperiment->log_*->summarize]:::code
+    s3c[S3StorageClient (async, retries)]:::code
+    llm[Adapters: OpenAI, Anthropic, LM Studio]:::code
+  end
+
+  utils --> rnn
+  utils --> bert
+  rnn --> pstore
+  bert --> pstore
+  rnn --> btracker
+  bert --> btracker
+  training[Training (RNN/BERT)] --> rnn
+  training --> btracker
+  rnn --> llm
+  bert --> llm
+  checkpoints((Checkpoints)) --> s3c
+
+  classDef code fill:#f6f6ff,stroke:#333
+```
+
+Image export:
+![C3 Components](./img/c3_components.png)
+
+## Key Sequence (C4)
+
+Mermaid:
+
+```mermaid
+sequenceDiagram
+  participant App as Demo/Framework
+  participant MC as Meta‑Controller (RNN/BERT)
+  participant LLM as LLM Adapter
+  participant PC as Pinecone
+  participant BT as Braintrust
+
+  App->>MC: features (state) or text (BERT)
+  MC->>LLM: (optional) prompt for feature extraction/aux
+  LLM-->>MC: completion
+  MC-->>App: MetaControllerPrediction(agent, confidence, probs)
+
+  App->>PC: upsert 10D vector + metadata (agent, probs, len, iter)
+  App->>BT: log hyperparams/epoch or prediction
+  Note over PC,BT: buffering when not configured
+```
+
+Image export:
+![C4 Sequence](./img/c4_sequence.png)
+
+## Neural Network Diagrams (Generated via Matplotlib)
+
+- RNN Meta‑Controller (GRU + Dropout + Linear → 3 agents)
+
+![RNN Meta‑Controller](./img/rnn_meta_controller.png)
+
+- BERT Meta‑Controller (Tokenizer → BERT Sequence Classification → Softmax)
+  - Optional LoRA adapters: r=4, α=16, dropout=0.1, target_modules=["query","value"]
+
+![BERT Meta‑Controller](./img/bert_meta_controller.png)
+
+## Notes
+
+- Feature vector is fixed 10‑D and normalized to [0,1] (see `src/agents/meta_controller/utils.py`).
+- Pinecone index must be configured with dimension 10 (cosine recommended) and can use namespace per environment.
+- Training integrates optional Braintrust experiment tracking and W&B for visualization.
+
 # Multi-Agent MCTS Framework Architecture
 
 ## C4 Model Diagrams
