@@ -167,3 +167,6 @@ logs/
 
 # Pre-commit
 .pre-commit-cache/
+
+# BERT LoRA checkpoints (keep only final model)
+models/bert_lora/checkpoint-*/

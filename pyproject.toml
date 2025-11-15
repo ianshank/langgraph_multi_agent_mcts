@@ -57,8 +57,15 @@ dev = [
 prometheus = [
     "prometheus-client>=0.18.0",
 ]
+neural = [
+    "torch>=2.0.0",
+    "transformers>=4.30.0",
+    "peft>=0.7.0",
+    "datasets>=2.14.0",
+    "PyYAML>=6.0.0",
+]
 all = [
-    "langgraph-multi-agent-mcts[dev,prometheus]",
+    "langgraph-multi-agent-mcts[dev,prometheus,neural]",
 ]
 
 [project.urls]

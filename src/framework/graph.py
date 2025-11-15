@@ -36,6 +36,29 @@ from .mcts.policies import (
 )
 from .mcts.experiments import ExperimentTracker
 
+# Neural Meta-Controller imports (optional)
+try:
+    from src.agents.meta_controller.base import (
+        AbstractMetaController,
+        MetaControllerFeatures,
+    )
+    from src.agents.meta_controller.rnn_controller import RNNMetaController
+    from src.agents.meta_controller.bert_controller import BERTMetaController
+    from src.agents.meta_controller.config_loader import (
+        MetaControllerConfig,
+        MetaControllerConfigLoader,
+    )
+
+    _META_CONTROLLER_AVAILABLE = True
+except ImportError:
+    _META_CONTROLLER_AVAILABLE = False
+    AbstractMetaController = None  # type: ignore
+    MetaControllerFeatures = None  # type: ignore
+    RNNMetaController = None  # type: ignore
+    BERTMetaController = None  # type: ignore
+    MetaControllerConfig = None  # type: ignore
+    MetaControllerConfigLoader = None  # type: ignore
+
 
 class AgentState(TypedDict):
     """Shared state for LangGraph agent framework."""
@@ -70,6 +93,11 @@ class AgentState(TypedDict):
     iteration: int
     max_iterations: int
 
+    # Neural Meta-Controller (optional)
+    routing_history: NotRequired[List[Dict]]
+    meta_controller_predictions: NotRequired[List[Dict]]
+    last_routed_agent: NotRequired[str]
+
     # Output
     final_response: NotRequired[str]
     metadata: NotRequired[Dict]
@@ -94,6 +122,7 @@ class GraphBuilder:
         max_iterations: int = 3,
         consensus_threshold: float = 0.75,
         enable_parallel_agents: bool = True,
+        meta_controller_config: Optional[Any] = None,
     ):
         """
         Initialize graph builder.
@@ -109,6 +138,7 @@ class GraphBuilder:
             max_iterations: Maximum agent iterations
             consensus_threshold: Threshold for consensus
             enable_parallel_agents: Run HRM/TRM in parallel
+            meta_controller_config: Optional neural meta-controller configuration
         """
         self.hrm_agent = hrm_agent
         self.trm_agent = trm_agent
@@ -135,6 +165,14 @@ class GraphBuilder:
 
         # Experiment tracking
         self.experiment_tracker = ExperimentTracker(name="langgraph_mcts")
+
+        # Neural Meta-Controller (optional)
+        self.meta_controller: Optional[Any] = None
+        self.meta_controller_config = meta_controller_config
+        self.use_neural_routing = False
+
+        if meta_controller_config is not None:
+            self._init_meta_controller(meta_controller_config)
 
     def build_graph(self) -> StateGraph:
         """
@@ -239,8 +277,192 @@ class GraphBuilder:
         """Prepare routing decision."""
         return {}
 
-    def _route_to_agents(self, state: AgentState) -> str:
-        """Route to appropriate agent based on state."""
+    def _init_meta_controller(self, config: Any) -> None:
+        """
+        Initialize the neural meta-controller based on configuration.
+
+        Args:
+            config: MetaControllerConfig or dict with configuration
+        """
+        if not _META_CONTROLLER_AVAILABLE:
+            self.logger.warning(
+                "Meta-controller modules not available. "
+                "Falling back to rule-based routing."
+            )
+            return
+
+        try:
+            # Handle both config object and dict
+            if isinstance(config, dict):
+                mc_config = MetaControllerConfigLoader.load_from_dict(config)
+            else:
+                mc_config = config
+
+            if not mc_config.enabled:
+                self.logger.info("Neural meta-controller disabled in config")
+                return
+
+            # Initialize based on type
+            if mc_config.type == "rnn":
+                self.meta_controller = RNNMetaController(
+                    name="GraphBuilder_RNN",
+                    seed=mc_config.inference.seed,
+                    hidden_dim=mc_config.rnn.hidden_dim,
+                    num_layers=mc_config.rnn.num_layers,
+                    dropout=mc_config.rnn.dropout,
+                    device=mc_config.inference.device,
+                )
+                # Load trained model if path specified
+                if mc_config.rnn.model_path:
+                    self.meta_controller.load_model(mc_config.rnn.model_path)
+                    self.logger.info(f"Loaded RNN model from {mc_config.rnn.model_path}")
+
+            elif mc_config.type == "bert":
+                self.meta_controller = BERTMetaController(
+                    name="GraphBuilder_BERT",
+                    seed=mc_config.inference.seed,
+                    model_name=mc_config.bert.model_name,
+                    lora_r=mc_config.bert.lora_r,
+                    lora_alpha=mc_config.bert.lora_alpha,
+                    lora_dropout=mc_config.bert.lora_dropout,
+                    device=mc_config.inference.device,
+                    use_lora=mc_config.bert.use_lora,
+                )
+                # Load trained model if path specified
+                if mc_config.bert.model_path:
+                    self.meta_controller.load_model(mc_config.bert.model_path)
+                    self.logger.info(f"Loaded BERT model from {mc_config.bert.model_path}")
+            else:
+                raise ValueError(f"Unknown meta-controller type: {mc_config.type}")
+
+            self.use_neural_routing = True
+            self.logger.info(
+                f"Initialized {mc_config.type.upper()} neural meta-controller"
+            )
+
+        except Exception as e:
+            self.logger.error(f"Failed to initialize meta-controller: {e}")
+            if hasattr(config, "fallback_to_rule_based") and config.fallback_to_rule_based:
+                self.logger.warning("Falling back to rule-based routing")
+            else:
+                raise
+
+    def _extract_meta_controller_features(self, state: AgentState) -> Any:
+        """
+        Extract features from AgentState for meta-controller prediction.
+
+        Args:
+            state: Current agent state
+
+        Returns:
+            MetaControllerFeatures instance
+        """
+        if not _META_CONTROLLER_AVAILABLE or MetaControllerFeatures is None:
+            return None
+
+        # Extract HRM confidence
+        hrm_conf = 0.0
+        if "hrm_results" in state:
+            hrm_conf = state["hrm_results"].get("metadata", {}).get(
+                "decomposition_quality_score", 0.5
+            )
+
+        # Extract TRM confidence
+        trm_conf = 0.0
+        if "trm_results" in state:
+            trm_conf = state["trm_results"].get("metadata", {}).get(
+                "final_quality_score", 0.5
+            )
+
+        # Extract MCTS value
+        mcts_val = 0.0
+        if "mcts_stats" in state:
+            mcts_val = state["mcts_stats"].get("best_action_value", 0.5)
+
+        # Consensus score
+        consensus = state.get("consensus_score", 0.0)
+
+        # Last agent used
+        last_agent = state.get("last_routed_agent", "none")
+
+        # Iteration
+        iteration = state.get("iteration", 0)
+
+        # Query length
+        query_length = len(state.get("query", ""))
+
+        # Has RAG context
+        has_rag = bool(state.get("rag_context", ""))
+
+        return MetaControllerFeatures(
+            hrm_confidence=hrm_conf,
+            trm_confidence=trm_conf,
+            mcts_value=mcts_val,
+            consensus_score=consensus,
+            last_agent=last_agent,
+            iteration=iteration,
+            query_length=query_length,
+            has_rag_context=has_rag,
+        )
+
+    def _neural_route_decision(self, state: AgentState) -> str:
+        """
+        Make routing decision using neural meta-controller.
+
+        Args:
+            state: Current agent state
+
+        Returns:
+            Route decision string ("parallel", "hrm", "trm", "mcts", "aggregate")
+        """
+        try:
+            features = self._extract_meta_controller_features(state)
+            if features is None:
+                return self._rule_based_route_decision(state)
+
+            prediction = self.meta_controller.predict(features)
+
+            # Log prediction for debugging
+            self.logger.debug(
+                f"Neural routing: agent={prediction.agent}, "
+                f"confidence={prediction.confidence:.3f}, "
+                f"probs={prediction.probabilities}"
+            )
+
+            # Map agent prediction to route
+            agent = prediction.agent
+
+            # Handle routing based on predicted agent
+            iteration = state.get("iteration", 0)
+
+            if agent == "hrm":
+                if "hrm_results" not in state:
+                    return "hrm"
+            elif agent == "trm":
+                if "trm_results" not in state:
+                    return "trm"
+            elif agent == "mcts":
+                if state.get("use_mcts", False) and "mcts_stats" not in state:
+                    return "mcts"
+
+            # If predicted agent already ran or not applicable, use rule-based
+            return self._rule_based_route_decision(state)
+
+        except Exception as e:
+            self.logger.error(f"Neural routing failed: {e}")
+            # Fallback to rule-based routing
+            return self._rule_based_route_decision(state)
+
+    def _rule_based_route_decision(self, state: AgentState) -> str:
+        """
+        Make routing decision using rule-based logic.
+
+        Args:
+            state: Current agent state
+
+        Returns:
+            Route decision string
+        """
         iteration = state.get("iteration", 0)
 
         # First iteration: run HRM and TRM
@@ -259,6 +481,15 @@ class GraphBuilder:
             return "mcts"
 
         return "aggregate"
+
+    def _route_to_agents(self, state: AgentState) -> str:
+        """Route to appropriate agent based on state."""
+        # Use neural routing if enabled
+        if self.use_neural_routing and self.meta_controller is not None:
+            return self._neural_route_decision(state)
+
+        # Fall back to rule-based routing
+        return self._rule_based_route_decision(state)
 
     async def _parallel_agents_node(self, state: AgentState) -> Dict:
         """Execute HRM and TRM agents in parallel."""
