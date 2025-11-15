@@ -6,7 +6,6 @@ Export architecture diagrams:
 Outputs to: docs/img/
 """
 import os
-import io
 import sys
 from typing import Dict
 
