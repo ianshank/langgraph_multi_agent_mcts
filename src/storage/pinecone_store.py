@@ -61,8 +61,8 @@ class PineconeVectorStore:
 
         if not PINECONE_AVAILABLE:
             print(
-                "Warning: pinecone-client package not installed. "
-                "Install with: pip install pinecone-client"
+                "Warning: pinecone package not installed. "
+                "Install with: pip install pinecone"
             )
             return
 

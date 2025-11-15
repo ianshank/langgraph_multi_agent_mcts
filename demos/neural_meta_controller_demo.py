@@ -264,11 +264,11 @@ def demo_braintrust_integration() -> None:
         tracker = BraintrustTracker(project_name="neural-meta-controller", auto_init=True)
 
         if tracker.is_available:
-            print("  ✓ Braintrust connection established")
+            print("  [OK] Braintrust connection established")
             print("    Project: neural-meta-controller")
             print("    Ready for experiment tracking")
         else:
-            print("  ✗ Braintrust not configured (missing API key)")
+            print("  [FAIL] Braintrust not configured (missing API key)")
             print("    Set BRAINTRUST_API_KEY in .env file")
 
         # Show buffering capability
@@ -292,19 +292,19 @@ def demo_pinecone_integration() -> None:
         from src.storage.pinecone_store import PineconeVectorStore, PINECONE_AVAILABLE
 
         if not PINECONE_AVAILABLE:
-            print("  Pinecone not installed. Install with: pip install pinecone-client")
+            print("  Pinecone not installed. Install with: pip install pinecone")
             return
 
         print("  Creating Pinecone vector store...")
         store = PineconeVectorStore(namespace="demo", auto_init=True)
 
         if store.is_available:
-            print("  ✓ Pinecone connection established")
+            print("  [OK] Pinecone connection established")
             stats = store.get_stats()
             print(f"    Total vectors: {stats.get('total_vectors', 0)}")
             print(f"    Vector dimension: {store.VECTOR_DIMENSION}")
         else:
-            print("  ✗ Pinecone not configured (missing API key/host)")
+            print("  [FAIL] Pinecone not configured (missing API key/host)")
             print("    Set PINECONE_API_KEY and PINECONE_HOST in .env file")
 
         # Show vector storage concept
@@ -326,7 +326,7 @@ def demo_pinecone_integration() -> None:
         print("  Operations will be stored when connection is available")
 
     except ImportError:
-        print("  Pinecone module not found. Install with: pip install pinecone-client")
+        print("  Pinecone module not found. Install with: pip install pinecone")
 
 
 def demo_configuration() -> None:
@@ -356,9 +356,9 @@ def demo_configuration() -> None:
     print_subheader("Configuration Validation")
     try:
         MetaControllerConfigLoader.validate(default_config)
-        print("  ✓ Default configuration is valid")
+        print("  [OK] Default configuration is valid")
     except ValueError as e:
-        print(f"  ✗ Configuration error: {e}")
+        print(f"  [FAIL] Configuration error: {e}")
 
 
 def main():
@@ -385,7 +385,7 @@ def main():
         try:
             demo_func()
         except Exception as e:
-            print(f"\n❌ Error in {name} demo: {e}")
+            print(f"\n[ERROR] Error in {name} demo: {e}")
             import traceback
             traceback.print_exc()
 

@@ -68,7 +68,7 @@ experiment = [
     "braintrust>=0.0.100",
 ]
 vectordb = [
-    "pinecone-client>=3.0.0",
+    "pinecone>=7.0.0",
 ]
 all = [
     "langgraph-multi-agent-mcts[dev,prometheus,neural,experiment,vectordb]",

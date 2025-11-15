@@ -16,6 +16,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 import os
+import pytest
+
+# This is a standalone E2E runner, not a pytest test module.
+# Skip collection to prevent pytest from treating helper functions as tests.
+pytestmark = pytest.mark.skip(reason="Standalone integration script; not collected by pytest")
 
 
 async def test_provider(provider: str, model: str = None) -> dict:
@@ -227,13 +232,13 @@ async def run_e2e_tests():
         results["providers"][provider] = result
 
         if result["status"] == "success":
-            print(f"  ✓ {provider}: {result['model']}")
+            print(f"  [OK] {provider}: {result['model']}")
             print(f"    Response: '{result['response']}'")
             print(f"    Usage: {result['usage']}")
         elif result["status"] == "skipped":
-            print(f"  ⊘ {provider}: Skipped - {result['error']}")
+            print(f"  [SKIP] {provider}: Skipped - {result['error']}")
         else:
-            print(f"  ✗ {provider}: {result['error']}")
+            print(f"  [FAIL] {provider}: {result['error']}")
 
     # Test MCTS engine
     print("\n--- MCTS Engine Tests ---")
@@ -243,10 +248,10 @@ async def run_e2e_tests():
         results["mcts"][provider] = mcts_result
 
         if mcts_result["status"] == "success":
-            print(f"  ✓ Best action: {mcts_result['best_action']}")
+            print(f"  [OK] Best action: {mcts_result['best_action']}")
             print(f"    Seed: {mcts_result['seed']}")
         else:
-            print(f"  ✗ Error: {mcts_result['error']}")
+            print(f"  [FAIL] Error: {mcts_result['error']}")
 
     # Test MCP Server
     print("\n--- MCP Server Tests ---")
@@ -254,14 +259,14 @@ async def run_e2e_tests():
     results["mcp_server"] = mcp_result
 
     if mcp_result["status"] == "success":
-        print(f"  ✓ All {mcp_result['tools_tested']} tools working")
+        print(f"  [OK] All {mcp_result['tools_tested']} tools working")
         print(f"    MCTS action: {mcp_result.get('mcts_action', 'N/A')}")
     elif mcp_result["status"] == "partial":
-        print(f"  ⚠ {mcp_result['tools_tested']} tools working, errors:")
+        print(f"  [WARN] {mcp_result['tools_tested']} tools working, errors:")
         for err in mcp_result["errors"]:
             print(f"    - {err}")
     else:
-        print(f"  ✗ Server error: {mcp_result['errors']}")
+        print(f"  [FAIL] Server error: {mcp_result['errors']}")
 
     # Summary
     print("\n" + "=" * 70)
@@ -287,9 +292,9 @@ async def run_e2e_tests():
     )
 
     if all_passed:
-        print("\n✓ All E2E tests passed!")
+        print("\n[OK] All E2E tests passed!")
     else:
-        print("\n✗ Some tests failed")
+        print("\n[FAIL] Some tests failed")
 
     return results, all_passed
 
