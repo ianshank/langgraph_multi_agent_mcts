@@ -202,5 +202,8 @@ docker/volumes/
 *.cache
 
 # Jupyter temporary files
-.ipynb_checkpoints/ruff_output.txt
+.ipynb_checkpoints/
+
+# Ruff temporary output files
+ruff_output.txt
 ruff_non_adapters.txt
