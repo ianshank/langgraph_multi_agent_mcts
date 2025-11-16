@@ -126,6 +126,8 @@ class OpenAIClient(BaseLLMClient):
         # Circuit breaker settings
         circuit_breaker_threshold: int = 5,
         circuit_breaker_reset: float = 60.0,
+        # Rate limiting
+        rate_limit_per_minute: int | None = None,
     ):
         """
         Initialize OpenAI client.
@@ -139,6 +141,7 @@ class OpenAIClient(BaseLLMClient):
             organization: Optional organization ID
             circuit_breaker_threshold: Failures before circuit opens
             circuit_breaker_reset: Seconds before circuit resets
+            rate_limit_per_minute: Rate limit for requests per minute (None to disable)
         """
         import os
 
@@ -154,6 +157,7 @@ class OpenAIClient(BaseLLMClient):
             base_url=base_url or self.DEFAULT_BASE_URL,
             timeout=timeout,
             max_retries=max_retries,
+            rate_limit_per_minute=rate_limit_per_minute,
         )
 
         self.organization = organization
@@ -257,6 +261,9 @@ class OpenAIClient(BaseLLMClient):
         Returns:
             LLMResponse or AsyncIterator[str] for streaming
         """
+        # Apply rate limiting before proceeding
+        await self._apply_rate_limit()
+
         # Check circuit breaker
         if not self.circuit_breaker.can_execute():
             raise CircuitBreakerOpenError(

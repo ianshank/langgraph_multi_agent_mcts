@@ -1,0 +1,298 @@
+# Multi-Agent MCTS Training Pipeline Configuration
+
+data:
+  # DABStep multi-step reasoning dataset
+  dabstep:
+    path: "adyen/DABstep"
+    cache_dir: "./cache/dabstep"
+    max_samples: null  # Use all samples (450+ tasks)
+    streaming: false
+    train_split: 0.8
+    val_split: 0.1
+    test_split: 0.1
+    seed: 42
+
+  # PRIMUS cybersecurity document corpus
+  primus_seed:
+    path: "trendmicro-ailab/Primus-Seed"
+    cache_dir: "./cache/primus_seed"
+    categories:
+      - "mitre"
+      - "cyber_companies"
+      - "wikipedia"
+    max_documents: null  # Use all 674k documents
+    streaming: true  # Required for large dataset
+
+  # PRIMUS instruction tuning dataset
+  primus_instruct:
+    path: "trendmicro-ailab/Primus-Instruct"
+    cache_dir: "./cache/primus_instruct"
+    max_samples: null  # Use all 835 samples
+
+  # Data augmentation settings
+  augmentation:
+    enabled: true
+    task_permutations: 3
+    difficulty_scaling: true
+    paraphrase_probability: 0.3
+
+training:
+  # General training parameters
+  batch_size: 32
+  learning_rate: 2e-5
+  weight_decay: 0.01
+  epochs: 10
+  max_steps: null  # Use epochs if null
+  warmup_ratio: 0.1
+  gradient_accumulation_steps: 4
+  fp16: true  # Mixed precision training
+  gradient_clip_norm: 1.0
+
+  # LoRA configuration
+  lora:
+    rank: 16
+    alpha: 32
+    dropout: 0.1
+    target_modules:
+      - "query"
+      - "key"
+      - "value"
+      - "dense"
+
+  # Curriculum learning
+  curriculum:
+    enabled: true
+    phases:
+      - difficulty: "easy"
+        epochs: 3
+      - difficulty: "medium"
+        epochs: 4
+      - difficulty: "hard"
+        epochs: 3
+
+  # Checkpointing
+  checkpointing:
+    save_strategy: "steps"
+    save_steps: 1000
+    save_total_limit: 5
+    resume_from_checkpoint: null
+
+  # Distributed training
+  distributed:
+    enabled: false
+    backend: "nccl"
+    world_size: null  # Auto-detect
+
+agents:
+  # Hierarchical Reasoning Model
+  hrm:
+    model_name: "microsoft/deberta-v3-base"
+    max_decomposition_depth: 5
+    min_subtasks: 2
+    max_subtasks: 10
+    learning_rate: 2e-5
+    lora_rank: 16
+    hidden_size: 768
+    num_labels: 3  # START, CONTINUE, END decomposition
+
+  # Task Refinement Model
+  trm:
+    model_name: "microsoft/deberta-v3-base"
+    max_refinement_iterations: 3
+    convergence_threshold: 0.95
+    learning_rate: 2e-5
+    lora_rank: 16
+    hidden_size: 768
+    improvement_threshold: 0.01
+
+  # Monte Carlo Tree Search
+  mcts:
+    simulations: 200
+    exploration_constant: 1.414
+    discount_factor: 0.99
+    value_network:
+      hidden_layers: [256, 128, 64]
+      activation: "relu"
+      learning_rate: 1e-3
+    policy_network:
+      hidden_layers: [256, 128]
+      temperature: 1.0
+      learning_rate: 1e-3
+    self_play:
+      games_per_iteration: 100
+      buffer_size: 10000
+      update_frequency: 10
+
+rag:
+  # Vector embeddings
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  embedding_dim: 384
+
+  # Chunking strategy
+  chunk_size: 512
+  chunk_overlap: 50
+  chunk_strategy: "semantic"  # semantic, fixed, recursive
+
+  # Pinecone configuration
+  pinecone:
+    api_key: null  # Set via environment variable PINECONE_API_KEY
+    environment: "us-east-1"  # AWS region for serverless
+    cloud: "aws"  # Cloud provider: aws, gcp, azure
+    index_name: "multi-agent-mcts-rag"
+    namespace: "training"  # Namespace for vector isolation
+    metric: "cosine"
+    batch_size: 100  # Vectors per upsert batch
+
+  # Index configuration (legacy for migration)
+  index_type: "pinecone"  # pinecone, faiss (deprecated)
+  index_path: "./cache/rag_index"  # For local BM25 cache
+  num_neighbors: 10
+  similarity_metric: "cosine"
+
+  # Hybrid search
+  hybrid_search:
+    enabled: true
+    bm25_weight: 0.3
+    dense_weight: 0.7
+
+  # Domain-specific indices (via Pinecone namespaces)
+  domain_indices:
+    - name: "cybersecurity"
+      categories: ["mitre", "cyber_companies"]
+      namespace: "cybersecurity"
+    - name: "tactical"
+      categories: ["wikipedia"]
+      namespace: "tactical"
+    - name: "general"
+      categories: ["all"]
+      namespace: "general"
+
+meta_controller:
+  # Router configuration
+  router:
+    model_type: "mlp"  # mlp, transformer
+    input_features: 12
+    hidden_layers: [128, 64, 32]
+    num_agents: 3  # HRM, TRM, MCTS
+    dropout: 0.2
+    learning_rate: 1e-3
+
+  # Aggregator configuration
+  aggregator:
+    method: "weighted_voting"  # weighted_voting, attention, ensemble
+    confidence_threshold: 0.7
+    fallback_strategy: "consensus"
+
+  # Trace collection
+  trace_collection:
+    buffer_size: 50000
+    sample_rate: 1.0
+    features:
+      - "task_complexity"
+      - "agent_confidence"
+      - "iteration_count"
+      - "consensus_score"
+      - "latency"
+      - "memory_usage"
+
+evaluation:
+  # Test configuration
+  test_size: 0.1
+  validation_frequency: 100  # steps
+
+  # Metrics to track
+  metrics:
+    - "accuracy"
+    - "f1_score"
+    - "precision"
+    - "recall"
+    - "latency_ms"
+    - "memory_mb"
+    - "consensus_rate"
+    - "decomposition_depth"
+    - "refinement_iterations"
+
+  # Benchmarking
+  benchmarks:
+    dabstep:
+      enabled: true
+      report_path: "./reports/dabstep_benchmark.json"
+
+  # Thresholds for success
+  success_criteria:
+    hrm_accuracy: 0.85
+    trm_avg_iterations: 3.0
+    mcts_win_rate: 0.75
+    rag_precision_at_10: 0.90
+    router_accuracy: 0.80
+
+  # Adversarial testing
+  adversarial:
+    enabled: true
+    attack_types:
+      - "prompt_injection"
+      - "input_perturbation"
+      - "edge_cases"
+
+monitoring:
+  # Experiment tracking
+  experiment_tracking:
+    platform: "wandb"  # wandb, mlflow, braintrust
+    project_name: "multi-agent-mcts-training"
+    run_name: null  # Auto-generated
+    tags: ["training", "multi-agent", "mcts"]
+
+  # Logging configuration
+  logging:
+    level: "INFO"
+    format: "json"
+    log_dir: "./logs"
+    max_bytes: 10485760  # 10MB
+    backup_count: 5
+
+  # Alerting
+  alerts:
+    loss_spike_threshold: 2.0
+    gradient_explosion_threshold: 100.0
+    oom_warning_threshold: 0.9  # 90% GPU memory
+
+  # Profiling
+  profiling:
+    enabled: false
+    cpu_profiling: false
+    memory_profiling: true
+    profile_steps: [10, 100, 1000]
+
+continual_learning:
+  # Feedback collection
+  feedback:
+    enabled: true
+    buffer_size: 100000
+    sample_rate: 0.1
+
+  # Incremental training
+  incremental:
+    retrain_threshold: 1000  # samples
+    forgetting_prevention: "elastic_weight_consolidation"
+    ewc_lambda: 1000.0
+
+  # Data drift detection
+  drift_detection:
+    enabled: true
+    window_size: 1000
+    threshold: 0.1
+    detection_method: "kolmogorov_smirnov"
+
+  # A/B testing
+  ab_testing:
+    enabled: false
+    traffic_split: 0.1  # 10% to new model
+    min_samples: 1000
+    confidence_level: 0.95
+
+# Resource constraints
+resources:
+  max_gpu_memory: null  # Auto-detect
+  max_cpu_workers: 8
+  prefetch_factor: 2
+  pin_memory: true

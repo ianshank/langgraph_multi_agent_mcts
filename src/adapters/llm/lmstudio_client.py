@@ -46,6 +46,8 @@ class LMStudioClient(BaseLLMClient):
         base_url: str | None = None,
         timeout: float = 300.0,  # Long timeout for local inference
         max_retries: int = 2,  # Fewer retries for local
+        # Rate limiting
+        rate_limit_per_minute: int | None = None,
     ):
         """
         Initialize LM Studio client.
@@ -56,6 +58,7 @@ class LMStudioClient(BaseLLMClient):
             base_url: Local server URL (default: http://localhost:1234/v1)
             timeout: Request timeout in seconds (default longer for local models)
             max_retries: Max retry attempts (fewer for local)
+            rate_limit_per_minute: Rate limit for requests per minute (None to disable)
         """
         import os
 
@@ -70,6 +73,7 @@ class LMStudioClient(BaseLLMClient):
             base_url=base_url,
             timeout=timeout,
             max_retries=max_retries,
+            rate_limit_per_minute=rate_limit_per_minute,
         )
 
         self._client: httpx.AsyncClient | None = None
@@ -167,6 +171,9 @@ class LMStudioClient(BaseLLMClient):
         Returns:
             LLMResponse or AsyncIterator[str] for streaming
         """
+        # Apply rate limiting before proceeding
+        await self._apply_rate_limit()
+
         if stream:
             return self._generate_stream(
                 messages=messages,
