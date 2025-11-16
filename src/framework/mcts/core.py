@@ -12,6 +12,7 @@ Features:
 from __future__ import annotations
 import asyncio
 import hashlib
+from collections import OrderedDict
 from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
 from dataclasses import dataclass, field
 import numpy as np
@@ -64,6 +65,9 @@ class MCTSNode:
         self.terminal: bool = False
         self.expanded_actions: set = set()
         self.available_actions: List[str] = []
+
+        # Track depth for O(1) tree statistics
+        self.depth: int = 0 if parent is None else parent.depth + 1
 
         # Use provided RNG or create default
         self._rng = rng or np.random.default_rng()
@@ -190,13 +194,19 @@ class MCTSEngine:
         self._semaphore: Optional[asyncio.Semaphore] = None
 
         # Simulation cache: state_hash -> (value, visit_count)
-        self._simulation_cache: Dict[str, Tuple[float, int]] = {}
+        # Using OrderedDict for LRU eviction
+        self._simulation_cache: OrderedDict[str, Tuple[float, int]] = OrderedDict()
         self.cache_size_limit = cache_size_limit
 
         # Statistics
         self.total_simulations = 0
         self.cache_hits = 0
         self.cache_misses = 0
+        self.cache_evictions = 0
+
+        # Cached tree statistics for O(1) retrieval
+        self._cached_tree_depth: int = 0
+        self._cached_node_count: int = 0
 
     def reset_seed(self, seed: int) -> None:
         """Reset the random seed for new experiment."""
@@ -208,6 +218,7 @@ class MCTSEngine:
         self._simulation_cache.clear()
         self.cache_hits = 0
         self.cache_misses = 0
+        self.cache_evictions = 0
 
     def should_expand(self, node: MCTSNode) -> bool:
         """
@@ -280,6 +291,9 @@ class MCTSEngine:
         child_state = state_transition(node.state, action)
         child = node.add_child(action, child_state)
 
+        # Update cached node count for O(1) retrieval
+        self._cached_node_count += 1
+
         return child
 
     async def simulate(
@@ -305,6 +319,8 @@ class MCTSEngine:
         state_hash = node.state.to_hash_key()
         if state_hash in self._simulation_cache:
             cached_value, cached_count = self._simulation_cache[state_hash]
+            # Move to end for LRU (most recently used)
+            self._simulation_cache.move_to_end(state_hash)
             self.cache_hits += 1
             # Return cached average with small noise for exploration
             noise = self.rng.normal(0, 0.01)
@@ -326,15 +342,23 @@ class MCTSEngine:
 
         self.total_simulations += 1
 
-        # Update cache
-        if len(self._simulation_cache) < self.cache_size_limit:
-            self._simulation_cache[state_hash] = (value, 1)
-        elif state_hash in self._simulation_cache:
+        # Update cache with LRU eviction
+        if state_hash in self._simulation_cache:
             # Update existing cache entry with running average
             old_value, old_count = self._simulation_cache[state_hash]
             new_count = old_count + 1
             new_value = (old_value * old_count + value) / new_count
             self._simulation_cache[state_hash] = (new_value, new_count)
+            # Move to end for LRU (most recently used)
+            self._simulation_cache.move_to_end(state_hash)
+        else:
+            # Evict oldest entry if cache is full
+            if len(self._simulation_cache) >= self.cache_size_limit:
+                # Remove the first item (least recently used)
+                self._simulation_cache.popitem(last=False)
+                self.cache_evictions += 1
+            # Add new entry at the end (most recently used)
+            self._simulation_cache[state_hash] = (value, 1)
 
         return value
 
@@ -346,6 +370,10 @@ class MCTSEngine:
             node: Leaf node to start backpropagation
             value: Value to propagate up the tree
         """
+        # Update cached tree depth if this node is deeper than current max
+        if node.depth > self._cached_tree_depth:
+            self._cached_tree_depth = node.depth
+
         current = node
         while current is not None:
             current.visits += 1
@@ -408,6 +436,10 @@ class MCTSEngine:
         Returns:
             Tuple of (best_action, statistics_dict)
         """
+        # Reset cached tree statistics for new search
+        self._cached_tree_depth = 0
+        self._cached_node_count = 1  # Start with root node
+
         # Initialize root's available actions
         if not root.available_actions:
             root.available_actions = action_generator(root.state)
@@ -514,23 +546,74 @@ class MCTSEngine:
             "total_simulations": self.total_simulations,
             "cache_hits": self.cache_hits,
             "cache_misses": self.cache_misses,
+            "cache_evictions": self.cache_evictions,
             "cache_hit_rate": (
                 self.cache_hits / (self.cache_hits + self.cache_misses)
                 if (self.cache_hits + self.cache_misses) > 0
                 else 0.0
             ),
+            "cache_size": len(self._simulation_cache),
             "seed": self.seed,
         }
 
     def get_tree_depth(self, node: MCTSNode) -> int:
-        """Get maximum depth of the tree from given node."""
+        """Get maximum depth of the tree from given node.
+
+        Uses iterative BFS to avoid stack overflow for large trees (5000+ nodes).
+        Each level of the tree is processed iteratively, tracking depth as we go.
+        """
         if not node.children:
             return 0
-        return 1 + max(self.get_tree_depth(child) for child in node.children)
+
+        from collections import deque
+
+        max_depth = 0
+        # Queue contains tuples of (node, depth)
+        queue = deque([(node, 0)])
+
+        while queue:
+            current_node, depth = queue.popleft()
+            max_depth = max(max_depth, depth)
+
+            for child in current_node.children:
+                queue.append((child, depth + 1))
+
+        return max_depth
 
     def count_nodes(self, node: MCTSNode) -> int:
-        """Count total number of nodes in tree."""
-        count = 1
-        for child in node.children:
-            count += self.count_nodes(child)
+        """Count total number of nodes in tree.
+
+        Uses iterative BFS to avoid stack overflow for large trees (5000+ nodes).
+        Traverses all nodes in the tree using a queue-based approach.
+        """
+        from collections import deque
+
+        count = 0
+        queue = deque([node])
+
+        while queue:
+            current_node = queue.popleft()
+            count += 1
+
+            for child in current_node.children:
+                queue.append(child)
+
         return count
+
+    def get_cached_tree_depth(self) -> int:
+        """
+        Get cached maximum tree depth in O(1) time.
+
+        Returns:
+            Maximum depth of tree from last search
+        """
+        return self._cached_tree_depth
+
+    def get_cached_node_count(self) -> int:
+        """
+        Get cached total node count in O(1) time.
+
+        Returns:
+            Total number of nodes in tree from last search
+        """
+        return self._cached_node_count
