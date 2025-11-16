@@ -16,6 +16,23 @@ from .metrics import MetricsCollector, mcts_metrics, agent_metrics
 from .debug import MCTSDebugger, export_tree_to_dot, visualize_mcts_tree
 from .profiling import profile_block, AsyncProfiler, MemoryProfiler, generate_performance_report
 
+# Braintrust integration (optional)
+try:
+    from .braintrust_tracker import (
+        BraintrustTracker,
+        BraintrustContextManager,
+        create_training_tracker,
+        BRAINTRUST_AVAILABLE,
+    )
+    _braintrust_exports = [
+        "BraintrustTracker",
+        "BraintrustContextManager",
+        "create_training_tracker",
+        "BRAINTRUST_AVAILABLE",
+    ]
+except ImportError:
+    _braintrust_exports = []
+
 __all__ = [
     # Logging
     "setup_logging",
@@ -38,4 +55,4 @@ __all__ = [
     "AsyncProfiler",
     "MemoryProfiler",
     "generate_performance_report",
-]
+] + _braintrust_exports

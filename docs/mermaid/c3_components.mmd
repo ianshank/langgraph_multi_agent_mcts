@@ -1,0 +1,27 @@
+graph TB
+  subgraph Meta‑Controller
+    utils[utils.py\nnormalize_features(10D)\nfeatures_to_text()]:::code
+    rnn[RNNMetaController\nGRU(hidden_dim, num_layers)\nDropout -> Linear(3)]:::code
+    bert[BERTMetaController\nHF AutoModelForSeqCls\nOptional LoRA(r=4, alpha=16)]:::code
+  end
+
+  subgraph Integrations
+    pstore[PineconeVectorStore\nVECTOR_DIMENSION=10\nupsert/query in namespace]:::code
+    btracker[BraintrustTracker\nexperiment->log_*->summarize]:::code
+    s3c[S3StorageClient (async, retries)]:::code
+    llm[Adapters: OpenAI, Anthropic, LM Studio]:::code
+  end
+
+  utils --> rnn
+  utils --> bert
+  rnn --> pstore
+  bert --> pstore
+  rnn --> btracker
+  bert --> btracker
+  training[Training (RNN/BERT)] --> rnn
+  training --> btracker
+  rnn --> llm
+  bert --> llm
+  checkpoints((Checkpoints)) --> s3c
+
+  classDef code fill:#f6f6ff,stroke:#333

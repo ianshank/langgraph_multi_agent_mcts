@@ -1,0 +1,31 @@
+graph TB
+  cli[CLI/Demos/Tests\n- demos/neural_meta_controller_demo.py\n- tests/*]:::app
+  training[Training Pipelines\n- src/training/train_rnn.py\n- src/training/train_bert_lora.py]:::app
+  framework[Core Framework\n- src/framework/*]:::core
+  agents[Meta‑Controllers\n- src/agents/meta_controller/*]:::core
+  adapters[LLM Adapters\n- src/adapters/llm/*]:::core
+  storage[Storage\n- src/storage/s3_client.py\n- src/storage/pinecone_store.py]:::infra
+  observ[Observability\n- src/observability/*]:::infra
+  config[Configuration\n- src/config/settings.py]:::infra
+  tools[MCP Server\n- tools/mcp/server.py]:::app
+
+  cli --> agents
+  cli --> training
+  training --> agents
+  agents --> adapters
+  agents --> storage
+  agents --> observ
+  framework --- agents
+  framework --- adapters
+  framework --- storage
+  framework --- observ
+  training --> observ
+  config --> agents
+  config --> adapters
+  config --> storage
+  config --> observ
+  tools --> framework
+
+  classDef app fill:#e7f7ff,stroke:#333
+  classDef core fill:#d7ffd7,stroke:#333
+  classDef infra fill:#fff1cc,stroke:#333

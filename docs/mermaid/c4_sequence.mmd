@@ -1,0 +1,15 @@
+sequenceDiagram
+  participant App as Demo/Framework
+  participant MC as Meta‑Controller (RNN/BERT)
+  participant LLM as LLM Adapter
+  participant PC as Pinecone
+  participant BT as Braintrust
+
+  App->>MC: features (state) or text (BERT)
+  MC->>LLM: (optional) prompt for feature extraction/aux
+  LLM-->>MC: completion
+  MC-->>App: MetaControllerPrediction(agent, confidence, probs)
+
+  App->>PC: upsert 10D vector + metadata (agent, probs, len, iter)
+  App->>BT: log hyperparams/epoch or prediction
+  Note over PC,BT: buffering when not configured

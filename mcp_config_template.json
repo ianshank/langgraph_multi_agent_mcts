@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "mcts-framework": {
+      "command": "python",
+      "args": ["tools/mcp/server.py"],
+      "cwd": "C:\\Users\\iansh\\OneDrive\\Documents\\GitHub\\langgraph_multi_agent_mcts",
+      "env": {
+        "comment": "Environment variables are loaded from .env file"
+      }
+    }
+  }
+}
