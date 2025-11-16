@@ -9,13 +9,12 @@ Tests:
 - Fault injection
 """
 
-import pytest
-import asyncio
+import contextlib
 import random
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Any
-
 import sys
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 sys.path.insert(0, ".")
 
@@ -34,17 +33,19 @@ class TestLLMFailureResilience:
         mock_logger.info = Mock()
         mock_logger.error = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
-            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    mock_hrm.return_value.process = AsyncMock(return_value={"response": "HRM", "metadata": {}})
-                    mock_trm.return_value.process = AsyncMock(return_value={"response": "TRM", "metadata": {}})
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm,
+            patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm,
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            mock_hrm.return_value.process = AsyncMock(return_value={"response": "HRM", "metadata": {}})
+            mock_trm.return_value.process = AsyncMock(return_value={"response": "TRM", "metadata": {}})
 
-                    framework = LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                    )
-                    return framework, mock_adapter
+            framework = LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
+            return framework, mock_adapter
 
     @pytest.mark.asyncio
     async def test_llm_timeout_graceful_degradation(self, framework_with_failing_llm):
@@ -52,7 +53,7 @@ class TestLLMFailureResilience:
         framework, mock_adapter = framework_with_failing_llm
 
         # LLM times out
-        mock_adapter.generate = AsyncMock(side_effect=asyncio.TimeoutError("LLM request timed out"))
+        mock_adapter.generate = AsyncMock(side_effect=TimeoutError("LLM request timed out"))
 
         state = {
             "query": "Test query",
@@ -137,13 +138,15 @@ class TestNetworkPartitionSimulation:
         mock_adapter = AsyncMock()
         mock_logger = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                    )
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
 
     @pytest.mark.asyncio
     async def test_vector_store_unavailable(self, framework):
@@ -158,12 +161,9 @@ class TestNetworkPartitionSimulation:
         }
 
         # Should not crash, should return empty context
-        try:
-            result = framework.retrieve_context_node(state)
+        with contextlib.suppress(Exception):
+            _result = framework.retrieve_context_node(state)
             # If it doesn't raise, check for degraded response
-        except Exception:
-            # Expected - but should be caught in production
-            pass
 
     @pytest.mark.asyncio
     async def test_partial_agent_failure(self, framework):
@@ -225,13 +225,15 @@ class TestPartialSystemDegradation:
         mock_logger = Mock()
         mock_logger.info = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                    )
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
 
     def test_no_vector_store_still_works(self, framework):
         """Framework should work without vector store."""
@@ -308,17 +310,19 @@ class TestMemoryPressure:
         mock_adapter = AsyncMock()
         mock_logger = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                        mcts_iterations=100,
-                    )
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+                mcts_iterations=100,
+            )
 
     @pytest.mark.asyncio
-    async def test_large_context_handling(self, framework):
+    async def test_large_context_handling(self, framework):  # noqa: ARG002
         """System should handle very large RAG contexts."""
         # Create very large context (100KB+)
         large_context = "Word " * 20001  # >100KB of text
@@ -359,7 +363,7 @@ class TestMemoryPressure:
         assert root.visits == 1
         assert root.value == 0.5
 
-    def test_wide_mcts_tree_memory(self, framework):
+    def test_wide_mcts_tree_memory(self, framework):  # noqa: ARG002
         """Wide MCTS trees should be handled efficiently."""
         from langgraph_multi_agent_mcts import MCTSNode
 
@@ -391,13 +395,15 @@ class TestFaultInjection:
         mock_logger.info = Mock()
         mock_logger.error = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                    )
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
 
     def test_corrupted_state_handling(self, framework):
         """Handle corrupted agent state gracefully."""
@@ -495,39 +501,41 @@ class TestRandomFailureInjection:
         mock_logger.info = Mock()
         mock_logger.error = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
-            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    # Random failures
-                    async def maybe_fail(*args, **kwargs):
-                        if random.random() < 0.3:  # 30% failure rate
-                            raise random.choice(
-                                [
-                                    TimeoutError("Timeout"),
-                                    ConnectionError("Connection lost"),
-                                    ValueError("Invalid input"),
-                                ]
-                            )
-                        return {"response": "OK", "metadata": {}}
-
-                    mock_hrm.return_value.process = AsyncMock(side_effect=maybe_fail)
-                    mock_trm.return_value.process = AsyncMock(side_effect=maybe_fail)
-
-                    framework = LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm,
+            patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm,
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            # Random failures
+            async def maybe_fail(*args, **kwargs):
+                if random.random() < 0.3:  # 30% failure rate
+                    raise random.choice(
+                        [
+                            TimeoutError("Timeout"),
+                            ConnectionError("Connection lost"),
+                            ValueError("Invalid input"),
+                        ]
                     )
+                return {"response": "OK", "metadata": {}}
 
-                    # Run many iterations
-                    crashes = 0
-                    for i in range(100):
-                        try:
-                            # Test various nodes
-                            framework.entry_node({"query": f"Test {i}"})
-                            framework.route_decision_node({})
-                            framework.aggregate_results_node({"agent_outputs": []})
-                        except Exception:
-                            crashes += 1
+            mock_hrm.return_value.process = AsyncMock(side_effect=maybe_fail)
+            mock_trm.return_value.process = AsyncMock(side_effect=maybe_fail)
 
-                    # Most operations should succeed
-                    assert crashes < 50, f"Too many crashes: {crashes}/100"
+            framework = LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
+
+            # Run many iterations
+            crashes = 0
+            for i in range(100):
+                try:
+                    # Test various nodes
+                    framework.entry_node({"query": f"Test {i}"})
+                    framework.route_decision_node({})
+                    framework.aggregate_results_node({"agent_outputs": []})
+                except Exception:
+                    crashes += 1
+
+            # Most operations should succeed
+            assert crashes < 50, f"Too many crashes: {crashes}/100"
