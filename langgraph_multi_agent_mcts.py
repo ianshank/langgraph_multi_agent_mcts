@@ -11,23 +11,21 @@ Implements a state machine architecture combining:
 Based on 2025 research in multi-agent systems, MCTS, and LangGraph architecture.
 """
 
-from typing import TypedDict, Annotated, List, Dict, Optional, Literal
-from typing_extensions import NotRequired
-import operator
-from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
-from langchain_core.messages import BaseMessage
-from langchain_community.vectorstores import Chroma, FAISS
-from langchain_openai import OpenAIEmbeddings
 import asyncio
 import math
+import operator
 import random
-from datetime import datetime
+from typing import Annotated, Dict, List, Literal, Optional, TypedDict
+
+from langgraph.checkpoint.memory import MemorySaver
+from langgraph.graph import END, StateGraph
+from langchain_openai import OpenAIEmbeddings
+from typing_extensions import NotRequired
 
 # Import our enhanced agents
 try:
     from improved_hrm_agent import HRMAgent
-    from improved_trm_agent import TRMAgent, ConvergenceMetric
+    from improved_trm_agent import ConvergenceMetric, TRMAgent
 except ImportError:
     pass
 
