@@ -105,18 +105,18 @@ jobs:
         run: |
           if [ -f bandit-report.json ]; then
             python -c "
-import json
-with open('bandit-report.json') as f:
-    data = json.load(f)
-    high_sev = [r for r in data.get('results', []) if r.get('issue_severity') == 'HIGH']
-    if high_sev:
-        print('HIGH SEVERITY ISSUES FOUND:')
-        for issue in high_sev:
-            print(f\"  - {issue['filename']}:{issue['line_number']}: {issue['issue_text']}\")
-        exit(1)
-    else:
-        print('No high severity issues found')
-"
+          import json
+          with open('bandit-report.json') as f:
+              data = json.load(f)
+              high_sev = [r for r in data.get('results', []) if r.get('issue_severity') == 'HIGH']
+              if high_sev:
+                  print('HIGH SEVERITY ISSUES FOUND:')
+                  for issue in high_sev:
+                      print(f'  - {issue[\"filename\"]}:{issue[\"line_number\"]}: {issue[\"issue_text\"]}')
+                  exit(1)
+              else:
+                  print('No high severity issues found')
+          "
           fi
 
   dependency-audit:
@@ -153,18 +153,18 @@ with open('bandit-report.json') as f:
         run: |
           if [ -f pip-audit-report.json ]; then
             python -c "
-import json
-with open('pip-audit-report.json') as f:
-    data = json.load(f)
-    critical = [d for d in data.get('dependencies', []) if any(v.get('severity', '') == 'CRITICAL' for v in d.get('vulns', []))]
-    if critical:
-        print('CRITICAL VULNERABILITIES FOUND:')
-        for dep in critical:
-            print(f\"  - {dep['name']}=={dep['version']}\")
-        exit(1)
-    else:
-        print('No critical vulnerabilities found')
-"
+          import json
+          with open('pip-audit-report.json') as f:
+              data = json.load(f)
+              critical = [d for d in data.get('dependencies', []) if any(v.get('severity', '') == 'CRITICAL' for v in d.get('vulns', []))]
+              if critical:
+                  print('CRITICAL VULNERABILITIES FOUND:')
+                  for dep in critical:
+                      print(f'  - {dep[\"name\"]}=={dep[\"version\"]}')
+                  exit(1)
+              else:
+                  print('No critical vulnerabilities found')
+          "
           fi
 
   test:
