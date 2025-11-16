@@ -836,7 +836,7 @@ class TestS3StorageClientIntegration:
                 "size_bytes": 50,
             }
 
-            result = await client.store_config(
+            await client.store_config(
                 config_name="test_config",
                 config_data={"setting": "value", "data": "x" * 100},
             )
@@ -855,7 +855,7 @@ class TestS3StorageClientIntegration:
         with patch.object(client, "_put_object_with_retry", new_callable=AsyncMock) as mock_put:
             mock_put.return_value = {"key": "test-key", "etag": '"abc"', "size_bytes": 100}
 
-            result = await client.store_mcts_stats(
+            await client.store_mcts_stats(
                 session_id="session123",
                 stats={"nodes_expanded": 100, "best_value": 0.95},
                 iteration=5,
@@ -881,7 +881,7 @@ class TestS3StorageClientIntegration:
                 {"level": "ERROR", "message": "Test 2"},
             ]
 
-            result = await client.store_logs(
+            await client.store_logs(
                 session_id="session123",
                 log_entries=log_entries,
             )

@@ -717,7 +717,7 @@ class DataOrchestrator:
         }
 
         # Count by difficulty
-        for split_name, samples in self.dabstep_loader._splits.items():
+        for _split_name, samples in self.dabstep_loader._splits.items():
             for sample in samples:
                 diff = sample.difficulty
                 if diff not in stats["dabstep"]["difficulties"]:

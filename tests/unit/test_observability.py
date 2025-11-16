@@ -156,8 +156,8 @@ def reset_correlation_id():
     from src.observability.logging import _correlation_id, _request_metadata
 
     # Save current state and reset to clean state
-    old_cid = _correlation_id.get()
-    old_metadata = _request_metadata.get()
+    _correlation_id.get()
+    _request_metadata.get()
     token1 = _correlation_id.set(None)
     token2 = _request_metadata.set({})
     yield

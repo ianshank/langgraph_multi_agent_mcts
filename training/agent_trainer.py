@@ -615,7 +615,7 @@ class MCTSTrainer(BaseAgentTrainer):
         state_dim = 256
         action_dim = 100
 
-        for step in range(20):  # Max 20 steps per game
+        for _step in range(20):  # Max 20 steps per game
             # Current state (random for simulation)
             state = torch.randn(state_dim)
 

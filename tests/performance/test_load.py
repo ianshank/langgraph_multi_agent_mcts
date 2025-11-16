@@ -185,7 +185,6 @@ class TestConcurrentRequestHandling:
     async def test_burst_handling(self, mock_framework):
         """Test system handles burst traffic."""
         # Normal load
-        normal_rps = 2
         burst_rps = 20
         burst_duration = 5
 

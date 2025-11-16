@@ -218,7 +218,7 @@ class TestBraintrustExperimentSummary:
     @pytest.mark.training
     def test_experiment_summary(self, braintrust_tracker, training_config, training_metrics):
         """Should generate comprehensive experiment summary."""
-        exp_id = braintrust_tracker.init_experiment(name="full_experiment")
+        braintrust_tracker.init_experiment(name="full_experiment")
 
         # Log everything
         braintrust_tracker.log_hyperparameters(training_config)
@@ -356,7 +356,6 @@ class TestOfflineMode:
     def test_wandb_offline_mode(self):
         """W&B should support offline mode for testing."""
         # Simulate offline mode
-        config = {"WANDB_MODE": "offline"}
 
         # Mock run should work without network
         offline_run = create_mock_wandb(project="offline-test")
@@ -386,7 +385,7 @@ class TestTrainingPipelineTracking:
     def test_complete_training_run_tracking(self, braintrust_tracker, wandb_run, training_config, training_metrics):
         """Should track complete training run."""
         # Initialize tracking
-        exp_id = braintrust_tracker.init_experiment(name="complete_run")
+        braintrust_tracker.init_experiment(name="complete_run")
         braintrust_tracker.log_hyperparameters(training_config)
         wandb_run.update_config(training_config)
 

@@ -505,7 +505,7 @@ class TrainingPipeline:
 
         # Fine-tune with lower learning rate
         # (In production, this would use actual instruction tuning)
-        for i, sample in enumerate(instruction_samples[:100]):  # Subset for demo
+        for i, _sample in enumerate(instruction_samples[:100]):  # Subset for demo
             # Simulate fine-tuning step
             if i % 10 == 0:
                 self.experiment_tracker.log_metrics(

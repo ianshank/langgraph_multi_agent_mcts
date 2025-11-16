@@ -413,13 +413,13 @@ class TestMCTSDeterminism:
         random.seed(11111)
         root1 = MCTSNode(state_id="root_state")
         root1.visits = 1
-        child1 = framework._mcts_expand(root1, state)
+        framework._mcts_expand(root1, state)
 
         # Second run with different seed
         random.seed(99999)
         root2 = MCTSNode(state_id="root_state")
         root2.visits = 1
-        child2 = framework._mcts_expand(root2, state)
+        framework._mcts_expand(root2, state)
 
         # With different seeds, actions may differ
         # This test verifies the mechanism works, not specific outcomes

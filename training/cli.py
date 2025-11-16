@@ -244,12 +244,12 @@ def integrate_command(args):
 
     # Export for production
     if args.export:
-        exported = integrator.export_production_models(args.export)
+        integrator.export_production_models(args.export)
         logger.info(f"Exported models to {args.export}")
 
     # Create production config
     if args.production_config:
-        prod_config = config_manager.create_production_config()
+        config_manager.create_production_config()
         logger.info("Created production configuration")
 
 

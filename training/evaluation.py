@@ -469,7 +469,7 @@ class MultiAgentEvaluator:
 
         # Group by category and difficulty
         categories = set(r.metadata.get("category") for r in results)
-        difficulties = set(r.metadata.get("difficulty") for r in results)
+        set(r.metadata.get("difficulty") for r in results)
 
         for category in categories:
             specialization[category] = {"best_performing_tasks": [], "avg_quality": 0.0}
@@ -503,7 +503,7 @@ class PerformanceProfiler:
         latencies = []
         memory_usage = []
 
-        for run in range(num_runs):
+        for _run in range(num_runs):
             for inp in test_inputs:
                 start_time = time.time()
 

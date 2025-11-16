@@ -9,7 +9,6 @@ Tests:
 - Mock-based isolation
 """
 
-import asyncio
 from unittest.mock import AsyncMock, Mock, patch
 
 import httpx
@@ -177,7 +176,6 @@ class TestRetryLogic:
         """Backoff should increase exponentially."""
         delays = []
 
-        original_sleep = asyncio.sleep
 
         async def mock_sleep(seconds):
             delays.append(seconds)

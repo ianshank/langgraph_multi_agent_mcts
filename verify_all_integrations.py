@@ -309,7 +309,7 @@ def main():
     print(f"\n{'Integration':<15} {'Installed':<12} {'Configured':<12} {'Purpose':<35}")
     print("-" * 75)
 
-    for name, (installed, configured, results), purpose in integrations:
+    for name, (installed, configured, _results), purpose in integrations:
         inst_status = f"{Colors.GREEN}Yes{Colors.ENDC}" if installed else f"{Colors.YELLOW}No{Colors.ENDC}"
         conf_status = f"{Colors.GREEN}Yes{Colors.ENDC}" if configured else f"{Colors.YELLOW}No{Colors.ENDC}"
         print(f"{name:<15} {inst_status:<21} {conf_status:<21} {purpose:<35}")
@@ -317,7 +317,7 @@ def main():
     # Show features if available
     print_header("AVAILABLE FEATURES")
 
-    for name, (installed, configured, results) in [
+    for name, (_installed, _configured, results) in [
         ("Pinecone", pinecone_status),
         ("Braintrust", braintrust_status),
         ("Wandb", wandb_status),
