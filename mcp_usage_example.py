@@ -6,9 +6,9 @@ This script demonstrates how to interact with the MCP server
 using the standard MCP protocol over stdio.
 """
 
-import json
 import asyncio
-from typing import Any, Dict, Optional
+import json
+from typing import Any
 
 
 class MCPClient:
@@ -22,11 +22,11 @@ class MCPClient:
         self.request_id += 1
         return self.request_id
 
-    def create_request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    def create_request(self, method: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
         """Create an MCP request."""
         return {"jsonrpc": "2.0", "id": self._next_id(), "method": method, "params": params or {}}
 
-    def format_response(self, response: Dict[str, Any]) -> str:
+    def format_response(self, response: dict[str, Any]) -> str:
         """Format response for display."""
         if "error" in response:
             return f"Error: {response['error']['message']}"
@@ -120,11 +120,11 @@ async def demo_mcp_tools():
 def main():
     """Main entry point."""
     print("\nMCP Server Configuration:")
-    print(f"- Provider: lmstudio")
-    print(f"- Model: llama-3.2-8x3b-moe-dark-champion-instruct-uncensored-abliterated-18.4b")
-    print(f"- Base URL: http://localhost:1234/v1")
-    print(f"- MCTS Iterations: 100")
-    print(f"- Exploration Weight: 1.414")
+    print("- Provider: lmstudio")
+    print("- Model: llama-3.2-8x3b-moe-dark-champion-instruct-uncensored-abliterated-18.4b")
+    print("- Base URL: http://localhost:1234/v1")
+    print("- MCTS Iterations: 100")
+    print("- Exploration Weight: 1.414")
 
     # Run the demo
     asyncio.run(demo_mcp_tools())

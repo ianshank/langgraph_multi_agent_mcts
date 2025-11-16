@@ -8,12 +8,10 @@ to perform multi-agent MCTS searches.
 
 import asyncio
 import json
-import subprocess
-import sys
-from typing import Dict, Any
+from typing import Any
 
 
-def create_mcp_request(method: str, params: Dict[str, Any] = None) -> Dict[str, Any]:
+def create_mcp_request(method: str, params: dict[str, Any] = None) -> dict[str, Any]:
     """Create a properly formatted MCP request."""
     return {"jsonrpc": "2.0", "id": 1, "method": method, "params": params or {}}
 
