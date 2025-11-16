@@ -20,10 +20,10 @@ sys.path.insert(0, str(Path(__file__).parent))
 # Load environment variables
 from dotenv import load_dotenv
 
-load_dotenv()
-
 from src.adapters.llm import create_client
 from src.config.settings import get_settings
+
+load_dotenv()
 
 
 async def test_openai():
@@ -35,7 +35,7 @@ async def test_openai():
         # Get settings
         settings = get_settings()
         print(f"Provider: {settings.LLM_PROVIDER}")
-        print(f"Model: gpt-4-turbo-preview")
+        print("Model: gpt-4-turbo-preview")
 
         # Create client
         client = create_client(provider="openai", api_key=os.environ.get("OPENAI_API_KEY"), model="gpt-4-turbo-preview")
@@ -70,8 +70,8 @@ async def test_anthropic():
             provider="anthropic", api_key=os.environ.get("ANTHROPIC_API_KEY"), model="claude-3-haiku-20240307"
         )
 
-        print(f"Provider: anthropic")
-        print(f"Model: claude-3-haiku-20240307")
+        print("Provider: anthropic")
+        print("Model: claude-3-haiku-20240307")
 
         # Test generation
         print("\nSending test prompt...")
@@ -101,7 +101,7 @@ def test_wandb():
         import wandb
 
         # Initialize a test run
-        run = wandb.init(
+        _run = wandb.init(
             project="langgraph-mcts-test",
             name="api-integration-test",
             config={

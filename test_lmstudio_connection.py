@@ -46,8 +46,8 @@ async def test_connection():
             response = await client.get(f"{settings.LMSTUDIO_BASE_URL}/models")
             if response.status_code == 200:
                 models_data = response.json()
-                print(f"   ✓ Connected to LM Studio")
-                print(f"   Available models:")
+                print("   ✓ Connected to LM Studio")
+                print("   Available models:")
                 if "data" in models_data:
                     for model in models_data["data"]:
                         print(f"      - {model.get('id', 'unknown')}")
@@ -76,7 +76,7 @@ async def test_connection():
             timeout=120.0,
             max_retries=3,
         )
-        print(f"   ✓ LLM client created")
+        print("   ✓ LLM client created")
         print(f"   Model: {client.model}")
     except Exception as e:
         print(f"   ✗ Client creation error: {e}")
@@ -90,7 +90,7 @@ async def test_connection():
             temperature=0.7,
             max_tokens=50,
         )
-        print(f"   ✓ Inference successful")
+        print("   ✓ Inference successful")
         print(f"   Model: {response.model}")
         print(f"   Response: {response.text[:200]}...")
         print(f"   Usage: {response.usage}")
@@ -105,7 +105,7 @@ async def test_connection():
 
         mcp_server = MCPServer()
         init_result = await mcp_server.initialize()
-        print(f"   ✓ MCP server initialized")
+        print("   ✓ MCP server initialized")
         print(f"   Status: {init_result}")
 
         # List available tools
@@ -120,8 +120,8 @@ async def test_connection():
     # Test MCTS with LM Studio
     print("\n6. Testing MCTS engine...")
     try:
-        from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
         from src.framework.mcts.config import FAST_CONFIG
+        from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
         from src.framework.mcts.policies import RandomRolloutPolicy
 
         config = FAST_CONFIG.copy(seed=42)
@@ -156,7 +156,7 @@ async def test_connection():
             rollout_policy=rollout_policy,
         )
 
-        print(f"   ✓ MCTS engine working")
+        print("   ✓ MCTS engine working")
         print(f"   Best action: {best_action}")
         print(f"   Iterations: {stats.get('total_iterations', 0)}")
         print(f"   Seed: {stats.get('seed', 'N/A')}")
