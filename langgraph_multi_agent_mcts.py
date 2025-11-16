@@ -15,17 +15,16 @@ import asyncio
 import math
 import operator
 import random
-from typing import Annotated, Dict, List, Literal, Optional, TypedDict
+from typing import Annotated, NotRequired, Optional, TypedDict
 
+from langchain_openai import OpenAIEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
-from langchain_openai import OpenAIEmbeddings
-from typing_extensions import NotRequired
 
 # Import our enhanced agents
 try:
     from improved_hrm_agent import HRMAgent
-    from improved_trm_agent import ConvergenceMetric, TRMAgent
+    from improved_trm_agent import TRMAgent
 except ImportError:
     pass
 
@@ -37,12 +36,12 @@ class MCTSNode:
         self,
         state_id: str,
         parent: Optional["MCTSNode"] = None,
-        action: Optional[str] = None,
+        action: str | None = None,
     ):
         self.state_id = state_id
         self.parent = parent
         self.action = action
-        self.children: List["MCTSNode"] = []
+        self.children: list[MCTSNode] = []
         self.visits = 0
         self.value = 0.0
         self.terminal = False
@@ -79,21 +78,21 @@ class AgentState(TypedDict):
 
     # RAG context
     rag_context: NotRequired[str]
-    retrieved_docs: NotRequired[List[Dict]]
+    retrieved_docs: NotRequired[list[dict]]
 
     # Agent results
-    hrm_results: NotRequired[Dict]
-    trm_results: NotRequired[Dict]
-    agent_outputs: Annotated[List[Dict], operator.add]
+    hrm_results: NotRequired[dict]
+    trm_results: NotRequired[dict]
+    agent_outputs: Annotated[list[dict], operator.add]
 
     # MCTS simulation
     mcts_root: NotRequired[MCTSNode]
     mcts_iterations: NotRequired[int]
     mcts_best_action: NotRequired[str]
-    mcts_stats: NotRequired[Dict]
+    mcts_stats: NotRequired[dict]
 
     # Evaluation
-    confidence_scores: NotRequired[Dict[str, float]]
+    confidence_scores: NotRequired[dict[str, float]]
     consensus_reached: NotRequired[bool]
     consensus_score: NotRequired[float]
 
@@ -103,7 +102,7 @@ class AgentState(TypedDict):
 
     # Output
     final_response: NotRequired[str]
-    metadata: NotRequired[Dict]
+    metadata: NotRequired[dict]
 
 
 class LangGraphMultiAgentFramework:
@@ -127,8 +126,8 @@ class LangGraphMultiAgentFramework:
         embedding_model=None,
         top_k_retrieval: int = 5,
         # Agent configuration
-        hrm_config: Optional[Dict] = None,
-        trm_config: Optional[Dict] = None,
+        hrm_config: dict | None = None,
+        trm_config: dict | None = None,
         # MCTS configuration
         mcts_iterations: int = 100,
         mcts_exploration_weight: float = 1.414,
@@ -227,7 +226,7 @@ class LangGraphMultiAgentFramework:
 
         return workflow
 
-    def entry_node(self, state: AgentState) -> Dict:
+    def entry_node(self, state: AgentState) -> dict:
         """Initialize state and parse query."""
 
         self.logger.info(f"Entry node: {state['query'][:100]}")
@@ -237,7 +236,7 @@ class LangGraphMultiAgentFramework:
             "agent_outputs": [],
         }
 
-    def retrieve_context_node(self, state: AgentState) -> Dict:
+    def retrieve_context_node(self, state: AgentState) -> dict:
         """Retrieve context from vector store using RAG."""
 
         if not state.get("use_rag", True) or not self.vector_store:
@@ -258,7 +257,7 @@ class LangGraphMultiAgentFramework:
             "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
         }
 
-    def route_decision_node(self, state: AgentState) -> Dict:
+    def route_decision_node(self, _state: AgentState) -> dict:
         """Analyze query and prepare routing."""
 
         # This node just marks that routing decision will be made
@@ -284,7 +283,7 @@ class LangGraphMultiAgentFramework:
         # All agents complete, aggregate
         return "aggregate"
 
-    async def hrm_agent_node(self, state: AgentState) -> Dict:
+    async def hrm_agent_node(self, state: AgentState) -> dict:
         """Execute HRM agent for hierarchical decomposition."""
 
         self.logger.info("Executing HRM agent")
@@ -308,7 +307,7 @@ class LangGraphMultiAgentFramework:
             ],
         }
 
-    async def trm_agent_node(self, state: AgentState) -> Dict:
+    async def trm_agent_node(self, state: AgentState) -> dict:
         """Execute TRM agent for iterative refinement."""
 
         self.logger.info("Executing TRM agent")
@@ -332,7 +331,7 @@ class LangGraphMultiAgentFramework:
             ],
         }
 
-    async def mcts_simulator_node(self, state: AgentState) -> Dict:
+    async def mcts_simulator_node(self, state: AgentState) -> dict:
         """Execute MCTS simulation for tactical planning."""
 
         self.logger.info("Executing MCTS simulation")
@@ -341,7 +340,7 @@ class LangGraphMultiAgentFramework:
         root = MCTSNode(state_id="root_state")
 
         # Run MCTS iterations
-        for i in range(self.mcts_iterations):
+        for _i in range(self.mcts_iterations):
             # Selection: traverse to leaf
             node = self._mcts_select(root)
 
@@ -407,7 +406,7 @@ class LangGraphMultiAgentFramework:
 
         return child
 
-    def _generate_actions(self, node: MCTSNode, state: AgentState) -> List[str]:
+    def _generate_actions(self, node: MCTSNode, _state: AgentState) -> list[str]:
         """Generate possible actions from current node."""
 
         # Simplified action generation
@@ -419,7 +418,7 @@ class LangGraphMultiAgentFramework:
         else:
             return []  # Terminal
 
-    async def _mcts_simulate(self, node: MCTSNode, state: AgentState) -> float:
+    async def _mcts_simulate(self, _node: MCTSNode, state: AgentState) -> float:
         """MCTS simulation phase: evaluate node value."""
 
         # Use HRM/TRM results to evaluate
@@ -446,7 +445,7 @@ class LangGraphMultiAgentFramework:
             node.value += value
             node = node.parent
 
-    def aggregate_results_node(self, state: AgentState) -> Dict:
+    def aggregate_results_node(self, state: AgentState) -> dict:
         """Aggregate results from all agents."""
 
         self.logger.info("Aggregating agent results")
@@ -460,7 +459,7 @@ class LangGraphMultiAgentFramework:
             "confidence_scores": confidence_scores,
         }
 
-    def evaluate_consensus_node(self, state: AgentState) -> Dict:
+    def evaluate_consensus_node(self, state: AgentState) -> dict:
         """Evaluate consensus among agents."""
 
         agent_outputs = state.get("agent_outputs", [])
@@ -494,7 +493,7 @@ class LangGraphMultiAgentFramework:
 
         return "iterate"
 
-    async def synthesize_node(self, state: AgentState) -> Dict:
+    async def synthesize_node(self, state: AgentState) -> dict:
         """Synthesize final response from agent outputs."""
 
         self.logger.info("Synthesizing final response")
@@ -553,8 +552,8 @@ Final Response:"""
         query: str,
         use_rag: bool = True,
         use_mcts: bool = False,
-        config: Optional[Dict] = None,
-    ) -> Dict:
+        config: dict | None = None,
+    ) -> dict:
         """Process query through LangGraph."""
 
         # Initial state
@@ -583,8 +582,8 @@ Final Response:"""
 async def example_usage():
     """Example usage of LangGraph multi-agent framework."""
 
-    from apps.agents.utils.model_adapters import UnifiedModelAdapter
     from apps.agents.utils.logging_config import LoggerAdapter
+    from apps.agents.utils.model_adapters import UnifiedModelAdapter
 
     # Initialize framework
     framework = LangGraphMultiAgentFramework(
