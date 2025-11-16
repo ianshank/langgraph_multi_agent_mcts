@@ -445,8 +445,25 @@ class EnsembleAggregator(nn.Module):
         # Stack outputs
         stacked = torch.stack(outputs, dim=0)  # (num_agents, ...)
 
-        # Weighted sum
-        aggregated = (stacked * weights.view(-1, *([1] * (stacked.dim() - 1)))).sum(dim=0)
+        # Handle batch dimensions properly
+        # If confidences has shape [num_agents], weights has shape [num_agents]
+        # If confidences has shape [batch_size, num_agents], weights has shape [batch_size, num_agents]
+        if weights.dim() == 1:
+            # Single sample: weights shape [num_agents]
+            # Reshape to broadcast over stacked dims (num_agents, batch?, features...)
+            weight_shape = [-1] + [1] * (stacked.dim() - 1)
+            reshaped_weights = weights.view(*weight_shape)
+        else:
+            # Batched: weights shape [batch_size, num_agents]
+            # Transpose to [num_agents, batch_size] then add dims for features
+            reshaped_weights = weights.t().unsqueeze(-1)  # [num_agents, batch_size, 1]
+            # Expand to match stacked dimensions if needed
+            if stacked.dim() > 2:
+                reshaped_weights = reshaped_weights.view(
+                    self.num_agents, weights.size(0), *([1] * (stacked.dim() - 2))
+                )
+
+        aggregated = (stacked * reshaped_weights).sum(dim=0)
 
         return {
             "output": aggregated,

@@ -105,8 +105,26 @@ def evaluate_command(args):
         # Load actual trained model
         import torch
         checkpoint = torch.load(args.model, map_location="cpu")
-        # Would instantiate actual model here
-        model = checkpoint
+        # Extract model type from checkpoint or default
+        model_type = checkpoint.get("model_type", "hrm") if isinstance(checkpoint, dict) else "hrm"
+
+        # Instantiate model based on type and load state dict
+        if model_type == "hrm":
+            from training.agent_trainer import HRMTrainer
+            trainer = HRMTrainer(config["agents"]["hrm"])
+            if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+                trainer.model.load_state_dict(checkpoint["model_state_dict"])
+            model = trainer.model
+        elif model_type == "trm":
+            from training.agent_trainer import TRMTrainer
+            trainer = TRMTrainer(config["agents"]["trm"])
+            if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
+                trainer.model.load_state_dict(checkpoint["model_state_dict"])
+            model = trainer.model
+        else:
+            # Generic model loading
+            logger.warning(f"Unknown model type: {model_type}, using checkpoint directly")
+            model = checkpoint
 
     # Run evaluation
     report = benchmark.evaluate_model(model, test_data, verbose=True)

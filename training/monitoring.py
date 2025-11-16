@@ -244,16 +244,22 @@ class TrainingMonitor:
         try:
             import torch
             if torch.cuda.is_available():
-                gpu_memory = torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated()
-                resources["gpu_memory_percent"] = gpu_memory * 100
+                # Use total GPU memory, not peak allocated
+                device = torch.cuda.current_device()
+                total_memory = torch.cuda.get_device_properties(device).total_memory
+                allocated_memory = torch.cuda.memory_allocated(device)
+                gpu_memory_ratio = allocated_memory / total_memory
+                resources["gpu_memory_percent"] = gpu_memory_ratio * 100
+                resources["gpu_memory_allocated_gb"] = allocated_memory / (1024**3)
+                resources["gpu_memory_total_gb"] = total_memory / (1024**3)
 
-                if gpu_memory > self.oom_warning_threshold:
+                if gpu_memory_ratio > self.oom_warning_threshold:
                     self._create_alert(
                         severity="warning",
                         category="resource",
-                        message=f"GPU memory usage high: {gpu_memory:.2%}",
+                        message=f"GPU memory usage high: {gpu_memory_ratio:.2%}",
                         metric_name="gpu_memory",
-                        metric_value=gpu_memory,
+                        metric_value=gpu_memory_ratio,
                         threshold=self.oom_warning_threshold
                     )
         except ImportError:

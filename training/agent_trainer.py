@@ -546,7 +546,15 @@ class TRMTrainer(BaseAgentTrainer):
                 # Calculate average iterations to convergence
                 target_scores = batch["improvement_scores"]
                 converged_mask = target_scores >= self.trm_config["convergence_threshold"]
-                iterations = converged_mask.int().argmax(dim=-1)
+
+                # Find first convergence iteration for each sample
+                # If no convergence, use max_iterations (sequence length)
+                max_iterations = target_scores.size(-1)
+                has_converged = converged_mask.any(dim=-1)
+                # argmax returns 0 for non-converging, but we need first True index
+                first_convergence = converged_mask.int().argmax(dim=-1)
+                # Set non-converging samples to max_iterations
+                iterations = torch.where(has_converged, first_convergence, max_iterations * torch.ones_like(first_convergence))
                 avg_iterations.extend(iterations.cpu().tolist())
 
                 # Convergence rate

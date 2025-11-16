@@ -22,6 +22,7 @@ import yaml
 try:
     import torch
     import torch.nn as nn
+    import torch.nn.functional as F
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -226,32 +227,49 @@ class IncrementalTrainer:
             fisher_info[name] = torch.zeros_like(param)
 
         # Compute Fisher Information
+        num_samples = 0
         for batch in dataloader:
             model.zero_grad()
 
             # Get model output (simplified)
             if hasattr(model, "forward"):
-                output = model(batch.get("input_ids", batch.get("features")))
+                inputs = batch.get("input_ids", batch.get("features"))
+                output = model(inputs)
             else:
                 continue
 
-            # Compute log likelihood (simplified)
+            # Compute log probability for Fisher Information
+            # Fisher Information = E[grad(log p(y|x))^2]
             if isinstance(output, dict):
-                log_likelihood = output.get("logits", torch.zeros(1)).mean()
+                logits = output.get("logits", None)
+                if logits is not None:
+                    # Compute log softmax for classification
+                    log_probs = F.log_softmax(logits, dim=-1)
+                    # Use the predicted class probability
+                    pred_classes = logits.argmax(dim=-1)
+                    # Get log probability of predicted class
+                    batch_size = logits.size(0)
+                    log_likelihood = log_probs[range(batch_size), pred_classes].sum()
+                else:
+                    log_likelihood = output.get("output", torch.zeros(1)).sum()
             else:
-                log_likelihood = output.mean()
+                # For regression or other outputs, use negative squared error
+                log_likelihood = -0.5 * (output ** 2).sum()
 
+            # Compute gradients
             log_likelihood.backward()
 
-            # Accumulate Fisher information
+            # Accumulate Fisher information (squared gradients)
             for name, param in model.named_parameters():
                 if param.grad is not None:
-                    fisher_info[name] += param.grad ** 2
+                    fisher_info[name] += param.grad.data ** 2
 
-        # Average over dataset
-        num_samples = len(dataloader)
-        for name in fisher_info:
-            fisher_info[name] /= num_samples
+            num_samples += 1
+
+        # Average over number of batches
+        if num_samples > 0:
+            for name in fisher_info:
+                fisher_info[name] /= num_samples
 
         self.fisher_information = fisher_info
 
