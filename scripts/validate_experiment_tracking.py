@@ -72,7 +72,7 @@ def validate_braintrust():
             "epochs": 10,
         }
         tracker.log_hyperparameters(hyperparams)
-        print(f"[OK] Hyperparameters logged")
+        print("[OK] Hyperparameters logged")
 
         # Log training metrics
         for epoch in range(5):
@@ -89,7 +89,7 @@ def validate_braintrust():
             )
             tracker.log_training_step(metrics)
 
-        print(f"[OK] Training metrics logged (5 epochs)")
+        print("[OK] Training metrics logged (5 epochs)")
 
         # Log evaluation
         tracker.log_evaluation(
@@ -98,7 +98,7 @@ def validate_braintrust():
             expected="Recommended action: Alpha",
             scores={"accuracy": 1.0, "confidence": 0.85},
         )
-        print(f"[OK] Evaluation logged")
+        print("[OK] Evaluation logged")
 
         # Create and log temporary artifact
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
@@ -110,19 +110,19 @@ def validate_braintrust():
 
         # Get summary
         summary = tracker.get_summary()
-        print(f"\nExperiment Summary:")
+        print("\nExperiment Summary:")
         print(f"  - ID: {summary['id']}")
         print(f"  - Metrics logged: {summary['metrics_count']}")
         print(f"  - Offline mode: {summary['offline']}")
 
         # End experiment
-        final_summary = tracker.end_experiment()
-        print(f"[OK] Experiment ended successfully")
+        tracker.end_experiment()
+        print("[OK] Experiment ended successfully")
 
         # Cleanup
         os.unlink(artifact_path)
 
-        print(f"\n[PASS] BRAINTRUST VALIDATION PASSED")
+        print("\n[PASS] BRAINTRUST VALIDATION PASSED")
         return True
 
     except Exception as e:
@@ -166,7 +166,7 @@ def validate_wandb():
             tags=["validation", "testing"],
             notes="Testing W&B integration",
         )
-        print(f"[OK] Run initialized")
+        print("[OK] Run initialized")
 
         # Log metrics
         for epoch in range(5):
@@ -179,11 +179,11 @@ def validate_wandb():
             )
             tracker.log_training_step(metrics)
 
-        print(f"[OK] Training metrics logged (5 epochs)")
+        print("[OK] Training metrics logged (5 epochs)")
 
         # Update config
         tracker.update_config({"additional_param": "test_value"})
-        print(f"[OK] Config updated")
+        print("[OK] Config updated")
 
         # Log custom metrics
         tracker.log(
@@ -193,13 +193,13 @@ def validate_wandb():
                 "agent_routing_accuracy": 0.79,
             }
         )
-        print(f"[OK] Custom metrics logged")
+        print("[OK] Custom metrics logged")
 
         # Finish run
         tracker.finish()
-        print(f"[OK] Run finished successfully")
+        print("[OK] Run finished successfully")
 
-        print(f"\n[PASS] WANDB VALIDATION PASSED")
+        print("\n[PASS] WANDB VALIDATION PASSED")
         return True
 
     except Exception as e:
@@ -216,7 +216,7 @@ def validate_unified_tracker():
 
     try:
         tracker = UnifiedExperimentTracker(project_name="mcts-unified-validation")
-        print(f"[OK] Unified tracker initialized")
+        print("[OK] Unified tracker initialized")
 
         # Initialize experiment
         config = {
@@ -230,7 +230,7 @@ def validate_unified_tracker():
             description="Testing unified tracker",
             tags=["unified", "validation"],
         )
-        print(f"[OK] Experiment initialized on both platforms")
+        print("[OK] Experiment initialized on both platforms")
 
         # Log metrics to both
         for epoch in range(3):
@@ -242,7 +242,7 @@ def validate_unified_tracker():
             )
             tracker.log_metrics(metrics)
 
-        print(f"[OK] Metrics logged to both platforms")
+        print("[OK] Metrics logged to both platforms")
 
         # Log evaluation
         tracker.log_evaluation(
@@ -251,14 +251,14 @@ def validate_unified_tracker():
             expected="Test expected",
             scores={"accuracy": 0.9},
         )
-        print(f"[OK] Evaluation logged")
+        print("[OK] Evaluation logged")
 
         # Finish
         summary = tracker.finish()
-        print(f"[OK] Experiment ended on both platforms")
+        print("[OK] Experiment ended on both platforms")
         print(f"\nSummary: {summary}")
 
-        print(f"\n[PASS] UNIFIED TRACKER VALIDATION PASSED")
+        print("\n[PASS] UNIFIED TRACKER VALIDATION PASSED")
         return True
 
     except Exception as e:

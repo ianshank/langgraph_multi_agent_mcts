@@ -11,12 +11,9 @@ Scans the codebase for potential security issues:
 CRITICAL: This script identifies sensitive data that should NOT be committed.
 """
 
-import json
-import os
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 # Patterns for detecting sensitive data
 SENSITIVE_PATTERNS = {
@@ -73,13 +70,10 @@ SENSITIVE_FILES = [
 def should_skip(path: Path) -> bool:
     """Check if path should be skipped."""
     path_str = str(path)
-    for pattern in SKIP_PATTERNS:
-        if pattern in path_str:
-            return True
-    return False
+    return any(pattern in path_str for pattern in SKIP_PATTERNS)
 
 
-def scan_file_for_secrets(file_path: Path) -> List[Tuple[str, str, int]]:
+def scan_file_for_secrets(file_path: Path) -> list[tuple[str, str, int]]:
     """
     Scan a single file for potential secrets.
 
@@ -89,7 +83,7 @@ def scan_file_for_secrets(file_path: Path) -> List[Tuple[str, str, int]]:
     findings = []
 
     try:
-        with open(file_path, "r", encoding="utf-8", errors="ignore") as f:
+        with open(file_path, encoding="utf-8", errors="ignore") as f:
             lines = f.readlines()
 
         for line_num, line in enumerate(lines, 1):
@@ -98,22 +92,19 @@ def scan_file_for_secrets(file_path: Path) -> List[Tuple[str, str, int]]:
                 if matches:
                     # Extract the actual secret value
                     for match in matches:
-                        if isinstance(match, tuple):
-                            secret = match[-1] if len(match) > 1 else match[0]
-                        else:
-                            secret = match
+                        secret = (match[-1] if len(match) > 1 else match[0]) if isinstance(match, tuple) else match
 
                         # Mask the secret for reporting
                         masked = secret[:4] + "*" * (len(secret) - 8) + secret[-4:] if len(secret) > 8 else "***"
                         findings.append((pattern_name, masked, line_num))
 
-    except Exception as e:
+    except Exception:
         pass  # Skip files that can't be read
 
     return findings
 
 
-def scan_codebase(root_path: Path) -> Dict[str, List[Tuple[str, str, int]]]:
+def scan_codebase(root_path: Path) -> dict[str, list[tuple[str, str, int]]]:
     """
     Scan entire codebase for secrets.
 
@@ -141,7 +132,7 @@ def scan_codebase(root_path: Path) -> Dict[str, List[Tuple[str, str, int]]]:
     return all_findings
 
 
-def check_sensitive_files(root_path: Path) -> List[str]:
+def check_sensitive_files(root_path: Path) -> list[str]:
     """Check for sensitive files that shouldn't be committed."""
     found_files = []
 
@@ -160,7 +151,7 @@ def check_sensitive_files(root_path: Path) -> List[str]:
     return found_files
 
 
-def check_gitignore(root_path: Path) -> List[str]:
+def check_gitignore(root_path: Path) -> list[str]:
     """Check if .gitignore includes necessary entries."""
     gitignore_path = root_path / ".gitignore"
     missing_entries = []
@@ -181,7 +172,7 @@ def check_gitignore(root_path: Path) -> List[str]:
     if not gitignore_path.exists():
         return required_entries
 
-    with open(gitignore_path, "r") as f:
+    with open(gitignore_path) as f:
         gitignore_content = f.read()
 
     for entry in required_entries:
@@ -196,9 +187,9 @@ def check_gitignore(root_path: Path) -> List[str]:
 
 
 def generate_report(
-    secrets_found: Dict[str, List[Tuple[str, str, int]]],
-    sensitive_files: List[str],
-    gitignore_missing: List[str],
+    secrets_found: dict[str, list[tuple[str, str, int]]],
+    sensitive_files: list[str],
+    gitignore_missing: list[str],
     root_path: Path,
 ) -> str:
     """Generate security audit report."""

@@ -12,14 +12,13 @@ Usage:
 """
 
 import argparse
+import contextlib
 import json
-import os
 import sys
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional
-from datetime import datetime
 
 
 class Status(Enum):
@@ -42,7 +41,7 @@ class CheckResult:
     status: Status
     priority: Priority
     message: str
-    details: Optional[str] = None
+    details: str | None = None
 
 
 def get_project_root() -> Path:
@@ -60,7 +59,7 @@ def check_dir_exists(path: Path, description: str) -> bool:
     return path.exists() and path.is_dir()
 
 
-def run_security_checks(root: Path) -> List[CheckResult]:
+def run_security_checks(root: Path) -> list[CheckResult]:
     """Run security-related checks."""
     results = []
 
@@ -185,7 +184,7 @@ def run_security_checks(root: Path) -> List[CheckResult]:
     return results
 
 
-def run_infrastructure_checks(root: Path) -> List[CheckResult]:
+def run_infrastructure_checks(root: Path) -> list[CheckResult]:
     """Run infrastructure-related checks."""
     results = []
 
@@ -336,7 +335,7 @@ def run_infrastructure_checks(root: Path) -> List[CheckResult]:
     return results
 
 
-def run_testing_checks(root: Path) -> List[CheckResult]:
+def run_testing_checks(root: Path) -> list[CheckResult]:
     """Run testing-related checks."""
     results = []
 
@@ -427,7 +426,7 @@ def run_testing_checks(root: Path) -> List[CheckResult]:
     return results
 
 
-def run_documentation_checks(root: Path) -> List[CheckResult]:
+def run_documentation_checks(root: Path) -> list[CheckResult]:
     """Run documentation-related checks."""
     results = []
 
@@ -518,7 +517,7 @@ def run_documentation_checks(root: Path) -> List[CheckResult]:
     return results
 
 
-def run_dependency_checks(root: Path) -> List[CheckResult]:
+def run_dependency_checks(root: Path) -> list[CheckResult]:
     """Run dependency management checks."""
     results = []
 
@@ -526,9 +525,9 @@ def run_dependency_checks(root: Path) -> List[CheckResult]:
     requirements = root / "requirements.txt"
     if check_file_exists(requirements, "Requirements file"):
         content = requirements.read_text()
-        lines = [l for l in content.splitlines() if l and not l.startswith("#")]
-        pinned = sum(1 for l in lines if "==" in l)
-        unpinned = sum(1 for l in lines if ">=" in l and "==" not in l)
+        lines = [line for line in content.splitlines() if line and not line.startswith("#")]
+        pinned = sum(1 for line in lines if "==" in line)
+        unpinned = sum(1 for line in lines if ">=" in line and "==" not in line)
 
         if unpinned == 0 and pinned > 0:
             results.append(
@@ -571,7 +570,7 @@ def run_dependency_checks(root: Path) -> List[CheckResult]:
     return results
 
 
-def generate_report(results: List[CheckResult], verbose: bool = False) -> int:
+def generate_report(results: list[CheckResult], verbose: bool = False) -> int:
     """Generate and print the readiness report."""
     print("\n" + "=" * 70)
     print(" 🚀 PRODUCTION READINESS REPORT - LangGraph Multi-Agent MCTS")
@@ -642,10 +641,8 @@ def main():
 
     # Fix Windows console encoding
     if sys.platform == "win32":
-        try:
+        with contextlib.suppress(AttributeError):
             sys.stdout.reconfigure(encoding="utf-8")
-        except AttributeError:
-            pass
 
     root = get_project_root()
     all_results = []

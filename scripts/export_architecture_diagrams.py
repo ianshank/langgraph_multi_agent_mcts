@@ -7,13 +7,12 @@ Outputs to: docs/img/
 """
 import os
 import sys
-from typing import Dict
 
 import requests
 
 try:
     import matplotlib.pyplot as plt
-    from matplotlib.patches import Rectangle, FancyArrow
+    from matplotlib.patches import FancyArrow, Rectangle
 except Exception:
     plt = None
 
@@ -27,7 +26,7 @@ def ensure_dirs() -> None:
     os.makedirs(MMD_DIR, exist_ok=True)
 
 
-def get_mermaid_texts() -> Dict[str, str]:
+def get_mermaid_texts() -> dict[str, str]:
     c1 = """graph TB
   user[Developer / Operator]:::person
   system[LangGraph Multi‑Agent MCTS Framework]:::system

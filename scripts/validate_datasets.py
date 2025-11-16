@@ -22,9 +22,9 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.data.dataset_loader import (
+    CombinedDatasetLoader,
     DABStepLoader,
     PRIMUSLoader,
-    CombinedDatasetLoader,
     load_dataset,
 )
 
@@ -54,7 +54,7 @@ def validate_dabstep():
         # Validate sample structure
         if samples:
             sample = samples[0]
-            print(f"\nSample structure validation:")
+            print("\nSample structure validation:")
             print(f"  - ID: {sample.id}")
             print(f"  - Text length: {len(sample.text)} chars")
             print(f"  - Domain: {sample.domain}")
@@ -68,16 +68,16 @@ def validate_dabstep():
 
         # Get statistics
         stats = loader.get_statistics()
-        print(f"\nDataset Statistics:")
+        print("\nDataset Statistics:")
         print(f"  - Total samples: {stats.total_samples}")
         print(f"  - Domains: {stats.domains}")
         print(f"  - Avg text length: {stats.avg_text_length:.2f} chars")
         print(f"  - Difficulty distribution: {stats.difficulty_distribution}")
 
         # Test batch iteration
-        print(f"\nTesting batch iteration...")
+        print("\nTesting batch iteration...")
         batch_count = 0
-        for batch in loader.iterate_samples(batch_size=32):
+        for _batch in loader.iterate_samples(batch_size=32):
             batch_count += 1
             if batch_count >= 3:  # Just test first 3 batches
                 break
@@ -87,7 +87,7 @@ def validate_dabstep():
         reasoning_tasks = loader.get_reasoning_tasks()
         print(f"  [OK] Reasoning tasks: {len(reasoning_tasks)} samples")
 
-        print(f"\n[PASS] DABSTEP VALIDATION PASSED")
+        print("\n[PASS] DABSTEP VALIDATION PASSED")
         return True
 
     except ImportError as e:
@@ -118,7 +118,7 @@ def validate_primus():
         # Validate sample structure
         if seed_samples:
             sample = seed_samples[0]
-            print(f"\nSeed sample structure:")
+            print("\nSeed sample structure:")
             print(f"  - ID: {sample.id}")
             print(f"  - Text length: {len(sample.text)} chars")
             print(f"  - Domain: {sample.domain}")
@@ -130,24 +130,24 @@ def validate_primus():
             print(f"  [OK] License attribution: {sample.metadata.get('license')}")
 
         # Load PRIMUS-Instruct
-        print(f"\nLoading PRIMUS-Instruct...")
+        print("\nLoading PRIMUS-Instruct...")
         instruct_samples = loader.load_instruct()
 
         print(f"[OK] Loaded {len(instruct_samples)} instruct samples")
 
         if instruct_samples:
             sample = instruct_samples[0]
-            print(f"\nInstruct sample structure:")
+            print("\nInstruct sample structure:")
             print(f"  - ID: {sample.id}")
             print(f"  - Text (first 200 chars): {sample.text[:200]}...")
             print(f"  - Domain: {sample.domain}")
             assert "Instruction:" in sample.text, "Missing instruction format"
             assert "Response:" in sample.text, "Missing response format"
-            print(f"  [OK] Instruction-Response format verified")
+            print("  [OK] Instruction-Response format verified")
 
         # Get statistics
         stats = loader.get_statistics()
-        print(f"\nCombined Statistics:")
+        print("\nCombined Statistics:")
         print(f"  - Total samples: {stats.total_samples}")
         print(f"  - Domains: {dict(list(stats.domains.items())[:5])}...")  # First 5
         print(f"  - Avg text length: {stats.avg_text_length:.2f} chars")
@@ -159,7 +159,7 @@ def validate_primus():
         threat_intel_samples = loader.get_threat_intelligence_samples()
         print(f"  [OK] Threat intelligence samples: {len(threat_intel_samples)}")
 
-        print(f"\n[PASS] PRIMUS VALIDATION PASSED")
+        print("\n[PASS] PRIMUS VALIDATION PASSED")
         return True
 
     except ImportError as e:
@@ -168,7 +168,7 @@ def validate_primus():
         return False
     except Exception as e:
         if "gated dataset" in str(e):
-            print(f"\n[SKIP] PRIMUS VALIDATION SKIPPED (Gated Dataset)")
+            print("\n[SKIP] PRIMUS VALIDATION SKIPPED (Gated Dataset)")
             print("  PRIMUS requires HuggingFace authentication.")
             print("  See docs/DATASET_SETUP.md for authentication instructions.")
             print("  This is expected behavior - PRIMUS will work after login.")
@@ -200,7 +200,7 @@ def validate_combined_loader():
 
         # Domain distribution
         domain_dist = loader.get_domain_distribution()
-        print(f"\nDomain Distribution:")
+        print("\nDomain Distribution:")
         for domain, count in sorted(domain_dist.items(), key=lambda x: x[1], reverse=True)[:5]:
             print(f"  - {domain}: {count}")
 
@@ -213,22 +213,22 @@ def validate_combined_loader():
         print(f"[OK] Multi-step reasoning samples: {len(reasoning_samples)}")
 
         # Test export (dry run)
-        print(f"\nTesting JSONL export...")
+        print("\nTesting JSONL export...")
         export_path = Path(__file__).parent.parent / "output" / "validation_export.jsonl"
         exported_file = loader.export_for_training(str(export_path), format="jsonl")
 
         # Verify export
         if Path(exported_file).exists():
-            with open(exported_file, "r", encoding="utf-8") as f:
+            with open(exported_file, encoding="utf-8") as f:
                 line_count = sum(1 for _ in f)
             print(f"[OK] Exported {line_count} samples to {exported_file}")
 
-        print(f"\n[PASS] COMBINED LOADER VALIDATION PASSED")
+        print("\n[PASS] COMBINED LOADER VALIDATION PASSED")
         return True
 
     except Exception as e:
         if "gated dataset" in str(e):
-            print(f"\n[SKIP] COMBINED LOADER VALIDATION SKIPPED (PRIMUS Gated)")
+            print("\n[SKIP] COMBINED LOADER VALIDATION SKIPPED (PRIMUS Gated)")
             print("  Combined loader requires PRIMUS authentication.")
             print("  DABStep works standalone. See docs/DATASET_SETUP.md for setup.")
             return True  # Return True since DABStep alone is sufficient
@@ -263,7 +263,7 @@ def validate_huggingface_interface():
                 first_sample = train_split[0]
                 print(f"  Sample keys: {list(first_sample.keys())}")
 
-        print(f"\n[PASS] HUGGINGFACE INTERFACE VALIDATION PASSED")
+        print("\n[PASS] HUGGINGFACE INTERFACE VALIDATION PASSED")
         return True
 
     except ImportError as e:
