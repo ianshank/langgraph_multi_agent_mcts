@@ -19,15 +19,16 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
-from src.framework.mcts.config import MCTSConfig, create_preset_config, ConfigPreset
-from src.framework.mcts.policies import (
-    RandomRolloutPolicy,
+from src.framework.mcts.config import (  # noqa: E402
+    MCTSConfig,
+)
+from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState  # noqa: E402
+from src.framework.mcts.experiments import ExperimentTracker  # noqa: E402
+from src.framework.mcts.policies import (  # noqa: E402
     HybridRolloutPolicy,
     SelectionPolicy,
     ucb1,
 )
-from src.framework.mcts.experiments import ExperimentTracker
 
 
 async def demonstrate_deterministic_mcts():
@@ -44,7 +45,7 @@ async def demonstrate_deterministic_mcts():
     seed = 42
     num_iterations = 100
 
-    print(f"\n1. Creating MCTS Configuration")
+    print("\n1. Creating MCTS Configuration")
     print(f"   Seed: {seed}")
     print(f"   Iterations: {num_iterations}")
 
@@ -60,8 +61,8 @@ async def demonstrate_deterministic_mcts():
     )
 
     print(f"   Progressive Widening: k={config.progressive_widening_k}, alpha={config.progressive_widening_alpha}")
-    print(f"   Formula: expand when visits > k * n^alpha")
-    print(f"   Interpretation: More visits needed before expanding additional children")
+    print("   Formula: expand when visits > k * n^alpha")
+    print("   Interpretation: More visits needed before expanding additional children")
 
     # Define action generator
     def action_generator(state: MCTSState):
@@ -84,7 +85,7 @@ async def demonstrate_deterministic_mcts():
 
     # Define rollout policy
     rollout_policy = HybridRolloutPolicy(
-        heuristic_fn=lambda s: 0.6,  # Simple constant heuristic
+        heuristic_fn=lambda _s: 0.6,  # Simple constant heuristic
         heuristic_weight=0.7,
         random_weight=0.3,
     )
@@ -136,9 +137,9 @@ async def demonstrate_deterministic_mcts():
         print(f"      Cache Hit Rate: {stats['cache_hit_rate']:.2%}")
 
     # Verify determinism
-    print(f"\n3. Determinism Verification:")
+    print("\n3. Determinism Verification:")
     is_deterministic = (
-        len(set(r["best_action"] for r in results)) == 1 and len(set(r["best_visits"] for r in results)) == 1
+        len({r["best_action"] for r in results}) == 1 and len({r["best_visits"] for r in results}) == 1
     )
     print(f"   All runs identical: {is_deterministic}")
 
@@ -148,7 +149,7 @@ async def demonstrate_deterministic_mcts():
         print("   WARNING: Results differ - check RNG isolation")
 
     # Demonstrate progressive widening
-    print(f"\n4. Progressive Widening Analysis:")
+    print("\n4. Progressive Widening Analysis:")
     engine = MCTSEngine(seed=seed, progressive_widening_k=1.0, progressive_widening_alpha=0.5)
     root_state = MCTSState(state_id="root", features={})
     root = MCTSNode(state=root_state, rng=engine.rng)
@@ -161,7 +162,7 @@ async def demonstrate_deterministic_mcts():
                 print(f"   Children={num_children}, Visits={visits}: Expand={should_expand}")
 
     # Show cache effectiveness
-    print(f"\n5. Cache Effectiveness:")
+    print("\n5. Cache Effectiveness:")
     engine = MCTSEngine(seed=seed)
     root_state = MCTSState(state_id="cache_test", features={})
     root = MCTSNode(state=root_state, rng=engine.rng)
@@ -178,10 +179,10 @@ async def demonstrate_deterministic_mcts():
     print(f"   Cache Hits: {stats['cache_hits']}")
     print(f"   Cache Misses: {stats['cache_misses']}")
     print(f"   Hit Rate: {stats['cache_hit_rate']:.2%}")
-    print(f"   Cache reduces redundant evaluations for repeated states")
+    print("   Cache reduces redundant evaluations for repeated states")
 
     # Experiment tracking
-    print(f"\n6. Experiment Tracking:")
+    print("\n6. Experiment Tracking:")
     tracker = ExperimentTracker(name="demo_experiments")
 
     for i, result in enumerate(results):
@@ -206,8 +207,8 @@ async def demonstrate_deterministic_mcts():
     print(f"   Most Common Action: {summary['action_consistency']['most_common_action']}")
 
     # UCB1 Formula Demonstration
-    print(f"\n7. UCB1 Selection Policy:")
-    print(f"   Formula: Q(s,a) + c * sqrt(N(parent)) / sqrt(N(child))")
+    print("\n7. UCB1 Selection Policy:")
+    print("   Formula: Q(s,a) + c * sqrt(N(parent)) / sqrt(N(child))")
     print(f"   c = {config.exploration_weight} (exploration weight)")
 
     # Example UCB1 calculations
@@ -220,13 +221,13 @@ async def demonstrate_deterministic_mcts():
         print(f"      (Exploitation={avg_value:.2f} + Exploration={exploration_term:.2f})")
 
     # Final selection by max visits (not max value)
-    print(f"\n8. Final Action Selection:")
-    print(f"   Policy: MAX_VISITS (most robust)")
-    print(f"   Selects action with highest visit count, not highest average value")
-    print(f"   This is more robust as it represents the most-explored option")
+    print("\n8. Final Action Selection:")
+    print("   Policy: MAX_VISITS (most robust)")
+    print("   Selects action with highest visit count, not highest average value")
+    print("   This is more robust as it represents the most-explored option")
 
-    print(f"\n" + "=" * 70)
-    print(f"CODE SNIPPET: Running MCTS with Seed")
+    print("\n" + "=" * 70)
+    print("CODE SNIPPET: Running MCTS with Seed")
     print("=" * 70)
     print(
         """

@@ -9,30 +9,24 @@ Demonstrates how to:
 """
 
 import asyncio
-import os
-from typing import Any
 
 # Import the LLM client factory
 from src.adapters.llm import (
+    LLMClientError,
+    LLMRateLimitError,
+    create_anthropic_client,
     create_client,
     create_client_from_config,
     create_openai_client,
-    create_anthropic_client,
-    create_local_client,
     list_providers,
-    register_provider,
-    LLMResponse,
-    LLMClientError,
-    LLMRateLimitError,
 )
 
 # Import the async agent base
 from src.framework.agents import (
-    AsyncAgentBase,
     AgentContext,
     AgentResult,
+    AsyncAgentBase,
 )
-
 
 # ============================================================================
 # Example 1: Basic Client Usage
@@ -140,12 +134,11 @@ async def provider_switching():
             client = create_client_from_config(config)
 
             # Check if local server is available
-            if provider == "lmstudio":
-                if hasattr(client, "check_health"):
-                    is_healthy = await client.check_health()
-                    if not is_healthy:
-                        print(f"  Skipping {provider}: Server not running")
-                        continue
+            if provider == "lmstudio" and hasattr(client, "check_health"):
+                is_healthy = await client.check_health()
+                if not is_healthy:
+                    print(f"  Skipping {provider}: Server not running")
+                    continue
 
             response = await client.generate(
                 prompt=prompt,
