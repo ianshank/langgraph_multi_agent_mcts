@@ -129,6 +129,49 @@ git commit -m "Enable Hugging Face Inference API"
 git push
 ```
 
+## Optional: Enable Weights & Biases Tracking
+
+Track experiments and visualize metrics with W&B integration.
+
+### 1. Get W&B API Key
+
+1. Sign up at [wandb.ai](https://wandb.ai)
+2. Go to Settings → API Keys
+3. Copy your API key
+
+### 2. Add W&B Secret to Space
+
+1. Go to Space Settings → **Repository secrets**
+2. Add new secret:
+   - Name: `WANDB_API_KEY`
+   - Value: Your W&B API key
+
+### 3. Use W&B in the Demo
+
+1. Expand "Weights & Biases Tracking" accordion in the UI
+2. Check "Enable W&B Tracking"
+3. Optionally set:
+   - **Project Name**: Your W&B project (default: `langgraph-mcts-demo`)
+   - **Run Name**: Custom name for this run (auto-generated if empty)
+4. Process your query
+5. View the W&B run URL in the results
+
+### 4. What Gets Logged
+
+- **Agent Metrics**: Confidence scores, execution times, response lengths
+- **MCTS Metrics**: Best value, visits, tree depth, exploration paths
+- **Consensus Metrics**: Agreement scores, agent combinations
+- **Performance**: Total processing time
+- **Artifacts**: Full JSON results as artifacts
+
+### 5. View Your Dashboard
+
+After runs, visit your W&B project dashboard to:
+- Compare different agent configurations
+- Visualize consensus patterns
+- Analyze MCTS exploration strategies
+- Track performance over time
+
 ## Customization Options
 
 ### Change Gradio Theme
@@ -206,7 +249,8 @@ your-space/
     ├── __init__.py
     ├── agents_demo.py
     ├── llm_mock.py
-    └── mcts_demo.py
+    ├── mcts_demo.py
+    └── wandb_tracker.py
 ```
 
 ## Upgrading Hardware

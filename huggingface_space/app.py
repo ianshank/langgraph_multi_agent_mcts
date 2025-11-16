@@ -17,6 +17,7 @@ import numpy as np
 from demo_src.mcts_demo import MCTSDemo
 from demo_src.agents_demo import HRMAgent, TRMAgent
 from demo_src.llm_mock import MockLLMClient, HuggingFaceClient
+from demo_src.wandb_tracker import WandBTracker, is_wandb_available
 
 
 @dataclass
@@ -270,6 +271,7 @@ class MultiAgentFrameworkDemo:
 
 # Global framework instance
 framework = None
+wandb_tracker = None
 
 
 def initialize_framework(use_hf: bool, model_id: str):
@@ -286,19 +288,41 @@ def process_query_sync(
     use_mcts: bool,
     mcts_iterations: int,
     exploration_weight: float,
-    seed: int
+    seed: int,
+    enable_wandb: bool = False,
+    wandb_project: str = "langgraph-mcts-demo",
+    wandb_run_name: str = ""
 ):
     """Synchronous wrapper for async processing."""
-    global framework
+    global framework, wandb_tracker
 
     if framework is None:
         framework = MultiAgentFrameworkDemo()
 
     if not query.strip():
-        return "Please enter a query.", {}, "", {}
+        return "Please enter a query.", {}, "", {}, ""
 
     # Handle seed
     seed_value = seed if seed > 0 else None
+
+    # Initialize W&B tracking if enabled
+    wandb_url = ""
+    if enable_wandb and is_wandb_available():
+        if wandb_tracker is None:
+            wandb_tracker = WandBTracker(project_name=wandb_project, enabled=True)
+
+        # Start a new run
+        run_name = wandb_run_name if wandb_run_name.strip() else None
+        config = {
+            "query": query[:200],  # Truncate for config
+            "use_hrm": use_hrm,
+            "use_trm": use_trm,
+            "use_mcts": use_mcts,
+            "mcts_iterations": mcts_iterations,
+            "exploration_weight": exploration_weight,
+            "seed": seed_value
+        }
+        wandb_tracker.init_run(run_name=run_name, config=config)
 
     # Run async function
     result = asyncio.run(
@@ -326,6 +350,16 @@ def process_query_sync(
             "time_ms": result.hrm_result.execution_time_ms
         }
 
+        # Log to W&B
+        if enable_wandb and wandb_tracker:
+            wandb_tracker.log_agent_result(
+                "HRM",
+                result.hrm_result.response,
+                result.hrm_result.confidence,
+                result.hrm_result.execution_time_ms,
+                result.hrm_result.reasoning_steps
+            )
+
     if result.trm_result:
         agent_details["TRM"] = {
             "response": result.trm_result.response,
@@ -334,8 +368,45 @@ def process_query_sync(
             "time_ms": result.trm_result.execution_time_ms
         }
 
+        # Log to W&B
+        if enable_wandb and wandb_tracker:
+            wandb_tracker.log_agent_result(
+                "TRM",
+                result.trm_result.response,
+                result.trm_result.confidence,
+                result.trm_result.execution_time_ms,
+                result.trm_result.reasoning_steps
+            )
+
     if result.mcts_result:
         agent_details["MCTS"] = result.mcts_result
+
+        # Log to W&B
+        if enable_wandb and wandb_tracker:
+            wandb_tracker.log_mcts_result(result.mcts_result)
+
+    # Log consensus and performance to W&B
+    if enable_wandb and wandb_tracker:
+        wandb_tracker.log_consensus(
+            result.consensus_score,
+            result.metadata['agents_used'],
+            result.final_response
+        )
+        wandb_tracker.log_performance(result.total_time_ms)
+        wandb_tracker.log_query_summary(
+            query,
+            use_hrm,
+            use_trm,
+            use_mcts,
+            result.consensus_score,
+            result.total_time_ms
+        )
+
+        # Get run URL
+        wandb_url = wandb_tracker.get_run_url() or ""
+
+        # Finish the run
+        wandb_tracker.finish_run()
 
     # Metrics
     metrics = f"""
@@ -344,6 +415,9 @@ def process_query_sync(
 **Agents Used:** {', '.join(result.metadata['agents_used'])}
 """
 
+    if wandb_url:
+        metrics += f"\n**W&B Run:** [{wandb_url}]({wandb_url})"
+
     # Full JSON result
     full_result = {
         "query": result.query,
@@ -351,10 +425,11 @@ def process_query_sync(
         "consensus_score": result.consensus_score,
         "total_time_ms": result.total_time_ms,
         "metadata": result.metadata,
-        "agent_details": agent_details
+        "agent_details": agent_details,
+        "wandb_url": wandb_url
     }
 
-    return final_response, agent_details, metrics, full_result
+    return final_response, agent_details, metrics, full_result, wandb_url
 
 
 def visualize_mcts_tree(mcts_result: dict) -> str:
@@ -452,6 +527,36 @@ with gr.Blocks(
                 precision=0
             )
 
+    with gr.Accordion("Weights & Biases Tracking", open=False):
+        gr.Markdown(
+            """
+            **Experiment Tracking with W&B**
+
+            Track your experiments, visualize metrics, and compare runs.
+            Requires W&B API key set in Space secrets as `WANDB_API_KEY`.
+            """
+        )
+        with gr.Row():
+            enable_wandb = gr.Checkbox(
+                label="Enable W&B Tracking",
+                value=False,
+                info="Log metrics and results to Weights & Biases"
+            )
+            wandb_project = gr.Textbox(
+                label="Project Name",
+                value="langgraph-mcts-demo",
+                placeholder="Your W&B project name"
+            )
+            wandb_run_name = gr.Textbox(
+                label="Run Name (optional)",
+                value="",
+                placeholder="Auto-generated if empty"
+            )
+
+        wandb_status = gr.Markdown(
+            f"**W&B Status:** {'Available' if is_wandb_available() else 'Not installed'}"
+        )
+
     process_btn = gr.Button("Process Query", variant="primary", size="lg")
 
     gr.Markdown("---")
@@ -475,6 +580,13 @@ with gr.Blocks(
     with gr.Accordion("Full JSON Result", open=False):
         full_result_output = gr.JSON(label="Complete Framework Output")
 
+    with gr.Accordion("W&B Run Details", open=False, visible=True):
+        wandb_url_output = gr.Textbox(
+            label="W&B Run URL",
+            interactive=False,
+            placeholder="Enable W&B tracking to see run URL here"
+        )
+
     # Wire up the processing
     process_btn.click(
         fn=process_query_sync,
@@ -485,13 +597,17 @@ with gr.Blocks(
             use_mcts,
             mcts_iterations,
             exploration_weight,
-            seed_input
+            seed_input,
+            enable_wandb,
+            wandb_project,
+            wandb_run_name
         ],
         outputs=[
             final_response_output,
             agent_details_output,
             metrics_output,
-            full_result_output
+            full_result_output,
+            wandb_url_output
         ]
     )
 
@@ -508,6 +624,7 @@ with gr.Blocks(
         - Monte Carlo Tree Search for strategic reasoning
         - Configurable exploration vs exploitation trade-offs
         - Deterministic results with seeded randomness
+        - **Weights & Biases integration** for experiment tracking
 
         **Limitations (POC):**
         - Uses mock/simplified LLM responses (not production LLM)
@@ -518,7 +635,7 @@ with gr.Blocks(
         **Full Framework:** [GitHub Repository](https://github.com/ianshank/langgraph_multi_agent_mcts)
 
         ---
-        *Built with LangGraph, Gradio, and Python*
+        *Built with LangGraph, Gradio, Weights & Biases, and Python*
         """
     )
 

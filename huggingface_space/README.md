@@ -14,6 +14,8 @@ tags:
   - reasoning
   - langgraph
   - ai-agents
+  - wandb
+  - experiment-tracking
 short_description: Multi-agent reasoning framework with Monte Carlo Tree Search
 ---
 
@@ -49,6 +51,7 @@ This interactive demo showcases a sophisticated multi-agent framework that combi
 - **Deterministic Results**: Use seeds for reproducible searches
 - **Performance Metrics**: Track execution time and token usage
 - **Tree Visualization**: See the MCTS exploration in ASCII format
+- **Weights & Biases Integration**: Track experiments, visualize metrics, compare runs
 
 ## How to Use
 
@@ -58,8 +61,38 @@ This interactive demo showcases a sophisticated multi-agent framework that combi
    - **Iterations**: More = better search (25-100 recommended)
    - **Exploration Weight**: Higher = more diverse search (default: 1.414)
    - **Seed**: Set for reproducible results
-4. **Process**: Click to see multi-agent reasoning in action
-5. **Analyze Results**: Review individual agent outputs and consensus
+4. **Enable W&B Tracking** (optional): Expand "Weights & Biases Tracking" section
+5. **Process**: Click to see multi-agent reasoning in action
+6. **Analyze Results**: Review individual agent outputs and consensus
+
+## Weights & Biases Integration
+
+Track your experiments with **Weights & Biases** for:
+- 📈 **Metrics Dashboard**: Visualize consensus scores, execution times, agent performance
+- 🔄 **Run Comparison**: Compare different configurations side-by-side
+- 📊 **Experiment History**: Track all your queries and results
+- 🌳 **MCTS Visualization**: Log tree exploration patterns
+
+### Setting Up W&B
+
+1. **Get API Key**: Sign up at [wandb.ai](https://wandb.ai) and get your API key
+2. **Configure Space Secret** (if deploying your own):
+   - Go to Space Settings → Repository secrets
+   - Add: `WANDB_API_KEY` = your API key
+3. **Enable in UI**:
+   - Expand "Weights & Biases Tracking" accordion
+   - Check "Enable W&B Tracking"
+   - Set project name (optional)
+   - Set run name (optional, auto-generated if empty)
+4. **View Results**: After processing, click the W&B run URL to see your dashboard
+
+### Logged Metrics
+
+- **Per Agent**: Confidence, execution time, response length, reasoning steps
+- **MCTS**: Best value, visits, tree depth, top actions with UCB1 scores
+- **Consensus**: Score, level (high/medium/low), number of agents
+- **Performance**: Total processing time
+- **Artifacts**: Full JSON results, tree visualizations
 
 ## Example Queries
 
@@ -147,6 +180,8 @@ The complete framework includes:
 - **UI**: Gradio 4.x
 - **Algorithm**: Monte Carlo Tree Search with UCB1
 - **Architecture**: Multi-agent orchestration pattern
+- **Experiment Tracking**: Weights & Biases
+- **Numerical**: NumPy
 
 ## Research Applications
 
