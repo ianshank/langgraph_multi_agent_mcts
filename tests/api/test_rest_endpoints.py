@@ -15,10 +15,9 @@ Expected outcomes:
 - Proper error responses
 """
 
-import pytest
 from datetime import datetime
-from typing import Any, Dict, List
-from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture
@@ -150,7 +149,7 @@ class TestQueryEndpoint:
     @pytest.mark.api
     def test_empty_query_rejected(self):
         """Empty query should return 422 validation error."""
-        invalid_request = {
+        _invalid_request = {
             "query": "",
             "use_rag": True,
             "use_mcts": False,
@@ -174,7 +173,7 @@ class TestQueryEndpoint:
     @pytest.mark.api
     def test_oversized_query_rejected(self):
         """Query exceeding max length should be rejected."""
-        oversized_request = {
+        _oversized_request = {
             "query": "x" * 15000,  # Exceeds 10000 limit
             "use_rag": False,
             "use_mcts": False,
@@ -190,7 +189,7 @@ class TestQueryEndpoint:
     @pytest.mark.api
     def test_query_with_mcts_enabled(self):
         """Query with MCTS should include simulation results."""
-        request = {
+        _request = {
             "query": "Recommend optimal action for tactical scenario",
             "use_rag": True,
             "use_mcts": True,
@@ -220,7 +219,7 @@ class TestAuthentication:
 
     @pytest.mark.api
     @pytest.mark.security
-    def test_valid_api_key_accepted(self, valid_api_key):
+    def test_valid_api_key_accepted(self, valid_api_key):  # noqa: ARG002
         """Valid API key should be accepted."""
         # Simulate auth check
         auth_result = {
@@ -490,7 +489,7 @@ class TestRequestValidation:
     @pytest.mark.api
     def test_extra_fields_handled(self):
         """Extra fields in request should be handled appropriately."""
-        request_with_extra = {
+        _request_with_extra = {
             "query": "Test query",
             "use_rag": False,
             "use_mcts": False,
