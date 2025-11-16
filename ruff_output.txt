@@ -1,0 +1,5528 @@
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\agents\meta_controller\__init__.py:8:1
+   |
+ 6 |   """
+ 7 |
+ 8 | / from src.agents.meta_controller.base import (
+ 9 | |     AbstractMetaController,
+10 | |     MetaControllerFeatures,
+11 | |     MetaControllerPrediction,
+12 | | )
+13 | | from src.agents.meta_controller.utils import (
+14 | |     features_to_tensor,
+15 | |     features_to_text,
+16 | |     normalize_features,
+17 | |     one_hot_encode_agent,
+18 | | )
+19 | | from src.agents.meta_controller.rnn_controller import (
+20 | |     RNNMetaController,
+21 | |     RNNMetaControllerModel,
+22 | | )
+   | |_^
+23 |
+24 |   # Import BERT controller (may not be available if transformers/peft not installed)
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\agents\meta_controller\base.py:10:1
+   |
+ 8 | from abc import ABC, abstractmethod
+ 9 | from dataclasses import dataclass, field
+10 | from typing import Any, Dict
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\agents\meta_controller\base.py:61:20
+   |
+59 |     """Confidence score for the prediction (0.0 to 1.0)."""
+60 |
+61 |     probabilities: Dict[str, float] = field(default_factory=dict)
+   |                    ^^^^
+62 |     """Probability distribution over all possible agents."""
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\base.py:125:39
+    |
+123 |         pass
+124 |
+125 |     def extract_features(self, state: Dict[str, Any]) -> MetaControllerFeatures:
+    |                                       ^^^^
+126 |         """
+127 |         Extract meta-controller features from an AgentState dictionary.
+    |
+help: Replace with `dict`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\agents\meta_controller\bert_controller.py:10:1
+   |
+ 9 | import warnings
+10 | from typing import Any, Dict, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | import torch
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\bert_controller.py:192:35
+    |
+191 |         # Initialize tokenization cache for performance optimization
+192 |         self._tokenization_cache: Dict[str, Any] = {}
+    |                                   ^^^^
+193 |
+194 |     def predict(self, features: MetaControllerFeatures) -> MetaControllerPrediction:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\bert_controller.py:265:24
+    |
+264 |             # Create probability dictionary
+265 |             prob_dict: Dict[str, float] = {}
+    |                        ^^^^
+266 |             for i, agent_name in enumerate(self.AGENT_NAMES):
+267 |                 prob_dict[agent_name] = probabilities[0, i].item()
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\bert_controller.py:365:33
+    |
+363 |         self._tokenization_cache.clear()
+364 |
+365 |     def get_cache_info(self) -> Dict[str, Any]:
+    |                                 ^^^^
+366 |         """
+367 |         Get information about the current tokenization cache.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\bert_controller.py:401:43
+    |
+399 |         }
+400 |
+401 |     def get_trainable_parameters(self) -> Dict[str, int]:
+    |                                           ^^^^
+402 |         """
+403 |         Get the number of trainable and total parameters in the model.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\agents\meta_controller\config_loader.py:9:1
+   |
+ 7 |   """
+ 8 |
+ 9 | / import yaml
+10 | | from pathlib import Path
+11 | | from dataclasses import dataclass, field, asdict
+12 | | from typing import Optional, Dict, Any
+   | |______________________________________^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\agents\meta_controller\config_loader.py:12:1
+   |
+10 | from pathlib import Path
+11 | from dataclasses import dataclass, field, asdict
+12 | from typing import Optional, Dict, Any
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\config_loader.py:152:37
+    |
+151 |     @staticmethod
+152 |     def load_from_dict(config_dict: Dict[str, Any]) -> MetaControllerConfig:
+    |                                     ^^^^
+153 |         """
+154 |         Load Meta-Controller configuration from a dictionary.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\config_loader.py:189:50
+    |
+188 |     @staticmethod
+189 |     def to_dict(config: MetaControllerConfig) -> Dict[str, Any]:
+    |                                                  ^^^^
+190 |         """
+191 |         Convert a MetaControllerConfig object to a dictionary.
+    |
+help: Replace with `dict`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\agents\meta_controller\rnn_controller.py:9:1
+   |
+ 7 | """
+ 8 |
+ 9 | from typing import Dict, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |
+11 | import torch
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\agents\meta_controller\rnn_controller.py:282:24
+    |
+281 |             # Create probability dictionary
+282 |             prob_dict: Dict[str, float] = {}
+    |                        ^^^^
+283 |             for i, agent_name in enumerate(self.AGENT_NAMES):
+284 |                 prob_dict[agent_name] = probabilities[0, i].item()
+    |
+help: Replace with `dict`
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\agents\meta_controller\utils.py:8:1
+   |
+ 6 | """
+ 7 |
+ 8 | from typing import List
+   | ^^^^^^^^^^^^^^^^^^^^^^^
+ 9 |
+10 | import torch
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\agents\meta_controller\utils.py:15:61
+   |
+15 | def normalize_features(features: MetaControllerFeatures) -> List[float]:
+   |                                                             ^^^^
+16 |     """
+17 |     Normalize meta-controller features to a 10-dimensional vector in range [0, 1].
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\agents\meta_controller\utils.py:88:41
+   |
+88 | def one_hot_encode_agent(agent: str) -> List[float]:
+   |                                         ^^^^
+89 |     """
+90 |     One-hot encode an agent name into a 3-dimensional vector.
+   |
+help: Replace with `list`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\api\__init__.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from src.api.exceptions import (
+12 | |     FrameworkError,
+13 | |     ValidationError,
+14 | |     AuthenticationError,
+15 | |     AuthorizationError,
+16 | |     RateLimitError,
+17 | |     LLMError,
+18 | |     MCTSError,
+19 | |     RAGError,
+20 | |     TimeoutError,
+21 | |     ConfigurationError,
+22 | | )
+   | |_^
+23 |
+24 |   __all__ = [
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\api\auth.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / import hashlib
+12 | | import secrets
+13 | | import time
+14 | | from collections import defaultdict
+15 | | from datetime import datetime, timedelta
+16 | | from typing import Dict, List, Optional, Set
+17 | | from dataclasses import dataclass, field
+18 | |
+19 | | from src.api.exceptions import (
+20 | |     AuthenticationError,
+21 | |     AuthorizationError,
+22 | |     RateLimitError,
+23 | | )
+   | |_^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\api\auth.py:16:1
+   |
+14 | from collections import defaultdict
+15 | from datetime import datetime, timedelta
+16 | from typing import Dict, List, Optional, Set
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\api\auth.py:16:1
+   |
+14 | from collections import defaultdict
+15 | from datetime import datetime, timedelta
+16 | from typing import Dict, List, Optional, Set
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+   |
+
+UP035 `typing.Set` is deprecated, use `set` instead
+  --> src\api\auth.py:16:1
+   |
+14 | from collections import defaultdict
+15 | from datetime import datetime, timedelta
+16 | from typing import Dict, List, Optional, Set
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+   |
+
+UP006 [*] Use `set` instead of `Set` for type annotation
+  --> src\api\auth.py:31:12
+   |
+30 |     client_id: str
+31 |     roles: Set[str] = field(default_factory=lambda: {"user"})
+   |            ^^^
+32 |     created_at: datetime = field(default_factory=datetime.utcnow)
+33 |     last_access: datetime = field(default_factory=datetime.utcnow)
+   |
+help: Replace with `set`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\api\auth.py:56:30
+   |
+54 |     def __init__(
+55 |         self,
+56 |         valid_keys: Optional[List[str]] = None,
+   |                              ^^^^
+57 |         rate_limit_config: Optional[RateLimitConfig] = None,
+58 |     ):
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\api\auth.py:66:30
+   |
+64 |             rate_limit_config: Rate limiting configuration
+65 |         """
+66 |         self._key_to_client: Dict[str, ClientInfo] = {}
+   |                              ^^^^
+67 |         self._rate_limits: Dict[str, List[float]] = defaultdict(list)
+68 |         self.rate_limit_config = rate_limit_config or RateLimitConfig()
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\api\auth.py:67:28
+   |
+65 |         """
+66 |         self._key_to_client: Dict[str, ClientInfo] = {}
+67 |         self._rate_limits: Dict[str, List[float]] = defaultdict(list)
+   |                            ^^^^
+68 |         self.rate_limit_config = rate_limit_config or RateLimitConfig()
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\api\auth.py:67:38
+   |
+65 |         """
+66 |         self._key_to_client: Dict[str, ClientInfo] = {}
+67 |         self._rate_limits: Dict[str, List[float]] = defaultdict(list)
+   |                                      ^^^^
+68 |         self.rate_limit_config = rate_limit_config or RateLimitConfig()
+   |
+help: Replace with `list`
+
+UP006 [*] Use `set` instead of `Set` for type annotation
+  --> src\api\auth.py:84:70
+   |
+82 |         return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
+83 |
+84 |     def _add_key(self, api_key: str, client_id: str, roles: Optional[Set[str]] = None) -> None:
+   |                                                                      ^^^
+85 |         """
+86 |         Add a new API key.
+   |
+help: Replace with `set`
+
+UP006 [*] Use `set` instead of `Set` for type annotation
+   --> src\api\auth.py:259:25
+    |
+257 |         self,
+258 |         client_id: str,
+259 |         roles: Optional[Set[str]] = None,
+    |                         ^^^
+260 |     ) -> str:
+261 |         """
+    |
+help: Replace with `set`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\api\auth.py:275:51
+    |
+273 |         return api_key
+274 |
+275 |     def get_client_stats(self, client_id: str) -> Dict:
+    |                                                   ^^^^
+276 |         """
+277 |         Get statistics for a client.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `set` instead of `Set` for type annotation
+   --> src\api\auth.py:313:32
+    |
+311 |         self.secret_key = secret_key
+312 |         self.algorithm = algorithm
+313 |         self._token_blacklist: Set[str] = set()
+    |                                ^^^
+314 |
+315 |     def create_token(
+    |
+help: Replace with `set`
+
+UP006 [*] Use `set` instead of `Set` for type annotation
+   --> src\api\auth.py:318:16
+    |
+316 |         self,
+317 |         client_id: str,
+318 |         roles: Set[str],
+    |                ^^^
+319 |         expires_in_hours: int = 24,
+320 |     ) -> str:
+    |
+help: Replace with `set`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\api\exceptions.py:10:1
+   |
+ 8 |   """
+ 9 |
+10 | / import re
+11 | | from typing import Any, Dict, Optional
+12 | | from datetime import datetime
+   | |_____________________________^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\api\exceptions.py:11:1
+   |
+10 | import re
+11 | from typing import Any, Dict, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+12 | from datetime import datetime
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\api\exceptions.py:28:27
+   |
+26 |         internal_details: Optional[str] = None,
+27 |         error_code: Optional[str] = None,
+28 |         context: Optional[Dict[str, Any]] = None,
+   |                           ^^^^
+29 |     ):
+30 |         """
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\api\exceptions.py:80:30
+   |
+78 |         return sanitized
+79 |
+80 |     def to_log_dict(self) -> Dict[str, Any]:
+   |                              ^^^^
+81 |         """
+82 |         Convert exception to dictionary for structured logging.
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\api\exceptions.py:95:35
+   |
+93 |         }
+94 |
+95 |     def to_user_response(self) -> Dict[str, Any]:
+   |                                   ^^^^
+96 |         """
+97 |         Convert exception to safe user-facing response.
+   |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\api\rest_server.py:13:1
+   |
+11 |   """
+12 |
+13 | / import asyncio
+14 | | import time
+15 | | from datetime import datetime
+16 | | from typing import Any, Dict, List, Optional
+17 | | from contextlib import asynccontextmanager
+18 | |
+19 | | from fastapi import FastAPI, HTTPException, Depends, Header, Request, Response
+20 | | from fastapi.middleware.cors import CORSMiddleware
+21 | | from fastapi.responses import JSONResponse
+22 | | from pydantic import BaseModel, Field
+   | |_____________________________________^
+23 |
+24 |   # Import framework components
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\api\rest_server.py:16:1
+   |
+14 | import time
+15 | from datetime import datetime
+16 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from contextlib import asynccontextmanager
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\api\rest_server.py:16:1
+   |
+14 | import time
+15 | from datetime import datetime
+16 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from contextlib import asynccontextmanager
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\api\rest_server.py:26:5
+   |
+24 |   # Import framework components
+25 |   try:
+26 | /     from src.adapters.llm import create_client
+27 | |     from src.models.validation import QueryInput, MCTSConfig
+28 | |     from src.api.auth import (
+29 | |         APIKeyAuthenticator,
+30 | |         ClientInfo,
+31 | |         RateLimitConfig,
+32 | |         get_authenticator,
+33 | |         set_authenticator,
+34 | |     )
+35 | |     from src.api.exceptions import (
+36 | |         FrameworkError,
+37 | |         ValidationError,
+38 | |         AuthenticationError,
+39 | |         AuthorizationError,
+40 | |         RateLimitError,
+41 | |     )
+   | |_____^
+42 |
+43 |       IMPORTS_AVAILABLE = True
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\api\rest_server.py:50:5
+   |
+48 | # Prometheus metrics (optional)
+49 | try:
+50 |     from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+51 |
+52 |     PROMETHEUS_AVAILABLE = True
+   |
+help: Organize imports
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\api\rest_server.py:101:18
+    |
+ 99 |     response: str = Field(..., description="Final synthesized response")
+100 |     confidence: float = Field(..., ge=0.0, le=1.0, description="Overall confidence score")
+101 |     agents_used: List[str] = Field(..., description="List of agents that contributed")
+    |                  ^^^^
+102 |     mcts_stats: Optional[Dict[str, Any]] = Field(default=None, description="MCTS simulation statistics")
+103 |     processing_time_ms: float = Field(..., description="Total processing time in milliseconds")
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\api\rest_server.py:102:26
+    |
+100 |     confidence: float = Field(..., ge=0.0, le=1.0, description="Overall confidence score")
+101 |     agents_used: List[str] = Field(..., description="List of agents that contributed")
+102 |     mcts_stats: Optional[Dict[str, Any]] = Field(default=None, description="MCTS simulation statistics")
+    |                          ^^^^
+103 |     processing_time_ms: float = Field(..., description="Total processing time in milliseconds")
+104 |     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\api\rest_server.py:104:15
+    |
+102 |     mcts_stats: Optional[Dict[str, Any]] = Field(default=None, description="MCTS simulation statistics")
+103 |     processing_time_ms: float = Field(..., description="Total processing time in milliseconds")
+104 |     metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    |               ^^^^
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\api\rest_server.py:120:13
+    |
+119 |     ready: bool = Field(..., description="Whether service is ready")
+120 |     checks: Dict[str, bool] = Field(..., description="Individual check results")
+    |             ^^^^
+    |
+help: Replace with `dict`
+
+F841 [*] Local variable `e` is assigned to but never used
+   --> src\api\rest_server.py:225:25
+    |
+223 |         response = await call_next(request)
+224 |         status = response.status_code
+225 |     except Exception as e:
+    |                         ^
+226 |         status = 500
+227 |         raise
+    |
+help: Remove assignment to unused variable `e`
+
+F841 Local variable `validated_input` is assigned to but never used
+   --> src\api\rest_server.py:367:13
+    |
+365 |     if IMPORTS_AVAILABLE:
+366 |         try:
+367 |             validated_input = QueryInput(
+    |             ^^^^^^^^^^^^^^^
+368 |                 query=request.query,
+369 |                 use_rag=request.use_rag,
+    |
+help: Remove assignment to unused variable `validated_input`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\config\settings.py:12:1
+   |
+10 |   """
+11 |
+12 | / from enum import Enum
+13 | | from typing import Optional
+14 | | from pydantic import (
+15 | |     Field,
+16 | |     SecretStr,
+17 | |     field_validator,
+18 | |     model_validator,
+19 | |     HttpUrl,
+20 | | )
+21 | | from pydantic_settings import BaseSettings, SettingsConfigDict
+   | |______________________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\data\__init__.py:13:1
+   |
+11 |   """
+12 |
+13 | / from .dataset_loader import DatasetLoader, DABStepLoader, PRIMUSLoader
+14 | | from .preprocessing import TextPreprocessor, TokenizerWrapper
+15 | | from .tactical_augmentation import TacticalAugmenter
+16 | | from .train_test_split import DataSplitter, StratifiedSplitter
+   | |______________________________________________________________^
+17 |
+18 |   __all__ = [
+   |
+help: Organize imports
+
+UP035 [*] Import from `collections.abc` instead: `Iterator`
+  --> src\data\dataset_loader.py:18:1
+   |
+16 | from dataclasses import dataclass, field
+17 | from pathlib import Path
+18 | from typing import Any, Dict, Iterator, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |
+20 | logger = logging.getLogger(__name__)
+   |
+help: Import from `collections.abc`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\data\dataset_loader.py:18:1
+   |
+16 | from dataclasses import dataclass, field
+17 | from pathlib import Path
+18 | from typing import Any, Dict, Iterator, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |
+20 | logger = logging.getLogger(__name__)
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\data\dataset_loader.py:18:1
+   |
+16 | from dataclasses import dataclass, field
+17 | from pathlib import Path
+18 | from typing import Any, Dict, Iterator, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 |
+20 | logger = logging.getLogger(__name__)
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\data\dataset_loader.py:29:15
+   |
+27 |     id: str
+28 |     text: str
+29 |     metadata: Dict[str, Any] = field(default_factory=dict)
+   |               ^^^^
+30 |     labels: Optional[List[str]] = None
+31 |     difficulty: Optional[str] = None
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\dataset_loader.py:30:22
+   |
+28 |     text: str
+29 |     metadata: Dict[str, Any] = field(default_factory=dict)
+30 |     labels: Optional[List[str]] = None
+   |                      ^^^^
+31 |     difficulty: Optional[str] = None
+32 |     domain: Optional[str] = None
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\dataset_loader.py:33:31
+   |
+31 |     difficulty: Optional[str] = None
+32 |     domain: Optional[str] = None
+33 |     reasoning_steps: Optional[List[str]] = None
+   |                               ^^^^
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\data\dataset_loader.py:41:14
+   |
+40 |     total_samples: int
+41 |     domains: Dict[str, int]
+   |              ^^^^
+42 |     avg_text_length: float
+43 |     difficulty_distribution: Dict[str, int]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\data\dataset_loader.py:43:30
+   |
+41 |     domains: Dict[str, int]
+42 |     avg_text_length: float
+43 |     difficulty_distribution: Dict[str, int]
+   |                              ^^^^
+44 |     total_tokens: int = 0
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\dataset_loader.py:62:45
+   |
+61 |     @abstractmethod
+62 |     def load(self, split: str = "train") -> List[DatasetSample]:
+   |                                             ^^^^
+63 |         """Load dataset split."""
+64 |         pass
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\dataset_loader.py:72:65
+   |
+71 |     @abstractmethod
+72 |     def iterate_samples(self, batch_size: int = 32) -> Iterator[List[DatasetSample]]:
+   |                                                                 ^^^^
+73 |         """Iterate over samples in batches."""
+74 |         pass
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\dataset_loader.py:94:31
+   |
+92 |         """Initialize DABStep loader."""
+93 |         super().__init__(cache_dir)
+94 |         self._loaded_samples: List[DatasetSample] = []
+   |                               ^^^^
+95 |
+96 |     def load(self, split: str = "train", difficulty: Optional[str] = None) -> List[DatasetSample]:
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\dataset_loader.py:96:79
+   |
+94 |         self._loaded_samples: List[DatasetSample] = []
+95 |
+96 |     def load(self, split: str = "train", difficulty: Optional[str] = None) -> List[DatasetSample]:
+   |                                                                               ^^^^
+97 |         """
+98 |         Load DABStep dataset.
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:174:65
+    |
+172 |         )
+173 |
+174 |     def iterate_samples(self, batch_size: int = 32) -> Iterator[List[DatasetSample]]:
+    |                                                                 ^^^^
+175 |         """Iterate over samples in batches."""
+176 |         if not self._loaded_samples:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:182:38
+    |
+180 |             yield self._loaded_samples[i : i + batch_size]
+181 |
+182 |     def get_reasoning_tasks(self) -> List[DatasetSample]:
+    |                                      ^^^^
+183 |         """Get only samples with explicit reasoning steps."""
+184 |         return [s for s in self._loaded_samples if s.reasoning_steps]
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:214:29
+    |
+212 |         """Initialize PRIMUS loader."""
+213 |         super().__init__(cache_dir)
+214 |         self._seed_samples: List[DatasetSample] = []
+    |                             ^^^^
+215 |         self._instruct_samples: List[DatasetSample] = []
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:215:33
+    |
+213 |         super().__init__(cache_dir)
+214 |         self._seed_samples: List[DatasetSample] = []
+215 |         self._instruct_samples: List[DatasetSample] = []
+    |                                 ^^^^
+216 |
+217 |     def load(
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:221:27
+    |
+219 |         split: str = "train",
+220 |         dataset_type: str = "seed",
+221 |         domains: Optional[List[str]] = None,
+    |                           ^^^^
+222 |         max_samples: Optional[int] = None,
+223 |         streaming: bool = True,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:224:10
+    |
+222 |         max_samples: Optional[int] = None,
+223 |         streaming: bool = True,
+224 |     ) -> List[DatasetSample]:
+    |          ^^^^
+225 |         """
+226 |         Load PRIMUS dataset.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:331:63
+    |
+329 |             raise
+330 |
+331 |     def load_seed(self, max_samples: Optional[int] = None) -> List[DatasetSample]:
+    |                                                               ^^^^
+332 |         """Load PRIMUS-Seed knowledge base."""
+333 |         return self.load(dataset_type="seed", max_samples=max_samples)
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:335:32
+    |
+333 |         return self.load(dataset_type="seed", max_samples=max_samples)
+334 |
+335 |     def load_instruct(self) -> List[DatasetSample]:
+    |                                ^^^^
+336 |         """Load PRIMUS-Instruct fine-tuning data."""
+337 |         return self.load(dataset_type="instruct", streaming=False)
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:361:65
+    |
+359 |         )
+360 |
+361 |     def iterate_samples(self, batch_size: int = 32) -> Iterator[List[DatasetSample]]:
+    |                                                                 ^^^^
+362 |         """Iterate over all loaded samples in batches."""
+363 |         all_samples = self._seed_samples + self._instruct_samples
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:371:43
+    |
+369 |             yield all_samples[i : i + batch_size]
+370 |
+371 |     def get_mitre_attack_samples(self) -> List[DatasetSample]:
+    |                                           ^^^^
+372 |         """Get samples specifically from MITRE ATT&CK."""
+373 |         return [s for s in self._seed_samples if "mitre" in (s.domain or "").lower()]
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:375:50
+    |
+373 |         return [s for s in self._seed_samples if "mitre" in (s.domain or "").lower()]
+374 |
+375 |     def get_threat_intelligence_samples(self) -> List[DatasetSample]:
+    |                                                  ^^^^
+376 |         """Get threat intelligence related samples."""
+377 |         return [
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:399:28
+    |
+397 |         self.dabstep_loader = DABStepLoader(cache_dir)
+398 |         self.primus_loader = PRIMUSLoader(cache_dir)
+399 |         self._all_samples: List[DatasetSample] = []
+    |                            ^^^^
+400 |
+401 |     def load_all(
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:406:10
+    |
+404 |         primus_max_samples: Optional[int] = 10000,
+405 |         include_instruct: bool = True,
+406 |     ) -> List[DatasetSample]:
+    |          ^^^^
+407 |         """
+408 |         Load all datasets.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\dataset_loader.py:439:42
+    |
+437 |         return self._all_samples
+438 |
+439 |     def get_domain_distribution(self) -> Dict[str, int]:
+    |                                          ^^^^
+440 |         """Get distribution of samples across domains."""
+441 |         dist = {}
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:447:48
+    |
+445 |         return dist
+446 |
+447 |     def filter_by_domain(self, domain: str) -> List[DatasetSample]:
+    |                                                ^^^^
+448 |         """Filter samples by domain."""
+449 |         return [s for s in self._all_samples if s.domain == domain]
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\dataset_loader.py:451:51
+    |
+449 |         return [s for s in self._all_samples if s.domain == domain]
+450 |
+451 |     def get_multi_step_reasoning_samples(self) -> List[DatasetSample]:
+    |                                                   ^^^^
+452 |         """Get samples suitable for multi-step reasoning training."""
+453 |         return [
+    |
+help: Replace with `list`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\data\preprocessing.py:13:1
+   |
+11 | import re
+12 | from dataclasses import dataclass
+13 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | logger = logging.getLogger(__name__)
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\data\preprocessing.py:13:1
+   |
+11 | import re
+12 | from dataclasses import dataclass
+13 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | logger = logging.getLogger(__name__)
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\data\preprocessing.py:13:1
+   |
+11 | import re
+12 | from dataclasses import dataclass
+13 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | logger = logging.getLogger(__name__)
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\preprocessing.py:24:13
+   |
+22 |     original: str
+23 |     cleaned: str
+24 |     tokens: List[str]
+   |             ^^^^
+25 |     token_ids: Optional[List[int]] = None
+26 |     features: Optional[Dict[str, Any]] = None
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\preprocessing.py:25:25
+   |
+23 |     cleaned: str
+24 |     tokens: List[str]
+25 |     token_ids: Optional[List[int]] = None
+   |                         ^^^^
+26 |     features: Optional[Dict[str, Any]] = None
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\data\preprocessing.py:26:24
+   |
+24 |     tokens: List[str]
+25 |     token_ids: Optional[List[int]] = None
+26 |     features: Optional[Dict[str, Any]] = None
+   |                        ^^^^
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\preprocessing.py:110:53
+    |
+108 |         return result
+109 |
+110 |     def extract_domain_features(self, text: str) -> Dict[str, Any]:
+    |                                                     ^^^^
+111 |         """
+112 |         Extract domain-specific features from text.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:165:39
+    |
+163 |         )
+164 |
+165 |     def batch_preprocess(self, texts: List[str]) -> List[PreprocessedText]:
+    |                                       ^^^^
+166 |         """
+167 |         Preprocess multiple texts.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:165:53
+    |
+163 |         )
+164 |
+165 |     def batch_preprocess(self, texts: List[str]) -> List[PreprocessedText]:
+    |                                                     ^^^^
+166 |         """
+167 |         Preprocess multiple texts.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\data\preprocessing.py:224:38
+    |
+222 |             raise
+223 |
+224 |     def tokenize(self, text: str) -> Tuple[List[str], Optional[List[int]]]:
+    |                                      ^^^^^
+225 |         """
+226 |         Tokenize text.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:224:44
+    |
+222 |             raise
+223 |
+224 |     def tokenize(self, text: str) -> Tuple[List[str], Optional[List[int]]]:
+    |                                            ^^^^
+225 |         """
+226 |         Tokenize text.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:224:64
+    |
+222 |             raise
+223 |
+224 |     def tokenize(self, text: str) -> Tuple[List[str], Optional[List[int]]]:
+    |                                                                ^^^^
+225 |         """
+226 |         Tokenize text.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:252:37
+    |
+250 |             raise ValueError(f"Unsupported backend: {self.backend}")
+251 |
+252 |     def batch_tokenize(self, texts: List[str]) -> List[Tuple[List[str], Optional[List[int]]]]:
+    |                                     ^^^^
+253 |         """
+254 |         Tokenize multiple texts.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:252:51
+    |
+250 |             raise ValueError(f"Unsupported backend: {self.backend}")
+251 |
+252 |     def batch_tokenize(self, texts: List[str]) -> List[Tuple[List[str], Optional[List[int]]]]:
+    |                                                   ^^^^
+253 |         """
+254 |         Tokenize multiple texts.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\data\preprocessing.py:252:56
+    |
+250 |             raise ValueError(f"Unsupported backend: {self.backend}")
+251 |
+252 |     def batch_tokenize(self, texts: List[str]) -> List[Tuple[List[str], Optional[List[int]]]]:
+    |                                                        ^^^^^
+253 |         """
+254 |         Tokenize multiple texts.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:252:62
+    |
+250 |             raise ValueError(f"Unsupported backend: {self.backend}")
+251 |
+252 |     def batch_tokenize(self, texts: List[str]) -> List[Tuple[List[str], Optional[List[int]]]]:
+    |                                                              ^^^^
+253 |         """
+254 |         Tokenize multiple texts.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:252:82
+    |
+250 |             raise ValueError(f"Unsupported backend: {self.backend}")
+251 |
+252 |     def batch_tokenize(self, texts: List[str]) -> List[Tuple[List[str], Optional[List[int]]]]:
+    |                                                                                  ^^^^
+253 |         """
+254 |         Tokenize multiple texts.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:264:42
+    |
+262 |         return [self.tokenize(text) for text in texts]
+263 |
+264 |     def encode_for_training(self, texts: List[str]) -> Dict[str, Any]:
+    |                                          ^^^^
+265 |         """
+266 |         Encode texts for model training.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\preprocessing.py:264:56
+    |
+262 |         return [self.tokenize(text) for text in texts]
+263 |
+264 |     def encode_for_training(self, texts: List[str]) -> Dict[str, Any]:
+    |                                                        ^^^^
+265 |         """
+266 |         Encode texts for model training.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\preprocessing.py:300:53
+    |
+298 |         self.preprocessor = TextPreprocessor()
+299 |
+300 |     def extract_query_features(self, query: str) -> Dict[str, float]:
+    |                                                     ^^^^
+301 |         """
+302 |         Extract numerical features from query text.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\preprocessing.py:380:10
+    |
+378 |         consensus_score: float = 0.0,
+379 |         rag_retrieved: int = 0,
+380 |     ) -> List[float]:
+    |          ^^^^
+381 |         """
+382 |         Extract features from current agent state.
+    |
+help: Replace with `list`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\data\tactical_augmentation.py:16:1
+   |
+14 | import random
+15 | from dataclasses import dataclass
+16 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | from .dataset_loader import DatasetSample
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\data\tactical_augmentation.py:16:1
+   |
+14 | import random
+15 | from dataclasses import dataclass
+16 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | from .dataset_loader import DatasetSample
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\tactical_augmentation.py:28:16
+   |
+27 |     original: DatasetSample
+28 |     augmented: List[DatasetSample]
+   |                ^^^^
+29 |     augmentation_types: List[str]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\tactical_augmentation.py:29:25
+   |
+27 |     original: DatasetSample
+28 |     augmented: List[DatasetSample]
+29 |     augmentation_types: List[str]
+   |                         ^^^^
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\tactical_augmentation.py:110:30
+    |
+108 |         sample: DatasetSample,
+109 |         num_augmentations: int = 3,
+110 |         techniques: Optional[List[str]] = None,
+    |                              ^^^^
+111 |     ) -> AugmentationResult:
+112 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\tactical_augmentation.py:299:18
+    |
+297 |     def augment_batch(
+298 |         self,
+299 |         samples: List[DatasetSample],
+    |                  ^^^^
+300 |         augmentations_per_sample: int = 2,
+301 |     ) -> List[DatasetSample]:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\tactical_augmentation.py:301:10
+    |
+299 |         samples: List[DatasetSample],
+300 |         augmentations_per_sample: int = 2,
+301 |     ) -> List[DatasetSample]:
+    |          ^^^^
+302 |         """
+303 |         Augment a batch of samples.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\tactical_augmentation.py:324:55
+    |
+322 |         return all_samples
+323 |
+324 |     def create_tactical_scenarios(self, base_samples: List[DatasetSample]) -> List[DatasetSample]:
+    |                                                       ^^^^
+325 |         """
+326 |         Create tactical scenario variations from base samples.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\tactical_augmentation.py:324:79
+    |
+322 |         return all_samples
+323 |
+324 |     def create_tactical_scenarios(self, base_samples: List[DatasetSample]) -> List[DatasetSample]:
+    |                                                                               ^^^^
+325 |         """
+326 |         Create tactical scenario variations from base samples.
+    |
+help: Replace with `list`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\data\train_test_split.py:14:1
+   |
+12 | from collections import defaultdict
+13 | from dataclasses import dataclass
+14 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |
+16 | from .dataset_loader import DatasetSample
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\data\train_test_split.py:14:1
+   |
+12 | from collections import defaultdict
+13 | from dataclasses import dataclass
+14 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |
+16 | from .dataset_loader import DatasetSample
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\data\train_test_split.py:14:1
+   |
+12 | from collections import defaultdict
+13 | from dataclasses import dataclass
+14 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 |
+16 | from .dataset_loader import DatasetSample
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\train_test_split.py:25:12
+   |
+23 |     """Result of dataset splitting."""
+24 |
+25 |     train: List[DatasetSample]
+   |            ^^^^
+26 |     validation: List[DatasetSample]
+27 |     test: List[DatasetSample]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\train_test_split.py:26:17
+   |
+25 |     train: List[DatasetSample]
+26 |     validation: List[DatasetSample]
+   |                 ^^^^
+27 |     test: List[DatasetSample]
+28 |     split_info: Dict[str, Any]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\train_test_split.py:27:11
+   |
+25 |     train: List[DatasetSample]
+26 |     validation: List[DatasetSample]
+27 |     test: List[DatasetSample]
+   |           ^^^^
+28 |     split_info: Dict[str, Any]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\data\train_test_split.py:28:17
+   |
+26 |     validation: List[DatasetSample]
+27 |     test: List[DatasetSample]
+28 |     split_info: Dict[str, Any]
+   |                 ^^^^
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\train_test_split.py:36:12
+   |
+35 |     fold_id: int
+36 |     train: List[DatasetSample]
+   |            ^^^^
+37 |     validation: List[DatasetSample]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\train_test_split.py:37:17
+   |
+35 |     fold_id: int
+36 |     train: List[DatasetSample]
+37 |     validation: List[DatasetSample]
+   |                 ^^^^
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\data\train_test_split.py:62:18
+   |
+60 |     def split(
+61 |         self,
+62 |         samples: List[DatasetSample],
+   |                  ^^^^
+63 |         train_ratio: float = 0.7,
+64 |         val_ratio: float = 0.15,
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:125:18
+    |
+123 |     def create_k_folds(
+124 |         self,
+125 |         samples: List[DatasetSample],
+    |                  ^^^^
+126 |         k: int = 5,
+127 |         shuffle: bool = True,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:128:10
+    |
+126 |         k: int = 5,
+127 |         shuffle: bool = True,
+128 |     ) -> List[CrossValidationFold]:
+    |          ^^^^
+129 |         """
+130 |         Create k-fold cross-validation splits.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:200:18
+    |
+198 |     def split(
+199 |         self,
+200 |         samples: List[DatasetSample],
+    |                  ^^^^
+201 |         train_ratio: float = 0.7,
+202 |         val_ratio: float = 0.15,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:297:16
+    |
+295 |     def _verify_stratification(
+296 |         self,
+297 |         train: List[DatasetSample],
+    |                ^^^^
+298 |         val: List[DatasetSample],
+299 |         test: List[DatasetSample],
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:298:14
+    |
+296 |         self,
+297 |         train: List[DatasetSample],
+298 |         val: List[DatasetSample],
+    |              ^^^^
+299 |         test: List[DatasetSample],
+300 |     ) -> Dict[str, Dict[str, float]]:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:299:15
+    |
+297 |         train: List[DatasetSample],
+298 |         val: List[DatasetSample],
+299 |         test: List[DatasetSample],
+    |               ^^^^
+300 |     ) -> Dict[str, Dict[str, float]]:
+301 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\train_test_split.py:300:10
+    |
+298 |         val: List[DatasetSample],
+299 |         test: List[DatasetSample],
+300 |     ) -> Dict[str, Dict[str, float]]:
+    |          ^^^^
+301 |         """
+302 |         Verify that stratification was successful.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\train_test_split.py:300:20
+    |
+298 |         val: List[DatasetSample],
+299 |         test: List[DatasetSample],
+300 |     ) -> Dict[str, Dict[str, float]]:
+    |                    ^^^^
+301 |         """
+302 |         Verify that stratification was successful.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:308:39
+    |
+306 |         """
+307 |
+308 |         def get_distribution(samples: List[DatasetSample]) -> Dict[str, float]:
+    |                                       ^^^^
+309 |             if not samples:
+310 |                 return {}
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\train_test_split.py:308:63
+    |
+306 |         """
+307 |
+308 |         def get_distribution(samples: List[DatasetSample]) -> Dict[str, float]:
+    |                                                               ^^^^
+309 |             if not samples:
+310 |                 return {}
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:326:18
+    |
+324 |     def create_stratified_k_folds(
+325 |         self,
+326 |         samples: List[DatasetSample],
+    |                  ^^^^
+327 |         k: int = 5,
+328 |         shuffle: bool = True,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:329:10
+    |
+327 |         k: int = 5,
+328 |         shuffle: bool = True,
+329 |     ) -> List[CrossValidationFold]:
+    |          ^^^^
+330 |         """
+331 |         Create stratified k-fold cross-validation splits.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:406:18
+    |
+404 |     def oversample_minority(
+405 |         self,
+406 |         samples: List[DatasetSample],
+    |                  ^^^^
+407 |         target_key: str = "domain",
+408 |         target_ratio: float = 1.0,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:409:10
+    |
+407 |         target_key: str = "domain",
+408 |         target_ratio: float = 1.0,
+409 |     ) -> List[DatasetSample]:
+    |          ^^^^
+410 |         """
+411 |         Oversample minority classes to balance dataset.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:458:18
+    |
+456 |     def undersample_majority(
+457 |         self,
+458 |         samples: List[DatasetSample],
+    |                  ^^^^
+459 |         target_key: str = "domain",
+460 |         target_ratio: float = 1.0,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:461:10
+    |
+459 |         target_key: str = "domain",
+460 |         target_ratio: float = 1.0,
+461 |     ) -> List[DatasetSample]:
+    |          ^^^^
+462 |         """
+463 |         Undersample majority classes to balance dataset.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\data\train_test_split.py:497:18
+    |
+495 |     def get_class_distribution(
+496 |         self,
+497 |         samples: List[DatasetSample],
+    |                  ^^^^
+498 |         target_key: str = "domain",
+499 |     ) -> Dict[str, int]:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\data\train_test_split.py:499:10
+    |
+497 |         samples: List[DatasetSample],
+498 |         target_key: str = "domain",
+499 |     ) -> Dict[str, int]:
+    |          ^^^^
+500 |         """
+501 |         Get distribution of classes.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\agents\__init__.py:2:1
+   |
+ 1 |   # Agents module for async agent implementations
+ 2 | / from .base import (
+ 3 | |     AsyncAgentBase,
+ 4 | |     AgentContext,
+ 5 | |     AgentResult,
+ 6 | |     MetricsCollector,
+ 7 | |     NoOpMetricsCollector,
+ 8 | |     CompositeAgent,
+ 9 | |     ParallelAgent,
+10 | |     SequentialAgent,
+11 | | )
+   | |_^
+12 |
+13 |   __all__ = [
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\agents\base.py:8:1
+   |
+ 6 |   """
+ 7 |
+ 8 | / import time
+ 9 | | import uuid
+10 | | from abc import ABC, abstractmethod
+11 | | from dataclasses import dataclass, field
+12 | | from datetime import datetime
+13 | | from typing import Any, Protocol
+14 | | import logging
+15 | | import asyncio
+16 | |
+17 | | from src.adapters.llm.base import LLMClient, LLMResponse
+   | |________________________________________________________^
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\graph.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from __future__ import annotations
+12 | | import asyncio
+13 | | import time
+14 | | from typing import TypedDict, Annotated, List, Dict, Optional, Any
+15 | | from typing_extensions import NotRequired
+16 | | import operator
+   | |_______________^
+17 |
+18 |   # LangGraph imports (these would be installed dependencies)
+   |
+help: Organize imports
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\framework\graph.py:14:1
+   |
+12 | import asyncio
+13 | import time
+14 | from typing import TypedDict, Annotated, List, Dict, Optional, Any
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | from typing_extensions import NotRequired
+16 | import operator
+   |
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\framework\graph.py:14:1
+   |
+12 | import asyncio
+13 | import time
+14 | from typing import TypedDict, Annotated, List, Dict, Optional, Any
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | from typing_extensions import NotRequired
+16 | import operator
+   |
+
+UP035 [*] Import from `typing` instead: `NotRequired`
+  --> src\framework\graph.py:15:1
+   |
+13 | import time
+14 | from typing import TypedDict, Annotated, List, Dict, Optional, Any
+15 | from typing_extensions import NotRequired
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 | import operator
+   |
+help: Import from `typing`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\graph.py:20:5
+   |
+18 |   # LangGraph imports (these would be installed dependencies)
+19 |   try:
+20 | /     from langgraph.graph import StateGraph, END
+21 | |     from langgraph.checkpoint.memory import MemorySaver
+   | |_______________________________________________________^
+22 |   except ImportError:
+23 |       # Stubs for development without LangGraph installed
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\graph.py:29:1
+   |
+28 |   # Import new MCTS modules
+29 | / from .mcts.core import MCTSEngine, MCTSNode, MCTSState
+30 | | from .mcts.config import MCTSConfig, create_preset_config, ConfigPreset
+31 | | from .mcts.policies import (
+32 | |     SelectionPolicy,
+33 | |     HybridRolloutPolicy,
+34 | |     RandomRolloutPolicy,
+35 | |     GreedyRolloutPolicy,
+36 | | )
+37 | | from .mcts.experiments import ExperimentTracker
+   | |_______________________________________________^
+38 |
+39 |   # Neural Meta-Controller imports (optional)
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\graph.py:41:5
+   |
+39 |   # Neural Meta-Controller imports (optional)
+40 |   try:
+41 | /     from src.agents.meta_controller.base import (
+42 | |         AbstractMetaController,
+43 | |         MetaControllerFeatures,
+44 | |     )
+45 | |     from src.agents.meta_controller.rnn_controller import RNNMetaController
+46 | |     from src.agents.meta_controller.bert_controller import BERTMetaController
+47 | |     from src.agents.meta_controller.config_loader import (
+48 | |         MetaControllerConfig,
+49 | |         MetaControllerConfigLoader,
+50 | |     )
+   | |_____^
+51 |
+52 |       _META_CONTROLLER_AVAILABLE = True
+   |
+help: Organize imports
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\framework\graph.py:73:33
+   |
+71 |     # RAG context
+72 |     rag_context: NotRequired[str]
+73 |     retrieved_docs: NotRequired[List[Dict]]
+   |                                 ^^^^
+74 |
+75 |     # Agent results
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:73:38
+   |
+71 |     # RAG context
+72 |     rag_context: NotRequired[str]
+73 |     retrieved_docs: NotRequired[List[Dict]]
+   |                                      ^^^^
+74 |
+75 |     # Agent results
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:76:30
+   |
+75 |     # Agent results
+76 |     hrm_results: NotRequired[Dict]
+   |                              ^^^^
+77 |     trm_results: NotRequired[Dict]
+78 |     agent_outputs: Annotated[List[Dict], operator.add]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:77:30
+   |
+75 |     # Agent results
+76 |     hrm_results: NotRequired[Dict]
+77 |     trm_results: NotRequired[Dict]
+   |                              ^^^^
+78 |     agent_outputs: Annotated[List[Dict], operator.add]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\framework\graph.py:78:30
+   |
+76 |     hrm_results: NotRequired[Dict]
+77 |     trm_results: NotRequired[Dict]
+78 |     agent_outputs: Annotated[List[Dict], operator.add]
+   |                              ^^^^
+79 |
+80 |     # MCTS simulation (updated for new core)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:78:35
+   |
+76 |     hrm_results: NotRequired[Dict]
+77 |     trm_results: NotRequired[Dict]
+78 |     agent_outputs: Annotated[List[Dict], operator.add]
+   |                                   ^^^^
+79 |
+80 |     # MCTS simulation (updated for new core)
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:84:29
+   |
+82 |     mcts_iterations: NotRequired[int]
+83 |     mcts_best_action: NotRequired[str]
+84 |     mcts_stats: NotRequired[Dict]
+   |                             ^^^^
+85 |     mcts_config: NotRequired[Dict]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:85:30
+   |
+83 |     mcts_best_action: NotRequired[str]
+84 |     mcts_stats: NotRequired[Dict]
+85 |     mcts_config: NotRequired[Dict]
+   |                              ^^^^
+86 |
+87 |     # Evaluation
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:88:36
+   |
+87 |     # Evaluation
+88 |     confidence_scores: NotRequired[Dict[str, float]]
+   |                                    ^^^^
+89 |     consensus_reached: NotRequired[bool]
+90 |     consensus_score: NotRequired[float]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\framework\graph.py:97:34
+   |
+96 |     # Neural Meta-Controller (optional)
+97 |     routing_history: NotRequired[List[Dict]]
+   |                                  ^^^^
+98 |     meta_controller_predictions: NotRequired[List[Dict]]
+99 |     last_routed_agent: NotRequired[str]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:97:39
+   |
+96 |     # Neural Meta-Controller (optional)
+97 |     routing_history: NotRequired[List[Dict]]
+   |                                       ^^^^
+98 |     meta_controller_predictions: NotRequired[List[Dict]]
+99 |     last_routed_agent: NotRequired[str]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\framework\graph.py:98:46
+   |
+96 |     # Neural Meta-Controller (optional)
+97 |     routing_history: NotRequired[List[Dict]]
+98 |     meta_controller_predictions: NotRequired[List[Dict]]
+   |                                              ^^^^
+99 |     last_routed_agent: NotRequired[str]
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\graph.py:98:51
+   |
+96 |     # Neural Meta-Controller (optional)
+97 |     routing_history: NotRequired[List[Dict]]
+98 |     meta_controller_predictions: NotRequired[List[Dict]]
+   |                                                   ^^^^
+99 |     last_routed_agent: NotRequired[str]
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:103:27
+    |
+101 |     # Output
+102 |     final_response: NotRequired[str]
+103 |     metadata: NotRequired[Dict]
+    |                           ^^^^
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:245:49
+    |
+243 |         return workflow
+244 |
+245 |     def _entry_node(self, state: AgentState) -> Dict:
+    |                                                 ^^^^
+246 |         """Initialize state and parse query."""
+247 |         self.logger.info(f"Entry node: {state['query'][:100]}")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:254:60
+    |
+252 |         }
+253 |
+254 |     def _retrieve_context_node(self, state: AgentState) -> Dict:
+    |                                                            ^^^^
+255 |         """Retrieve context from vector store using RAG."""
+256 |         if not state.get("use_rag", True) or not self.vector_store:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:274:58
+    |
+272 |         }
+273 |
+274 |     def _route_decision_node(self, state: AgentState) -> Dict:
+    |                                                          ^^^^
+275 |         """Prepare routing decision."""
+276 |         return {}
+    |
+help: Replace with `dict`
+
+F841 Local variable `iteration` is assigned to but never used
+   --> src\framework\graph.py:425:13
+    |
+424 |             # Handle routing based on predicted agent
+425 |             iteration = state.get("iteration", 0)
+    |             ^^^^^^^^^
+426 |
+427 |             if agent == "hrm":
+    |
+help: Remove assignment to unused variable `iteration`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:483:65
+    |
+481 |         return self._rule_based_route_decision(state)
+482 |
+483 |     async def _parallel_agents_node(self, state: AgentState) -> Dict:
+    |                                                                 ^^^^
+484 |         """Execute HRM and TRM agents in parallel."""
+485 |         self.logger.info("Executing HRM and TRM agents in parallel")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:529:59
+    |
+527 |         }
+528 |
+529 |     async def _hrm_agent_node(self, state: AgentState) -> Dict:
+    |                                                           ^^^^
+530 |         """Execute HRM agent."""
+531 |         self.logger.info("Executing HRM agent")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:552:59
+    |
+550 |         }
+551 |
+552 |     async def _trm_agent_node(self, state: AgentState) -> Dict:
+    |                                                           ^^^^
+553 |         """Execute TRM agent."""
+554 |         self.logger.info("Executing TRM agent")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:575:64
+    |
+573 |         }
+574 |
+575 |     async def _mcts_simulator_node(self, state: AgentState) -> Dict:
+    |                                                                ^^^^
+576 |         """Execute MCTS simulation using new deterministic engine."""
+577 |         self.logger.info("Executing MCTS simulation with deterministic engine")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\graph.py:600:56
+    |
+599 |         # Define action generator based on domain
+600 |         def action_generator(mcts_state: MCTSState) -> List[str]:
+    |                                                        ^^^^
+601 |             """Generate available actions for state."""
+602 |             depth = len(mcts_state.state_id.split("_")) - 1
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:704:61
+    |
+702 |         }
+703 |
+704 |     def _aggregate_results_node(self, state: AgentState) -> Dict:
+    |                                                             ^^^^
+705 |         """Aggregate results from all agents."""
+706 |         self.logger.info("Aggregating agent results")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:714:62
+    |
+712 |         return {"confidence_scores": confidence_scores}
+713 |
+714 |     def _evaluate_consensus_node(self, state: AgentState) -> Dict:
+    |                                                              ^^^^
+715 |         """Evaluate consensus among agents."""
+716 |         agent_outputs = state.get("agent_outputs", [])
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:745:60
+    |
+743 |         return "iterate"
+744 |
+745 |     async def _synthesize_node(self, state: AgentState) -> Dict:
+    |                                                            ^^^^
+746 |         """Synthesize final response from agent outputs."""
+747 |         self.logger.info("Synthesizing final response")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:810:30
+    |
+808 |         vector_store=None,
+809 |         embedding_model=None,
+810 |         hrm_config: Optional[Dict] = None,
+    |                              ^^^^
+811 |         trm_config: Optional[Dict] = None,
+812 |         mcts_config: Optional[MCTSConfig] = None,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:811:30
+    |
+809 |         embedding_model=None,
+810 |         hrm_config: Optional[Dict] = None,
+811 |         trm_config: Optional[Dict] = None,
+    |                              ^^^^
+812 |         mcts_config: Optional[MCTSConfig] = None,
+813 |         top_k_retrieval: int = 5,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:877:26
+    |
+875 |         use_rag: bool = True,
+876 |         use_mcts: bool = False,
+877 |         config: Optional[Dict] = None,
+    |                          ^^^^
+878 |     ) -> Dict:
+879 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\graph.py:878:10
+    |
+876 |         use_mcts: bool = False,
+877 |         config: Optional[Dict] = None,
+878 |     ) -> Dict:
+    |          ^^^^
+879 |         """
+880 |         Process query through LangGraph.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\mcts\__init__.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from .core import MCTSNode, MCTSEngine
+12 | | from .policies import ucb1, RolloutPolicy, SelectionPolicy
+13 | | from .config import MCTSConfig, create_preset_config
+14 | | from .experiments import ExperimentTracker, ExperimentResult
+   | |____________________________________________________________^
+15 |
+16 |   __all__ = [
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\mcts\config.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from __future__ import annotations
+12 | | import json
+13 | | from dataclasses import dataclass, field, asdict
+14 | | from typing import Any, Dict, Optional
+15 | | from enum import Enum
+16 | |
+17 | | from .policies import SelectionPolicy
+   | |_____________________________________^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\framework\mcts\config.py:14:1
+   |
+12 | import json
+13 | from dataclasses import dataclass, field, asdict
+14 | from typing import Any, Dict, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | from enum import Enum
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\config.py:173:26
+    |
+171 |             raise ValueError(f"Invalid MCTS configuration:\n" + "\n".join(f"  - {e}" for e in errors))
+172 |
+173 |     def to_dict(self) -> Dict[str, Any]:
+    |                          ^^^^
+174 |         """
+175 |         Convert configuration to dictionary for serialization.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\config.py:198:30
+    |
+197 |     @classmethod
+198 |     def from_dict(cls, data: Dict[str, Any]) -> MCTSConfig:
+    |                              ^^^^
+199 |         """
+200 |         Create configuration from dictionary.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\mcts\core.py:12:1
+   |
+10 |   """
+11 |
+12 | / from __future__ import annotations
+13 | | import asyncio
+14 | | import hashlib
+15 | | from collections import OrderedDict
+16 | | from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
+17 | | from dataclasses import dataclass, field
+18 | | import numpy as np
+19 | |
+20 | | from .policies import ucb1, SelectionPolicy, RolloutPolicy
+   | |__________________________________________________________^
+   |
+help: Organize imports
+
+UP035 [*] Import from `collections.abc` instead: `Callable`, `Awaitable`
+  --> src\framework\mcts\core.py:16:1
+   |
+14 | import hashlib
+15 | from collections import OrderedDict
+16 | from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+18 | import numpy as np
+   |
+help: Import from `collections.abc`
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\framework\mcts\core.py:16:1
+   |
+14 | import hashlib
+15 | from collections import OrderedDict
+16 | from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+18 | import numpy as np
+   |
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\framework\mcts\core.py:16:1
+   |
+14 | import hashlib
+15 | from collections import OrderedDict
+16 | from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+18 | import numpy as np
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\framework\mcts\core.py:16:1
+   |
+14 | import hashlib
+15 | from collections import OrderedDict
+16 | from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 | from dataclasses import dataclass, field
+18 | import numpy as np
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\core.py:28:15
+   |
+27 |     state_id: str
+28 |     features: Dict[str, Any] = field(default_factory=dict)
+   |               ^^^^
+29 |
+30 |     def to_hash_key(self) -> str:
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\framework\mcts\core.py:62:24
+   |
+60 |         self.parent = parent
+61 |         self.action = action
+62 |         self.children: List[MCTSNode] = []
+   |                        ^^^^
+63 |         self.visits: int = 0
+64 |         self.value_sum: float = 0.0
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\framework\mcts\core.py:67:33
+   |
+65 |         self.terminal: bool = False
+66 |         self.expanded_actions: set = set()
+67 |         self.available_actions: List[str] = []
+   |                                 ^^^^
+68 |
+69 |         # Track depth for O(1) tree statistics
+   |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\framework\mcts\core.py:195:50
+    |
+193 |         # Simulation cache: state_hash -> (value, visit_count)
+194 |         # Using OrderedDict for LRU eviction
+195 |         self._simulation_cache: OrderedDict[str, Tuple[float, int]] = OrderedDict()
+    |                                                  ^^^^^
+196 |         self.cache_size_limit = cache_size_limit
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\core.py:253:49
+    |
+251 |         self,
+252 |         node: MCTSNode,
+253 |         action_generator: Callable[[MCTSState], List[str]],
+    |                                                 ^^^^
+254 |         state_transition: Callable[[MCTSState, str], MCTSState],
+255 |     ) -> MCTSNode:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\core.py:383:49
+    |
+381 |         self,
+382 |         root: MCTSNode,
+383 |         action_generator: Callable[[MCTSState], List[str]],
+    |                                                 ^^^^
+384 |         state_transition: Callable[[MCTSState, str], MCTSState],
+385 |         rollout_policy: RolloutPolicy,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\core.py:415:49
+    |
+413 |         root: MCTSNode,
+414 |         num_iterations: int,
+415 |         action_generator: Callable[[MCTSState], List[str]],
+    |                                                 ^^^^
+416 |         state_transition: Callable[[MCTSState, str], MCTSState],
+417 |         rollout_policy: RolloutPolicy,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\framework\mcts\core.py:420:10
+    |
+418 |         max_rollout_depth: int = 10,
+419 |         selection_policy: SelectionPolicy = SelectionPolicy.MAX_VISITS,
+420 |     ) -> Tuple[Optional[str], Dict[str, Any]]:
+    |          ^^^^^
+421 |         """
+422 |         Run MCTS search for specified number of iterations.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\core.py:420:31
+    |
+418 |         max_rollout_depth: int = 10,
+419 |         selection_policy: SelectionPolicy = SelectionPolicy.MAX_VISITS,
+420 |     ) -> Tuple[Optional[str], Dict[str, Any]]:
+    |                               ^^^^
+421 |         """
+422 |         Run MCTS search for specified number of iterations.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\core.py:508:10
+    |
+506 |         root: MCTSNode,
+507 |         num_iterations: int,
+508 |     ) -> Dict[str, Any]:
+    |          ^^^^
+509 |         """
+510 |         Compute comprehensive MCTS statistics.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\mcts\experiments.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from __future__ import annotations
+12 | | import json
+13 | | import csv
+14 | | import statistics
+15 | | from datetime import datetime
+16 | | from pathlib import Path
+17 | | from dataclasses import dataclass, asdict, field
+18 | | from typing import Any, Dict, List, Optional, Tuple
+19 | | import numpy as np
+20 | |
+21 | | from .config import MCTSConfig
+   | |______________________________^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\framework\mcts\experiments.py:18:1
+   |
+16 | from pathlib import Path
+17 | from dataclasses import dataclass, asdict, field
+18 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 | import numpy as np
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\framework\mcts\experiments.py:18:1
+   |
+16 | from pathlib import Path
+17 | from dataclasses import dataclass, asdict, field
+18 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 | import numpy as np
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\framework\mcts\experiments.py:18:1
+   |
+16 | from pathlib import Path
+17 | from dataclasses import dataclass, asdict, field
+18 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+19 | import numpy as np
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\experiments.py:33:22
+   |
+32 |     # Configuration
+33 |     config: Optional[Dict[str, Any]] = None
+   |                      ^^^^
+34 |     seed: int = 42
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\experiments.py:58:19
+   |
+57 |     # Action distribution
+58 |     action_stats: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+   |                   ^^^^
+59 |
+60 |     # Optional metadata
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\experiments.py:58:29
+   |
+57 |     # Action distribution
+58 |     action_stats: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+   |                             ^^^^
+59 |
+60 |     # Optional metadata
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\experiments.py:61:15
+   |
+60 |     # Optional metadata
+61 |     metadata: Dict[str, Any] = field(default_factory=dict)
+   |               ^^^^
+62 |
+63 |     def to_dict(self) -> Dict[str, Any]:
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\experiments.py:63:26
+   |
+61 |     metadata: Dict[str, Any] = field(default_factory=dict)
+62 |
+63 |     def to_dict(self) -> Dict[str, Any]:
+   |                          ^^^^
+64 |         """Convert to dictionary."""
+65 |         return asdict(self)
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\framework\mcts\experiments.py:72:30
+   |
+71 |     @classmethod
+72 |     def from_dict(cls, data: Dict[str, Any]) -> ExperimentResult:
+   |                              ^^^^
+73 |         """Create from dictionary."""
+74 |         return cls(**data)
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\experiments.py:101:23
+    |
+ 99 |         """
+100 |         self.name = name
+101 |         self.results: List[ExperimentResult] = []
+    |                       ^^^^
+102 |         self.created_at = datetime.now().isoformat()
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:117:21
+    |
+115 |         experiment_id: str,
+116 |         config: MCTSConfig,
+117 |         mcts_stats: Dict[str, Any],
+    |                     ^^^^
+118 |         execution_time_ms: float = 0.0,
+119 |         tree_depth: int = 0,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:121:28
+    |
+119 |         tree_depth: int = 0,
+120 |         tree_node_count: int = 0,
+121 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+122 |     ) -> ExperimentResult:
+123 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:167:41
+    |
+165 |         return result
+166 |
+167 |     def get_summary_statistics(self) -> Dict[str, Any]:
+    |                                         ^^^^
+168 |         """
+169 |         Compute summary statistics across all experiments.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\experiments.py:185:35
+    |
+183 |         node_counts = [r.tree_node_count for r in self.results]
+184 |
+185 |         def compute_stats(values: List[float]) -> Dict[str, float]:
+    |                                   ^^^^
+186 |             """Compute basic statistics."""
+187 |             if not values:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:185:51
+    |
+183 |         node_counts = [r.tree_node_count for r in self.results]
+184 |
+185 |         def compute_stats(values: List[float]) -> Dict[str, float]:
+    |                                                   ^^^^
+186 |             """Compute basic statistics."""
+187 |             if not values:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\experiments.py:222:32
+    |
+220 |     def compare_configs(
+221 |         self,
+222 |         config_names: Optional[List[str]] = None,
+    |                                ^^^^
+223 |     ) -> Dict[str, Dict[str, Any]]:
+224 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:223:10
+    |
+221 |         self,
+222 |         config_names: Optional[List[str]] = None,
+223 |     ) -> Dict[str, Dict[str, Any]]:
+    |          ^^^^
+224 |         """
+225 |         Compare performance across different configurations.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:223:20
+    |
+221 |         self,
+222 |         config_names: Optional[List[str]] = None,
+223 |     ) -> Dict[str, Dict[str, Any]]:
+    |                    ^^^^
+224 |         """
+225 |         Compare performance across different configurations.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:234:18
+    |
+232 |         """
+233 |         # Group results by configuration name
+234 |         grouped: Dict[str, List[ExperimentResult]] = {}
+    |                  ^^^^
+235 |
+236 |         for result in self.results:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\experiments.py:234:28
+    |
+232 |         """
+233 |         # Group results by configuration name
+234 |         grouped: Dict[str, List[ExperimentResult]] = {}
+    |                            ^^^^
+235 |
+236 |         for result in self.results:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:269:54
+    |
+267 |         return comparison
+268 |
+269 |     def analyze_seed_consistency(self, seed: int) -> Dict[str, Any]:
+    |                                                      ^^^^
+270 |         """
+271 |         Analyze consistency of results for a specific seed.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\framework\mcts\experiments.py:416:6
+    |
+414 |     config: MCTSConfig,
+415 |     num_runs: int = 3,
+416 | ) -> Tuple[bool, Dict[str, Any]]:
+    |      ^^^^^
+417 |     """
+418 |     Test that MCTS produces deterministic results with same seed.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\framework\mcts\experiments.py:416:18
+    |
+414 |     config: MCTSConfig,
+415 |     num_runs: int = 3,
+416 | ) -> Tuple[bool, Dict[str, Any]]:
+    |                  ^^^^
+417 |     """
+418 |     Test that MCTS produces deterministic results with same seed.
+    |
+help: Replace with `dict`
+
+F841 Local variable `tracker` is assigned to but never used
+   --> src\framework\mcts\experiments.py:428:5
+    |
+426 |         Tuple of (is_deterministic, analysis_dict)
+427 |     """
+428 |     tracker = ExperimentTracker(name="determinism_test")
+    |     ^^^^^^^
+429 |
+430 |     # This is a stub - actual implementation would run the engine
+    |
+help: Remove assignment to unused variable `tracker`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\framework\mcts\policies.py:11:1
+   |
+ 9 |   """
+10 |
+11 | / from __future__ import annotations
+12 | | import math
+13 | | from enum import Enum
+14 | | from typing import Any, List, Callable, Awaitable, Optional, TYPE_CHECKING
+15 | | from abc import ABC, abstractmethod
+16 | | import numpy as np
+   | |__________________^
+17 |
+18 |   if TYPE_CHECKING:
+   |
+help: Organize imports
+
+UP035 [*] Import from `collections.abc` instead: `Callable`, `Awaitable`
+  --> src\framework\mcts\policies.py:14:1
+   |
+12 | import math
+13 | from enum import Enum
+14 | from typing import Any, List, Callable, Awaitable, Optional, TYPE_CHECKING
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | from abc import ABC, abstractmethod
+16 | import numpy as np
+   |
+help: Import from `collections.abc`
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\framework\mcts\policies.py:14:1
+   |
+12 | import math
+13 | from enum import Enum
+14 | from typing import Any, List, Callable, Awaitable, Optional, TYPE_CHECKING
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+15 | from abc import ABC, abstractmethod
+16 | import numpy as np
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\policies.py:348:21
+    |
+347 | def compute_action_probabilities(
+348 |     children_stats: List[dict],
+    |                     ^^^^
+349 |     temperature: float = 1.0,
+350 | ) -> List[float]:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\policies.py:350:6
+    |
+348 |     children_stats: List[dict],
+349 |     temperature: float = 1.0,
+350 | ) -> List[float]:
+    |      ^^^^
+351 |     """
+352 |     Compute action probabilities from visit counts using softmax.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\framework\mcts\policies.py:379:21
+    |
+378 | def select_action_stochastic(
+379 |     children_stats: List[dict],
+    |                     ^^^^
+380 |     rng: np.random.Generator,
+381 |     temperature: float = 1.0,
+    |
+help: Replace with `list`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\models\validation.py:12:1
+   |
+10 |   """
+11 |
+12 | / import re
+13 | | from typing import Any, Dict, List, Optional
+14 | | from datetime import datetime
+15 | |
+16 | | from pydantic import (
+17 | |     BaseModel,
+18 | |     Field,
+19 | |     field_validator,
+20 | |     model_validator,
+21 | |     ConfigDict,
+22 | | )
+   | |_^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\models\validation.py:13:1
+   |
+12 | import re
+13 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 | from datetime import datetime
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\models\validation.py:13:1
+   |
+12 | import re
+13 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 | from datetime import datetime
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\models\validation.py:235:17
+    |
+233 |     )
+234 |
+235 |     parameters: Dict[str, Any] = Field(default_factory=dict, description="Tool parameters as key-value pairs")
+    |                 ^^^^
+236 |
+237 |     timeout_seconds: float = Field(default=30.0, ge=1.0, le=300.0, description="Timeout for tool execution")
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\models\validation.py:255:37
+    |
+253 |     @field_validator("parameters")
+254 |     @classmethod
+255 |     def validate_parameters(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+    |                                     ^^^^
+256 |         """Validate tool parameters for security."""
+257 |         # Check for reasonable size
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\models\validation.py:255:56
+    |
+253 |     @field_validator("parameters")
+254 |     @classmethod
+255 |     def validate_parameters(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+    |                                                        ^^^^
+256 |         """Validate tool parameters for security."""
+257 |         # Check for reasonable size
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\models\validation.py:364:14
+    |
+362 |     )
+363 |
+364 |     queries: List[QueryInput] = Field(
+    |              ^^^^
+365 |         ..., min_length=1, max_length=MAX_BATCH_SIZE, description="List of queries to process in batch"
+366 |     )
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\models\validation.py:372:37
+    |
+370 |     @field_validator("queries")
+371 |     @classmethod
+372 |     def validate_batch_size(cls, v: List[QueryInput]) -> List[QueryInput]:
+    |                                     ^^^^
+373 |         """Validate batch doesn't exceed limits."""
+374 |         if len(v) > MAX_BATCH_SIZE:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\models\validation.py:372:58
+    |
+370 |     @field_validator("queries")
+371 |     @classmethod
+372 |     def validate_batch_size(cls, v: List[QueryInput]) -> List[QueryInput]:
+    |                                                          ^^^^
+373 |         """Validate batch doesn't exceed limits."""
+374 |         if len(v) > MAX_BATCH_SIZE:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\models\validation.py:455:53
+    |
+455 | def validate_tool_input(tool_name: str, parameters: Dict[str, Any], **kwargs) -> MCPToolInput:
+    |                                                     ^^^^
+456 |     """
+457 |     Validate MCP tool input parameters.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\observability\__init__.py:13:1
+   |
+11 |   """
+12 |
+13 | / from .logging import setup_logging, get_logger, CorrelationIdFilter
+14 | | from .tracing import TracingManager, trace_operation, get_tracer
+15 | | from .metrics import MetricsCollector, mcts_metrics, agent_metrics
+16 | | from .debug import MCTSDebugger, export_tree_to_dot, visualize_mcts_tree
+17 | | from .profiling import profile_block, AsyncProfiler, MemoryProfiler, generate_performance_report
+   | |________________________________________________________________________________________________^
+18 |
+19 |   # Braintrust integration (optional)
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\observability\__init__.py:21:5
+   |
+19 |   # Braintrust integration (optional)
+20 |   try:
+21 | /     from .braintrust_tracker import (
+22 | |         BraintrustTracker,
+23 | |         BraintrustContextManager,
+24 | |         create_training_tracker,
+25 | |         BRAINTRUST_AVAILABLE,
+26 | |     )
+   | |_____^
+27 |
+28 |       _braintrust_exports = [
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\observability\braintrust_tracker.py:9:1
+   |
+ 7 | import os
+ 8 | from datetime import datetime
+ 9 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |
+11 | # Check if braintrust is available
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\observability\braintrust_tracker.py:9:1
+   |
+ 7 | import os
+ 8 | from datetime import datetime
+ 9 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+10 |
+11 | # Check if braintrust is available
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\braintrust_tracker.py:52:31
+   |
+50 |         self._current_span: Any = None
+51 |         self._is_initialized = False
+52 |         self._metrics_buffer: List[Dict[str, Any]] = []
+   |                               ^^^^
+53 |
+54 |         if not BRAINTRUST_AVAILABLE:
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\braintrust_tracker.py:52:36
+   |
+50 |         self._current_span: Any = None
+51 |         self._is_initialized = False
+52 |         self._metrics_buffer: List[Dict[str, Any]] = []
+   |                                    ^^^^
+53 |
+54 |         if not BRAINTRUST_AVAILABLE:
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\braintrust_tracker.py:78:28
+   |
+76 |         self,
+77 |         experiment_name: Optional[str] = None,
+78 |         metadata: Optional[Dict[str, Any]] = None,
+   |                            ^^^^
+79 |     ) -> Optional[Any]:
+80 |         """
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:108:43
+    |
+106 |             return None
+107 |
+108 |     def log_hyperparameters(self, params: Dict[str, Any]) -> None:
+    |                                           ^^^^
+109 |         """
+110 |         Log hyperparameters for the current experiment.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:129:27
+    |
+127 |         step: int,
+128 |         loss: float,
+129 |         metrics: Optional[Dict[str, float]] = None,
+    |                           ^^^^
+130 |     ) -> None:
+131 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:169:38
+    |
+167 |         train_accuracy: Optional[float] = None,
+168 |         val_accuracy: Optional[float] = None,
+169 |         additional_metrics: Optional[Dict[str, float]] = None,
+    |                                      ^^^^
+170 |     ) -> None:
+171 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\braintrust_tracker.py:220:22
+    |
+218 |         self,
+219 |         eval_type: str,
+220 |         predictions: List[str],
+    |                      ^^^^
+221 |         ground_truth: List[str],
+222 |         metrics: Dict[str, float],
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\braintrust_tracker.py:221:23
+    |
+219 |         eval_type: str,
+220 |         predictions: List[str],
+221 |         ground_truth: List[str],
+    |                       ^^^^
+222 |         metrics: Dict[str, float],
+223 |     ) -> None:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:222:18
+    |
+220 |         predictions: List[str],
+221 |         ground_truth: List[str],
+222 |         metrics: Dict[str, float],
+    |                  ^^^^
+223 |     ) -> None:
+224 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:261:25
+    |
+259 |     def log_model_prediction(
+260 |         self,
+261 |         input_features: Dict[str, Any],
+    |                         ^^^^
+262 |         prediction: str,
+263 |         confidence: float,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:305:18
+    |
+303 |         model_path: str,
+304 |         model_type: str,
+305 |         metrics: Dict[str, float],
+    |                  ^^^^
+306 |         metadata: Optional[Dict[str, Any]] = None,
+307 |     ) -> None:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:306:28
+    |
+304 |         model_type: str,
+305 |         metrics: Dict[str, float],
+306 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+307 |     ) -> None:
+308 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\braintrust_tracker.py:360:39
+    |
+358 |             return None
+359 |
+360 |     def get_buffered_metrics(self) -> List[Dict[str, Any]]:
+    |                                       ^^^^
+361 |         """
+362 |         Get all buffered metrics (useful when Braintrust is not available).
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:360:44
+    |
+358 |             return None
+359 |
+360 |     def get_buffered_metrics(self) -> List[Dict[str, Any]]:
+    |                                            ^^^^
+361 |         """
+362 |         Get all buffered metrics (useful when Braintrust is not available).
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:392:28
+    |
+390 |         experiment_name: Optional[str] = None,
+391 |         api_key: Optional[str] = None,
+392 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+393 |     ):
+394 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\braintrust_tracker.py:431:22
+    |
+429 | def create_training_tracker(
+430 |     model_type: str = "rnn",
+431 |     config: Optional[Dict[str, Any]] = None,
+    |                      ^^^^
+432 | ) -> BraintrustTracker:
+433 |     """
+    |
+help: Replace with `dict`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\observability\debug.py:16:1
+   |
+14 | import os
+15 | from datetime import datetime
+16 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | from .logging import get_logger
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\observability\debug.py:16:1
+   |
+14 | import os
+15 | from datetime import datetime
+16 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | from .logging import get_logger
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\debug.py:49:30
+   |
+47 |         # State tracking
+48 |         self._iteration_count = 0
+49 |         self._state_history: List[Dict[str, Any]] = []
+   |                              ^^^^
+50 |         self._selection_history: List[Dict[str, Any]] = []
+51 |         self._ucb_history: List[Dict[str, float]] = []
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\debug.py:49:35
+   |
+47 |         # State tracking
+48 |         self._iteration_count = 0
+49 |         self._state_history: List[Dict[str, Any]] = []
+   |                                   ^^^^
+50 |         self._selection_history: List[Dict[str, Any]] = []
+51 |         self._ucb_history: List[Dict[str, float]] = []
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\debug.py:50:34
+   |
+48 |         self._iteration_count = 0
+49 |         self._state_history: List[Dict[str, Any]] = []
+50 |         self._selection_history: List[Dict[str, Any]] = []
+   |                                  ^^^^
+51 |         self._ucb_history: List[Dict[str, float]] = []
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\debug.py:50:39
+   |
+48 |         self._iteration_count = 0
+49 |         self._state_history: List[Dict[str, Any]] = []
+50 |         self._selection_history: List[Dict[str, Any]] = []
+   |                                       ^^^^
+51 |         self._ucb_history: List[Dict[str, float]] = []
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\debug.py:51:28
+   |
+49 |         self._state_history: List[Dict[str, Any]] = []
+50 |         self._selection_history: List[Dict[str, Any]] = []
+51 |         self._ucb_history: List[Dict[str, float]] = []
+   |                            ^^^^
+52 |
+53 |     def log_iteration_start(self, iteration: int) -> None:
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\debug.py:51:33
+   |
+49 |         self._state_history: List[Dict[str, Any]] = []
+50 |         self._selection_history: List[Dict[str, Any]] = []
+51 |         self._ucb_history: List[Dict[str, float]] = []
+   |                                 ^^^^
+52 |
+53 |     def log_iteration_start(self, iteration: int) -> None:
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:113:23
+    |
+111 |         self,
+112 |         parent_id: str,
+113 |         children_ucb: Dict[str, float],
+    |                       ^^^^
+114 |         selected_child: str,
+115 |     ) -> None:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\debug.py:146:28
+    |
+144 |         action: str,
+145 |         new_node_id: str,
+146 |         available_actions: List[str],
+    |                            ^^^^
+147 |     ) -> None:
+148 |         """Log node expansion details."""
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:170:38
+    |
+168 |         node_id: str,
+169 |         simulation_result: float,
+170 |         simulation_details: Optional[Dict[str, Any]] = None,
+    |                                      ^^^^
+171 |     ) -> None:
+172 |         """Log simulation/rollout results."""
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\debug.py:190:15
+    |
+188 |     def log_backpropagation(
+189 |         self,
+190 |         path: List[str],
+    |               ^^^^
+191 |         value: float,
+192 |         updates: List[Dict[str, Any]],
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\debug.py:192:18
+    |
+190 |         path: List[str],
+191 |         value: float,
+192 |         updates: List[Dict[str, Any]],
+    |                  ^^^^
+193 |     ) -> None:
+194 |         """Log backpropagation path and value updates."""
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:192:23
+    |
+190 |         path: List[str],
+191 |         value: float,
+192 |         updates: List[Dict[str, Any]],
+    |                       ^^^^
+193 |     ) -> None:
+194 |         """Log backpropagation path and value updates."""
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:236:20
+    |
+234 |     def log_state_diff(
+235 |         self,
+236 |         old_state: Dict[str, Any],
+    |                    ^^^^
+237 |         new_state: Dict[str, Any],
+238 |         description: str = "State change",
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:237:20
+    |
+235 |         self,
+236 |         old_state: Dict[str, Any],
+237 |         new_state: Dict[str, Any],
+    |                    ^^^^
+238 |         description: str = "State change",
+239 |     ) -> None:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:268:14
+    |
+266 |     def _compute_state_diff(
+267 |         self,
+268 |         old: Dict[str, Any],
+    |              ^^^^
+269 |         new: Dict[str, Any],
+270 |         prefix: str = "",
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:269:14
+    |
+267 |         self,
+268 |         old: Dict[str, Any],
+269 |         new: Dict[str, Any],
+    |              ^^^^
+270 |         prefix: str = "",
+271 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:271:10
+    |
+269 |         new: Dict[str, Any],
+270 |         prefix: str = "",
+271 |     ) -> Dict[str, Any]:
+    |          ^^^^
+272 |         """Compute differences between two dictionaries."""
+273 |         diff = {}
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:293:36
+    |
+291 |         return diff
+292 |
+293 |     def get_debug_summary(self) -> Dict[str, Any]:
+    |                                    ^^^^
+294 |         """Get summary of debug information collected."""
+295 |         return {
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\debug.py:481:12
+    |
+479 | def log_agent_state_snapshot(
+480 |     agent_name: str,
+481 |     state: Dict[str, Any],
+    |            ^^^^
+482 |     include_keys: Optional[List[str]] = None,
+483 | ) -> None:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\debug.py:482:28
+    |
+480 |     agent_name: str,
+481 |     state: Dict[str, Any],
+482 |     include_keys: Optional[List[str]] = None,
+    |                            ^^^^
+483 | ) -> None:
+484 |     """
+    |
+help: Replace with `list`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\observability\metrics.py:19:1
+   |
+17 | from dataclasses import dataclass, field
+18 | from datetime import datetime
+19 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | import psutil
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\observability\metrics.py:19:1
+   |
+17 | from dataclasses import dataclass, field
+18 | from datetime import datetime
+19 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | import psutil
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\observability\metrics.py:24:5
+   |
+23 |   try:
+24 | /     from prometheus_client import (
+25 | |         Counter,
+26 | |         Gauge,
+27 | |         Histogram,
+28 | |         Summary,
+29 | |         generate_latest,
+30 | |         REGISTRY,
+31 | |         start_http_server,
+32 | |     )
+   | |_____^
+33 |
+34 |       PROMETHEUS_AVAILABLE = True
+   |
+help: Organize imports
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:47:17
+   |
+45 |     tree_depth: int = 0
+46 |     total_nodes: int = 0
+47 |     ucb_scores: List[float] = field(default_factory=list)
+   |                 ^^^^
+48 |     selection_times_ms: List[float] = field(default_factory=list)
+49 |     expansion_times_ms: List[float] = field(default_factory=list)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:48:25
+   |
+46 |     total_nodes: int = 0
+47 |     ucb_scores: List[float] = field(default_factory=list)
+48 |     selection_times_ms: List[float] = field(default_factory=list)
+   |                         ^^^^
+49 |     expansion_times_ms: List[float] = field(default_factory=list)
+50 |     simulation_times_ms: List[float] = field(default_factory=list)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:49:25
+   |
+47 |     ucb_scores: List[float] = field(default_factory=list)
+48 |     selection_times_ms: List[float] = field(default_factory=list)
+49 |     expansion_times_ms: List[float] = field(default_factory=list)
+   |                         ^^^^
+50 |     simulation_times_ms: List[float] = field(default_factory=list)
+51 |     backprop_times_ms: List[float] = field(default_factory=list)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:50:26
+   |
+48 |     selection_times_ms: List[float] = field(default_factory=list)
+49 |     expansion_times_ms: List[float] = field(default_factory=list)
+50 |     simulation_times_ms: List[float] = field(default_factory=list)
+   |                          ^^^^
+51 |     backprop_times_ms: List[float] = field(default_factory=list)
+52 |     best_action_visits: int = 0
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:51:24
+   |
+49 |     expansion_times_ms: List[float] = field(default_factory=list)
+50 |     simulation_times_ms: List[float] = field(default_factory=list)
+51 |     backprop_times_ms: List[float] = field(default_factory=list)
+   |                        ^^^^
+52 |     best_action_visits: int = 0
+53 |     best_action_value: float = 0.0
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:64:24
+   |
+62 |     total_time_ms: float = 0.0
+63 |     avg_confidence: float = 0.0
+64 |     confidence_scores: List[float] = field(default_factory=list)
+   |                        ^^^^
+65 |     success_count: int = 0
+66 |     error_count: int = 0
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:67:22
+   |
+65 |     success_count: int = 0
+66 |     error_count: int = 0
+67 |     memory_usage_mb: List[float] = field(default_factory=list)
+   |                      ^^^^
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\metrics.py:87:29
+   |
+86 |     def __init__(self):
+87 |         self._mcts_metrics: Dict[str, MCTSMetrics] = defaultdict(MCTSMetrics)
+   |                             ^^^^
+88 |         self._agent_metrics: Dict[str, AgentMetrics] = {}
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\metrics.py:88:30
+   |
+86 |     def __init__(self):
+87 |         self._mcts_metrics: Dict[str, MCTSMetrics] = defaultdict(MCTSMetrics)
+88 |         self._agent_metrics: Dict[str, AgentMetrics] = {}
+   |                              ^^^^
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+90 |         self._request_latencies: List[float] = []
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\metrics.py:89:29
+   |
+87 |         self._mcts_metrics: Dict[str, MCTSMetrics] = defaultdict(MCTSMetrics)
+88 |         self._agent_metrics: Dict[str, AgentMetrics] = {}
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+   |                             ^^^^
+90 |         self._request_latencies: List[float] = []
+91 |         self._memory_samples: List[Dict[str, float]] = []
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:89:39
+   |
+87 |         self._mcts_metrics: Dict[str, MCTSMetrics] = defaultdict(MCTSMetrics)
+88 |         self._agent_metrics: Dict[str, AgentMetrics] = {}
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+   |                                       ^^^^
+90 |         self._request_latencies: List[float] = []
+91 |         self._memory_samples: List[Dict[str, float]] = []
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:90:34
+   |
+88 |         self._agent_metrics: Dict[str, AgentMetrics] = {}
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+90 |         self._request_latencies: List[float] = []
+   |                                  ^^^^
+91 |         self._memory_samples: List[Dict[str, float]] = []
+92 |         self._start_time = datetime.utcnow()
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\metrics.py:91:31
+   |
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+90 |         self._request_latencies: List[float] = []
+91 |         self._memory_samples: List[Dict[str, float]] = []
+   |                               ^^^^
+92 |         self._start_time = datetime.utcnow()
+93 |         self._process = psutil.Process()
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\metrics.py:91:36
+   |
+89 |         self._node_timings: Dict[str, List[float]] = defaultdict(list)
+90 |         self._request_latencies: List[float] = []
+91 |         self._memory_samples: List[Dict[str, float]] = []
+   |                                    ^^^^
+92 |         self._start_time = datetime.utcnow()
+93 |         self._process = psutil.Process()
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\metrics.py:281:40
+    |
+279 |             self._prom_request_latency.observe(latency_ms)
+280 |
+281 |     def sample_system_metrics(self) -> Dict[str, float]:
+    |                                        ^^^^
+282 |         """Sample current system metrics."""
+283 |         memory_info = self._process.memory_info()
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\metrics.py:303:52
+    |
+301 |         return sample
+302 |
+303 |     def get_mcts_summary(self, session_id: str) -> Dict[str, Any]:
+    |                                                    ^^^^
+304 |         """Get summary statistics for MCTS session."""
+305 |         metrics = self._mcts_metrics.get(session_id)
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\metrics.py:309:27
+    |
+307 |             return {}
+308 |
+309 |         def safe_avg(lst: List[float]) -> float:
+    |                           ^^^^
+310 |             return sum(lst) / len(lst) if lst else 0.0
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\metrics.py:312:34
+    |
+310 |             return sum(lst) / len(lst) if lst else 0.0
+311 |
+312 |         def safe_percentile(lst: List[float], p: float) -> float:
+    |                                  ^^^^
+313 |             if not lst:
+314 |                 return 0.0
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\metrics.py:343:53
+    |
+341 |         }
+342 |
+343 |     def get_agent_summary(self, agent_name: str) -> Dict[str, Any]:
+    |                                                     ^^^^
+344 |         """Get summary statistics for an agent."""
+345 |         metrics = self._agent_metrics.get(agent_name)
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\metrics.py:349:27
+    |
+347 |             return {}
+348 |
+349 |         def safe_avg(lst: List[float]) -> float:
+    |                           ^^^^
+350 |             return sum(lst) / len(lst) if lst else 0.0
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\metrics.py:368:42
+    |
+366 |         }
+367 |
+368 |     def get_node_timing_summary(self) -> Dict[str, Dict[str, float]]:
+    |                                          ^^^^
+369 |         """Get timing summary for all graph nodes."""
+370 |         summary = {}
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\metrics.py:368:52
+    |
+366 |         }
+367 |
+368 |     def get_node_timing_summary(self) -> Dict[str, Dict[str, float]]:
+    |                                                    ^^^^
+369 |         """Get timing summary for all graph nodes."""
+370 |         summary = {}
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\metrics.py:382:34
+    |
+380 |         return summary
+381 |
+382 |     def get_full_report(self) -> Dict[str, Any]:
+    |                                  ^^^^
+383 |         """Generate a comprehensive metrics report."""
+384 |         # Sample current system state
+    |
+help: Replace with `dict`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\observability\profiling.py:19:1
+   |
+17 | from dataclasses import dataclass, field
+18 | from datetime import datetime
+19 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | import psutil
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\observability\profiling.py:19:1
+   |
+17 | from dataclasses import dataclass, field
+18 | from datetime import datetime
+19 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+20 |
+21 | import psutil
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\profiling.py:39:15
+   |
+37 |     success: bool = True
+38 |     error: Optional[str] = None
+39 |     metadata: Dict[str, Any] = field(default_factory=dict)
+   |               ^^^^
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\profiling.py:48:14
+   |
+46 |     session_id: str
+47 |     start_time: datetime = field(default_factory=datetime.utcnow)
+48 |     timings: List[TimingResult] = field(default_factory=list)
+   |              ^^^^
+49 |     memory_samples: List[Dict[str, float]] = field(default_factory=list)
+50 |     cpu_samples: List[float] = field(default_factory=list)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\profiling.py:49:21
+   |
+47 |     start_time: datetime = field(default_factory=datetime.utcnow)
+48 |     timings: List[TimingResult] = field(default_factory=list)
+49 |     memory_samples: List[Dict[str, float]] = field(default_factory=list)
+   |                     ^^^^
+50 |     cpu_samples: List[float] = field(default_factory=list)
+51 |     markers: List[Dict[str, Any]] = field(default_factory=list)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\profiling.py:49:26
+   |
+47 |     start_time: datetime = field(default_factory=datetime.utcnow)
+48 |     timings: List[TimingResult] = field(default_factory=list)
+49 |     memory_samples: List[Dict[str, float]] = field(default_factory=list)
+   |                          ^^^^
+50 |     cpu_samples: List[float] = field(default_factory=list)
+51 |     markers: List[Dict[str, Any]] = field(default_factory=list)
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\profiling.py:50:18
+   |
+48 |     timings: List[TimingResult] = field(default_factory=list)
+49 |     memory_samples: List[Dict[str, float]] = field(default_factory=list)
+50 |     cpu_samples: List[float] = field(default_factory=list)
+   |                  ^^^^
+51 |     markers: List[Dict[str, Any]] = field(default_factory=list)
+   |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\profiling.py:51:14
+   |
+49 |     memory_samples: List[Dict[str, float]] = field(default_factory=list)
+50 |     cpu_samples: List[float] = field(default_factory=list)
+51 |     markers: List[Dict[str, Any]] = field(default_factory=list)
+   |              ^^^^
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\profiling.py:51:19
+   |
+49 |     memory_samples: List[Dict[str, float]] = field(default_factory=list)
+50 |     cpu_samples: List[float] = field(default_factory=list)
+51 |     markers: List[Dict[str, Any]] = field(default_factory=list)
+   |                   ^^^^
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\profiling.py:69:25
+   |
+67 |     def __init__(self):
+68 |         self.logger = get_logger("observability.profiling")
+69 |         self._sessions: Dict[str, ProfilingSession] = {}
+   |                         ^^^^
+70 |         self._current_session: Optional[str] = None
+71 |         self._process = psutil.Process()
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\profiling.py:72:34
+   |
+70 |         self._current_session: Optional[str] = None
+71 |         self._process = psutil.Process()
+72 |         self._aggregate_timings: Dict[str, List[float]] = defaultdict(list)
+   |                                  ^^^^
+73 |
+74 |     @classmethod
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\observability\profiling.py:72:44
+   |
+70 |         self._current_session: Optional[str] = None
+71 |         self._process = psutil.Process()
+72 |         self._aggregate_timings: Dict[str, List[float]] = defaultdict(list)
+   |                                            ^^^^
+73 |
+74 |     @classmethod
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:118:28
+    |
+116 |         name: str,
+117 |         session_id: Optional[str] = None,
+118 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+119 |     ):
+120 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:188:28
+    |
+186 |         name: str,
+187 |         session_id: Optional[str] = None,
+188 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+189 |     ):
+190 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:251:66
+    |
+249 |             )
+250 |
+251 |     def sample_memory(self, session_id: Optional[str] = None) -> Dict[str, float]:
+    |                                                                  ^^^^
+252 |         """Sample current memory usage."""
+253 |         memory_info = self._process.memory_info()
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:285:24
+    |
+283 |         self,
+284 |         name: str,
+285 |         data: Optional[Dict[str, Any]] = None,
+    |                        ^^^^
+286 |         session_id: Optional[str] = None,
+287 |     ) -> None:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:303:65
+    |
+301 |         self.logger.debug(f"Added profiling marker: {name}")
+302 |
+303 |     def get_timing_summary(self, name: Optional[str] = None) -> Dict[str, Any]:
+    |                                                                 ^^^^
+304 |         """
+305 |         Get summary statistics for timed operations.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\profiling.py:321:50
+    |
+319 |             return {op_name: self._compute_stats(op_name, times) for op_name, times in self._aggregate_timings.items()}
+320 |
+321 |     def _compute_stats(self, name: str, timings: List[float]) -> Dict[str, Any]:
+    |                                                  ^^^^
+322 |         """Compute statistics for a list of timings."""
+323 |         if not timings:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:321:66
+    |
+319 |             return {op_name: self._compute_stats(op_name, times) for op_name, times in self._aggregate_timings.items()}
+320 |
+321 |     def _compute_stats(self, name: str, timings: List[float]) -> Dict[str, Any]:
+    |                                                                  ^^^^
+322 |         """Compute statistics for a list of timings."""
+323 |         if not timings:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\observability\profiling.py:360:24
+    |
+358 |         self._baseline: Optional[float] = None
+359 |         self._peak: float = 0.0
+360 |         self._samples: List[Dict[str, Any]] = []
+    |                        ^^^^
+361 |
+362 |     def set_baseline(self) -> float:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:360:29
+    |
+358 |         self._baseline: Optional[float] = None
+359 |         self._peak: float = 0.0
+360 |         self._samples: List[Dict[str, Any]] = []
+    |                             ^^^^
+361 |
+362 |     def set_baseline(self) -> float:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:381:42
+    |
+379 |         return current - self._baseline
+380 |
+381 |     def sample(self, label: str = "") -> Dict[str, Any]:
+    |                                          ^^^^
+382 |         """Take a memory sample with optional label."""
+383 |         memory_info = self._process.memory_info()
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:403:57
+    |
+401 |         return sample
+402 |
+403 |     def check_leak(self, threshold_mb: float = 10.0) -> Dict[str, Any]:
+    |                                                         ^^^^
+404 |         """
+405 |         Check for potential memory leak.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:437:30
+    |
+435 |         }
+436 |
+437 |     def get_summary(self) -> Dict[str, Any]:
+    |                              ^^^^
+438 |         """Get memory profiling summary."""
+439 |         if not self._samples:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:458:24
+    |
+456 | def profile_block(
+457 |     name: str,
+458 |     metadata: Optional[Dict[str, Any]] = None,
+    |                        ^^^^
+459 | ):
+460 |     """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:474:70
+    |
+474 | def generate_performance_report(session_id: Optional[str] = None) -> Dict[str, Any]:
+    |                                                                      ^^^^
+475 |     """
+476 |     Generate a comprehensive performance report.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\profiling.py:547:69
+    |
+547 | def profile_function(name: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None):
+    |                                                                     ^^^^
+548 |     """
+549 |     Decorator for profiling function execution.
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\observability\tracing.py:13:1
+   |
+11 |   """
+12 |
+13 | / import functools
+14 | | import os
+15 | | from contextlib import asynccontextmanager, contextmanager
+16 | | from typing import Any, Dict, Optional
+17 | |
+18 | | from opentelemetry import trace
+19 | | from opentelemetry.context import Context
+20 | | from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
+21 | | from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
+22 | | from opentelemetry.propagate import extract, inject
+23 | | from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+24 | | from opentelemetry.sdk.trace import TracerProvider
+25 | | from opentelemetry.sdk.trace.export import (
+26 | |     BatchSpanProcessor,
+27 | |     ConsoleSpanExporter,
+28 | |     SimpleSpanProcessor,
+29 | | )
+30 | | from opentelemetry.trace import Status, StatusCode, Span, SpanKind
+31 | | from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
+32 | |
+33 | | from .logging import get_correlation_id, set_correlation_id
+   | |___________________________________________________________^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\observability\tracing.py:16:1
+   |
+14 | import os
+15 | from contextlib import asynccontextmanager, contextmanager
+16 | from typing import Any, Dict, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+17 |
+18 | from opentelemetry import trace
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\observability\tracing.py:66:40
+   |
+64 |         otlp_endpoint: Optional[str] = None,
+65 |         exporter_type: Optional[str] = None,
+66 |         additional_resources: Optional[Dict[str, str]] = None,
+   |                                        ^^^^
+67 |     ) -> None:
+68 |         """
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\tracing.py:182:26
+    |
+180 |     name: str,
+181 |     kind: SpanKind = SpanKind.INTERNAL,
+182 |     attributes: Optional[Dict[str, Any]] = None,
+    |                          ^^^^
+183 |     record_exception: bool = True,
+184 |     set_status_on_exception: bool = True,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\tracing.py:218:26
+    |
+216 |     name: str,
+217 |     kind: SpanKind = SpanKind.INTERNAL,
+218 |     attributes: Optional[Dict[str, Any]] = None,
+    |                          ^^^^
+219 |     record_exception: bool = True,
+220 |     set_status_on_exception: bool = True,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\tracing.py:243:26
+    |
+241 |     name: Optional[str] = None,
+242 |     kind: SpanKind = SpanKind.INTERNAL,
+243 |     attributes: Optional[Dict[str, Any]] = None,
+    |                          ^^^^
+244 | ):
+245 |     """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\tracing.py:314:31
+    |
+312 |         self._propagator = TraceContextTextMapPropagator()
+313 |
+314 |     def inject(self, carrier: Dict[str, str], context: Optional[Context] = None) -> None:
+    |                               ^^^^
+315 |         """Inject trace context into a carrier (e.g., HTTP headers)."""
+316 |         inject(carrier, context=context)
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\observability\tracing.py:318:32
+    |
+316 |         inject(carrier, context=context)
+317 |
+318 |     def extract(self, carrier: Dict[str, str]) -> Context:
+    |                                ^^^^
+319 |         """Extract trace context from a carrier."""
+320 |         return extract(carrier)
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\storage\__init__.py:12:1
+   |
+10 | """
+11 |
+12 | from .s3_client import S3StorageClient, S3Config
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+13 |
+14 | # Pinecone integration (optional)
+   |
+help: Organize imports
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\storage\__init__.py:16:5
+   |
+14 |   # Pinecone integration (optional)
+15 |   try:
+16 | /     from .pinecone_store import (
+17 | |         PineconeVectorStore,
+18 | |         PINECONE_AVAILABLE,
+19 | |     )
+   | |_____^
+20 |
+21 |       _pinecone_exports = [
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\storage\pinecone_store.py:10:1
+   |
+ 8 | import uuid
+ 9 | from datetime import datetime
+10 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | # Check if pinecone is available
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\storage\pinecone_store.py:10:1
+   |
+ 8 | import uuid
+ 9 | from datetime import datetime
+10 | from typing import Any, Dict, List, Optional
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | # Check if pinecone is available
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\storage\pinecone_store.py:60:33
+   |
+58 |         self._index: Any = None
+59 |         self._is_initialized = False
+60 |         self._operation_buffer: List[Dict[str, Any]] = []
+   |                                 ^^^^
+61 |
+62 |         if not PINECONE_AVAILABLE:
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\storage\pinecone_store.py:60:38
+   |
+58 |         self._index: Any = None
+59 |         self._is_initialized = False
+60 |         self._operation_buffer: List[Dict[str, Any]] = []
+   |                                      ^^^^
+61 |
+62 |         if not PINECONE_AVAILABLE:
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\storage\pinecone_store.py:92:28
+   |
+90 |         features: MetaControllerFeatures,
+91 |         prediction: MetaControllerPrediction,
+92 |         metadata: Optional[Dict[str, Any]] = None,
+   |                            ^^^^
+93 |     ) -> Optional[str]:
+94 |         """
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\pinecone_store.py:165:10
+    |
+163 |         top_k: int = 5,
+164 |         include_metadata: bool = True,
+165 |     ) -> List[Dict[str, Any]]:
+    |          ^^^^
+166 |         """
+167 |         Find similar past routing decisions based on current features.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\pinecone_store.py:165:15
+    |
+163 |         top_k: int = 5,
+164 |         include_metadata: bool = True,
+165 |     ) -> List[Dict[str, Any]]:
+    |               ^^^^
+166 |         """
+167 |         Find similar past routing decisions based on current features.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\pinecone_store.py:213:10
+    |
+211 |         features: MetaControllerFeatures,
+212 |         top_k: int = 10,
+213 |     ) -> Dict[str, float]:
+    |          ^^^^
+214 |         """
+215 |         Get the distribution of agent selections for similar past decisions.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\pinecone_store.py:250:24
+    |
+248 |     def store_batch(
+249 |         self,
+250 |         features_list: List[MetaControllerFeatures],
+    |                        ^^^^
+251 |         predictions_list: List[MetaControllerPrediction],
+252 |         batch_metadata: Optional[Dict[str, Any]] = None,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\pinecone_store.py:251:27
+    |
+249 |         self,
+250 |         features_list: List[MetaControllerFeatures],
+251 |         predictions_list: List[MetaControllerPrediction],
+    |                           ^^^^
+252 |         batch_metadata: Optional[Dict[str, Any]] = None,
+253 |     ) -> int:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\pinecone_store.py:252:34
+    |
+250 |         features_list: List[MetaControllerFeatures],
+251 |         predictions_list: List[MetaControllerPrediction],
+252 |         batch_metadata: Optional[Dict[str, Any]] = None,
+    |                                  ^^^^
+253 |     ) -> int:
+254 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\pinecone_store.py:339:28
+    |
+337 |             return False
+338 |
+339 |     def get_stats(self) -> Dict[str, Any]:
+    |                            ^^^^
+340 |         """
+341 |         Get statistics about the vector store.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\pinecone_store.py:368:42
+    |
+366 |             }
+367 |
+368 |     def get_buffered_operations(self) -> List[Dict[str, Any]]:
+    |                                          ^^^^
+369 |         """
+370 |         Get all buffered operations (useful when Pinecone is not available).
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\pinecone_store.py:368:47
+    |
+366 |             }
+367 |
+368 |     def get_buffered_operations(self) -> List[Dict[str, Any]]:
+    |                                               ^^^^
+369 |         """
+370 |         Get all buffered operations (useful when Pinecone is not available).
+    |
+help: Replace with `dict`
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\storage\s3_client.py:13:1
+   |
+11 |   """
+12 |
+13 | / import asyncio
+14 | | import gzip
+15 | | import hashlib
+16 | | import json
+17 | | import os
+18 | | from dataclasses import dataclass, field
+19 | | from datetime import datetime
+20 | | from typing import Any, Dict, List, Optional, Union
+21 | |
+22 | | import aioboto3
+23 | | from botocore.config import Config as BotoConfig
+24 | | from botocore.exceptions import ClientError
+25 | | from tenacity import (
+26 | |     retry,
+27 | |     retry_if_exception_type,
+28 | |     stop_after_attempt,
+29 | |     wait_exponential,
+30 | |     before_sleep_log,
+31 | |     RetryError,
+32 | | )
+33 | |
+34 | | from src.observability.logging import get_logger
+   | |________________________________________________^
+   |
+help: Organize imports
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\storage\s3_client.py:20:1
+   |
+18 | from dataclasses import dataclass, field
+19 | from datetime import datetime
+20 | from typing import Any, Dict, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21 |
+22 | import aioboto3
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\storage\s3_client.py:20:1
+   |
+18 | from dataclasses import dataclass, field
+19 | from datetime import datetime
+20 | from typing import Any, Dict, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+21 |
+22 | import aioboto3
+   |
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:109:37
+    |
+107 |         self.logger.info("S3 client closed")
+108 |
+109 |     def _get_client_params(self) -> Dict[str, Any]:
+    |                                     ^^^^
+110 |         """Get parameters for S3 client context manager."""
+111 |         params = {
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:177:28
+    |
+175 |         body: bytes,
+176 |         content_type: str = "application/octet-stream",
+177 |         metadata: Optional[Dict[str, str]] = None,
+    |                            ^^^^
+178 |     ) -> Dict[str, Any]:
+179 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:178:10
+    |
+176 |         content_type: str = "application/octet-stream",
+177 |         metadata: Optional[Dict[str, str]] = None,
+178 |     ) -> Dict[str, Any]:
+    |          ^^^^
+179 |         """
+180 |         Put object to S3 with retry logic.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:252:22
+    |
+250 |         self,
+251 |         config_name: str,
+252 |         config_data: Dict[str, Any],
+    |                      ^^^^
+253 |         session_id: Optional[str] = None,
+254 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:254:10
+    |
+252 |         config_data: Dict[str, Any],
+253 |         session_id: Optional[str] = None,
+254 |     ) -> Dict[str, Any]:
+    |          ^^^^
+255 |         """
+256 |         Store configuration data to S3.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:297:16
+    |
+295 |         self,
+296 |         session_id: str,
+297 |         stats: Dict[str, Any],
+    |                ^^^^
+298 |         iteration: Optional[int] = None,
+299 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:299:10
+    |
+297 |         stats: Dict[str, Any],
+298 |         iteration: Optional[int] = None,
+299 |     ) -> Dict[str, Any]:
+    |          ^^^^
+300 |         """
+301 |         Store MCTS statistics to S3.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:346:27
+    |
+344 |         self,
+345 |         session_id: str,
+346 |         trace_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+    |                           ^^^^
+347 |     ) -> Dict[str, Any]:
+348 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\s3_client.py:346:43
+    |
+344 |         self,
+345 |         session_id: str,
+346 |         trace_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+    |                                           ^^^^
+347 |     ) -> Dict[str, Any]:
+348 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:346:48
+    |
+344 |         self,
+345 |         session_id: str,
+346 |         trace_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+    |                                                ^^^^
+347 |     ) -> Dict[str, Any]:
+348 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:347:10
+    |
+345 |         session_id: str,
+346 |         trace_data: Union[Dict[str, Any], List[Dict[str, Any]]],
+347 |     ) -> Dict[str, Any]:
+    |          ^^^^
+348 |         """
+349 |         Store trace data to S3.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\s3_client.py:387:22
+    |
+385 |         self,
+386 |         session_id: str,
+387 |         log_entries: List[Dict[str, Any]],
+    |                      ^^^^
+388 |     ) -> Dict[str, Any]:
+389 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:387:27
+    |
+385 |         self,
+386 |         session_id: str,
+387 |         log_entries: List[Dict[str, Any]],
+    |                           ^^^^
+388 |     ) -> Dict[str, Any]:
+389 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:388:10
+    |
+386 |         session_id: str,
+387 |         log_entries: List[Dict[str, Any]],
+388 |     ) -> Dict[str, Any]:
+    |          ^^^^
+389 |         """
+390 |         Store log entries to S3.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:431:26
+    |
+429 |         self,
+430 |         session_id: str,
+431 |         checkpoint_data: Dict[str, Any],
+    |                          ^^^^
+432 |         checkpoint_name: str = "checkpoint",
+433 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:433:10
+    |
+431 |         checkpoint_data: Dict[str, Any],
+432 |         checkpoint_name: str = "checkpoint",
+433 |     ) -> Dict[str, Any]:
+    |          ^^^^
+434 |         """
+435 |         Store framework checkpoint/state to S3.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\storage\s3_client.py:507:10
+    |
+505 |         prefix: str,
+506 |         max_keys: int = 1000,
+507 |     ) -> List[Dict[str, Any]]:
+    |          ^^^^
+508 |         """
+509 |         List objects with given prefix.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:507:15
+    |
+505 |         prefix: str,
+506 |         max_keys: int = 1000,
+507 |     ) -> List[Dict[str, Any]]:
+    |               ^^^^
+508 |         """
+509 |         List objects with given prefix.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:541:48
+    |
+539 |             return objects
+540 |
+541 |     async def delete_object(self, key: str) -> Dict[str, Any]:
+    |                                                ^^^^
+542 |         """
+543 |         Delete object from S3.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\storage\s3_client.py:568:37
+    |
+566 |             }
+567 |
+568 |     async def health_check(self) -> Dict[str, Any]:
+    |                                     ^^^^
+569 |         """
+570 |         Check S3 connectivity and bucket access.
+    |
+help: Replace with `dict`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\training\data_generator.py:10:1
+   |
+ 8 | import json
+ 9 | from dataclasses import asdict
+10 | from typing import Any, Dict, List, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | import numpy as np
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\training\data_generator.py:10:1
+   |
+ 8 | import json
+ 9 | from dataclasses import asdict
+10 | from typing import Any, Dict, List, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | import numpy as np
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\training\data_generator.py:10:1
+   |
+ 8 | import json
+ 9 | from dataclasses import asdict
+10 | from typing import Any, Dict, List, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+11 |
+12 | import numpy as np
+   |
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+  --> src\training\data_generator.py:55:41
+   |
+53 |         self.rng = np.random.default_rng(seed)
+54 |
+55 |     def generate_single_sample(self) -> Tuple[MetaControllerFeatures, str]:
+   |                                         ^^^^^
+56 |         """
+57 |         Generate a single training sample with features and optimal agent label.
+   |
+help: Replace with `tuple`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\data_generator.py:139:60
+    |
+137 |         return max(scores, key=lambda k: scores[k])
+138 |
+139 |     def generate_dataset(self, num_samples: int = 1000) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                                            ^^^^^
+140 |         """
+141 |         Generate a dataset with the specified number of samples.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:139:66
+    |
+137 |         return max(scores, key=lambda k: scores[k])
+138 |
+139 |     def generate_dataset(self, num_samples: int = 1000) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                                                  ^^^^
+140 |         """
+141 |         Generate a dataset with the specified number of samples.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:139:96
+    |
+137 |         return max(scores, key=lambda k: scores[k])
+138 |
+139 |     def generate_dataset(self, num_samples: int = 1000) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                                                                                ^^^^
+140 |         """
+141 |         Generate a dataset with the specified number of samples.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:168:24
+    |
+166 |             raise ValueError(f"num_samples must be positive, got {num_samples}")
+167 |
+168 |         features_list: List[MetaControllerFeatures] = []
+    |                        ^^^^
+169 |         labels_list: List[str] = []
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:169:22
+    |
+168 |         features_list: List[MetaControllerFeatures] = []
+169 |         labels_list: List[str] = []
+    |                      ^^^^
+170 |
+171 |         for _ in range(num_samples):
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\data_generator.py:180:10
+    |
+178 |     def generate_balanced_dataset(
+179 |         self, num_samples_per_class: int = 500
+180 |     ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |          ^^^^^
+181 |         """
+182 |         Generate a balanced dataset with equal samples per agent class.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:180:16
+    |
+178 |     def generate_balanced_dataset(
+179 |         self, num_samples_per_class: int = 500
+180 |     ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                ^^^^
+181 |         """
+182 |         Generate a balanced dataset with equal samples per agent class.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:180:46
+    |
+178 |     def generate_balanced_dataset(
+179 |         self, num_samples_per_class: int = 500
+180 |     ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                              ^^^^
+181 |         """
+182 |         Generate a balanced dataset with equal samples per agent class.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:211:24
+    |
+209 |             raise ValueError(f"num_samples_per_class must be positive, got {num_samples_per_class}")
+210 |
+211 |         features_list: List[MetaControllerFeatures] = []
+    |                        ^^^^
+212 |         labels_list: List[str] = []
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:212:22
+    |
+211 |         features_list: List[MetaControllerFeatures] = []
+212 |         labels_list: List[str] = []
+    |                      ^^^^
+213 |
+214 |         # Generate samples for each class
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:338:30
+    |
+337 |     def to_tensor_dataset(
+338 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+    |                              ^^^^
+339 |     ) -> Tuple[torch.Tensor, torch.Tensor]:
+340 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:338:73
+    |
+337 |     def to_tensor_dataset(
+338 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+    |                                                                         ^^^^
+339 |     ) -> Tuple[torch.Tensor, torch.Tensor]:
+340 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\data_generator.py:339:10
+    |
+337 |     def to_tensor_dataset(
+338 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+339 |     ) -> Tuple[torch.Tensor, torch.Tensor]:
+    |          ^^^^^
+340 |         """
+341 |         Convert features and labels to PyTorch tensors.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:395:30
+    |
+394 |     def to_text_dataset(
+395 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+    |                              ^^^^
+396 |     ) -> Tuple[List[str], List[int]]:
+397 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:395:73
+    |
+394 |     def to_text_dataset(
+395 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+    |                                                                         ^^^^
+396 |     ) -> Tuple[List[str], List[int]]:
+397 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\data_generator.py:396:10
+    |
+394 |     def to_text_dataset(
+395 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+396 |     ) -> Tuple[List[str], List[int]]:
+    |          ^^^^^
+397 |         """
+398 |         Convert features to text format and labels to indices.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:396:16
+    |
+394 |     def to_text_dataset(
+395 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+396 |     ) -> Tuple[List[str], List[int]]:
+    |                ^^^^
+397 |         """
+398 |         Convert features to text format and labels to indices.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:396:27
+    |
+394 |     def to_text_dataset(
+395 |         self, features_list: List[MetaControllerFeatures], labels_list: List[str]
+396 |     ) -> Tuple[List[str], List[int]]:
+    |                           ^^^^
+397 |         """
+398 |         Convert features to text format and labels to indices.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\data_generator.py:450:10
+    |
+448 |         train_ratio: float = 0.7,
+449 |         val_ratio: float = 0.15,
+450 |     ) -> Dict[str, Any]:
+    |          ^^^^
+451 |         """
+452 |         Split dataset into train, validation, and test sets.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:560:24
+    |
+558 |     def save_dataset(
+559 |         self,
+560 |         features_list: List[MetaControllerFeatures],
+    |                        ^^^^
+561 |         labels_list: List[str],
+562 |         path: str,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:561:22
+    |
+559 |         self,
+560 |         features_list: List[MetaControllerFeatures],
+561 |         labels_list: List[str],
+    |                      ^^^^
+562 |         path: str,
+563 |     ) -> None:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\data_generator.py:599:42
+    |
+597 |             json.dump(data, f, indent=2)
+598 |
+599 |     def load_dataset(self, path: str) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                          ^^^^^
+600 |         """
+601 |         Load dataset from a JSON file.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:599:48
+    |
+597 |             json.dump(data, f, indent=2)
+598 |
+599 |     def load_dataset(self, path: str) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                                ^^^^
+600 |         """
+601 |         Load dataset from a JSON file.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:599:78
+    |
+597 |             json.dump(data, f, indent=2)
+598 |
+599 |     def load_dataset(self, path: str) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    |                                                                              ^^^^
+600 |         """
+601 |         Load dataset from a JSON file.
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:625:24
+    |
+623 |             data = json.load(f)
+624 |
+625 |         features_list: List[MetaControllerFeatures] = []
+    |                        ^^^^
+626 |         labels_list: List[str] = []
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\data_generator.py:626:22
+    |
+625 |         features_list: List[MetaControllerFeatures] = []
+626 |         labels_list: List[str] = []
+    |                      ^^^^
+627 |
+628 |         for sample in data["samples"]:
+    |
+help: Replace with `list`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\training\experiment_tracker.py:17:1
+   |
+15 | from datetime import datetime
+16 | from pathlib import Path
+17 | from typing import Any, Dict, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |
+19 | logger = logging.getLogger(__name__)
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\training\experiment_tracker.py:17:1
+   |
+15 | from datetime import datetime
+16 | from pathlib import Path
+17 | from typing import Any, Dict, List, Optional, Union
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+18 |
+19 | logger = logging.getLogger(__name__)
+   |
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\training\experiment_tracker.py:28:11
+   |
+26 |     project_name: str
+27 |     experiment_name: str
+28 |     tags: List[str] = field(default_factory=list)
+   |           ^^^^
+29 |     description: str = ""
+30 |     save_artifacts: bool = True
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\training\experiment_tracker.py:45:21
+   |
+43 |     learning_rate: Optional[float] = None
+44 |     timestamp: float = field(default_factory=time.time)
+45 |     custom_metrics: Dict[str, float] = field(default_factory=dict)
+   |                     ^^^^
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+  --> src\training\experiment_tracker.py:72:31
+   |
+70 |         self._experiment = None
+71 |         self._experiment_id = None
+72 |         self._metrics_buffer: List[Dict[str, Any]] = []
+   |                               ^^^^
+73 |         self._initialized = False
+   |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+  --> src\training\experiment_tracker.py:72:36
+   |
+70 |         self._experiment = None
+71 |         self._experiment_id = None
+72 |         self._metrics_buffer: List[Dict[str, Any]] = []
+   |                                    ^^^^
+73 |         self._initialized = False
+   |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\experiment_tracker.py:102:24
+    |
+100 |         name: str,
+101 |         description: str = "",
+102 |         tags: Optional[List[str]] = None,
+    |                        ^^^^
+103 |         metadata: Optional[Dict[str, Any]] = None,
+104 |     ) -> str:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:103:28
+    |
+101 |         description: str = "",
+102 |         tags: Optional[List[str]] = None,
+103 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+104 |     ) -> str:
+105 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:142:43
+    |
+140 |             return self.init_experiment(name, description, tags, metadata)  # Fallback to offline
+141 |
+142 |     def log_hyperparameters(self, params: Dict[str, Any]):
+    |                                           ^^^^
+143 |         """
+144 |         Log hyperparameters for the experiment.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:232:17
+    |
+230 |         output: Any,
+231 |         expected: Any,
+232 |         scores: Dict[str, float],
+    |                 ^^^^
+233 |         metadata: Optional[Dict[str, Any]] = None,
+234 |     ):
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:233:28
+    |
+231 |         expected: Any,
+232 |         scores: Dict[str, float],
+233 |         metadata: Optional[Dict[str, Any]] = None,
+    |                            ^^^^
+234 |     ):
+235 |         """
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:294:30
+    |
+292 |             logger.error(f"Failed to log artifact: {e}")
+293 |
+294 |     def get_summary(self) -> Dict[str, Any]:
+    |                              ^^^^
+295 |         """
+296 |         Get experiment summary.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:398:26
+    |
+396 |         self,
+397 |         name: str,
+398 |         config: Optional[Dict[str, Any]] = None,
+    |                          ^^^^
+399 |         tags: Optional[List[str]] = None,
+400 |         notes: str = "",
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\experiment_tracker.py:399:24
+    |
+397 |         name: str,
+398 |         config: Optional[Dict[str, Any]] = None,
+399 |         tags: Optional[List[str]] = None,
+    |                        ^^^^
+400 |         notes: str = "",
+401 |     ):
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:435:28
+    |
+433 |             return None
+434 |
+435 |     def log(self, metrics: Dict[str, Any], step: Optional[int] = None):
+    |                            ^^^^
+436 |         """
+437 |         Log metrics to W&B.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:478:37
+    |
+476 |         self.log(log_data, step=metrics.step)
+477 |
+478 |     def update_config(self, config: Dict[str, Any]):
+    |                                     ^^^^
+479 |         """
+480 |         Update run configuration.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:579:26
+    |
+577 |         self,
+578 |         name: str,
+579 |         config: Optional[Dict[str, Any]] = None,
+    |                          ^^^^
+580 |         description: str = "",
+581 |         tags: Optional[List[str]] = None,
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\experiment_tracker.py:581:24
+    |
+579 |         config: Optional[Dict[str, Any]] = None,
+580 |         description: str = "",
+581 |         tags: Optional[List[str]] = None,
+    |                        ^^^^
+582 |     ):
+583 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\experiment_tracker.py:615:17
+    |
+613 |         output: Any,
+614 |         expected: Any,
+615 |         scores: Dict[str, float],
+    |                 ^^^^
+616 |     ):
+617 |         """
+    |
+help: Replace with `dict`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\training\train_bert_lora.py:15:1
+   |
+13 | import warnings
+14 | from pathlib import Path
+15 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |
+17 | import torch
+   |
+
+UP035 `typing.List` is deprecated, use `list` instead
+  --> src\training\train_bert_lora.py:15:1
+   |
+13 | import warnings
+14 | from pathlib import Path
+15 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |
+17 | import torch
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\training\train_bert_lora.py:15:1
+   |
+13 | import warnings
+14 | from pathlib import Path
+15 | from typing import Any, Dict, List, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+16 |
+17 | import torch
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\training\train_bert_lora.py:25:5
+   |
+24 |   try:
+25 | /     from transformers import (
+26 | |         AutoTokenizer,
+27 | |         Trainer,
+28 | |         TrainingArguments,
+29 | |         EvalPrediction,
+30 | |     )
+   | |_____^
+31 |
+32 |       _TRANSFORMERS_AVAILABLE = True
+   |
+help: Organize imports
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:203:16
+    |
+201 |     def prepare_dataset(
+202 |         self,
+203 |         texts: List[str],
+    |                ^^^^
+204 |         labels: List[int],
+205 |     ) -> Dataset:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:204:17
+    |
+202 |         self,
+203 |         texts: List[str],
+204 |         labels: List[int],
+    |                 ^^^^
+205 |     ) -> Dataset:
+206 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_bert_lora.py:239:41
+    |
+238 |         # Tokenize function
+239 |         def tokenize_function(examples: Dict[str, Any]) -> Dict[str, Any]:
+    |                                         ^^^^
+240 |             return self.tokenizer(
+241 |                 examples["text"],
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_bert_lora.py:239:60
+    |
+238 |         # Tokenize function
+239 |         def tokenize_function(examples: Dict[str, Any]) -> Dict[str, Any]:
+    |                                                            ^^^^
+240 |             return self.tokenizer(
+241 |                 examples["text"],
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_bert_lora.py:264:61
+    |
+262 |         return tokenized_dataset
+263 |
+264 |     def compute_metrics(self, eval_pred: EvalPrediction) -> Dict[str, float]:
+    |                                                             ^^^^
+265 |         """
+266 |         Compute evaluation metrics from predictions.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:296:22
+    |
+294 |     def train(
+295 |         self,
+296 |         train_texts: List[str],
+    |                      ^^^^
+297 |         train_labels: List[int],
+298 |         val_texts: List[str],
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:297:23
+    |
+295 |         self,
+296 |         train_texts: List[str],
+297 |         train_labels: List[int],
+    |                       ^^^^
+298 |         val_texts: List[str],
+299 |         val_labels: List[int],
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:298:20
+    |
+296 |         train_texts: List[str],
+297 |         train_labels: List[int],
+298 |         val_texts: List[str],
+    |                    ^^^^
+299 |         val_labels: List[int],
+300 |         output_dir: str,
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:299:21
+    |
+297 |         train_labels: List[int],
+298 |         val_texts: List[str],
+299 |         val_labels: List[int],
+    |                     ^^^^
+300 |         output_dir: str,
+301 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_bert_lora.py:301:10
+    |
+299 |         val_labels: List[int],
+300 |         output_dir: str,
+301 |     ) -> Dict[str, Any]:
+    |          ^^^^
+302 |         """
+303 |         Train the BERT LoRA model.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:404:21
+    |
+402 |     def evaluate(
+403 |         self,
+404 |         test_texts: List[str],
+    |                     ^^^^
+405 |         test_labels: List[int],
+406 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:405:22
+    |
+403 |         self,
+404 |         test_texts: List[str],
+405 |         test_labels: List[int],
+    |                      ^^^^
+406 |     ) -> Dict[str, Any]:
+407 |         """
+    |
+help: Replace with `list`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_bert_lora.py:406:10
+    |
+404 |         test_texts: List[str],
+405 |         test_labels: List[int],
+406 |     ) -> Dict[str, Any]:
+    |          ^^^^
+407 |         """
+408 |         Evaluate the model on a test set.
+    |
+help: Replace with `dict`
+
+F841 Local variable `test_dataset` is assigned to but never used
+   --> src\training\train_bert_lora.py:431:9
+    |
+430 |         # Prepare test dataset
+431 |         test_dataset = self.prepare_dataset(test_texts, test_labels)
+    |         ^^^^^^^^^^^^
+432 |
+433 |         # Set model to evaluation mode
+    |
+help: Remove assignment to unused variable `test_dataset`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:437:26
+    |
+436 |         # Collect predictions
+437 |         all_predictions: List[int] = []
+    |                          ^^^^
+438 |         all_probabilities: List[List[float]] = []
+439 |         total_loss = 0.0
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:438:28
+    |
+436 |         # Collect predictions
+437 |         all_predictions: List[int] = []
+438 |         all_probabilities: List[List[float]] = []
+    |                            ^^^^
+439 |         total_loss = 0.0
+    |
+help: Replace with `list`
+
+UP006 [*] Use `list` instead of `List` for type annotation
+   --> src\training\train_bert_lora.py:438:33
+    |
+436 |         # Collect predictions
+437 |         all_predictions: List[int] = []
+438 |         all_probabilities: List[List[float]] = []
+    |                                 ^^^^
+439 |         total_loss = 0.0
+    |
+help: Replace with `list`
+
+UP035 `typing.Dict` is deprecated, use `dict` instead
+  --> src\training\train_rnn.py:13:1
+   |
+11 | import logging
+12 | from pathlib import Path
+13 | from typing import Any, Dict, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | import torch
+   |
+
+UP035 `typing.Tuple` is deprecated, use `tuple` instead
+  --> src\training\train_rnn.py:13:1
+   |
+11 | import logging
+12 | from pathlib import Path
+13 | from typing import Any, Dict, Optional, Tuple
+   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+14 |
+15 | import torch
+   |
+
+I001 [*] Import block is un-sorted or un-formatted
+  --> src\training\train_rnn.py:28:5
+   |
+26 | # Braintrust integration (optional)
+27 | try:
+28 |     from src.observability.braintrust_tracker import create_training_tracker, BraintrustTracker
+   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+29 |
+30 |     BRAINTRUST_AVAILABLE = True
+   |
+help: Organize imports
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\train_rnn.py:291:51
+    |
+289 |         return average_loss
+290 |
+291 |     def validate(self, val_loader: DataLoader) -> Tuple[float, float]:
+    |                                                   ^^^^^
+292 |         """
+293 |         Evaluate the model on the validation set.
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\train_rnn.py:343:21
+    |
+341 |     def train(
+342 |         self,
+343 |         train_data: Tuple[torch.Tensor, torch.Tensor],
+    |                     ^^^^^
+344 |         val_data: Tuple[torch.Tensor, torch.Tensor],
+345 |         save_path: Optional[str] = None,
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `tuple` instead of `Tuple` for type annotation
+   --> src\training\train_rnn.py:344:19
+    |
+342 |         self,
+343 |         train_data: Tuple[torch.Tensor, torch.Tensor],
+344 |         val_data: Tuple[torch.Tensor, torch.Tensor],
+    |                   ^^^^^
+345 |         save_path: Optional[str] = None,
+346 |     ) -> Dict[str, Any]:
+    |
+help: Replace with `tuple`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_rnn.py:346:10
+    |
+344 |         val_data: Tuple[torch.Tensor, torch.Tensor],
+345 |         save_path: Optional[str] = None,
+346 |     ) -> Dict[str, Any]:
+    |          ^^^^
+347 |         """
+348 |         Main training loop with early stopping and model checkpointing.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_rnn.py:501:52
+    |
+499 |         return history
+500 |
+501 |     def evaluate(self, test_loader: DataLoader) -> Dict[str, Any]:
+    |                                                    ^^^^
+502 |         """
+503 |         Comprehensive evaluation on the test set.
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_rnn.py:572:28
+    |
+571 |         # Calculate per-class metrics
+572 |         per_class_metrics: Dict[str, Dict[str, float]] = {}
+    |                            ^^^^
+573 |
+574 |         for class_idx, agent_name in enumerate(self.AGENT_NAMES):
+    |
+help: Replace with `dict`
+
+UP006 [*] Use `dict` instead of `Dict` for type annotation
+   --> src\training\train_rnn.py:572:38
+    |
+571 |         # Calculate per-class metrics
+572 |         per_class_metrics: Dict[str, Dict[str, float]] = {}
+    |                                      ^^^^
+573 |
+574 |         for class_idx, agent_name in enumerate(self.AGENT_NAMES):
+    |
+help: Replace with `dict`
+
+Found 459 errors.
+[*] 399 fixable with the `--fix` option (4 hidden fixes can be enabled with the `--unsafe-fixes` option).

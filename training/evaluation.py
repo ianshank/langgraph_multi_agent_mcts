@@ -19,8 +19,7 @@ import numpy as np
 import yaml
 
 try:
-    import torch
-    import torch.nn as nn
+    import torch  # noqa: F401
 
     HAS_TORCH = True
 except ImportError:

@@ -18,11 +18,10 @@ import pytest
 # Import adapters (with fallback if not available)
 try:
     from src.adapters.llm.anthropic_client import AnthropicClient
-    from src.adapters.llm.base import LLMClientProtocol, LLMResponse
+    from src.adapters.llm.base import LLMResponse
     from src.adapters.llm.exceptions import (
         LLMConnectionError,
         LLMInvalidResponseError,
-        LLMRateLimitError,
         LLMTimeoutError,
     )
     from src.adapters.llm.lmstudio_client import LMStudioClient

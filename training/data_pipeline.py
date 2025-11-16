@@ -19,8 +19,7 @@ import yaml
 from torch.utils.data import DataLoader, Dataset
 
 try:
-    from datasets import Dataset as HFDataset
-    from datasets import load_dataset
+    from datasets import load_dataset  # noqa: F401
 
     HAS_DATASETS = True
 except ImportError:
