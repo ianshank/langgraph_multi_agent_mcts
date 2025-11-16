@@ -796,7 +796,7 @@ if __name__ == "__main__":
 
     # Create test
     test_id = ab_framework.create_test(
-        "model_v2_test", model_a="model_v1", model_b="model_v2", metric_fn=lambda inp, out: np.random.random()
+        "model_v2_test", model_a="model_v1", model_b="model_v2", metric_fn=lambda _inp, _out: np.random.random()
     )
 
     # Simulate test traffic

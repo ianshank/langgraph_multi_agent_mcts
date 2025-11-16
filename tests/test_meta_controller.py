@@ -841,8 +841,8 @@ class TestEdgeCases:
 # RNN META-CONTROLLER TESTS
 # ============================================================================
 
-from src.agents.meta_controller.bert_controller import BERTMetaController
-from src.agents.meta_controller.rnn_controller import (
+from src.agents.meta_controller.bert_controller import BERTMetaController  # noqa: E402
+from src.agents.meta_controller.rnn_controller import (  # noqa: E402
     RNNMetaController,
     RNNMetaControllerModel,
 )

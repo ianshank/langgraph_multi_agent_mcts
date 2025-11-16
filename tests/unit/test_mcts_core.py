@@ -522,26 +522,32 @@ class TestMCTSValidation:
     @pytest.mark.parametrize("exploration_weight", [0.0, 0.5, 1.0, 1.414, 2.0, 3.0])
     def test_valid_exploration_weights(self, exploration_weight, mock_adapter, mock_logger):
         """Valid exploration weights should work."""
-        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
-            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                framework = LangGraphMultiAgentFramework(
-                    model_adapter=mock_adapter,
-                    logger=mock_logger,
-                    mcts_exploration_weight=exploration_weight,
-                )
-                assert framework.mcts_exploration_weight == exploration_weight
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            framework = LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+                mcts_exploration_weight=exploration_weight,
+            )
+            assert framework.mcts_exploration_weight == exploration_weight
 
     @pytest.mark.parametrize("iterations", [1, 10, 100, 1000])
     def test_valid_iteration_counts(self, iterations, mock_adapter, mock_logger):
         """Valid iteration counts should work."""
-        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
-            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                framework = LangGraphMultiAgentFramework(
-                    model_adapter=mock_adapter,
-                    logger=mock_logger,
-                    mcts_iterations=iterations,
-                )
-                assert framework.mcts_iterations == iterations
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            framework = LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+                mcts_iterations=iterations,
+            )
+            assert framework.mcts_iterations == iterations
 
 
 # Performance benchmarks

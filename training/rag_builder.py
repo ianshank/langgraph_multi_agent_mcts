@@ -400,7 +400,7 @@ class VectorIndexBuilder:
                 pass
 
         stats = IndexStats(
-            total_documents=len(set(c["doc_id"] for c in self.chunk_store)),
+            total_documents=len({c["doc_id"] for c in self.chunk_store}),
             total_chunks=total_chunks,
             index_size_mb=index_size_mb,
             avg_chunk_length=np.mean(chunk_lengths) if chunk_lengths else 0,
@@ -720,9 +720,9 @@ class RAGIndexManager:
 
             logger.info(f"Building index for domain: {domain_name}")
 
-            def filter_documents():
+            def filter_documents(cats=categories):  # Bind loop variable
                 for chunk in processor.stream_documents():
-                    if categories == ["all"] or chunk.metadata.get("category") in categories:
+                    if cats == ["all"] or chunk.metadata.get("category") in cats:
                         yield chunk
 
             index_config = self.rag_config.copy()

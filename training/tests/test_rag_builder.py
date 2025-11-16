@@ -30,11 +30,11 @@ class DocumentChunk:
 
 
 # Patch data_pipeline to use our local DocumentChunk
-import training.data_pipeline
+import training.data_pipeline  # noqa: E402
 
 training.data_pipeline.DocumentChunk = DocumentChunk
 
-from training.rag_builder import (
+from training.rag_builder import (  # noqa: E402
     ChunkingStrategy,
     IndexStats,
     RAGIndexManager,

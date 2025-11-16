@@ -229,7 +229,7 @@ class TestRetryLogic:
 
         client = OpenAIClient(api_key="invalid-key", http_client=mock_httpx_client, max_retries=3)
 
-        with pytest.raises(Exception):  # Auth error
+        with pytest.raises(LLMInvalidResponseError):  # Auth error
             await client.generate("prompt")
 
         # Should not retry auth errors
@@ -362,7 +362,7 @@ class TestErrorHandling:
 
         client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=3)
 
-        with pytest.raises(Exception):
+        with pytest.raises(LLMInvalidResponseError):
             await client.generate("invalid prompt")
 
         # Should not retry client errors

@@ -112,12 +112,11 @@ class DABStepLoader:
                 streaming=self.streaming,
             )
 
-            if self.max_samples and not self.streaming:
+            if self.max_samples and not self.streaming and "train" in self._dataset:
                 # Limit samples if specified
-                if "train" in self._dataset:
-                    self._dataset["train"] = self._dataset["train"].select(
-                        range(min(self.max_samples, len(self._dataset["train"])))
-                    )
+                self._dataset["train"] = self._dataset["train"].select(
+                    range(min(self.max_samples, len(self._dataset["train"])))
+                )
 
             logger.info("Loaded DABStep dataset successfully")
 
@@ -331,8 +330,7 @@ class DABStepLoader:
 
         # Yield in curriculum order
         for difficulty_group in [easy, medium, hard]:
-            for sample in difficulty_group:
-                yield sample
+            yield from difficulty_group
 
 
 class PRIMUSProcessor:
@@ -862,11 +860,9 @@ if __name__ == "__main__":
     processor = PRIMUSProcessor(primus_config)
 
     # Stream first 5 documents
-    count = 0
-    for chunk in processor.stream_documents():
+    for count, chunk in enumerate(processor.stream_documents()):
         logger.info(f"Document chunk {chunk.chunk_id}: {len(chunk.text)} chars")
-        count += 1
-        if count >= 5:
+        if count >= 4:  # 0-indexed, so 4 means 5 documents
             break
 
     logger.info("Data Pipeline Module test complete")

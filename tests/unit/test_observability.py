@@ -66,22 +66,24 @@ from src.observability.tracing import (
 @pytest.fixture
 def mock_process():
     """Mock psutil.Process for all tests."""
-    with patch("src.observability.metrics.PROMETHEUS_AVAILABLE", False):
-        with patch("src.observability.metrics.psutil.Process") as mock:
-            process_instance = MagicMock()
-            mock.return_value = process_instance
+    with (
+        patch("src.observability.metrics.PROMETHEUS_AVAILABLE", False),
+        patch("src.observability.metrics.psutil.Process") as mock,
+    ):
+        process_instance = MagicMock()
+        mock.return_value = process_instance
 
-            # Set up default memory info
-            memory_info = MagicMock()
-            memory_info.rss = 100 * 1024 * 1024  # 100 MB
-            memory_info.vms = 200 * 1024 * 1024  # 200 MB
-            process_instance.memory_info.return_value = memory_info
-            process_instance.cpu_percent.return_value = 25.5
-            process_instance.num_threads.return_value = 8
-            process_instance.open_files.return_value = [1, 2, 3]
-            process_instance.memory_percent.return_value = 5.0
+        # Set up default memory info
+        memory_info = MagicMock()
+        memory_info.rss = 100 * 1024 * 1024  # 100 MB
+        memory_info.vms = 200 * 1024 * 1024  # 200 MB
+        process_instance.memory_info.return_value = memory_info
+        process_instance.cpu_percent.return_value = 25.5
+        process_instance.num_threads.return_value = 8
+        process_instance.open_files.return_value = [1, 2, 3]
+        process_instance.memory_percent.return_value = 5.0
 
-            yield process_instance
+        yield process_instance
 
 
 @pytest.fixture
@@ -1028,14 +1030,16 @@ class TestTracingManager:
 
     def test_initialize_with_defaults(self, reset_tracing_manager):
         """Test initialization with default values."""
-        with patch("src.observability.tracing.trace.set_tracer_provider"):
-            with patch("src.observability.tracing.OTLPSpanExporter"):
-                with patch("src.observability.tracing.BatchSpanProcessor"):
-                    with patch("src.observability.tracing.HTTPXClientInstrumentor"):
-                        manager = TracingManager.get_instance()
-                        manager.initialize()
+        with (
+            patch("src.observability.tracing.trace.set_tracer_provider"),
+            patch("src.observability.tracing.OTLPSpanExporter"),
+            patch("src.observability.tracing.BatchSpanProcessor"),
+            patch("src.observability.tracing.HTTPXClientInstrumentor"),
+        ):
+            manager = TracingManager.get_instance()
+            manager.initialize()
 
-                        assert manager._initialized is True
+            assert manager._initialized is True
 
     def test_initialize_with_console_exporter(self, reset_tracing_manager):
         """Test initialization with console exporter."""
@@ -1050,12 +1054,14 @@ class TestTracingManager:
 
     def test_initialize_with_none_exporter(self, reset_tracing_manager):
         """Test initialization with no exporter."""
-        with patch("src.observability.tracing.trace.set_tracer_provider"):
-            with patch("src.observability.tracing.HTTPXClientInstrumentor"):
-                manager = TracingManager.get_instance()
-                manager.initialize(exporter_type="none")
+        with (
+            patch("src.observability.tracing.trace.set_tracer_provider"),
+            patch("src.observability.tracing.HTTPXClientInstrumentor"),
+        ):
+            manager = TracingManager.get_instance()
+            manager.initialize(exporter_type="none")
 
-                assert manager._initialized is True
+            assert manager._initialized is True
 
     def test_initialize_with_invalid_exporter_raises(self, reset_tracing_manager):
         """Test initialization with invalid exporter type raises ValueError."""
@@ -1094,33 +1100,37 @@ class TestTracingManager:
 
     def test_shutdown(self, reset_tracing_manager):
         """Test shutdown cleans up resources."""
-        with patch("src.observability.tracing.trace.set_tracer_provider"):
-            with patch("src.observability.tracing.OTLPSpanExporter"):
-                with patch("src.observability.tracing.BatchSpanProcessor"):
-                    with patch("src.observability.tracing.HTTPXClientInstrumentor"):
-                        manager = TracingManager.get_instance()
-                        manager.initialize()
+        with (
+            patch("src.observability.tracing.trace.set_tracer_provider"),
+            patch("src.observability.tracing.OTLPSpanExporter"),
+            patch("src.observability.tracing.BatchSpanProcessor"),
+            patch("src.observability.tracing.HTTPXClientInstrumentor"),
+        ):
+            manager = TracingManager.get_instance()
+            manager.initialize()
 
-                        mock_provider = MagicMock()
-                        manager._provider = mock_provider
+            mock_provider = MagicMock()
+            manager._provider = mock_provider
 
-                        manager.shutdown()
+            manager.shutdown()
 
-                        mock_provider.shutdown.assert_called_once()
-                        assert manager._initialized is False
+            mock_provider.shutdown.assert_called_once()
+            assert manager._initialized is False
 
     def test_get_tracer_module_function(self, reset_tracing_manager):
         """Test get_tracer module-level function."""
         # Test that get_tracer returns a tracer object
-        with patch("src.observability.tracing.trace.set_tracer_provider"):
-            with patch("src.observability.tracing.OTLPSpanExporter"):
-                with patch("src.observability.tracing.BatchSpanProcessor"):
-                    with patch("src.observability.tracing.HTTPXClientInstrumentor"):
-                        result = get_tracer("test_tracer")
-                        # Verify it's a tracer-like object
-                        from opentelemetry.trace import Tracer
+        with (
+            patch("src.observability.tracing.trace.set_tracer_provider"),
+            patch("src.observability.tracing.OTLPSpanExporter"),
+            patch("src.observability.tracing.BatchSpanProcessor"),
+            patch("src.observability.tracing.HTTPXClientInstrumentor"),
+        ):
+            result = get_tracer("test_tracer")
+            # Verify it's a tracer-like object
+            from opentelemetry.trace import Tracer
 
-                        assert hasattr(result, "start_span") or isinstance(result, Tracer)
+            assert hasattr(result, "start_span") or isinstance(result, Tracer)
 
 
 # ============================================================================
@@ -1727,12 +1737,14 @@ class TestSetupLogging:
 
     def test_setup_logging_uses_env_var(self, reset_correlation_id):
         """Test that setup_logging uses LOG_LEVEL environment variable."""
-        with patch.dict("os.environ", {"LOG_LEVEL": "WARNING"}):
-            with patch("logging.config.dictConfig") as mock_config:
-                setup_logging()
+        with (
+            patch.dict("os.environ", {"LOG_LEVEL": "WARNING"}),
+            patch("logging.config.dictConfig") as mock_config,
+        ):
+            setup_logging()
 
-                config = mock_config.call_args[0][0]
-                assert config["loggers"][""]["level"] == "WARNING"
+            config = mock_config.call_args[0][0]
+            assert config["loggers"][""]["level"] == "WARNING"
 
     def test_setup_logging_with_file_handler(self, reset_correlation_id):
         """Test setup with file handler."""

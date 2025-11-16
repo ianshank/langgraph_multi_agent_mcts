@@ -468,8 +468,8 @@ class MultiAgentEvaluator:
         specialization = {}
 
         # Group by category and difficulty
-        categories = set(r.metadata.get("category") for r in results)
-        set(r.metadata.get("difficulty") for r in results)
+        categories = {r.metadata.get("category") for r in results}
+        _difficulties = {r.metadata.get("difficulty") for r in results}  # noqa: F841
 
         for category in categories:
             specialization[category] = {"best_performing_tasks": [], "avg_quality": 0.0}

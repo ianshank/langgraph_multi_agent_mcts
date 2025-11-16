@@ -30,9 +30,9 @@ mock_logger_module = MagicMock()
 mock_logger_module.get_logger = Mock(return_value=Mock())
 sys.modules["src.observability.logging"] = mock_logger_module
 
-from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction
-from src.storage.pinecone_store import PineconeVectorStore
-from src.storage.s3_client import S3Config, S3StorageClient
+from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction  # noqa: E402
+from src.storage.pinecone_store import PineconeVectorStore  # noqa: E402
+from src.storage.s3_client import S3Config, S3StorageClient  # noqa: E402
 
 
 class TestS3Config:
@@ -373,14 +373,16 @@ class TestPineconeVectorStore:
 
     def test_initialization_without_api_key(self):
         """Test initialization when API key is not provided."""
-        with patch.dict("os.environ", {}, clear=True):
-            with patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True):
-                store = PineconeVectorStore(auto_init=False)
+        with (
+            patch.dict("os.environ", {}, clear=True),
+            patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True),
+        ):
+            store = PineconeVectorStore(auto_init=False)
 
-                assert store._api_key is None
-                assert store._host is None
-                assert store.namespace == "meta_controller"
-                assert store._is_initialized is False
+            assert store._api_key is None
+            assert store._host is None
+            assert store.namespace == "meta_controller"
+            assert store._is_initialized is False
 
     def test_initialization_with_custom_namespace(self):
         """Test initialization with custom namespace."""
