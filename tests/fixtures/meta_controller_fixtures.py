@@ -9,12 +9,14 @@ Provides:
 """
 
 from __future__ import annotations
-from typing import Dict, List, Tuple, Any, Optional
+
 from dataclasses import dataclass
+from typing import Any
+
 import numpy as np
 
 # Type alias for AgentState structure from src.framework.graph
-AgentStateDict = Dict[str, Any]
+AgentStateDict = dict[str, Any]
 
 
 @dataclass
@@ -68,7 +70,7 @@ class MetaControllerFeatures:
         )
 
     @classmethod
-    def from_vector(cls, vector: np.ndarray) -> "MetaControllerFeatures":
+    def from_vector(cls, vector: np.ndarray) -> MetaControllerFeatures:
         """Create features from numpy vector."""
         return cls(
             hrm_confidence=float(vector[0]),
@@ -213,7 +215,7 @@ class MetaControllerTestFixture:
             "metadata": {},
         }
 
-    def create_training_batch(self, batch_size: int = 32) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    def create_training_batch(self, batch_size: int = 32) -> tuple[list[MetaControllerFeatures], list[str]]:
         """
         Create a training batch with features and corresponding labels.
 
@@ -388,7 +390,7 @@ class MetaControllerTestFixture:
 # ============================================================================
 
 
-def create_high_hrm_confidence_scenario() -> Dict[str, Any]:
+def create_high_hrm_confidence_scenario() -> dict[str, Any]:
     """
     Create scenario where HRM should be chosen.
 
@@ -420,7 +422,7 @@ def create_high_hrm_confidence_scenario() -> Dict[str, Any]:
     }
 
 
-def create_high_trm_confidence_scenario() -> Dict[str, Any]:
+def create_high_trm_confidence_scenario() -> dict[str, Any]:
     """
     Create scenario where TRM should be chosen.
 
@@ -452,7 +454,7 @@ def create_high_trm_confidence_scenario() -> Dict[str, Any]:
     }
 
 
-def create_mcts_favorable_scenario() -> Dict[str, Any]:
+def create_mcts_favorable_scenario() -> dict[str, Any]:
     """
     Create scenario where MCTS should be chosen.
 
@@ -484,7 +486,7 @@ def create_mcts_favorable_scenario() -> Dict[str, Any]:
     }
 
 
-def create_balanced_scenario() -> Dict[str, Any]:
+def create_balanced_scenario() -> dict[str, Any]:
     """
     Create balanced/ambiguous scenario.
 
@@ -540,7 +542,7 @@ DETERMINISTIC_TEST_SEEDS = [42, 123, 456, 789, 1024]
 """Standard seeds for determinism testing."""
 
 
-def get_all_test_scenarios() -> List[Dict[str, Any]]:
+def get_all_test_scenarios() -> list[dict[str, Any]]:
     """
     Get all predefined test scenarios.
 
@@ -550,7 +552,7 @@ def get_all_test_scenarios() -> List[Dict[str, Any]]:
     return list(TEST_SCENARIOS.values())
 
 
-def validate_scenario_predictions() -> Dict[str, bool]:
+def validate_scenario_predictions() -> dict[str, bool]:
     """
     Validate that fixture predictions match expected outcomes.
 
@@ -623,7 +625,6 @@ def features_to_agent_state(
         "consensus_score": features.consensus_score,
         "iteration": features.iteration_count,
         "max_iterations": 3,
-        "agent_outputs": [],
     }
 
 
