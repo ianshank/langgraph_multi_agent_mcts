@@ -17,8 +17,8 @@ import operator
 from langgraph.graph import StateGraph, END
 from langgraph.checkpoint.memory import MemorySaver
 from langchain_core.messages import BaseMessage
-from langchain.vectorstores import Chroma, FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma, FAISS
+from langchain_openai import OpenAIEmbeddings
 import asyncio
 import math
 import random

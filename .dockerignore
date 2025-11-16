@@ -1,0 +1,115 @@
+# Git
+.git
+.gitignore
+.github
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+.mypy_cache/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Local development
+.pre-commit-config.yaml
+.secrets.baseline
+*.log
+logs/
+output/
+wandb/
+*.history.json
+
+# Models (too large for container - mount as volume)
+models/
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+
+# Data
+data/
+*.db
+*.sqlite
+*.csv
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+.DS_Store
+Thumbs.db
+
+# Docker
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# CI/CD
+.github/
+.circleci/
+.travis.yml
+
+# Scripts not needed in container
+scripts/export_architecture_diagrams.py
+verify_*.py
+test_api_integrations.py
+
+# Secrets (never include in image!)
+.env
+.env.*
+*.pem
+*.key
+*.crt
+credentials.json
+secrets.json

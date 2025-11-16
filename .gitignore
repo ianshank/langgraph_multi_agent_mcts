@@ -175,3 +175,31 @@ logs/
 
 # BERT LoRA checkpoints (keep only final model)
 models/bert_lora/checkpoint-*/
+
+# Weights & Biases
+wandb/
+
+# Output files (reports, exports, etc.)
+output/
+
+# Service account credentials
+service_account.json
+google_credentials.json
+
+# Model artifacts (large files)
+*.pt
+*.pth
+*.h5
+*.onnx
+rnn_meta_controller.pt
+rnn_meta_controller.history.json
+
+# Docker volumes
+docker/volumes/
+
+# Cache directories
+.cache/
+*.cache
+
+# Jupyter temporary files
+.ipynb_checkpoints/

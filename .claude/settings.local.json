@@ -5,7 +5,14 @@
       "Bash(find:*)",
       "Bash(python -m py_compile:*)",
       "Bash(python -m pytest:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(tree:*)",
+      "Bash(git checkout:*)",
+      "Bash(python3 -c \"import yaml; yaml.safe_load(open(''c:/Users/iansh/OneDrive/Documents/GitHub/langgraph_multi_agent_mcts/.github/workflows/ci.yml''))\")",
+      "Bash(pip show:*)",
+      "Bash(if not exist \"c:\\Users\\iansh\\OneDrive\\Documents\\GitHub\\langgraph_multi_agent_mcts\\src\\training\" mkdir \"c:\\Users\\iansh\\OneDrive\\Documents\\GitHub\\langgraph_multi_agent_mcts\\src\\training\")",
+      "Bash(huggingface-cli whoami:*)",
+      "Bash(git add:*)"
     ],
     "deny": [],
     "ask": []

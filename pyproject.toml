@@ -45,6 +45,9 @@ dev = [
     "pytest-asyncio>=0.21.0",
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.11.0",
+    "pytest-timeout>=2.1.0",
+    "pytest-xdist>=3.3.0",
+    "hypothesis>=6.88.0",
     "mypy>=1.7.0",
     "types-psutil>=5.9.0",
     "types-requests>=2.31.0",
@@ -146,10 +149,18 @@ python_classes = ["Test*"]
 python_functions = ["test_*"]
 asyncio_mode = "auto"
 addopts = "-v --tb=short"
+timeout = 300  # 5 minute timeout for long-running tests
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
     "unit: marks tests as unit tests",
+    "e2e: End-to-end user journey tests",
+    "api: API endpoint tests",
+    "training: Training pipeline tests",
+    "dataset: Dataset integration tests",
+    "performance: Performance and load tests",
+    "security: Security validation tests",
+    "chaos: Chaos engineering tests for system resilience",
 ]
 
 [tool.coverage.run]
