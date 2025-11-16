@@ -14,10 +14,9 @@ Expected outcomes:
 - Win-probability estimates for decisions
 """
 
-import pytest
 import time
-from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
+
+import pytest
 
 
 @pytest.fixture
@@ -79,7 +78,7 @@ class TestMCTSInitialization:
     """Test MCTS tree initialization."""
 
     @pytest.mark.e2e
-    def test_tree_root_initialization(self, tactical_scenario, mcts_config):
+    def test_tree_root_initialization(self, tactical_scenario, mcts_config):  # noqa: ARG002
         """MCTS tree should initialize with proper root node."""
         root_node = {
             "state": tactical_scenario["initial_state"],
@@ -262,7 +261,7 @@ class TestMCTSSimulation:
         actions_taken = []
         max_steps = 10
 
-        for step in range(max_steps):
+        for _step in range(max_steps):
             # Random action selection
             action = random.choice(tactical_scenario["possible_actions"])
             actions_taken.append(action)
@@ -311,7 +310,7 @@ class TestMCTSSimulation:
         }
 
         # Verify scoring range
-        for outcome, data in outcomes.items():
+        for _outcome, data in outcomes.items():
             assert 0.0 <= data["score"] <= 1.0
 
         # Higher score should mean better outcome
@@ -454,12 +453,12 @@ class TestMCTSPerformance:
         random.seed(mcts_config["seed"])
 
         # Simulate 100 iterations (simplified)
-        for iteration in range(mcts_config["iterations"]):
+        for _iteration in range(mcts_config["iterations"]):
             # Selection (simplified)
-            selected_action = random.choice(tactical_scenario["possible_actions"])
+            _selected_action = random.choice(tactical_scenario["possible_actions"])
 
             # Simulation (simplified)
-            simulation_result = random.random()
+            _simulation_result = random.random()
 
             # Backpropagation (simplified)
             pass  # Would update tree
@@ -479,9 +478,9 @@ class TestMCTSPerformance:
         random.seed(42)
         iterations = 200
 
-        for iteration in range(iterations):
-            selected_action = random.choice(tactical_scenario["possible_actions"])
-            simulation_result = random.random()
+        for _iteration in range(iterations):
+            _selected_action = random.choice(tactical_scenario["possible_actions"])
+            _simulation_result = random.random()
             # Simplified simulation
 
         elapsed_time = time.time() - start_time
@@ -530,7 +529,7 @@ class TestTacticalDecisionQuality:
             win_probs[action] = stats["wins"] / stats["visits"]
 
         # Verify probabilities are valid
-        for action, prob in win_probs.items():
+        for _action, prob in win_probs.items():
             assert 0.0 <= prob <= 1.0
 
         # Best action should have highest win probability
@@ -583,7 +582,7 @@ class TestCybersecurityMCTS:
     """Test MCTS for cybersecurity decision scenarios."""
 
     @pytest.mark.e2e
-    def test_incident_response_simulation(self, cybersecurity_scenario):
+    def test_incident_response_simulation(self, cybersecurity_scenario):  # noqa: ARG002
         """MCTS should simulate incident response options."""
         # Simulate different response strategies
         strategies = {
@@ -602,7 +601,7 @@ class TestCybersecurityMCTS:
         }
 
         # Each strategy should have defined outcomes
-        for strategy_name, strategy in strategies.items():
+        for _strategy_name, strategy in strategies.items():
             assert len(strategy["actions"]) >= 3
             assert "threat_contained" in strategy["expected_outcome"]
             assert "evidence_preserved" in strategy["expected_outcome"]
