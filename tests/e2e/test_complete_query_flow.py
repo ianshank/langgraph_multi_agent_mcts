@@ -14,15 +14,11 @@ Expected outcomes:
 - Uncertainty quantification (0-1 scale)
 """
 
-import pytest
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock, patch
 
-from tests.mocks.mock_external_services import (
-    create_mock_llm,
-    create_mock_pinecone,
-)
+import pytest
+
+from tests.mocks.mock_external_services import create_mock_llm
 
 
 @pytest.fixture
@@ -92,8 +88,9 @@ class TestQueryValidation:
     @pytest.mark.e2e
     def test_empty_query_rejected(self):
         """Empty query should be rejected."""
-        from src.models.validation import QueryInput
         import pydantic
+
+        from src.models.validation import QueryInput
 
         with pytest.raises(pydantic.ValidationError):
             QueryInput(query="", use_rag=True, use_mcts=False)
@@ -101,8 +98,9 @@ class TestQueryValidation:
     @pytest.mark.e2e
     def test_oversized_query_rejected(self):
         """Query exceeding max length should be rejected."""
-        from src.models.validation import QueryInput
         import pydantic
+
+        from src.models.validation import QueryInput
 
         oversized_query = "x" * 15000  # Exceeds 10000 char limit
 
@@ -142,7 +140,7 @@ class TestMultiAgentProcessing:
         hrm_response = await mock_llm_client.generate(f"HRM Analysis: {tactical_query['query']}")
         trm_response = await mock_llm_client.generate(f"TRM Refinement: {tactical_query['query']}")
 
-        elapsed_time = (datetime.now() - start_time).total_seconds()
+        _elapsed_time = (datetime.now() - start_time).total_seconds()
 
         assert hrm_response.content is not None
         assert trm_response.content is not None
@@ -165,7 +163,7 @@ class TestMultiAgentProcessing:
         assert 0.0 <= confidence <= 1.0
         assert confidence == 0.85  # From mock response
 
-    def _extract_confidence(self, response_text: str) -> Optional[float]:
+    def _extract_confidence(self, response_text: str) -> float | None:
         """Extract confidence score from response text."""
         import re
 
@@ -291,8 +289,8 @@ class TestCompleteFlow:
         assert query_input.query is not None
 
         # Step 2: Process through agents
-        hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
-        trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
+        _hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
+        _trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
 
         # Step 3: Calculate consensus
         hrm_conf = 0.85
