@@ -18,18 +18,21 @@ import yaml
 
 try:
     from pinecone import Pinecone, ServerlessSpec
+
     HAS_PINECONE = True
 except ImportError:
     HAS_PINECONE = False
 
 try:
     from sentence_transformers import SentenceTransformer
+
     HAS_SENTENCE_TRANSFORMERS = True
 except ImportError:
     HAS_SENTENCE_TRANSFORMERS = False
 
 try:
     from rank_bm25 import BM25Okapi
+
     HAS_BM25 = True
 except ImportError:
     HAS_BM25 = False
@@ -42,6 +45,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SearchResult:
     """Result from vector search."""
+
     doc_id: str
     chunk_id: int
     text: str
@@ -52,6 +56,7 @@ class SearchResult:
 @dataclass
 class IndexStats:
     """Statistics about the vector index."""
+
     total_documents: int
     total_chunks: int
     index_size_mb: float
@@ -74,8 +79,7 @@ class ChunkingStrategy:
         self.strategy = config.get("chunk_strategy", "semantic")
 
         logger.info(
-            f"ChunkingStrategy: size={self.chunk_size}, "
-            f"overlap={self.chunk_overlap}, strategy={self.strategy}"
+            f"ChunkingStrategy: size={self.chunk_size}, " f"overlap={self.chunk_overlap}, strategy={self.strategy}"
         )
 
     def chunk_document(self, text: str, doc_id: str = "") -> List[DocumentChunk]:
@@ -107,12 +111,14 @@ class ChunkingStrategy:
             chunk_text = text[start:end].strip()
 
             if chunk_text:
-                chunks.append(DocumentChunk(
-                    doc_id=doc_id,
-                    chunk_id=chunk_id,
-                    text=chunk_text,
-                    metadata={"strategy": "fixed", "start": start, "end": end}
-                ))
+                chunks.append(
+                    DocumentChunk(
+                        doc_id=doc_id,
+                        chunk_id=chunk_id,
+                        text=chunk_text,
+                        metadata={"strategy": "fixed", "start": start, "end": end},
+                    )
+                )
                 chunk_id += 1
 
             start = end - self.chunk_overlap
@@ -134,12 +140,14 @@ class ChunkingStrategy:
 
             if current_length + sentence_len > self.chunk_size and current_chunk:
                 chunk_text = " ".join(current_chunk)
-                chunks.append(DocumentChunk(
-                    doc_id=doc_id,
-                    chunk_id=chunk_id,
-                    text=chunk_text,
-                    metadata={"strategy": "semantic", "num_sentences": len(current_chunk)}
-                ))
+                chunks.append(
+                    DocumentChunk(
+                        doc_id=doc_id,
+                        chunk_id=chunk_id,
+                        text=chunk_text,
+                        metadata={"strategy": "semantic", "num_sentences": len(current_chunk)},
+                    )
+                )
                 chunk_id += 1
 
                 overlap_sentences = current_chunk[-2:] if len(current_chunk) > 2 else current_chunk[-1:]
@@ -151,12 +159,14 @@ class ChunkingStrategy:
 
         if current_chunk:
             chunk_text = " ".join(current_chunk)
-            chunks.append(DocumentChunk(
-                doc_id=doc_id,
-                chunk_id=chunk_id,
-                text=chunk_text,
-                metadata={"strategy": "semantic", "num_sentences": len(current_chunk)}
-            ))
+            chunks.append(
+                DocumentChunk(
+                    doc_id=doc_id,
+                    chunk_id=chunk_id,
+                    text=chunk_text,
+                    metadata={"strategy": "semantic", "num_sentences": len(current_chunk)},
+                )
+            )
 
         return chunks
 
@@ -166,36 +176,26 @@ class ChunkingStrategy:
         return self._recursive_split(text, separators, doc_id, 0, [])
 
     def _recursive_split(
-        self,
-        text: str,
-        separators: List[str],
-        doc_id: str,
-        chunk_id: int,
-        results: List[DocumentChunk]
+        self, text: str, separators: List[str], doc_id: str, chunk_id: int, results: List[DocumentChunk]
     ) -> List[DocumentChunk]:
         """Recursively split text with separators."""
         if len(text) <= self.chunk_size:
-            results.append(DocumentChunk(
-                doc_id=doc_id,
-                chunk_id=chunk_id,
-                text=text.strip(),
-                metadata={"strategy": "recursive"}
-            ))
+            results.append(
+                DocumentChunk(doc_id=doc_id, chunk_id=chunk_id, text=text.strip(), metadata={"strategy": "recursive"})
+            )
             return results
 
         if not separators:
-            results.append(DocumentChunk(
-                doc_id=doc_id,
-                chunk_id=chunk_id,
-                text=text[:self.chunk_size].strip(),
-                metadata={"strategy": "recursive", "forced": True}
-            ))
+            results.append(
+                DocumentChunk(
+                    doc_id=doc_id,
+                    chunk_id=chunk_id,
+                    text=text[: self.chunk_size].strip(),
+                    metadata={"strategy": "recursive", "forced": True},
+                )
+            )
             return self._recursive_split(
-                text[self.chunk_size - self.chunk_overlap:],
-                ["\n\n", "\n", ". ", " "],
-                doc_id,
-                chunk_id + 1,
-                results
+                text[self.chunk_size - self.chunk_overlap :], ["\n\n", "\n", ". ", " "], doc_id, chunk_id + 1, results
             )
 
         separator = separators[0]
@@ -207,31 +207,36 @@ class ChunkingStrategy:
                 current_chunk += part + separator
             else:
                 if current_chunk:
-                    results.append(DocumentChunk(
-                        doc_id=doc_id,
-                        chunk_id=len(results),
-                        text=current_chunk.strip(),
-                        metadata={"strategy": "recursive", "separator": separator}
-                    ))
+                    results.append(
+                        DocumentChunk(
+                            doc_id=doc_id,
+                            chunk_id=len(results),
+                            text=current_chunk.strip(),
+                            metadata={"strategy": "recursive", "separator": separator},
+                        )
+                    )
                 if len(part) > self.chunk_size:
                     self._recursive_split(part, separators[1:], doc_id, len(results), results)
                 else:
                     current_chunk = part + separator
 
         if current_chunk.strip():
-            results.append(DocumentChunk(
-                doc_id=doc_id,
-                chunk_id=len(results),
-                text=current_chunk.strip(),
-                metadata={"strategy": "recursive", "separator": separator}
-            ))
+            results.append(
+                DocumentChunk(
+                    doc_id=doc_id,
+                    chunk_id=len(results),
+                    text=current_chunk.strip(),
+                    metadata={"strategy": "recursive", "separator": separator},
+                )
+            )
 
         return results
 
     def _split_into_sentences(self, text: str) -> List[str]:
         """Split text into sentences."""
         import re
-        sentences = re.split(r'(?<=[.!?])\s+', text)
+
+        sentences = re.split(r"(?<=[.!?])\s+", text)
         return [s.strip() for s in sentences if s.strip()]
 
 
@@ -295,7 +300,7 @@ class VectorIndexBuilder:
                     name=self.index_name,
                     dimension=self.embedding_dim,
                     metric="cosine",
-                    spec=ServerlessSpec(cloud=self.cloud, region=self.environment)
+                    spec=ServerlessSpec(cloud=self.cloud, region=self.environment),
                 )
                 logger.info(f"Created Pinecone index: {self.index_name}")
             else:
@@ -349,18 +354,20 @@ class VectorIndexBuilder:
                 "word_count": len(chunk.text.split()),
                 "has_mitre_reference": "mitre" in chunk.text.lower() or "att&ck" in chunk.text.lower(),
                 "has_cve_reference": "cve-" in chunk.text.lower(),
-                "threat_level": self._estimate_threat_level(chunk.text)
+                "threat_level": self._estimate_threat_level(chunk.text),
             }
 
             batch_vectors.append({"id": vector_id, "values": embedding.tolist(), "metadata": metadata})
 
-            self.chunk_store.append({
-                "id": vector_id,
-                "doc_id": chunk.doc_id,
-                "chunk_id": chunk.chunk_id,
-                "text": chunk.text,
-                "metadata": chunk.metadata
-            })
+            self.chunk_store.append(
+                {
+                    "id": vector_id,
+                    "doc_id": chunk.doc_id,
+                    "chunk_id": chunk.chunk_id,
+                    "text": chunk.text,
+                    "metadata": chunk.metadata,
+                }
+            )
 
             all_texts.append(chunk.text)
             chunk_lengths.append(len(chunk.text))
@@ -396,7 +403,7 @@ class VectorIndexBuilder:
             total_chunks=total_chunks,
             index_size_mb=index_size_mb,
             avg_chunk_length=np.mean(chunk_lengths) if chunk_lengths else 0,
-            domains=domain_counts
+            domains=domain_counts,
         )
 
         logger.info(f"Index built: {stats.total_chunks} chunks in Pinecone")
@@ -453,19 +460,21 @@ class VectorIndexBuilder:
                 top_k=k * 2 if self.bm25_index else k,
                 include_metadata=True,
                 namespace=self.namespace,
-                filter=filter_metadata
+                filter=filter_metadata,
             )
 
             pinecone_results = []
             for match in query_response.get("matches", []):
                 metadata = match.get("metadata", {})
-                pinecone_results.append(SearchResult(
-                    doc_id=metadata.get("doc_id", ""),
-                    chunk_id=int(metadata.get("chunk_id", 0)),
-                    text=metadata.get("text", ""),
-                    score=float(match.get("score", 0.0)),
-                    metadata=metadata
-                ))
+                pinecone_results.append(
+                    SearchResult(
+                        doc_id=metadata.get("doc_id", ""),
+                        chunk_id=int(metadata.get("chunk_id", 0)),
+                        text=metadata.get("text", ""),
+                        score=float(match.get("score", 0.0)),
+                        metadata=metadata,
+                    )
+                )
 
             if self.bm25_index and self.config.get("hybrid_search", {}).get("enabled", False):
                 bm25_weight = self.config["hybrid_search"]["bm25_weight"]
@@ -512,12 +521,12 @@ class VectorIndexBuilder:
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
 
-        with open(path / "chunks.json", 'w') as f:
+        with open(path / "chunks.json", "w") as f:
             json.dump(self.chunk_store, f)
 
         if self.bm25_index:
             corpus = [chunk["text"].lower().split() for chunk in self.chunk_store]
-            with open(path / "bm25_corpus.json", 'w') as f:
+            with open(path / "bm25_corpus.json", "w") as f:
                 json.dump(corpus, f)
 
         config_data = {
@@ -525,9 +534,9 @@ class VectorIndexBuilder:
             "namespace": self.namespace,
             "embedding_model": self.embedding_model_name,
             "embedding_dim": self.embedding_dim,
-            "total_chunks": len(self.chunk_store)
+            "total_chunks": len(self.chunk_store),
         }
-        with open(path / "index_config.json", 'w') as f:
+        with open(path / "index_config.json", "w") as f:
             json.dump(config_data, f, indent=2)
 
         logger.info(f"Index metadata saved to {path}")
@@ -539,11 +548,11 @@ class VectorIndexBuilder:
         path = Path(path)
 
         if (path / "chunks.json").exists():
-            with open(path / "chunks.json", 'r') as f:
+            with open(path / "chunks.json", "r") as f:
                 self.chunk_store = json.load(f)
 
         if HAS_BM25 and (path / "bm25_corpus.json").exists():
-            with open(path / "bm25_corpus.json", 'r') as f:
+            with open(path / "bm25_corpus.json", "r") as f:
                 corpus = json.load(f)
             self.bm25_index = BM25Okapi(corpus)
 
@@ -570,11 +579,19 @@ class VectorIndexBuilder:
                 "word_count": len(chunk.text.split()),
                 "has_mitre_reference": "mitre" in chunk.text.lower() or "att&ck" in chunk.text.lower(),
                 "has_cve_reference": "cve-" in chunk.text.lower(),
-                "threat_level": self._estimate_threat_level(chunk.text)
+                "threat_level": self._estimate_threat_level(chunk.text),
             }
 
             batch_vectors.append({"id": vector_id, "values": embedding.tolist(), "metadata": metadata})
-            self.chunk_store.append({"id": vector_id, "doc_id": chunk.doc_id, "chunk_id": chunk.chunk_id, "text": chunk.text, "metadata": chunk.metadata})
+            self.chunk_store.append(
+                {
+                    "id": vector_id,
+                    "doc_id": chunk.doc_id,
+                    "chunk_id": chunk.chunk_id,
+                    "text": chunk.text,
+                    "metadata": chunk.metadata,
+                }
+            )
             new_texts.append(chunk.text)
             added += 1
 
@@ -618,7 +635,7 @@ class VectorIndexBuilder:
                 "total_vector_count": stats.get("total_vector_count", 0),
                 "dimension": stats.get("dimension", self.embedding_dim),
                 "namespaces": stats.get("namespaces", {}),
-                "local_chunks": len(self.chunk_store)
+                "local_chunks": len(self.chunk_store),
             }
         except Exception as e:
             return {"available": True, "error": str(e), "local_chunks": len(self.chunk_store)}
@@ -630,7 +647,9 @@ class RetrievalOptimizer:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
 
-    def evaluate_retrieval(self, index: VectorIndexBuilder, queries: List[str], ground_truth: List[List[str]]) -> Dict[str, float]:
+    def evaluate_retrieval(
+        self, index: VectorIndexBuilder, queries: List[str], ground_truth: List[List[str]]
+    ) -> Dict[str, float]:
         """Evaluate retrieval quality."""
         precisions, recalls, mrrs = [], [], []
 
@@ -655,7 +674,7 @@ class RetrievalOptimizer:
             "precision_at_k": np.mean(precisions),
             "recall": np.mean(recalls),
             "mrr": np.mean(mrrs),
-            "f1_score": 2 * np.mean(precisions) * np.mean(recalls) / (np.mean(precisions) + np.mean(recalls) + 1e-6)
+            "f1_score": 2 * np.mean(precisions) * np.mean(recalls) / (np.mean(precisions) + np.mean(recalls) + 1e-6),
         }
         logger.info(f"Retrieval metrics: {metrics}")
         return metrics
@@ -681,7 +700,7 @@ class RAGIndexManager:
     """Manage multiple domain-specific indices using Pinecone namespaces."""
 
     def __init__(self, config_path: str = "training/config.yaml"):
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
 
         self.rag_config = self.config["rag"]
@@ -761,7 +780,7 @@ if __name__ == "__main__":
     logger.info("Testing RAG Builder Module with Pinecone")
 
     config_path = "training/config.yaml"
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     rag_config = config["rag"]

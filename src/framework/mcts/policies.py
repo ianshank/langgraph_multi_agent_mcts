@@ -74,7 +74,7 @@ def ucb1_tuned(
         return float("inf")
 
     mean_value = value_sum / visits
-    variance = value_squared_sum / visits - mean_value ** 2
+    variance = value_squared_sum / visits - mean_value**2
     variance = max(0, variance)  # Ensure non-negative
 
     # Variance bound term
@@ -236,10 +236,7 @@ class HybridRolloutPolicy(RolloutPolicy):
             heuristic_value = self.base_random_value
 
         # Combine
-        value = (
-            self.heuristic_weight * heuristic_value
-            + self.random_weight * random_value
-        )
+        value = self.heuristic_weight * heuristic_value + self.random_weight * random_value
 
         return max(0.0, min(1.0, value))
 
@@ -327,7 +324,7 @@ class ProgressiveWideningConfig:
         Returns:
             True if should expand, False otherwise
         """
-        threshold = self.k * (num_children ** self.alpha)
+        threshold = self.k * (num_children**self.alpha)
         return visits > threshold
 
     def min_visits_for_expansion(self, num_children: int) -> int:
@@ -340,7 +337,7 @@ class ProgressiveWideningConfig:
         Returns:
             Minimum visit count for expansion
         """
-        threshold = self.k * (num_children ** self.alpha)
+        threshold = self.k * (num_children**self.alpha)
         return int(math.ceil(threshold))
 
     def __repr__(self) -> str:

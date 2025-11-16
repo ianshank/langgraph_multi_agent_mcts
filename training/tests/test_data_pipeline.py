@@ -8,6 +8,7 @@ import yaml
 
 # Import modules to test
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from training.data_pipeline import (
@@ -17,7 +18,7 @@ from training.data_pipeline import (
     TaskSample,
     HRMSample,
     TRMSample,
-    DocumentChunk
+    DocumentChunk,
 )
 
 
@@ -32,7 +33,7 @@ class TestDABStepLoader:
             "train_split": 0.8,
             "val_split": 0.1,
             "test_split": 0.1,
-            "seed": 42
+            "seed": 42,
         }
 
     @pytest.fixture
@@ -73,7 +74,7 @@ class TestDABStepLoader:
             difficulty="medium",
             category="reasoning",
             steps=["Step 1", "Step 2", "Step 3"],
-            expected_output="Result"
+            expected_output="Result",
         )
 
         hrm_sample = loader.convert_to_hrm_format(sample)
@@ -91,7 +92,7 @@ class TestDABStepLoader:
             difficulty="medium",
             category="reasoning",
             steps=["Step 1", "Step 2"],
-            expected_output="Result"
+            expected_output="Result",
         )
 
         trm_sample = loader.convert_to_trm_format(sample)
@@ -109,7 +110,7 @@ class TestDABStepLoader:
             difficulty="easy",
             category="reasoning",
             steps=["A", "B", "C"],
-            expected_output="Result"
+            expected_output="Result",
         )
 
         augmented = loader.augment_task(sample, num_variations=3)
@@ -140,11 +141,9 @@ class TestPRIMUSProcessor:
                 "path": "trendmicro-ailab/Primus-Seed",
                 "cache_dir": tempfile.mkdtemp(),
                 "categories": ["mitre", "cyber_companies"],
-                "streaming": True
+                "streaming": True,
             },
-            "primus_instruct": {
-                "path": "trendmicro-ailab/Primus-Instruct"
-            }
+            "primus_instruct": {"path": "trendmicro-ailab/Primus-Instruct"},
         }
 
     @pytest.fixture
@@ -193,7 +192,7 @@ class TestPRIMUSProcessor:
             doc_id="test",
             chunk_id=0,
             text="This document discusses MITRE ATT&CK T1059 command execution vulnerability CVE-2021-12345",
-            metadata={"category": "cyber"}
+            metadata={"category": "cyber"},
         )
 
         metadata = processor.extract_domain_metadata(chunk)
@@ -227,29 +226,22 @@ class TestDataOrchestrator:
                     "train_split": 0.8,
                     "val_split": 0.1,
                     "test_split": 0.1,
-                    "seed": 42
+                    "seed": 42,
                 },
                 "primus_seed": {
                     "path": "trendmicro-ailab/Primus-Seed",
                     "cache_dir": str(tmp_path / "primus"),
                     "categories": ["mitre"],
-                    "streaming": True
+                    "streaming": True,
                 },
-                "primus_instruct": {
-                    "path": "trendmicro-ailab/Primus-Instruct"
-                }
+                "primus_instruct": {"path": "trendmicro-ailab/Primus-Instruct"},
             },
-            "training": {
-                "batch_size": 8
-            },
-            "resources": {
-                "max_cpu_workers": 2,
-                "pin_memory": False
-            }
+            "training": {"batch_size": 8},
+            "resources": {"max_cpu_workers": 2, "pin_memory": False},
         }
 
         config_path = tmp_path / "config.yaml"
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             yaml.dump(config, f)
 
         return str(config_path)
@@ -283,7 +275,7 @@ class TestTaskSample:
             difficulty="easy",
             category="test",
             steps=["Step 1"],
-            expected_output="Output"
+            expected_output="Output",
         )
 
         assert sample.task_id == "test"
@@ -299,7 +291,7 @@ class TestTaskSample:
             category="test",
             steps=[],
             expected_output="",
-            metadata={"custom": "value"}
+            metadata={"custom": "value"},
         )
 
         assert sample.metadata["custom"] == "value"

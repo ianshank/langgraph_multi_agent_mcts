@@ -21,6 +21,7 @@ import yaml
 try:
     import torch
     import torch.nn as nn
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class BenchmarkResult:
     """Result from a benchmark evaluation."""
+
     task_id: str
     predicted_answer: Any
     ground_truth: Any
@@ -46,6 +48,7 @@ class BenchmarkResult:
 @dataclass
 class EvaluationReport:
     """Comprehensive evaluation report."""
+
     timestamp: str
     total_samples: int
     accuracy: float
@@ -73,9 +76,9 @@ class DABStepBenchmark:
         """
         self.config = config
         self.test_size = config.get("test_size", 0.1)
-        self.report_path = Path(config.get("benchmarks", {}).get("dabstep", {}).get(
-            "report_path", "./reports/dabstep_benchmark.json"
-        ))
+        self.report_path = Path(
+            config.get("benchmarks", {}).get("dabstep", {}).get("report_path", "./reports/dabstep_benchmark.json")
+        )
 
         self.report_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -84,12 +87,7 @@ class DABStepBenchmark:
 
         logger.info(f"DABStepBenchmark initialized, report path: {self.report_path}")
 
-    def evaluate_model(
-        self,
-        model: Any,
-        test_data: List[Dict[str, Any]],
-        verbose: bool = True
-    ) -> EvaluationReport:
+    def evaluate_model(self, model: Any, test_data: List[Dict[str, Any]], verbose: bool = True) -> EvaluationReport:
         """
         Evaluate model on DABStep test set.
 
@@ -121,10 +119,7 @@ class DABStepBenchmark:
             is_correct = self._check_correctness(prediction["answer"], sample.get("expected_output"))
 
             # Assess reasoning quality
-            quality = self._assess_reasoning_quality(
-                prediction.get("reasoning", []),
-                sample.get("steps", [])
-            )
+            quality = self._assess_reasoning_quality(prediction.get("reasoning", []), sample.get("steps", []))
 
             result = BenchmarkResult(
                 task_id=sample.get("task_id", str(idx)),
@@ -139,8 +134,8 @@ class DABStepBenchmark:
                 metadata={
                     "difficulty": sample.get("difficulty", "unknown"),
                     "category": sample.get("category", "general"),
-                    "confidence": prediction.get("confidence", 0.0)
-                }
+                    "confidence": prediction.get("confidence", 0.0),
+                },
             )
 
             self.results.append(result)
@@ -169,7 +164,7 @@ class DABStepBenchmark:
                 "steps": len(sample.get("steps", [])),
                 "reasoning": sample.get("steps", []),
                 "confidence": np.random.uniform(0.7, 1.0),
-                "consensus": np.random.uniform(0.8, 1.0)
+                "consensus": np.random.uniform(0.8, 1.0),
             }
 
     def _check_correctness(self, predicted: Any, expected: Any) -> bool:
@@ -188,11 +183,7 @@ class DABStepBenchmark:
         # Direct equality
         return predicted == expected
 
-    def _assess_reasoning_quality(
-        self,
-        predicted_steps: List[str],
-        expected_steps: List[str]
-    ) -> float:
+    def _assess_reasoning_quality(self, predicted_steps: List[str], expected_steps: List[str]) -> float:
         """Assess quality of reasoning steps."""
         if not expected_steps:
             return 1.0 if predicted_steps else 0.5
@@ -228,6 +219,7 @@ class DABStepBenchmark:
             return torch.cuda.memory_allocated() / (1024 * 1024)
         else:
             import psutil
+
             process = psutil.Process()
             return process.memory_info().rss / (1024 * 1024)
 
@@ -247,7 +239,7 @@ class DABStepBenchmark:
                 per_difficulty_metrics={},
                 agent_metrics={},
                 error_analysis={},
-                recommendations=[]
+                recommendations=[],
             )
 
         # Basic metrics
@@ -279,7 +271,7 @@ class DABStepBenchmark:
                     "count": len(diff_results),
                     "accuracy": sum(1 for r in diff_results if r.is_correct) / len(diff_results),
                     "avg_steps": np.mean([r.steps_taken for r in diff_results]),
-                    "avg_quality": np.mean([r.reasoning_quality for r in diff_results])
+                    "avg_quality": np.mean([r.reasoning_quality for r in diff_results]),
                 }
 
         # Error analysis
@@ -287,13 +279,11 @@ class DABStepBenchmark:
             "incorrect_answer": sum(1 for r in self.results if not r.is_correct),
             "low_quality_reasoning": sum(1 for r in self.results if r.reasoning_quality < 0.5),
             "high_latency": sum(1 for r in self.results if r.latency_ms > 5000),
-            "low_consensus": sum(1 for r in self.results if r.agent_consensus < 0.7)
+            "low_consensus": sum(1 for r in self.results if r.agent_consensus < 0.7),
         }
 
         # Recommendations
-        recommendations = self._generate_recommendations(
-            accuracy, avg_latency, avg_consensus, error_analysis
-        )
+        recommendations = self._generate_recommendations(accuracy, avg_latency, avg_consensus, error_analysis)
 
         report = EvaluationReport(
             timestamp=time.strftime("%Y-%m-%d %H:%M:%S"),
@@ -308,17 +298,13 @@ class DABStepBenchmark:
             per_difficulty_metrics=difficulty_metrics,
             agent_metrics={},  # Would be populated with agent-specific metrics
             error_analysis=error_analysis,
-            recommendations=recommendations
+            recommendations=recommendations,
         )
 
         return report
 
     def _generate_recommendations(
-        self,
-        accuracy: float,
-        latency: float,
-        consensus: float,
-        errors: Dict[str, int]
+        self, accuracy: float, latency: float, consensus: float, errors: Dict[str, int]
     ) -> List[str]:
         """Generate actionable recommendations."""
         recommendations = []
@@ -329,14 +315,10 @@ class DABStepBenchmark:
             )
 
         if latency > 5000:
-            recommendations.append(
-                f"Average latency {latency:.0f}ms is high. Consider model optimization or caching."
-            )
+            recommendations.append(f"Average latency {latency:.0f}ms is high. Consider model optimization or caching.")
 
         if consensus < 0.8:
-            recommendations.append(
-                f"Agent consensus {consensus:.2%} is low. Review agent coordination strategy."
-            )
+            recommendations.append(f"Agent consensus {consensus:.2%} is low. Review agent coordination strategy.")
 
         if errors["low_quality_reasoning"] > len(self.results) * 0.2:
             recommendations.append(
@@ -363,20 +345,17 @@ class DABStepBenchmark:
             "per_difficulty_metrics": report.per_difficulty_metrics,
             "agent_metrics": report.agent_metrics,
             "error_analysis": report.error_analysis,
-            "recommendations": report.recommendations
+            "recommendations": report.recommendations,
         }
 
-        with open(self.report_path, 'w') as f:
+        with open(self.report_path, "w") as f:
             json.dump(report_dict, f, indent=2)
 
         logger.info(f"Report saved to {self.report_path}")
 
-    def compare_with_baseline(
-        self,
-        baseline_report_path: str
-    ) -> Dict[str, float]:
+    def compare_with_baseline(self, baseline_report_path: str) -> Dict[str, float]:
         """Compare current results with baseline."""
-        with open(baseline_report_path, 'r') as f:
+        with open(baseline_report_path, "r") as f:
             baseline = json.load(f)
 
         current = self._generate_report()
@@ -385,7 +364,7 @@ class DABStepBenchmark:
             "accuracy_improvement": current.accuracy - baseline["accuracy"],
             "latency_improvement": baseline["avg_latency_ms"] - current.avg_latency_ms,
             "consensus_improvement": current.avg_consensus - baseline["avg_consensus"],
-            "f1_improvement": current.f1_score - baseline["f1_score"]
+            "f1_improvement": current.f1_score - baseline["f1_score"],
         }
 
         logger.info(f"Baseline comparison: {comparison}")
@@ -404,11 +383,7 @@ class MultiAgentEvaluator:
         """
         self.config = config
 
-    def evaluate_consensus(
-        self,
-        agent_outputs: Dict[str, List[Any]],
-        ground_truths: List[Any]
-    ) -> Dict[str, float]:
+    def evaluate_consensus(self, agent_outputs: Dict[str, List[Any]], ground_truths: List[Any]) -> Dict[str, float]:
         """
         Evaluate consensus quality across agents.
 
@@ -433,10 +408,7 @@ class MultiAgentEvaluator:
 
         # Accuracy per agent
         for agent_name, outputs in agent_outputs.items():
-            correct = sum(
-                1 for pred, truth in zip(outputs, ground_truths)
-                if self._outputs_match(pred, truth)
-            )
+            correct = sum(1 for pred, truth in zip(outputs, ground_truths) if self._outputs_match(pred, truth))
             metrics[f"{agent_name}_accuracy"] = correct / len(ground_truths)
 
         # Ensemble accuracy (majority voting)
@@ -449,10 +421,7 @@ class MultiAgentEvaluator:
         metrics["ensemble_accuracy"] = ensemble_correct / len(ground_truths)
 
         # Improvement over best single agent
-        best_single = max(
-            metrics[f"{agent}_accuracy"]
-            for agent in agent_outputs
-        )
+        best_single = max(metrics[f"{agent}_accuracy"] for agent in agent_outputs)
         metrics["ensemble_improvement"] = metrics["ensemble_accuracy"] - best_single
 
         logger.info(f"Consensus metrics: {metrics}")
@@ -495,10 +464,7 @@ class MultiAgentEvaluator:
                 return o
         return outputs[0]
 
-    def analyze_agent_specialization(
-        self,
-        results: List[BenchmarkResult]
-    ) -> Dict[str, Any]:
+    def analyze_agent_specialization(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
         """Analyze which agents excel at which task types."""
         specialization = {}
 
@@ -507,16 +473,11 @@ class MultiAgentEvaluator:
         difficulties = set(r.metadata.get("difficulty") for r in results)
 
         for category in categories:
-            specialization[category] = {
-                "best_performing_tasks": [],
-                "avg_quality": 0.0
-            }
+            specialization[category] = {"best_performing_tasks": [], "avg_quality": 0.0}
 
             cat_results = [r for r in results if r.metadata.get("category") == category]
             if cat_results:
-                specialization[category]["avg_quality"] = np.mean(
-                    [r.reasoning_quality for r in cat_results]
-                )
+                specialization[category]["avg_quality"] = np.mean([r.reasoning_quality for r in cat_results])
 
         return specialization
 
@@ -528,12 +489,7 @@ class PerformanceProfiler:
         """Initialize performance profiler."""
         self.profiles = []
 
-    def profile_inference(
-        self,
-        model: Any,
-        test_inputs: List[Any],
-        num_runs: int = 10
-    ) -> Dict[str, Any]:
+    def profile_inference(self, model: Any, test_inputs: List[Any], num_runs: int = 10) -> Dict[str, Any]:
         """
         Profile inference performance.
 
@@ -576,7 +532,7 @@ class PerformanceProfiler:
             "p99_latency_ms": np.percentile(latencies, 99),
             "max_latency_ms": np.max(latencies),
             "avg_memory_increase_mb": np.mean(memory_usage),
-            "throughput_rps": 1000.0 / np.mean(latencies) if latencies else 0
+            "throughput_rps": 1000.0 / np.mean(latencies) if latencies else 0,
         }
 
         self.profiles.append(profile)
@@ -587,6 +543,7 @@ class PerformanceProfiler:
     def _get_memory(self) -> float:
         """Get current memory usage in MB."""
         import psutil
+
         return psutil.Process().memory_info().rss / (1024 * 1024)
 
     def identify_bottlenecks(self, profile: Dict[str, Any]) -> List[str]:
@@ -618,10 +575,7 @@ class ProductionValidator:
         self.config = config
         self.success_criteria = config.get("success_criteria", {})
 
-    def validate_all_criteria(
-        self,
-        evaluation_report: EvaluationReport
-    ) -> Tuple[bool, Dict[str, bool]]:
+    def validate_all_criteria(self, evaluation_report: EvaluationReport) -> Tuple[bool, Dict[str, bool]]:
         """
         Check if all production criteria are met.
 
@@ -634,9 +588,7 @@ class ProductionValidator:
         checks = {}
 
         # Accuracy checks
-        checks["hrm_accuracy"] = (
-            evaluation_report.accuracy >= self.success_criteria.get("hrm_accuracy", 0.85)
-        )
+        checks["hrm_accuracy"] = evaluation_report.accuracy >= self.success_criteria.get("hrm_accuracy", 0.85)
 
         # Latency checks
         checks["latency_sla"] = evaluation_report.avg_latency_ms < 30000  # 30 seconds
@@ -656,11 +608,7 @@ class ProductionValidator:
 
         return overall_pass, checks
 
-    def run_adversarial_tests(
-        self,
-        model: Any,
-        adversarial_samples: List[Dict[str, Any]]
-    ) -> Dict[str, float]:
+    def run_adversarial_tests(self, model: Any, adversarial_samples: List[Dict[str, Any]]) -> Dict[str, float]:
         """
         Test model robustness against adversarial inputs.
 
@@ -673,11 +621,7 @@ class ProductionValidator:
         """
         logger.info(f"Running adversarial tests on {len(adversarial_samples)} samples")
 
-        results = {
-            "prompt_injection_resistance": 0.0,
-            "input_perturbation_robustness": 0.0,
-            "edge_case_handling": 0.0
-        }
+        results = {"prompt_injection_resistance": 0.0, "input_perturbation_robustness": 0.0, "edge_case_handling": 0.0}
 
         for sample in adversarial_samples:
             attack_type = sample.get("attack_type", "unknown")
@@ -716,47 +660,32 @@ class ProductionValidator:
         logger.info(f"Adversarial test results: {results}")
         return results
 
-    def generate_production_checklist(
-        self,
-        validation_results: Dict[str, bool]
-    ) -> List[Dict[str, Any]]:
+    def generate_production_checklist(self, validation_results: Dict[str, bool]) -> List[Dict[str, Any]]:
         """Generate production deployment checklist."""
         checklist = [
             {
                 "item": "Model accuracy meets threshold",
                 "status": "pass" if validation_results.get("hrm_accuracy", False) else "fail",
-                "priority": "critical"
+                "priority": "critical",
             },
             {
                 "item": "Latency SLA met",
                 "status": "pass" if validation_results.get("latency_sla", False) else "fail",
-                "priority": "critical"
+                "priority": "critical",
             },
             {
                 "item": "Agent consensus rate acceptable",
                 "status": "pass" if validation_results.get("consensus_rate", False) else "fail",
-                "priority": "high"
+                "priority": "high",
             },
             {
                 "item": "Error rate within bounds",
                 "status": "pass" if validation_results.get("error_rate", False) else "fail",
-                "priority": "high"
+                "priority": "high",
             },
-            {
-                "item": "Monitoring dashboards configured",
-                "status": "pending",
-                "priority": "medium"
-            },
-            {
-                "item": "Rollback mechanism tested",
-                "status": "pending",
-                "priority": "critical"
-            },
-            {
-                "item": "Documentation complete",
-                "status": "pending",
-                "priority": "medium"
-            }
+            {"item": "Monitoring dashboards configured", "status": "pending", "priority": "medium"},
+            {"item": "Rollback mechanism tested", "status": "pending", "priority": "critical"},
+            {"item": "Documentation complete", "status": "pending", "priority": "medium"},
         ]
 
         return checklist
@@ -770,7 +699,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     eval_config = config["evaluation"]
@@ -786,7 +715,7 @@ if __name__ == "__main__":
             "expected_output": f"Result {i}",
             "steps": [f"Step {j}" for j in range(3)],
             "difficulty": ["easy", "medium", "hard"][i % 3],
-            "category": "reasoning"
+            "category": "reasoning",
         }
         for i in range(20)
     ]
@@ -802,7 +731,7 @@ if __name__ == "__main__":
                 "steps": len(sample.get("steps", [])),
                 "reasoning": sample.get("steps", []),
                 "confidence": np.random.uniform(0.7, 1.0),
-                "consensus": np.random.uniform(0.8, 1.0)
+                "consensus": np.random.uniform(0.8, 1.0),
             }
 
     model = MockModel()

@@ -340,14 +340,8 @@ class TestRateLimiting:
         }
 
         # Enterprise has higher limits
-        assert (
-            client_limits["enterprise"]["requests_per_minute"]
-            > client_limits["pro_tier"]["requests_per_minute"]
-        )
-        assert (
-            client_limits["pro_tier"]["requests_per_minute"]
-            > client_limits["free_tier"]["requests_per_minute"]
-        )
+        assert client_limits["enterprise"]["requests_per_minute"] > client_limits["pro_tier"]["requests_per_minute"]
+        assert client_limits["pro_tier"]["requests_per_minute"] > client_limits["free_tier"]["requests_per_minute"]
 
 
 class TestErrorHandling:

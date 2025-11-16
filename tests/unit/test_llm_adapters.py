@@ -27,6 +27,7 @@ try:
         LLMRateLimitError,
         LLMInvalidResponseError,
     )
+
     ADAPTERS_AVAILABLE = True
 except ImportError:
     ADAPTERS_AVAILABLE = False
@@ -46,18 +47,11 @@ class TestLLMResponseParsing:
             "choices": [
                 {
                     "index": 0,
-                    "message": {
-                        "role": "assistant",
-                        "content": "Hello! How can I help you today?"
-                    },
-                    "finish_reason": "stop"
+                    "message": {"role": "assistant", "content": "Hello! How can I help you today?"},
+                    "finish_reason": "stop",
                 }
             ],
-            "usage": {
-                "prompt_tokens": 9,
-                "completion_tokens": 12,
-                "total_tokens": 21
-            }
+            "usage": {"prompt_tokens": 9, "completion_tokens": 12, "total_tokens": 21},
         }
 
         response = LLMResponse.from_openai(raw_response)
@@ -72,18 +66,10 @@ class TestLLMResponseParsing:
             "id": "msg_01XFDUDYJgAACzvnptvVoYEL",
             "type": "message",
             "role": "assistant",
-            "content": [
-                {
-                    "type": "text",
-                    "text": "I'm Claude, an AI assistant."
-                }
-            ],
+            "content": [{"type": "text", "text": "I'm Claude, an AI assistant."}],
             "model": "claude-3-opus-20240229",
             "stop_reason": "end_turn",
-            "usage": {
-                "input_tokens": 10,
-                "output_tokens": 25
-            }
+            "usage": {"input_tokens": 10, "output_tokens": 25},
         }
 
         response = LLMResponse.from_anthropic(raw_response)
@@ -102,18 +88,11 @@ class TestLLMResponseParsing:
             "choices": [
                 {
                     "index": 0,
-                    "message": {
-                        "role": "assistant",
-                        "content": "Local model response"
-                    },
-                    "finish_reason": "stop"
+                    "message": {"role": "assistant", "content": "Local model response"},
+                    "finish_reason": "stop",
                 }
             ],
-            "usage": {
-                "prompt_tokens": 5,
-                "completion_tokens": 3,
-                "total_tokens": 8
-            }
+            "usage": {"prompt_tokens": 5, "completion_tokens": 3, "total_tokens": 8},
         }
 
         response = LLMResponse.from_openai(raw_response)
@@ -126,9 +105,7 @@ class TestLLMResponseParsing:
 
     def test_parse_malformed_response(self):
         """Malformed response should raise descriptive error."""
-        malformed = {
-            "choices": []  # No choices
-        }
+        malformed = {"choices": []}  # No choices
 
         with pytest.raises(LLMInvalidResponseError):
             LLMResponse.from_openai(malformed)
@@ -146,17 +123,14 @@ class TestLLMResponseParsing:
                             {
                                 "id": "call_123",
                                 "type": "function",
-                                "function": {
-                                    "name": "get_weather",
-                                    "arguments": '{"location": "NYC"}'
-                                }
+                                "function": {"name": "get_weather", "arguments": '{"location": "NYC"}'},
                             }
-                        ]
+                        ],
                     },
-                    "finish_reason": "tool_calls"
+                    "finish_reason": "tool_calls",
                 }
             ],
-            "usage": {"total_tokens": 50}
+            "usage": {"total_tokens": 50},
         }
 
         response = LLMResponse.from_openai(raw_response)
@@ -182,20 +156,18 @@ class TestRetryLogic:
                 httpx.ConnectError("Connection refused"),
                 # Third attempt succeeds
                 Mock(
-                    json=Mock(return_value={
-                        "choices": [{"message": {"content": "Success"}, "finish_reason": "stop"}],
-                        "usage": {"total_tokens": 10}
-                    }),
-                    status_code=200
-                )
+                    json=Mock(
+                        return_value={
+                            "choices": [{"message": {"content": "Success"}, "finish_reason": "stop"}],
+                            "usage": {"total_tokens": 10},
+                        }
+                    ),
+                    status_code=200,
+                ),
             ]
         )
 
-        client = OpenAIClient(
-            api_key="test-key",
-            http_client=mock_httpx_client,
-            max_retries=3
-        )
+        client = OpenAIClient(api_key="test-key", http_client=mock_httpx_client, max_retries=3)
 
         response = await client.generate("Test prompt")
         assert response.text == "Success"
@@ -218,22 +190,19 @@ class TestRetryLogic:
                 httpx.ConnectError("Error 2"),
                 httpx.ConnectError("Error 3"),
                 Mock(
-                    json=Mock(return_value={
-                        "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
-                        "usage": {"total_tokens": 5}
-                    }),
-                    status_code=200
-                )
+                    json=Mock(
+                        return_value={
+                            "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
+                            "usage": {"total_tokens": 5},
+                        }
+                    ),
+                    status_code=200,
+                ),
             ]
         )
 
-        with patch('asyncio.sleep', mock_sleep):
-            client = OpenAIClient(
-                api_key="key",
-                http_client=mock_httpx_client,
-                max_retries=4,
-                base_delay=1.0
-            )
+        with patch("asyncio.sleep", mock_sleep):
+            client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=4, base_delay=1.0)
             await client.generate("prompt")
 
         # Verify exponential backoff: 1, 2, 4 seconds (approximately)
@@ -245,15 +214,9 @@ class TestRetryLogic:
     @pytest.mark.asyncio
     async def test_max_retries_exceeded_raises_error(self, mock_httpx_client):
         """Should raise error after max retries exceeded."""
-        mock_httpx_client.post = AsyncMock(
-            side_effect=httpx.ConnectError("Always fails")
-        )
+        mock_httpx_client.post = AsyncMock(side_effect=httpx.ConnectError("Always fails"))
 
-        client = OpenAIClient(
-            api_key="key",
-            http_client=mock_httpx_client,
-            max_retries=3
-        )
+        client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=3)
 
         with pytest.raises(LLMConnectionError):
             await client.generate("prompt")
@@ -264,17 +227,10 @@ class TestRetryLogic:
     async def test_no_retry_on_invalid_api_key(self, mock_httpx_client):
         """Should not retry on authentication errors."""
         mock_httpx_client.post = AsyncMock(
-            return_value=Mock(
-                status_code=401,
-                json=Mock(return_value={"error": {"message": "Invalid API key"}})
-            )
+            return_value=Mock(status_code=401, json=Mock(return_value={"error": {"message": "Invalid API key"}}))
         )
 
-        client = OpenAIClient(
-            api_key="invalid-key",
-            http_client=mock_httpx_client,
-            max_retries=3
-        )
+        client = OpenAIClient(api_key="invalid-key", http_client=mock_httpx_client, max_retries=3)
 
         with pytest.raises(Exception):  # Auth error
             await client.generate("prompt")
@@ -290,15 +246,17 @@ class TestRetryLogic:
                 Mock(
                     status_code=429,
                     headers={"Retry-After": "5"},
-                    json=Mock(return_value={"error": {"message": "Rate limited"}})
+                    json=Mock(return_value={"error": {"message": "Rate limited"}}),
                 ),
                 Mock(
-                    json=Mock(return_value={
-                        "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
-                        "usage": {"total_tokens": 5}
-                    }),
-                    status_code=200
-                )
+                    json=Mock(
+                        return_value={
+                            "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
+                            "usage": {"total_tokens": 5},
+                        }
+                    ),
+                    status_code=200,
+                ),
             ]
         )
 
@@ -307,12 +265,8 @@ class TestRetryLogic:
         async def mock_sleep(seconds):
             delays.append(seconds)
 
-        with patch('asyncio.sleep', mock_sleep):
-            client = OpenAIClient(
-                api_key="key",
-                http_client=mock_httpx_client,
-                max_retries=2
-            )
+        with patch("asyncio.sleep", mock_sleep):
+            client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=2)
             response = await client.generate("prompt")
 
         assert response.text == "OK"
@@ -331,15 +285,9 @@ class TestTimeoutHandling:
     @pytest.mark.asyncio
     async def test_request_timeout_raises_error(self, mock_httpx_client):
         """Timeout should raise specific error."""
-        mock_httpx_client.post = AsyncMock(
-            side_effect=httpx.TimeoutException("Request timed out")
-        )
+        mock_httpx_client.post = AsyncMock(side_effect=httpx.TimeoutException("Request timed out"))
 
-        client = OpenAIClient(
-            api_key="key",
-            http_client=mock_httpx_client,
-            timeout_seconds=10
-        )
+        client = OpenAIClient(api_key="key", http_client=mock_httpx_client, timeout_seconds=10)
 
         with pytest.raises(LLMTimeoutError):
             await client.generate("Long prompt")
@@ -349,25 +297,23 @@ class TestTimeoutHandling:
         """Timeout should be passed to HTTP client."""
         mock_httpx_client.post = AsyncMock(
             return_value=Mock(
-                json=Mock(return_value={
-                    "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
-                    "usage": {"total_tokens": 5}
-                }),
-                status_code=200
+                json=Mock(
+                    return_value={
+                        "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
+                        "usage": {"total_tokens": 5},
+                    }
+                ),
+                status_code=200,
             )
         )
 
-        client = OpenAIClient(
-            api_key="key",
-            http_client=mock_httpx_client,
-            timeout_seconds=60
-        )
+        client = OpenAIClient(api_key="key", http_client=mock_httpx_client, timeout_seconds=60)
 
         await client.generate("prompt")
 
         # Verify timeout was set
         call_kwargs = mock_httpx_client.post.call_args
-        assert call_kwargs.kwargs.get('timeout') == 60
+        assert call_kwargs.kwargs.get("timeout") == 60
 
     @pytest.mark.asyncio
     async def test_streaming_timeout_handling(self, mock_httpx_client):
@@ -392,21 +338,19 @@ class TestErrorHandling:
                 Mock(status_code=500, json=Mock(return_value={"error": "Internal error"})),
                 Mock(status_code=503, json=Mock(return_value={"error": "Service unavailable"})),
                 Mock(
-                    json=Mock(return_value={
-                        "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
-                        "usage": {"total_tokens": 5}
-                    }),
-                    status_code=200
-                )
+                    json=Mock(
+                        return_value={
+                            "choices": [{"message": {"content": "OK"}, "finish_reason": "stop"}],
+                            "usage": {"total_tokens": 5},
+                        }
+                    ),
+                    status_code=200,
+                ),
             ]
         )
 
-        with patch('asyncio.sleep', AsyncMock()):
-            client = OpenAIClient(
-                api_key="key",
-                http_client=mock_httpx_client,
-                max_retries=3
-            )
+        with patch("asyncio.sleep", AsyncMock()):
+            client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=3)
             response = await client.generate("prompt")
 
         assert response.text == "OK"
@@ -416,17 +360,10 @@ class TestErrorHandling:
     async def test_400_error_not_retried(self, mock_httpx_client):
         """Client errors (4xx except 429) should not be retried."""
         mock_httpx_client.post = AsyncMock(
-            return_value=Mock(
-                status_code=400,
-                json=Mock(return_value={"error": {"message": "Bad request"}})
-            )
+            return_value=Mock(status_code=400, json=Mock(return_value={"error": {"message": "Bad request"}}))
         )
 
-        client = OpenAIClient(
-            api_key="key",
-            http_client=mock_httpx_client,
-            max_retries=3
-        )
+        client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=3)
 
         with pytest.raises(Exception):
             await client.generate("invalid prompt")
@@ -437,15 +374,9 @@ class TestErrorHandling:
     @pytest.mark.asyncio
     async def test_network_error_handling(self, mock_httpx_client):
         """Network errors should be handled gracefully."""
-        mock_httpx_client.post = AsyncMock(
-            side_effect=httpx.NetworkError("DNS resolution failed")
-        )
+        mock_httpx_client.post = AsyncMock(side_effect=httpx.NetworkError("DNS resolution failed"))
 
-        client = OpenAIClient(
-            api_key="key",
-            http_client=mock_httpx_client,
-            max_retries=1
-        )
+        client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=1)
 
         with pytest.raises(LLMConnectionError) as exc_info:
             await client.generate("prompt")
@@ -456,17 +387,10 @@ class TestErrorHandling:
     async def test_json_decode_error_handling(self, mock_httpx_client):
         """Invalid JSON response should be handled."""
         mock_httpx_client.post = AsyncMock(
-            return_value=Mock(
-                status_code=200,
-                json=Mock(side_effect=ValueError("Invalid JSON"))
-            )
+            return_value=Mock(status_code=200, json=Mock(side_effect=ValueError("Invalid JSON")))
         )
 
-        client = OpenAIClient(
-            api_key="key",
-            http_client=mock_httpx_client,
-            max_retries=1
-        )
+        client = OpenAIClient(api_key="key", http_client=mock_httpx_client, max_retries=1)
 
         with pytest.raises(LLMInvalidResponseError):
             await client.generate("prompt")
@@ -482,29 +406,25 @@ class TestProviderSpecificBehavior:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_client.post = AsyncMock(
             return_value=Mock(
-                json=Mock(return_value={
-                    "id": "msg_123",
-                    "content": [{"type": "text", "text": "Response"}],
-                    "stop_reason": "end_turn",
-                    "usage": {"input_tokens": 10, "output_tokens": 5}
-                }),
-                status_code=200
+                json=Mock(
+                    return_value={
+                        "id": "msg_123",
+                        "content": [{"type": "text", "text": "Response"}],
+                        "stop_reason": "end_turn",
+                        "usage": {"input_tokens": 10, "output_tokens": 5},
+                    }
+                ),
+                status_code=200,
             )
         )
 
-        client = AnthropicClient(
-            api_key="key",
-            http_client=mock_client
-        )
+        client = AnthropicClient(api_key="key", http_client=mock_client)
 
-        await client.generate(
-            prompt="User message",
-            system_prompt="You are a helpful assistant"
-        )
+        await client.generate(prompt="User message", system_prompt="You are a helpful assistant")
 
         # Verify system prompt is passed separately
         call_kwargs = mock_client.post.call_args
-        request_body = call_kwargs.kwargs.get('json', {})
+        request_body = call_kwargs.kwargs.get("json", {})
         assert "system" in request_body
 
     @pytest.mark.asyncio
@@ -513,23 +433,22 @@ class TestProviderSpecificBehavior:
         mock_client = AsyncMock(spec=httpx.AsyncClient)
         mock_client.post = AsyncMock(
             return_value=Mock(
-                json=Mock(return_value={
-                    "choices": [{"message": {"content": "Local"}, "finish_reason": "stop"}],
-                    "usage": {"total_tokens": 5}
-                }),
-                status_code=200
+                json=Mock(
+                    return_value={
+                        "choices": [{"message": {"content": "Local"}, "finish_reason": "stop"}],
+                        "usage": {"total_tokens": 5},
+                    }
+                ),
+                status_code=200,
             )
         )
 
-        client = LMStudioClient(
-            base_url="http://localhost:1234/v1",
-            http_client=mock_client
-        )
+        client = LMStudioClient(base_url="http://localhost:1234/v1", http_client=mock_client)
 
         await client.generate("prompt")
 
         call_args = mock_client.post.call_args
-        url = call_args.args[0] if call_args.args else call_args.kwargs.get('url')
+        url = call_args.args[0] if call_args.args else call_args.kwargs.get("url")
         assert "localhost" in url or "127.0.0.1" in url
 
 
@@ -545,17 +464,12 @@ class TestMockClientFactory:
 
             if responses:
                 client.generate = AsyncMock(
-                    side_effect=[
-                        Mock(text=r, tokens_used=10, finish_reason="stop")
-                        for r in responses
-                    ]
+                    side_effect=[Mock(text=r, tokens_used=10, finish_reason="stop") for r in responses]
                 )
             elif errors:
                 client.generate = AsyncMock(side_effect=errors)
             else:
-                client.generate = AsyncMock(
-                    return_value=Mock(text="Default response", tokens_used=10)
-                )
+                client.generate = AsyncMock(return_value=Mock(text="Default response", tokens_used=10))
 
             return client
 
@@ -575,10 +489,7 @@ class TestMockClientFactory:
     @pytest.mark.asyncio
     async def test_mock_client_raises_errors(self, mock_llm_client):
         """Mock client should raise configured errors."""
-        client = mock_llm_client(errors=[
-            Exception("First error"),
-            Exception("Second error")
-        ])
+        client = mock_llm_client(errors=[Exception("First error"), Exception("Second error")])
 
         with pytest.raises(Exception, match="First error"):
             await client.generate("prompt")

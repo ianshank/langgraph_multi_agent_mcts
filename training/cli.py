@@ -30,7 +30,7 @@ def setup_logging(level: str = "INFO", log_file: str = None):
     logging.basicConfig(
         level=getattr(logging, level.upper()),
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-        handlers=handlers
+        handlers=handlers,
     )
 
 
@@ -47,10 +47,7 @@ def train_command(args):
         # Run specific phase
         logger.info(f"Running phase: {args.phase}")
         pipeline.initialize_components()
-        phase = next(
-            (p for p in pipeline.phase_manager.phases if p["name"] == args.phase),
-            None
-        )
+        phase = next((p for p in pipeline.phase_manager.phases if p["name"] == args.phase), None)
         if phase:
             result = pipeline._run_phase(phase)
             logger.info(f"Phase result: {result}")
@@ -63,8 +60,9 @@ def train_command(args):
         logger.info(f"Training completed. Total time: {results['total_time'] / 3600:.2f} hours")
 
         if args.output:
-            with open(args.output, 'w') as f:
+            with open(args.output, "w") as f:
                 import json
+
                 json.dump(results, f, indent=2, default=str)
             logger.info(f"Results saved to {args.output}")
 
@@ -78,7 +76,7 @@ def evaluate_command(args):
     logger.info(f"Evaluating model: {args.model}")
 
     # Load config
-    with open(args.config, 'r') as f:
+    with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
     # Setup evaluator
@@ -91,6 +89,7 @@ def evaluate_command(args):
 
     # Create mock model or load real one
     if args.model == "mock":
+
         class MockModel:
             def predict(self, sample):
                 return {
@@ -98,12 +97,14 @@ def evaluate_command(args):
                     "steps": len(sample.get("steps", [])),
                     "reasoning": sample.get("steps", []),
                     "confidence": 0.85,
-                    "consensus": 0.9
+                    "consensus": 0.9,
                 }
+
         model = MockModel()
     else:
         # Load actual trained model
         import torch
+
         checkpoint = torch.load(args.model, map_location="cpu")
         # Extract model type from checkpoint or default
         model_type = checkpoint.get("model_type", "hrm") if isinstance(checkpoint, dict) else "hrm"
@@ -111,12 +112,14 @@ def evaluate_command(args):
         # Instantiate model based on type and load state dict
         if model_type == "hrm":
             from training.agent_trainer import HRMTrainer
+
             trainer = HRMTrainer(config["agents"]["hrm"])
             if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
                 trainer.model.load_state_dict(checkpoint["model_state_dict"])
             model = trainer.model
         elif model_type == "trm":
             from training.agent_trainer import TRMTrainer
+
             trainer = TRMTrainer(config["agents"]["trm"])
             if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
                 trainer.model.load_state_dict(checkpoint["model_state_dict"])
@@ -152,7 +155,7 @@ def build_rag_command(args):
     logger.info(f"Building RAG index to: {args.output}")
 
     # Load config
-    with open(args.config, 'r') as f:
+    with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
     # Setup processor
@@ -182,7 +185,7 @@ def monitor_command(args):
     logger.info(f"Starting monitoring dashboard on port {args.port}")
 
     # Load config
-    with open(args.config, 'r') as f:
+    with open(args.config, "r") as f:
         config = yaml.safe_load(f)
 
     monitor = TrainingMonitor(config.get("monitoring", {}))
@@ -277,21 +280,14 @@ Examples:
 
   # Generate monitoring dashboard
   python -m training.cli monitor --static --config training/config.yaml
-        """
+        """,
     )
 
     # Global arguments
     parser.add_argument(
-        "--log-level",
-        default="INFO",
-        choices=["DEBUG", "INFO", "WARNING", "ERROR"],
-        help="Logging level"
+        "--log-level", default="INFO", choices=["DEBUG", "INFO", "WARNING", "ERROR"], help="Logging level"
     )
-    parser.add_argument(
-        "--log-file",
-        default=None,
-        help="Log file path"
-    )
+    parser.add_argument("--log-file", default=None, help="Log file path")
 
     subparsers = parser.add_subparsers(dest="command", help="Available commands")
 
@@ -355,6 +351,7 @@ Examples:
         logging.error(f"Command failed: {e}")
         if args.log_level == "DEBUG":
             import traceback
+
             traceback.print_exc()
         sys.exit(1)
 

@@ -18,7 +18,8 @@ from unittest.mock import patch, MagicMock
 import os
 
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 from pydantic import ValidationError, SecretStr
 from src.models.validation import (
@@ -62,10 +63,7 @@ class TestQueryInputValidation:
     def test_valid_query_with_options(self):
         """Test valid query with all options."""
         query_input = QueryInput(
-            query="Complex question here",
-            use_rag=False,
-            use_mcts=True,
-            thread_id="test-thread-123"
+            query="Complex question here", use_rag=False, use_mcts=True, thread_id="test-thread-123"
         )
         assert query_input.query == "Complex question here"
         assert query_input.use_rag is False
@@ -79,13 +77,16 @@ class TestQueryInputValidation:
         assert query_input.use_mcts is False
         assert query_input.thread_id is None
 
-    @pytest.mark.parametrize("whitespace_query,expected", [
-        ("  test query  ", "test query"),
-        ("\nquery with newlines\n", "query with newlines"),
-        ("\tquery with tabs\t", "query with tabs"),
-        ("multiple   spaces   here", "multiple spaces here"),
-        ("  multiple   whitespace   everywhere  ", "multiple whitespace everywhere"),
-    ])
+    @pytest.mark.parametrize(
+        "whitespace_query,expected",
+        [
+            ("  test query  ", "test query"),
+            ("\nquery with newlines\n", "query with newlines"),
+            ("\tquery with tabs\t", "query with tabs"),
+            ("multiple   spaces   here", "multiple spaces here"),
+            ("  multiple   whitespace   everywhere  ", "multiple whitespace everywhere"),
+        ],
+    )
     def test_whitespace_normalization(self, whitespace_query, expected):
         """Test that whitespace is properly normalized."""
         query_input = QueryInput(query=whitespace_query)
@@ -98,22 +99,23 @@ class TestQueryInputValidation:
         # Null bytes are removed, then consecutive whitespace is normalized
         assert query_input.query == "testqueryhere"
 
-    @pytest.mark.parametrize("empty_query", [
-        "",
-        "   ",
-        "\n\n\n",
-        "\t\t",
-        "  \n  \t  ",
-    ])
+    @pytest.mark.parametrize(
+        "empty_query",
+        [
+            "",
+            "   ",
+            "\n\n\n",
+            "\t\t",
+            "  \n  \t  ",
+        ],
+    )
     def test_empty_query_rejected(self, empty_query):
         """Test that empty or whitespace-only queries are rejected."""
         with pytest.raises(ValidationError) as exc_info:
             QueryInput(query=empty_query)
         error_msg = str(exc_info.value).lower()
         # Check for various validation error messages
-        assert ("empty" in error_msg or
-                "whitespace" in error_msg or
-                "at least 1 character" in error_msg)
+        assert "empty" in error_msg or "whitespace" in error_msg or "at least 1 character" in error_msg
 
     def test_query_minimum_length(self):
         """Test query must meet minimum length."""
@@ -137,36 +139,45 @@ class TestQueryInputValidation:
 class TestQueryInputXSSPrevention:
     """Test XSS prevention in QueryInput."""
 
-    @pytest.mark.parametrize("xss_attempt", [
-        "<script>alert('xss')</script>",
-        "<SCRIPT>malicious_code()</SCRIPT>",
-        "<script src='evil.js'>",
-        "<script type='text/javascript'>",
-        "<ScRiPt>mixed_case()</ScRiPt>",
-    ])
+    @pytest.mark.parametrize(
+        "xss_attempt",
+        [
+            "<script>alert('xss')</script>",
+            "<SCRIPT>malicious_code()</SCRIPT>",
+            "<script src='evil.js'>",
+            "<script type='text/javascript'>",
+            "<ScRiPt>mixed_case()</ScRiPt>",
+        ],
+    )
     def test_script_tags_blocked(self, xss_attempt):
         """Test that script tags are blocked."""
         with pytest.raises(ValidationError) as exc_info:
             QueryInput(query=xss_attempt)
         assert "unsafe content" in str(exc_info.value).lower()
 
-    @pytest.mark.parametrize("js_url", [
-        "javascript:alert('xss')",
-        "JAVASCRIPT:void(0)",
-        "javascript:evil_function()",
-    ])
+    @pytest.mark.parametrize(
+        "js_url",
+        [
+            "javascript:alert('xss')",
+            "JAVASCRIPT:void(0)",
+            "javascript:evil_function()",
+        ],
+    )
     def test_javascript_urls_blocked(self, js_url):
         """Test that JavaScript URLs are blocked."""
         with pytest.raises(ValidationError) as exc_info:
             QueryInput(query=js_url)
         assert "unsafe content" in str(exc_info.value).lower()
 
-    @pytest.mark.parametrize("event_handler", [
-        "onclick=alert('xss')",
-        "onload =evil()",
-        "onerror= hack()",
-        "ONMOUSEOVER =track()",
-    ])
+    @pytest.mark.parametrize(
+        "event_handler",
+        [
+            "onclick=alert('xss')",
+            "onload =evil()",
+            "onerror= hack()",
+            "ONMOUSEOVER =track()",
+        ],
+    )
     def test_event_handlers_blocked(self, event_handler):
         """Test that event handlers are blocked."""
         with pytest.raises(ValidationError) as exc_info:
@@ -177,23 +188,29 @@ class TestQueryInputXSSPrevention:
 class TestQueryInputTemplateInjection:
     """Test template injection prevention in QueryInput."""
 
-    @pytest.mark.parametrize("template_injection", [
-        "{{user.password}}",
-        "{{config.secret_key}}",
-        "{{ system.admin }}",
-        "{{__import__('os').system('whoami')}}",
-    ])
+    @pytest.mark.parametrize(
+        "template_injection",
+        [
+            "{{user.password}}",
+            "{{config.secret_key}}",
+            "{{ system.admin }}",
+            "{{__import__('os').system('whoami')}}",
+        ],
+    )
     def test_double_brace_templates_blocked(self, template_injection):
         """Test that double-brace template syntax is blocked."""
         with pytest.raises(ValidationError) as exc_info:
             QueryInput(query=template_injection)
         assert "unsafe content" in str(exc_info.value).lower()
 
-    @pytest.mark.parametrize("template_literal", [
-        "${process.env.SECRET}",
-        "${require('child_process').exec('ls')}",
-        "Hello ${name}",
-    ])
+    @pytest.mark.parametrize(
+        "template_literal",
+        [
+            "${process.env.SECRET}",
+            "${require('child_process').exec('ls')}",
+            "Hello ${name}",
+        ],
+    )
     def test_template_literals_blocked(self, template_literal):
         """Test that template literal syntax is blocked."""
         with pytest.raises(ValidationError) as exc_info:
@@ -214,26 +231,32 @@ class TestQueryInputTemplateInjection:
 class TestQueryInputThreadId:
     """Test thread ID validation."""
 
-    @pytest.mark.parametrize("valid_thread_id", [
-        "thread-123",
-        "THREAD_456",
-        "my-thread_id-789",
-        "a",
-        "123456789",
-    ])
+    @pytest.mark.parametrize(
+        "valid_thread_id",
+        [
+            "thread-123",
+            "THREAD_456",
+            "my-thread_id-789",
+            "a",
+            "123456789",
+        ],
+    )
     def test_valid_thread_ids(self, valid_thread_id):
         """Test valid thread ID formats."""
         query_input = QueryInput(query="test", thread_id=valid_thread_id)
         assert query_input.thread_id == valid_thread_id
 
-    @pytest.mark.parametrize("invalid_thread_id", [
-        "thread/with/slashes",
-        "thread\\with\\backslashes",
-        "thread..traversal",
-        "thread with spaces",
-        "thread@email.com",
-        "thread#hash",
-    ])
+    @pytest.mark.parametrize(
+        "invalid_thread_id",
+        [
+            "thread/with/slashes",
+            "thread\\with\\backslashes",
+            "thread..traversal",
+            "thread with spaces",
+            "thread@email.com",
+            "thread#hash",
+        ],
+    )
     def test_invalid_thread_ids(self, invalid_thread_id):
         """Test invalid thread ID formats are rejected."""
         with pytest.raises(ValidationError):
@@ -407,25 +430,31 @@ class TestRAGConfig:
 class TestMCPToolInput:
     """Test MCP tool input validation."""
 
-    @pytest.mark.parametrize("valid_name", [
-        "read_file",
-        "search_documents",
-        "toolName123",
-        "my-tool_name",
-    ])
+    @pytest.mark.parametrize(
+        "valid_name",
+        [
+            "read_file",
+            "search_documents",
+            "toolName123",
+            "my-tool_name",
+        ],
+    )
     def test_valid_tool_names(self, valid_name):
         """Test valid tool names are accepted."""
         tool_input = MCPToolInput(tool_name=valid_name)
         assert tool_input.tool_name == valid_name
 
-    @pytest.mark.parametrize("invalid_name", [
-        "123tool",
-        "-invalid",
-        "_invalid",
-        "tool/name",
-        "tool\\name",
-        "tool..name",
-    ])
+    @pytest.mark.parametrize(
+        "invalid_name",
+        [
+            "123tool",
+            "-invalid",
+            "_invalid",
+            "tool/name",
+            "tool\\name",
+            "tool..name",
+        ],
+    )
     def test_invalid_tool_names_rejected(self, invalid_name):
         """Test invalid tool names are rejected."""
         with pytest.raises(ValidationError):
@@ -459,11 +488,14 @@ class TestMCPToolInput:
 class TestFileReadInput:
     """Test FileReadInput validation for path security."""
 
-    @pytest.mark.parametrize("valid_path", [
-        "data/file.txt",
-        "documents/report.pdf",
-        "src/main.py",
-    ])
+    @pytest.mark.parametrize(
+        "valid_path",
+        [
+            "data/file.txt",
+            "documents/report.pdf",
+            "src/main.py",
+        ],
+    )
     def test_valid_file_paths(self, valid_path):
         """Test valid file paths are accepted."""
         input_data = FileReadInput(file_path=valid_path)
@@ -475,13 +507,16 @@ class TestFileReadInput:
             FileReadInput(file_path="../../../etc/passwd")
         assert "Path traversal" in str(exc_info.value)
 
-    @pytest.mark.parametrize("restricted_path", [
-        "/etc/shadow",
-        "/root/.ssh/id_rsa",
-        "~/.ssh/id_rsa",
-        "/var/log/secure",
-        "\\windows\\system32\\config",
-    ])
+    @pytest.mark.parametrize(
+        "restricted_path",
+        [
+            "/etc/shadow",
+            "/root/.ssh/id_rsa",
+            "~/.ssh/id_rsa",
+            "/var/log/secure",
+            "\\windows\\system32\\config",
+        ],
+    )
     def test_restricted_paths_blocked(self, restricted_path):
         """Test restricted system paths are blocked."""
         with pytest.raises(ValidationError) as exc_info:
@@ -500,12 +535,15 @@ class TestFileReadInput:
 class TestWebFetchInput:
     """Test WebFetchInput URL validation."""
 
-    @pytest.mark.parametrize("valid_url", [
-        "https://example.com",
-        "https://api.example.com/data",
-        "http://localhost:8080/api",
-        "http://127.0.0.1:3000/test",
-    ])
+    @pytest.mark.parametrize(
+        "valid_url",
+        [
+            "https://example.com",
+            "https://api.example.com/data",
+            "http://localhost:8080/api",
+            "http://127.0.0.1:3000/test",
+        ],
+    )
     def test_valid_urls_accepted(self, valid_url):
         """Test valid URLs are accepted."""
         input_data = WebFetchInput(url=valid_url)
@@ -560,12 +598,15 @@ class TestAPIRequestMetadata:
         metadata = APIRequestMetadata(request_id="req-123-abc")
         assert metadata.request_id == "req-123-abc"
 
-    @pytest.mark.parametrize("valid_ip", [
-        "192.168.1.1",
-        "10.0.0.1",
-        "::1",
-        "2001:db8::1",
-    ])
+    @pytest.mark.parametrize(
+        "valid_ip",
+        [
+            "192.168.1.1",
+            "10.0.0.1",
+            "::1",
+            "2001:db8::1",
+        ],
+    )
     def test_valid_ip_addresses(self, valid_ip):
         """Test valid IP addresses."""
         metadata = APIRequestMetadata(request_id="test", source_ip=valid_ip)
@@ -616,23 +657,28 @@ class TestSettingsInitialization:
 
     def test_lmstudio_provider_defaults(self):
         """Test LMStudio provider with default URL."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.LLM_PROVIDER == LLMProvider.LMSTUDIO
             # Allow either localhost or 127.0.0.1
-            assert settings.LMSTUDIO_BASE_URL in [
-                "http://localhost:1234/v1",
-                "http://127.0.0.1:1234/v1"
-            ]
+            assert settings.LMSTUDIO_BASE_URL in ["http://localhost:1234/v1", "http://127.0.0.1:1234/v1"]
 
     def test_mcts_default_values(self):
         """Test MCTS default configuration values."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.MCTS_ITERATIONS == 100
@@ -640,9 +686,13 @@ class TestSettingsInitialization:
 
     def test_log_level_default(self):
         """Test default log level."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.LOG_LEVEL == LogLevel.INFO
@@ -661,50 +711,70 @@ class TestSettingsEnvironmentVariables:
 
     def test_mcts_iterations_from_env(self):
         """Test MCTS iterations loaded from environment."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "MCTS_ITERATIONS": "500",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "MCTS_ITERATIONS": "500",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.MCTS_ITERATIONS == 500
 
     def test_mcts_c_from_env(self):
         """Test MCTS_C loaded from environment."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "MCTS_C": "2.0",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "MCTS_C": "2.0",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.MCTS_C == 2.0
 
     def test_log_level_from_env(self):
         """Test log level from environment variable."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "LOG_LEVEL": "DEBUG",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "LOG_LEVEL": "DEBUG",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.LOG_LEVEL == LogLevel.DEBUG
 
     def test_invalid_mcts_iterations_rejected(self):
         """Test invalid MCTS iterations are rejected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "MCTS_ITERATIONS": "20000",  # Exceeds maximum
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "MCTS_ITERATIONS": "20000",  # Exceeds maximum
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError):
                 Settings()
 
     def test_invalid_mcts_c_rejected(self):
         """Test invalid MCTS_C is rejected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "MCTS_C": "15.0",  # Exceeds maximum of 10.0
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "MCTS_C": "15.0",  # Exceeds maximum of 10.0
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError):
                 Settings()
@@ -736,6 +806,7 @@ class TestProviderEnumValidation:
         """Test OpenAI provider requires API key."""
         # Create environment without OpenAI key - need to patch _env_file to prevent loading from .env
         from pydantic_settings import BaseSettings
+
         env_without_key = {
             "LLM_PROVIDER": "openai",
         }
@@ -786,10 +857,14 @@ class TestSecretStrHandling:
 
     def test_openai_key_is_secret(self):
         """Test OpenAI API key is stored as SecretStr."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "sk-test123456789012345678901234567890",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "sk-test123456789012345678901234567890",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert isinstance(settings.OPENAI_API_KEY, SecretStr)
@@ -797,10 +872,14 @@ class TestSecretStrHandling:
 
     def test_anthropic_key_is_secret(self):
         """Test Anthropic API key is stored as SecretStr."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "anthropic",
-            "ANTHROPIC_API_KEY": "sk-ant-test1234567890123456",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "anthropic",
+                "ANTHROPIC_API_KEY": "sk-ant-test1234567890123456",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert isinstance(settings.ANTHROPIC_API_KEY, SecretStr)
@@ -808,10 +887,14 @@ class TestSecretStrHandling:
     def test_openai_key_format_validation(self):
         """Test OpenAI API key format is validated."""
         # Invalid: doesn't start with sk-
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "invalid_key_format_12345678901234567890",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "invalid_key_format_12345678901234567890",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -819,10 +902,14 @@ class TestSecretStrHandling:
 
     def test_openai_key_placeholder_rejected(self):
         """Test OpenAI placeholder keys are rejected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "sk-xxx",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "sk-xxx",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -830,10 +917,14 @@ class TestSecretStrHandling:
 
     def test_api_key_too_short_rejected(self):
         """Test API keys that are too short are rejected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "sk-short",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "sk-short",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -853,13 +944,17 @@ class TestSecretMasking:
 
     def test_safe_dict_masks_secrets(self):
         """Test safe_dict masks all API keys."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "sk-real_secret_key_12345678901234567890",
-            "ANTHROPIC_API_KEY": "sk-ant-another_secret_1234567890",
-            "BRAINTRUST_API_KEY": "br-secret123456789012345678",
-            "PINECONE_API_KEY": "pc-secret1234567890123456789",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "sk-real_secret_key_12345678901234567890",
+                "ANTHROPIC_API_KEY": "sk-ant-another_secret_1234567890",
+                "BRAINTRUST_API_KEY": "br-secret123456789012345678",
+                "PINECONE_API_KEY": "pc-secret1234567890123456789",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             safe_data = settings.safe_dict()
@@ -875,10 +970,14 @@ class TestSecretMasking:
 
     def test_repr_does_not_expose_secrets(self):
         """Test __repr__ does not expose secrets."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "sk-super_secret_key_123456789012345678901234567890",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "sk-super_secret_key_123456789012345678901234567890",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             repr_str = repr(settings)
@@ -889,10 +988,14 @@ class TestSecretMasking:
 
     def test_get_api_key_returns_value(self):
         """Test get_api_key returns actual secret value."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "openai",
-            "OPENAI_API_KEY": "sk-test_api_key_1234567890123456789012345678901234567890",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "openai",
+                "OPENAI_API_KEY": "sk-test_api_key_1234567890123456789012345678901234567890",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             key = settings.get_api_key()
@@ -901,10 +1004,14 @@ class TestSecretMasking:
 
     def test_get_api_key_for_anthropic(self):
         """Test get_api_key returns Anthropic key when that provider is selected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "anthropic",
-            "ANTHROPIC_API_KEY": "sk-ant-test1234567890123456",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "anthropic",
+                "ANTHROPIC_API_KEY": "sk-ant-test1234567890123456",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             key = settings.get_api_key()
@@ -913,9 +1020,13 @@ class TestSecretMasking:
 
     def test_get_api_key_for_lmstudio_returns_none(self):
         """Test get_api_key returns None for LMStudio."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             key = settings.get_api_key()
@@ -936,10 +1047,14 @@ class TestSettingsValidation:
 
     def test_pinecone_host_must_be_https(self):
         """Test Pinecone host must use HTTPS."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "PINECONE_HOST": "http://invalid.pinecone.io",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "PINECONE_HOST": "http://invalid.pinecone.io",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -947,10 +1062,14 @@ class TestSettingsValidation:
 
     def test_pinecone_host_must_be_pinecone_domain(self):
         """Test Pinecone host must be pinecone.io domain."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "PINECONE_HOST": "https://not-pinecone.com",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "PINECONE_HOST": "https://not-pinecone.com",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -958,10 +1077,14 @@ class TestSettingsValidation:
 
     def test_lmstudio_url_validation(self):
         """Test LMStudio URL validation."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "LMSTUDIO_BASE_URL": "invalid_url",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "LMSTUDIO_BASE_URL": "invalid_url",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -969,10 +1092,14 @@ class TestSettingsValidation:
 
     def test_lmstudio_non_localhost_warning(self):
         """Test LMStudio non-localhost URL triggers warning."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "LMSTUDIO_BASE_URL": "http://remote-server.com:1234/v1",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "LMSTUDIO_BASE_URL": "http://remote-server.com:1234/v1",
+            },
+            clear=False,
+        ):
             reset_settings()
             with warnings.catch_warnings(record=True) as w:
                 warnings.simplefilter("always")
@@ -983,20 +1110,28 @@ class TestSettingsValidation:
     def test_s3_bucket_name_validation(self):
         """Test S3 bucket name validation."""
         # Valid bucket name
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "S3_BUCKET": "my-valid-bucket-123",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "S3_BUCKET": "my-valid-bucket-123",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.S3_BUCKET == "my-valid-bucket-123"
 
     def test_s3_bucket_invalid_characters_rejected(self):
         """Test S3 bucket with invalid characters is rejected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "S3_BUCKET": "invalid_bucket_name!",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "S3_BUCKET": "invalid_bucket_name!",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -1004,10 +1139,14 @@ class TestSettingsValidation:
 
     def test_s3_bucket_too_short_rejected(self):
         """Test S3 bucket name that is too short is rejected."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "S3_BUCKET": "ab",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "S3_BUCKET": "ab",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -1015,10 +1154,14 @@ class TestSettingsValidation:
 
     def test_otel_endpoint_validation(self):
         """Test OpenTelemetry endpoint URL validation."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "OTEL_EXPORTER_OTLP_ENDPOINT": "invalid://endpoint",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "OTEL_EXPORTER_OTLP_ENDPOINT": "invalid://endpoint",
+            },
+            clear=False,
+        ):
             reset_settings()
             with pytest.raises(ValidationError) as exc_info:
                 Settings()
@@ -1038,9 +1181,13 @@ class TestGlobalSettingsFunctions:
 
     def test_get_settings_returns_singleton(self):
         """Test get_settings returns same instance."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings1 = get_settings()
             settings2 = get_settings()
@@ -1048,9 +1195,13 @@ class TestGlobalSettingsFunctions:
 
     def test_reset_settings_clears_instance(self):
         """Test reset_settings clears the cached instance."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings1 = get_settings()
             reset_settings()
@@ -1072,11 +1223,15 @@ class TestTypeCoercion:
 
     def test_string_to_int_coercion(self):
         """Test string environment variables are coerced to int."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "MCTS_ITERATIONS": "250",
-            "HTTP_TIMEOUT_SECONDS": "60",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "MCTS_ITERATIONS": "250",
+                "HTTP_TIMEOUT_SECONDS": "60",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.MCTS_ITERATIONS == 250
@@ -1086,10 +1241,14 @@ class TestTypeCoercion:
 
     def test_string_to_float_coercion(self):
         """Test string environment variables are coerced to float."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "lmstudio",
-            "MCTS_C": "2.5",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "lmstudio",
+                "MCTS_C": "2.5",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.MCTS_C == 2.5
@@ -1097,11 +1256,15 @@ class TestTypeCoercion:
 
     def test_string_to_enum_coercion(self):
         """Test string environment variables are coerced to enum."""
-        with patch.dict(os.environ, {
-            "LLM_PROVIDER": "anthropic",
-            "ANTHROPIC_API_KEY": "sk-ant-valid_key_12345678901234567890",
-            "LOG_LEVEL": "WARNING",
-        }, clear=False):
+        with patch.dict(
+            os.environ,
+            {
+                "LLM_PROVIDER": "anthropic",
+                "ANTHROPIC_API_KEY": "sk-ant-valid_key_12345678901234567890",
+                "LOG_LEVEL": "WARNING",
+            },
+            clear=False,
+        ):
             reset_settings()
             settings = Settings()
             assert settings.LLM_PROVIDER == LLMProvider.ANTHROPIC

@@ -16,7 +16,8 @@ from typing import Dict, List
 
 # Import the MCTS classes from the main module
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 from langgraph_multi_agent_mcts import MCTSNode, LangGraphMultiAgentFramework
 
 
@@ -49,7 +50,7 @@ class TestMCTSNode:
         parent.visits = 10  # Parent must have visits
         child = MCTSNode(state_id="child", parent=parent)
 
-        assert child.ucb1() == float('inf')
+        assert child.ucb1() == float("inf")
 
     def test_ucb1_calculation_standard_case(self):
         """Test UCB1 calculation with standard values."""
@@ -189,9 +190,9 @@ class TestMCTSFrameworkIntegration:
     @pytest.fixture
     def framework(self, mock_model_adapter, mock_logger):
         """Create a framework instance with mocks."""
-        with patch('langgraph_multi_agent_mcts.HRMAgent'):
-            with patch('langgraph_multi_agent_mcts.TRMAgent'):
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
+        with patch("langgraph_multi_agent_mcts.HRMAgent"):
+            with patch("langgraph_multi_agent_mcts.TRMAgent"):
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
                     framework = LangGraphMultiAgentFramework(
                         model_adapter=mock_model_adapter,
                         logger=mock_logger,
@@ -378,9 +379,9 @@ class TestMCTSDeterminism:
         mock_logger = Mock()
         mock_logger.info = Mock()
 
-        with patch('langgraph_multi_agent_mcts.HRMAgent'):
-            with patch('langgraph_multi_agent_mcts.TRMAgent'):
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
+        with patch("langgraph_multi_agent_mcts.HRMAgent"):
+            with patch("langgraph_multi_agent_mcts.TRMAgent"):
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
                     return LangGraphMultiAgentFramework(
                         model_adapter=mock_adapter,
                         logger=mock_logger,
@@ -517,9 +518,9 @@ class TestMCTSValidation:
     @pytest.mark.parametrize("exploration_weight", [0.0, 0.5, 1.0, 1.414, 2.0, 3.0])
     def test_valid_exploration_weights(self, exploration_weight, mock_adapter, mock_logger):
         """Valid exploration weights should work."""
-        with patch('langgraph_multi_agent_mcts.HRMAgent'):
-            with patch('langgraph_multi_agent_mcts.TRMAgent'):
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
+        with patch("langgraph_multi_agent_mcts.HRMAgent"):
+            with patch("langgraph_multi_agent_mcts.TRMAgent"):
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
                     framework = LangGraphMultiAgentFramework(
                         model_adapter=mock_adapter,
                         logger=mock_logger,
@@ -530,9 +531,9 @@ class TestMCTSValidation:
     @pytest.mark.parametrize("iterations", [1, 10, 100, 1000])
     def test_valid_iteration_counts(self, iterations, mock_adapter, mock_logger):
         """Valid iteration counts should work."""
-        with patch('langgraph_multi_agent_mcts.HRMAgent'):
-            with patch('langgraph_multi_agent_mcts.TRMAgent'):
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
+        with patch("langgraph_multi_agent_mcts.HRMAgent"):
+            with patch("langgraph_multi_agent_mcts.TRMAgent"):
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
                     framework = LangGraphMultiAgentFramework(
                         model_adapter=mock_adapter,
                         logger=mock_logger,

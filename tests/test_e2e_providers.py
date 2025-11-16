@@ -120,10 +120,7 @@ async def test_mcts_with_provider(provider: str) -> dict:
             return []
 
         def state_transition(state, action):
-            return MCTSState(
-                state_id=f"{state.state_id}_{action}",
-                features={**state.features, "last": action}
-            )
+            return MCTSState(state_id=f"{state.state_id}_{action}", features={**state.features, "last": action})
 
         root = MCTSNode(
             state=MCTSState(state_id="root", features={"provider": provider}),
@@ -188,10 +185,7 @@ async def test_mcp_server() -> dict:
             result["tools_tested"] += 1
 
         # Test run_mcts
-        mcts_result = await server.call_tool(
-            "run_mcts",
-            {"query": "E2E test query", "iterations": 10, "seed": 42}
-        )
+        mcts_result = await server.call_tool("run_mcts", {"query": "E2E test query", "iterations": 10, "seed": 42})
         if not mcts_result.get("success"):
             result["errors"].append(f"run_mcts: {mcts_result.get('error')}")
         else:
@@ -215,6 +209,7 @@ async def run_e2e_tests():
 
     # Load environment
     from dotenv import load_dotenv
+
     load_dotenv()
 
     results = {
@@ -285,11 +280,7 @@ async def run_e2e_tests():
     print(f"MCP Server: {mcp_result['status']} ({mcp_result['tools_tested']} tools)")
 
     # Overall status
-    all_passed = (
-        provider_failed == 0
-        and mcts_failed == 0
-        and mcp_result["status"] in ["success", "partial"]
-    )
+    all_passed = provider_failed == 0 and mcts_failed == 0 and mcp_result["status"] in ["success", "partial"]
 
     if all_passed:
         print("\n[OK] All E2E tests passed!")

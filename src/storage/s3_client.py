@@ -130,10 +130,7 @@ class S3StorageClient:
 
     def _should_compress(self, data: bytes) -> bool:
         """Determine if data should be compressed."""
-        return (
-            self.config.enable_compression
-            and len(data) >= self.config.compression_threshold_bytes
-        )
+        return self.config.enable_compression and len(data) >= self.config.compression_threshold_bytes
 
     def _generate_key(
         self,
@@ -207,7 +204,7 @@ class S3StorageClient:
                     "s3_key": key,
                     "size_bytes": len(body),
                     "etag": response.get("ETag"),
-                }
+                },
             )
 
             return {
@@ -244,7 +241,7 @@ class S3StorageClient:
                 extra={
                     "s3_key": key,
                     "size_bytes": len(data),
-                }
+                },
             )
 
             return data
@@ -400,9 +397,7 @@ class S3StorageClient:
             Upload result
         """
         # Store as newline-delimited JSON (NDJSON)
-        ndjson_data = "\n".join(
-            json.dumps(entry, default=str) for entry in log_entries
-        ).encode("utf-8")
+        ndjson_data = "\n".join(json.dumps(entry, default=str) for entry in log_entries).encode("utf-8")
 
         key = self._generate_key(
             prefix=self.config.prefix_logs,
@@ -532,12 +527,14 @@ class S3StorageClient:
 
             objects = []
             for obj in response.get("Contents", []):
-                objects.append({
-                    "key": obj["Key"],
-                    "size": obj["Size"],
-                    "last_modified": obj["LastModified"],
-                    "etag": obj["ETag"],
-                })
+                objects.append(
+                    {
+                        "key": obj["Key"],
+                        "size": obj["Size"],
+                        "last_modified": obj["LastModified"],
+                        "etag": obj["ETag"],
+                    }
+                )
 
             return objects
 

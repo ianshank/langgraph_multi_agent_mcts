@@ -80,9 +80,7 @@ class TestBraintrustExperimentInit:
     @pytest.mark.training
     def test_experiment_naming(self, braintrust_tracker):
         """Experiments should have descriptive names."""
-        exp_id = braintrust_tracker.init_experiment(
-            name="rnn_meta_controller_v2_lr0001"
-        )
+        exp_id = braintrust_tracker.init_experiment(name="rnn_meta_controller_v2_lr0001")
 
         summary = braintrust_tracker.get_experiment_summary(exp_id)
 
@@ -389,9 +387,7 @@ class TestTrainingPipelineTracking:
 
     @pytest.mark.training
     @pytest.mark.integration
-    def test_complete_training_run_tracking(
-        self, braintrust_tracker, wandb_run, training_config, training_metrics
-    ):
+    def test_complete_training_run_tracking(self, braintrust_tracker, wandb_run, training_config, training_metrics):
         """Should track complete training run."""
         # Initialize tracking
         exp_id = braintrust_tracker.init_experiment(name="complete_run")

@@ -42,9 +42,7 @@ _PROVIDER_REGISTRY: dict[str, tuple[str, str]] = {
 _CLIENT_CACHE: dict[str, Type[BaseLLMClient]] = {}
 
 
-def register_provider(
-    name: str, module_path: str, class_name: str, override: bool = False
-) -> None:
+def register_provider(name: str, module_path: str, class_name: str, override: bool = False) -> None:
     """
     Register a new LLM provider.
 
@@ -106,9 +104,7 @@ def get_provider_class(provider: str) -> Type[BaseLLMClient]:
     except ImportError as e:
         raise ImportError(f"Failed to load provider '{provider}': {e}") from e
     except AttributeError as e:
-        raise ImportError(
-            f"Class '{class_name}' not found in module '{module_path}'"
-        ) from e
+        raise ImportError(f"Class '{class_name}' not found in module '{module_path}'") from e
 
     # Cache for future use
     _CLIENT_CACHE[provider] = client_class

@@ -39,6 +39,7 @@ try:
         AuthorizationError,
         RateLimitError,
     )
+
     IMPORTS_AVAILABLE = True
 except ImportError as e:
     IMPORTS_AVAILABLE = False
@@ -47,28 +48,14 @@ except ImportError as e:
 # Prometheus metrics (optional)
 try:
     from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+
     PROMETHEUS_AVAILABLE = True
 
     # Define metrics
-    REQUEST_COUNT = Counter(
-        'mcts_requests_total',
-        'Total number of requests',
-        ['method', 'endpoint', 'status']
-    )
-    REQUEST_LATENCY = Histogram(
-        'mcts_request_duration_seconds',
-        'Request latency in seconds',
-        ['method', 'endpoint']
-    )
-    ACTIVE_REQUESTS = Gauge(
-        'mcts_active_requests',
-        'Number of active requests'
-    )
-    ERROR_COUNT = Counter(
-        'mcts_errors_total',
-        'Total number of errors',
-        ['error_type']
-    )
+    REQUEST_COUNT = Counter("mcts_requests_total", "Total number of requests", ["method", "endpoint", "status"])
+    REQUEST_LATENCY = Histogram("mcts_request_duration_seconds", "Request latency in seconds", ["method", "endpoint"])
+    ACTIVE_REQUESTS = Gauge("mcts_active_requests", "Number of active requests")
+    ERROR_COUNT = Counter("mcts_errors_total", "Total number of errors", ["error_type"])
 except ImportError:
     PROMETHEUS_AVAILABLE = False
 
@@ -82,27 +69,16 @@ class QueryRequest(BaseModel):
         min_length=1,
         max_length=10000,
         description="User query to process",
-        json_schema_extra={"example": "Recommend defensive positions for night attack scenario"}
+        json_schema_extra={"example": "Recommend defensive positions for night attack scenario"},
     )
-    use_mcts: bool = Field(
-        default=True,
-        description="Enable MCTS tactical simulation"
-    )
-    use_rag: bool = Field(
-        default=True,
-        description="Enable RAG context retrieval"
-    )
-    mcts_iterations: Optional[int] = Field(
-        default=None,
-        ge=1,
-        le=10000,
-        description="Override default MCTS iterations"
-    )
+    use_mcts: bool = Field(default=True, description="Enable MCTS tactical simulation")
+    use_rag: bool = Field(default=True, description="Enable RAG context retrieval")
+    mcts_iterations: Optional[int] = Field(default=None, ge=1, le=10000, description="Override default MCTS iterations")
     thread_id: Optional[str] = Field(
         default=None,
         max_length=100,
-        pattern=r'^[a-zA-Z0-9_-]+$',
-        description="Conversation thread ID for state persistence"
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Conversation thread ID for state persistence",
     )
 
     class Config:
@@ -112,7 +88,7 @@ class QueryRequest(BaseModel):
                 "use_mcts": True,
                 "use_rag": True,
                 "mcts_iterations": 200,
-                "thread_id": "session_123"
+                "thread_id": "session_123",
             }
         }
 
@@ -121,25 +97,11 @@ class QueryResponse(BaseModel):
     """Response model for query results."""
 
     response: str = Field(..., description="Final synthesized response")
-    confidence: float = Field(
-        ...,
-        ge=0.0,
-        le=1.0,
-        description="Overall confidence score"
-    )
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Overall confidence score")
     agents_used: List[str] = Field(..., description="List of agents that contributed")
-    mcts_stats: Optional[Dict[str, Any]] = Field(
-        default=None,
-        description="MCTS simulation statistics"
-    )
-    processing_time_ms: float = Field(
-        ...,
-        description="Total processing time in milliseconds"
-    )
-    metadata: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional metadata"
-    )
+    mcts_stats: Optional[Dict[str, Any]] = Field(default=None, description="MCTS simulation statistics")
+    processing_time_ms: float = Field(..., description="Total processing time in milliseconds")
+    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class HealthResponse(BaseModel):
@@ -187,7 +149,7 @@ async def lifespan(app: FastAPI):
             requests_per_minute=60,
             requests_per_hour=1000,
             requests_per_day=10000,
-        )
+        ),
     )
     set_authenticator(authenticator)
 
@@ -267,15 +229,8 @@ async def metrics_middleware(request: Request, call_next):
         if PROMETHEUS_AVAILABLE:
             ACTIVE_REQUESTS.dec()
             elapsed = time.perf_counter() - start
-            REQUEST_COUNT.labels(
-                method=request.method,
-                endpoint=request.url.path,
-                status=str(status)
-            ).inc()
-            REQUEST_LATENCY.labels(
-                method=request.method,
-                endpoint=request.url.path
-            ).observe(elapsed)
+            REQUEST_COUNT.labels(method=request.method, endpoint=request.url.path, status=str(status)).inc()
+            REQUEST_LATENCY.labels(method=request.method, endpoint=request.url.path).observe(elapsed)
 
     return response
 
@@ -293,17 +248,12 @@ async def verify_api_key(x_api_key: str = Header(..., description="API key for a
     except AuthenticationError as e:
         if PROMETHEUS_AVAILABLE:
             ERROR_COUNT.labels(error_type="authentication").inc()
-        raise HTTPException(
-            status_code=401,
-            detail=e.user_message
-        )
+        raise HTTPException(status_code=401, detail=e.user_message)
     except RateLimitError as e:
         if PROMETHEUS_AVAILABLE:
             ERROR_COUNT.labels(error_type="rate_limit").inc()
         raise HTTPException(
-            status_code=429,
-            detail=e.user_message,
-            headers={"Retry-After": str(e.retry_after_seconds or 60)}
+            status_code=429, detail=e.user_message, headers={"Retry-After": str(e.retry_after_seconds or 60)}
         )
 
 
@@ -314,10 +264,7 @@ async def framework_error_handler(request: Request, exc: FrameworkError):
     if PROMETHEUS_AVAILABLE:
         ERROR_COUNT.labels(error_type=exc.error_code).inc()
 
-    return JSONResponse(
-        status_code=500,
-        content=exc.to_user_response()
-    )
+    return JSONResponse(status_code=500, content=exc.to_user_response())
 
 
 @app.exception_handler(ValidationError)
@@ -326,10 +273,7 @@ async def validation_error_handler(request: Request, exc: ValidationError):
     if PROMETHEUS_AVAILABLE:
         ERROR_COUNT.labels(error_type="validation").inc()
 
-    return JSONResponse(
-        status_code=400,
-        content=exc.to_user_response()
-    )
+    return JSONResponse(status_code=400, content=exc.to_user_response())
 
 
 # Endpoints
@@ -344,7 +288,7 @@ async def health_check():
         status="healthy",
         timestamp=datetime.utcnow().isoformat(),
         version="1.0.0",
-        uptime_seconds=time.time() - start_time
+        uptime_seconds=time.time() - start_time,
     )
 
 
@@ -363,18 +307,17 @@ async def readiness_check():
     }
 
     # Check if all critical services are available
-    all_ready = all([
-        checks["imports_available"],
-        checks["authenticator_configured"],
-    ])
+    all_ready = all(
+        [
+            checks["imports_available"],
+            checks["authenticator_configured"],
+        ]
+    )
 
     if not all_ready:
         raise HTTPException(status_code=503, detail="Service not ready")
 
-    return ReadinessResponse(
-        ready=all_ready,
-        checks=checks
-    )
+    return ReadinessResponse(ready=all_ready, checks=checks)
 
 
 @app.get("/metrics", tags=["metrics"])
@@ -385,15 +328,9 @@ async def prometheus_metrics():
     Returns metrics in Prometheus text format for scraping.
     """
     if not PROMETHEUS_AVAILABLE:
-        raise HTTPException(
-            status_code=501,
-            detail="Prometheus metrics not available"
-        )
+        raise HTTPException(status_code=501, detail="Prometheus metrics not available")
 
-    return Response(
-        content=generate_latest(),
-        media_type=CONTENT_TYPE_LATEST
-    )
+    return Response(content=generate_latest(), media_type=CONTENT_TYPE_LATEST)
 
 
 @app.post(
@@ -405,12 +342,9 @@ async def prometheus_metrics():
         429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
         400: {"model": ErrorResponse, "description": "Invalid input"},
         500: {"model": ErrorResponse, "description": "Internal server error"},
-    }
+    },
 )
-async def process_query(
-    request: QueryRequest,
-    client_info: ClientInfo = Depends(verify_api_key)
-):
+async def process_query(request: QueryRequest, client_info: ClientInfo = Depends(verify_api_key)):
     """
     Process a query using the multi-agent MCTS framework.
 
@@ -452,17 +386,21 @@ async def process_query(
         response=f"Processed query: {request.query[:100]}...",
         confidence=0.85,
         agents_used=["hrm", "trm"] + (["mcts"] if request.use_mcts else []),
-        mcts_stats={
-            "iterations": request.mcts_iterations or 100,
-            "best_action": "recommended_action",
-            "root_visits": request.mcts_iterations or 100,
-        } if request.use_mcts else None,
+        mcts_stats=(
+            {
+                "iterations": request.mcts_iterations or 100,
+                "best_action": "recommended_action",
+                "root_visits": request.mcts_iterations or 100,
+            }
+            if request.use_mcts
+            else None
+        ),
         processing_time_ms=processing_time,
         metadata={
             "client_id": client_info.client_id,
             "thread_id": request.thread_id,
             "rag_enabled": request.use_rag,
-        }
+        },
     )
 
 
@@ -484,7 +422,7 @@ async def get_stats(client_info: ClientInfo = Depends(verify_api_key)):
             "per_minute": authenticator.rate_limit_config.requests_per_minute,
             "per_hour": authenticator.rate_limit_config.requests_per_hour,
             "per_day": authenticator.rate_limit_config.requests_per_day,
-        }
+        },
     }
 
 

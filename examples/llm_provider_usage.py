@@ -38,6 +38,7 @@ from src.framework.agents import (
 # Example 1: Basic Client Usage
 # ============================================================================
 
+
 async def basic_client_usage():
     """Demonstrate basic client creation and usage."""
     print("=" * 60)
@@ -103,6 +104,7 @@ async def message_based_usage():
 # Example 2: Switching Providers
 # ============================================================================
 
+
 async def provider_switching():
     """Demonstrate switching between different providers."""
     print("\n" + "=" * 60)
@@ -166,6 +168,7 @@ async def provider_switching():
 # Example 3: Streaming Responses
 # ============================================================================
 
+
 async def streaming_example():
     """Demonstrate streaming responses."""
     print("\n" + "=" * 60)
@@ -196,6 +199,7 @@ async def streaming_example():
 # ============================================================================
 # Example 4: Custom Agent Implementation
 # ============================================================================
+
 
 class SimpleHRMAgent(AsyncAgentBase):
     """
@@ -247,10 +251,7 @@ Provide a comprehensive solution that addresses each component:"""
                 "decomposition_quality_score": confidence,
             },
             token_usage={
-                "total_tokens": (
-                    decomposition_response.total_tokens
-                    + solution_response.total_tokens
-                ),
+                "total_tokens": (decomposition_response.total_tokens + solution_response.total_tokens),
             },
             intermediate_steps=[
                 {"step": "decomposition", "output": decomposition_response.text},
@@ -296,6 +297,7 @@ async def custom_agent_example():
 # Example 5: Integration with LangGraphMultiAgentFramework
 # ============================================================================
 
+
 async def framework_integration_example():
     """
     Show how to integrate the new LLM clients with the existing framework.
@@ -312,7 +314,7 @@ async def framework_integration_example():
     # The new client works directly with the existing framework
     # Example of how to use it:
 
-    code_example = '''
+    code_example = """
 # In your main application:
 
 from src.adapters.llm import create_client
@@ -342,7 +344,7 @@ result = await framework.process(
 )
 
 print(result["response"])
-'''
+"""
 
     print("Code example for integration:")
     print(code_example)
@@ -370,6 +372,7 @@ print(result["response"])
 # ============================================================================
 # Example 6: Retry and Error Handling
 # ============================================================================
+
 
 async def retry_and_error_handling():
     """Demonstrate retry logic and error handling."""
@@ -413,6 +416,7 @@ async def retry_and_error_handling():
 # Example 7: Registering Custom Providers
 # ============================================================================
 
+
 def custom_provider_registration():
     """Demonstrate registering a custom provider."""
     print("\n" + "=" * 60)
@@ -430,7 +434,8 @@ def custom_provider_registration():
     # client = create_client("azure", deployment_name="my-gpt4")
 
     print("To register a custom provider:")
-    print("""
+    print(
+        """
     from src.adapters.llm import register_provider
 
     register_provider(
@@ -441,7 +446,8 @@ def custom_provider_registration():
 
     # Now you can use it:
     client = create_client("azure", deployment_name="my-deployment")
-    """)
+    """
+    )
 
     print(f"Currently available: {list_providers()}")
 
@@ -449,6 +455,7 @@ def custom_provider_registration():
 # ============================================================================
 # Main
 # ============================================================================
+
 
 async def main():
     """Run all examples."""

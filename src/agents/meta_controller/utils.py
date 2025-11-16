@@ -206,10 +206,10 @@ def features_to_text(features: MetaControllerFeatures) -> str:
 def convert_features_to_text(features: MetaControllerFeatures) -> str:
     """
     Convert MetaControllerFeatures to a text description for BERT input.
-    
+
     Args:
         features: MetaControllerFeatures instance
-        
+
     Returns:
         Text description of the features
     """
@@ -225,5 +225,5 @@ def convert_features_to_text(features: MetaControllerFeatures) -> str:
         f"Domain: {features.domain}\n"
         f"User preference: {features.user_preference}"
     )
-    
+
     return text

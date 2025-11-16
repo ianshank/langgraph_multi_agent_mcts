@@ -20,6 +20,7 @@ import yaml
 
 try:
     from datasets import load_dataset, Dataset as HFDataset
+
     HAS_DATASETS = True
 except ImportError:
     HAS_DATASETS = False
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TaskSample:
     """Represents a single training task sample."""
+
     task_id: str
     task_text: str
     difficulty: str  # easy, medium, hard
@@ -42,6 +44,7 @@ class TaskSample:
 @dataclass
 class HRMSample:
     """Sample formatted for HRM (hierarchical decomposition) training."""
+
     input_text: str
     decomposition: List[str]
     depth: int
@@ -51,6 +54,7 @@ class HRMSample:
 @dataclass
 class TRMSample:
     """Sample formatted for TRM (task refinement) training."""
+
     initial_task: str
     refinement_steps: List[str]
     final_task: str
@@ -60,6 +64,7 @@ class TRMSample:
 @dataclass
 class DocumentChunk:
     """A chunk of document for RAG processing."""
+
     doc_id: str
     chunk_id: int
     text: str
@@ -139,12 +144,13 @@ class DABStepLoader:
                 "category": "reasoning",
                 "steps": [f"Step {j}: Intermediate computation" for j in range(num_steps)],
                 "answer": f"Result for task {i}",
-                "metadata": {"synthetic": True}
+                "metadata": {"synthetic": True},
             }
             synthetic_tasks.append(task)
 
         # Convert to HuggingFace dataset format
         from datasets import Dataset as HFDataset
+
         self._dataset = {"train": HFDataset.from_list(synthetic_tasks)}
 
     def create_splits(self) -> Dict[str, List[TaskSample]]:
@@ -181,8 +187,8 @@ class DABStepLoader:
 
         self._splits = {
             "train": all_samples[:n_train],
-            "val": all_samples[n_train:n_train + n_val],
-            "test": all_samples[n_train + n_val:]
+            "val": all_samples[n_train : n_train + n_val],
+            "test": all_samples[n_train + n_val :],
         }
 
         logger.info(
@@ -211,7 +217,7 @@ class DABStepLoader:
                 category=category,
                 steps=steps if isinstance(steps, list) else [steps],
                 expected_output=expected_output,
-                metadata=metadata
+                metadata=metadata,
             )
         except Exception as e:
             logger.warning(f"Failed to convert item: {e}")
@@ -240,12 +246,7 @@ class DABStepLoader:
             step_labels.append(2)  # END
             labels.extend(step_labels)
 
-        return HRMSample(
-            input_text=sample.task_text,
-            decomposition=decomposition,
-            depth=depth,
-            labels=labels
-        )
+        return HRMSample(input_text=sample.task_text, decomposition=decomposition, depth=depth, labels=labels)
 
     def convert_to_trm_format(self, sample: TaskSample) -> TRMSample:
         """
@@ -269,7 +270,7 @@ class DABStepLoader:
             initial_task=sample.task_text,
             refinement_steps=refinement_steps[1:],
             final_task=sample.steps[-1] if sample.steps else sample.task_text,
-            improvement_scores=improvement_scores
+            improvement_scores=improvement_scores,
         )
 
     def augment_task(self, sample: TaskSample, num_variations: int = 3) -> List[TaskSample]:
@@ -303,7 +304,7 @@ class DABStepLoader:
                 category=sample.category,
                 steps=new_steps,
                 expected_output=sample.expected_output,
-                metadata={**sample.metadata, "augmented": True, "variation": i}
+                metadata={**sample.metadata, "augmented": True, "variation": i},
             )
             augmented.append(augmented_sample)
 
@@ -370,11 +371,7 @@ class PRIMUSProcessor:
         logger.info(f"Loading PRIMUS-Seed from {self.seed_path}")
 
         try:
-            self._seed_dataset = load_dataset(
-                self.seed_path,
-                cache_dir=str(self.cache_dir),
-                streaming=self.streaming
-            )
+            self._seed_dataset = load_dataset(self.seed_path, cache_dir=str(self.cache_dir), streaming=self.streaming)
             logger.info("Loaded PRIMUS-Seed successfully")
 
         except Exception as e:
@@ -391,15 +388,16 @@ class PRIMUSProcessor:
             doc = {
                 "doc_id": f"synthetic_doc_{i}",
                 "text": f"This is synthetic cybersecurity document {i} about {category}. "
-                        f"It contains information relevant to tactical analysis and threat intelligence. "
-                        f"The document discusses various aspects of cybersecurity operations.",
+                f"It contains information relevant to tactical analysis and threat intelligence. "
+                f"The document discusses various aspects of cybersecurity operations.",
                 "category": category,
                 "source": "synthetic",
-                "timestamp": "2024-01-01"
+                "timestamp": "2024-01-01",
             }
             synthetic_docs.append(doc)
 
         from datasets import Dataset as HFDataset
+
         self._seed_dataset = HFDataset.from_list(synthetic_docs)
 
     def load_instruct_dataset(self) -> None:
@@ -410,7 +408,7 @@ class PRIMUSProcessor:
             self._instruct_dataset = load_dataset(
                 self.instruct_path,
                 cache_dir=str(self.cache_dir / "instruct"),
-                streaming=False  # Small dataset, no need for streaming
+                streaming=False,  # Small dataset, no need for streaming
             )
             logger.info("Loaded PRIMUS-Instruct successfully")
 
@@ -427,11 +425,12 @@ class PRIMUSProcessor:
             sample = {
                 "instruction": f"Analyze the cybersecurity threat scenario {i}",
                 "input": f"Context for scenario {i}: A potential security breach...",
-                "output": f"Analysis: Based on the provided context, the threat level is moderate..."
+                "output": f"Analysis: Based on the provided context, the threat level is moderate...",
             }
             synthetic_instruct.append(sample)
 
         from datasets import Dataset as HFDataset
+
         self._instruct_dataset = {"train": HFDataset.from_list(synthetic_instruct)}
 
     def stream_documents(self) -> Iterator[DocumentChunk]:
@@ -463,20 +462,15 @@ class PRIMUSProcessor:
                     metadata={
                         "category": doc_category,
                         "source": doc.get("source", "primus"),
-                        "timestamp": doc.get("timestamp", "")
-                    }
+                        "timestamp": doc.get("timestamp", ""),
+                    },
                 )
                 chunk_id += 1
 
                 if self.max_documents and chunk_id >= self.max_documents:
                     return
 
-    def _chunk_text(
-        self,
-        text: str,
-        chunk_size: int = 512,
-        overlap: int = 50
-    ) -> List[str]:
+    def _chunk_text(self, text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]:
         """
         Chunk text into smaller pieces with overlap.
 
@@ -533,7 +527,7 @@ class PRIMUSProcessor:
             sample = {
                 "instruction": item.get("instruction", ""),
                 "input": item.get("input", ""),
-                "output": item.get("output", "")
+                "output": item.get("output", ""),
             }
             samples.append(sample)
 
@@ -558,7 +552,7 @@ class PRIMUSProcessor:
             "threat_level": self._estimate_threat_level(text),
             "domain": chunk.metadata.get("category", "general"),
             "text_length": len(chunk.text),
-            "word_count": len(chunk.text.split())
+            "word_count": len(chunk.text.split()),
         }
 
         return metadata
@@ -588,7 +582,7 @@ class DataOrchestrator:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
 
         self.dabstep_loader = DABStepLoader(self.config["data"]["dabstep"])
@@ -639,7 +633,7 @@ class DataOrchestrator:
             batch_size=self.batch_size,
             shuffle=(split == "train"),
             num_workers=self.config["resources"]["max_cpu_workers"],
-            pin_memory=self.config["resources"]["pin_memory"]
+            pin_memory=self.config["resources"]["pin_memory"],
         )
 
     def get_trm_dataloader(self, split: str = "train") -> DataLoader:
@@ -665,7 +659,7 @@ class DataOrchestrator:
             batch_size=self.batch_size,
             shuffle=(split == "train"),
             num_workers=self.config["resources"]["max_cpu_workers"],
-            pin_memory=self.config["resources"]["pin_memory"]
+            pin_memory=self.config["resources"]["pin_memory"],
         )
 
     def get_rag_documents(self) -> Iterator[DocumentChunk]:
@@ -682,10 +676,7 @@ class DataOrchestrator:
         return self.primus_processor.get_instruction_samples()
 
     def create_balanced_batch(
-        self,
-        hrm_samples: List[HRMSample],
-        trm_samples: List[TRMSample],
-        instruction_samples: List[Dict[str, str]]
+        self, hrm_samples: List[HRMSample], trm_samples: List[TRMSample], instruction_samples: List[Dict[str, str]]
     ) -> Dict[str, Any]:
         """
         Create a balanced batch across different training objectives.
@@ -699,9 +690,9 @@ class DataOrchestrator:
             Dictionary containing balanced batch
         """
         batch = {
-            "hrm": hrm_samples[:self.batch_size // 3],
-            "trm": trm_samples[:self.batch_size // 3],
-            "instruction": instruction_samples[:self.batch_size // 3]
+            "hrm": hrm_samples[: self.batch_size // 3],
+            "trm": trm_samples[: self.batch_size // 3],
+            "instruction": instruction_samples[: self.batch_size // 3],
         }
         return batch
 
@@ -720,11 +711,9 @@ class DataOrchestrator:
                 "train_samples": len(self.dabstep_loader._splits.get("train", [])),
                 "val_samples": len(self.dabstep_loader._splits.get("val", [])),
                 "test_samples": len(self.dabstep_loader._splits.get("test", [])),
-                "difficulties": {}
+                "difficulties": {},
             },
-            "primus_instruct": {
-                "total_samples": len(self.get_instruction_samples())
-            }
+            "primus_instruct": {"total_samples": len(self.get_instruction_samples())},
         }
 
         # Count by difficulty
@@ -753,7 +742,7 @@ class HRMDataset(Dataset):
             "input_text": sample.input_text,
             "decomposition": sample.decomposition,
             "depth": sample.depth,
-            "labels": torch.tensor(sample.labels[:512], dtype=torch.long)  # Truncate to max length
+            "labels": torch.tensor(sample.labels[:512], dtype=torch.long),  # Truncate to max length
         }
 
 
@@ -772,7 +761,7 @@ class TRMDataset(Dataset):
             "initial_task": sample.initial_task,
             "refinement_steps": sample.refinement_steps,
             "final_task": sample.final_task,
-            "improvement_scores": torch.tensor(sample.improvement_scores, dtype=torch.float32)
+            "improvement_scores": torch.tensor(sample.improvement_scores, dtype=torch.float32),
         }
 
 
@@ -780,10 +769,7 @@ class TrainingDataset(Dataset):
     """Combined dataset for multi-objective training."""
 
     def __init__(
-        self,
-        hrm_samples: List[HRMSample],
-        trm_samples: List[TRMSample],
-        instruction_samples: List[Dict[str, str]]
+        self, hrm_samples: List[HRMSample], trm_samples: List[TRMSample], instruction_samples: List[Dict[str, str]]
     ):
         self.hrm_samples = hrm_samples
         self.trm_samples = trm_samples
@@ -811,7 +797,7 @@ class TrainingDataset(Dataset):
                 "input_text": sample.input_text,
                 "decomposition": sample.decomposition,
                 "depth": sample.depth,
-                "labels": torch.tensor(sample.labels[:512], dtype=torch.long)
+                "labels": torch.tensor(sample.labels[:512], dtype=torch.long),
             }
         elif sample_type == "trm":
             sample = self.trm_samples[sample_idx]
@@ -820,7 +806,7 @@ class TrainingDataset(Dataset):
                 "initial_task": sample.initial_task,
                 "refinement_steps": sample.refinement_steps,
                 "final_task": sample.final_task,
-                "improvement_scores": torch.tensor(sample.improvement_scores, dtype=torch.float32)
+                "improvement_scores": torch.tensor(sample.improvement_scores, dtype=torch.float32),
             }
         else:  # instruction
             sample = self.instruction_samples[sample_idx]
@@ -828,7 +814,7 @@ class TrainingDataset(Dataset):
                 "type": "instruction",
                 "instruction": sample["instruction"],
                 "input": sample["input"],
-                "output": sample["output"]
+                "output": sample["output"],
             }
 
 
@@ -845,7 +831,7 @@ if __name__ == "__main__":
         "train_split": 0.8,
         "val_split": 0.1,
         "test_split": 0.1,
-        "seed": 42
+        "seed": 42,
     }
 
     loader = DABStepLoader(dabstep_config)
@@ -868,11 +854,9 @@ if __name__ == "__main__":
             "path": "trendmicro-ailab/Primus-Seed",
             "cache_dir": "./cache/primus_seed",
             "categories": ["mitre", "cyber_companies"],
-            "streaming": True
+            "streaming": True,
         },
-        "primus_instruct": {
-            "path": "trendmicro-ailab/Primus-Instruct"
-        }
+        "primus_instruct": {"path": "trendmicro-ailab/Primus-Instruct"},
     }
 
     processor = PRIMUSProcessor(primus_config)

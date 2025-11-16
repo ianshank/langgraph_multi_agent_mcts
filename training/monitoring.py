@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Alert:
     """Training alert."""
+
     timestamp: str
     severity: str  # "info", "warning", "critical"
     category: str
@@ -38,6 +39,7 @@ class Alert:
 @dataclass
 class TrainingSnapshot:
     """Snapshot of training state."""
+
     timestamp: float
     epoch: int
     global_step: int
@@ -92,9 +94,7 @@ class TrainingMonitor:
                 '"module": "%(name)s", "message": "%(message)s"}'
             )
         else:
-            formatter = logging.Formatter(
-                "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-            )
+            formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
         file_handler = logging.FileHandler(training_log)
         file_handler.setFormatter(formatter)
@@ -146,7 +146,7 @@ class TrainingMonitor:
                 message=f"Gradient explosion detected at step {step}",
                 metric_name="gradient_norm",
                 metric_value=norm,
-                threshold=self.gradient_explosion_threshold
+                threshold=self.gradient_explosion_threshold,
             )
 
     def _check_loss_spike(self, loss: float, step: int) -> None:
@@ -162,7 +162,7 @@ class TrainingMonitor:
                 message=f"Loss spike detected at step {step}: {loss:.4f} vs mean {recent_mean:.4f}",
                 metric_name="loss",
                 metric_value=loss,
-                threshold=recent_mean * self.loss_spike_threshold
+                threshold=recent_mean * self.loss_spike_threshold,
             )
 
     def _check_metric_anomalies(self, name: str, value: float, step: int) -> None:
@@ -175,17 +175,11 @@ class TrainingMonitor:
                 message=f"Invalid metric value detected: {name}={value} at step {step}",
                 metric_name=name,
                 metric_value=value,
-                threshold=0.0
+                threshold=0.0,
             )
 
     def _create_alert(
-        self,
-        severity: str,
-        category: str,
-        message: str,
-        metric_name: str,
-        metric_value: float,
-        threshold: float
+        self, severity: str, category: str, message: str, metric_name: str, metric_value: float, threshold: float
     ) -> None:
         """Create and store an alert."""
         alert = Alert(
@@ -195,7 +189,7 @@ class TrainingMonitor:
             message=message,
             metric_name=metric_name,
             metric_value=metric_value,
-            threshold=threshold
+            threshold=threshold,
         )
 
         self.alerts.append(alert)
@@ -214,7 +208,7 @@ class TrainingMonitor:
     def _persist_alert(self, alert: Alert) -> None:
         """Persist alert to disk."""
         alert_file = self.log_dir / "alerts.jsonl"
-        with open(alert_file, 'a') as f:
+        with open(alert_file, "a") as f:
             alert_dict = {
                 "timestamp": alert.timestamp,
                 "severity": alert.severity,
@@ -222,7 +216,7 @@ class TrainingMonitor:
                 "message": alert.message,
                 "metric_name": alert.metric_name,
                 "metric_value": alert.metric_value,
-                "threshold": alert.threshold
+                "threshold": alert.threshold,
             }
             f.write(json.dumps(alert_dict) + "\n")
 
@@ -237,12 +231,13 @@ class TrainingMonitor:
         resources = {
             "cpu_percent": cpu_percent,
             "memory_percent": memory_percent * 100,
-            "memory_available_gb": memory_info.available / (1024**3)
+            "memory_available_gb": memory_info.available / (1024**3),
         }
 
         # Check GPU if available
         try:
             import torch
+
             if torch.cuda.is_available():
                 # Use total GPU memory, not peak allocated
                 device = torch.cuda.current_device()
@@ -260,7 +255,7 @@ class TrainingMonitor:
                         message=f"GPU memory usage high: {gpu_memory_ratio:.2%}",
                         metric_name="gpu_memory",
                         metric_value=gpu_memory_ratio,
-                        threshold=self.oom_warning_threshold
+                        threshold=self.oom_warning_threshold,
                     )
         except ImportError:
             pass
@@ -290,9 +285,7 @@ class TrainingMonitor:
         if model is not None:
             try:
                 model_info["num_parameters"] = sum(p.numel() for p in model.parameters())
-                model_info["trainable_parameters"] = sum(
-                    p.numel() for p in model.parameters() if p.requires_grad
-                )
+                model_info["trainable_parameters"] = sum(p.numel() for p in model.parameters() if p.requires_grad)
             except Exception:
                 pass
 
@@ -302,7 +295,7 @@ class TrainingMonitor:
             global_step=global_step,
             metrics=current_metrics,
             resource_usage=resource_usage,
-            model_info=model_info
+            model_info=model_info,
         )
 
         self.snapshots.append(snapshot)
@@ -333,7 +326,7 @@ class TrainingMonitor:
             "mean": float(np.mean(values)),
             "std": float(np.std(values)),
             "latest": float(values[-1]),
-            "num_samples": len(values)
+            "num_samples": len(values),
         }
 
     def export_metrics(self, output_path: str) -> None:
@@ -345,25 +338,16 @@ class TrainingMonitor:
         """
         export_data = {
             "metric_history": {
-                name: [(step, ts, val) for step, ts, val in history]
-                for name, history in self.metric_history.items()
+                name: [(step, ts, val) for step, ts, val in history] for name, history in self.metric_history.items()
             },
             "alerts": [
-                {
-                    "timestamp": a.timestamp,
-                    "severity": a.severity,
-                    "category": a.category,
-                    "message": a.message
-                }
+                {"timestamp": a.timestamp, "severity": a.severity, "category": a.category, "message": a.message}
                 for a in self.alerts
             ],
-            "summaries": {
-                name: self.get_metric_summary(name)
-                for name in self.metric_history
-            }
+            "summaries": {name: self.get_metric_summary(name) for name in self.metric_history},
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(export_data, f, indent=2)
 
         logger.info(f"Metrics exported to {output_path}")
@@ -393,7 +377,7 @@ class MetricsDashboard:
         html_content = self._create_html_content()
         output_path = self.dashboard_dir / f"dashboard_{datetime.now().strftime('%Y%m%d_%H%M%S')}.html"
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             f.write(html_content)
 
         logger.info(f"Dashboard generated at {output_path}")
@@ -402,10 +386,7 @@ class MetricsDashboard:
     def _create_html_content(self) -> str:
         """Create HTML content for dashboard."""
         # Get summaries
-        summaries = {
-            name: self.monitor.get_metric_summary(name)
-            for name in self.monitor.metric_history
-        }
+        summaries = {name: self.monitor.get_metric_summary(name) for name in self.monitor.metric_history}
 
         html = f"""
 <!DOCTYPE html>
@@ -522,7 +503,7 @@ class MetricsDashboard:
             "timestamp": datetime.now().isoformat(),
             "metrics": {},
             "alerts": [],
-            "resources": self.monitor.check_resource_usage()
+            "resources": self.monitor.check_resource_usage(),
         }
 
         # Latest metrics
@@ -532,12 +513,7 @@ class MetricsDashboard:
 
         # Recent alerts
         live_data["alerts"] = [
-            {
-                "timestamp": a.timestamp,
-                "severity": a.severity,
-                "message": a.message
-            }
-            for a in self.monitor.alerts[-5:]
+            {"timestamp": a.timestamp, "severity": a.severity, "message": a.message} for a in self.monitor.alerts[-5:]
         ]
 
         return live_data
@@ -567,20 +543,20 @@ class AlertManager:
                 "name": "loss_divergence",
                 "condition": lambda m: m.get("loss", 0) > 10.0,
                 "severity": "critical",
-                "message": "Training loss diverging"
+                "message": "Training loss diverging",
             },
             {
                 "name": "low_accuracy",
                 "condition": lambda m: m.get("accuracy", 1.0) < 0.5,
                 "severity": "warning",
-                "message": "Model accuracy below threshold"
+                "message": "Model accuracy below threshold",
             },
             {
                 "name": "slow_convergence",
                 "condition": lambda m: m.get("epoch", 0) > 5 and m.get("loss", 0) > 1.0,
                 "severity": "info",
-                "message": "Slow training convergence detected"
-            }
+                "message": "Slow training convergence detected",
+            },
         ]
         return rules
 
@@ -618,7 +594,7 @@ class AlertManager:
                     message=rule["message"],
                     metric_name=rule["name"],
                     metric_value=0.0,
-                    threshold=0.0
+                    threshold=0.0,
                 )
 
                 triggered.append(alert)
@@ -675,7 +651,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     monitoring_config = config.get("monitoring", {})
@@ -688,7 +664,7 @@ if __name__ == "__main__":
         metrics = {
             "loss": 1.0 / (step + 1) + np.random.randn() * 0.1,
             "accuracy": 0.5 + 0.5 * (step / 100) + np.random.randn() * 0.05,
-            "learning_rate": 0.001 * (0.95 ** (step // 10))
+            "learning_rate": 0.001 * (0.95 ** (step // 10)),
         }
         monitor.log_metrics(metrics, step)
 

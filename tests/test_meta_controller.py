@@ -760,9 +760,7 @@ class TestIntegration:
             {},  # Empty state
         ]
 
-        features_list = [
-            concrete_meta_controller.extract_features(state) for state in states
-        ]
+        features_list = [concrete_meta_controller.extract_features(state) for state in states]
 
         assert len(features_list) == 4
         assert all(isinstance(f, MetaControllerFeatures) for f in features_list)
@@ -1038,9 +1036,7 @@ class TestRNNMetaController:
             assert isinstance(prob, float)
             assert 0.0 <= prob <= 1.0
 
-    def test_controller_deterministic_with_seed(
-        self, sample_features: MetaControllerFeatures
-    ) -> None:
+    def test_controller_deterministic_with_seed(self, sample_features: MetaControllerFeatures) -> None:
         """Test that same seed produces same results."""
         controller1 = RNNMetaController(name="Test1", seed=123)
         controller2 = RNNMetaController(name="Test2", seed=123)
@@ -1052,9 +1048,7 @@ class TestRNNMetaController:
         assert prediction1.confidence == pytest.approx(prediction2.confidence, abs=1e-6)
 
         for agent in ["hrm", "trm", "mcts"]:
-            assert prediction1.probabilities[agent] == pytest.approx(
-                prediction2.probabilities[agent], abs=1e-6
-            )
+            assert prediction1.probabilities[agent] == pytest.approx(prediction2.probabilities[agent], abs=1e-6)
 
     @pytest.mark.slow
     def test_controller_save_and_load_model(
@@ -1083,18 +1077,14 @@ class TestRNNMetaController:
 
         # Predictions should be identical
         assert prediction_before.agent == prediction_after.agent
-        assert prediction_before.confidence == pytest.approx(
-            prediction_after.confidence, abs=1e-6
-        )
+        assert prediction_before.confidence == pytest.approx(prediction_after.confidence, abs=1e-6)
 
         for agent in ["hrm", "trm", "mcts"]:
             assert prediction_before.probabilities[agent] == pytest.approx(
                 prediction_after.probabilities[agent], abs=1e-6
             )
 
-    def test_controller_reset_hidden_state(
-        self, rnn_controller: RNNMetaController
-    ) -> None:
+    def test_controller_reset_hidden_state(self, rnn_controller: RNNMetaController) -> None:
         """Test that reset_hidden_state() sets hidden state to None."""
         # Initially should be None
         assert rnn_controller.hidden_state is None
@@ -1300,9 +1290,7 @@ class TestBERTMetaController:
         assert 0.0 <= prediction.confidence <= 1.0
 
     @pytest.mark.slow
-    def test_controller_get_trainable_parameters(
-        self, bert_controller: BERTMetaController
-    ) -> None:
+    def test_controller_get_trainable_parameters(self, bert_controller: BERTMetaController) -> None:
         """Test that get_trainable_parameters returns dict with trainable statistics."""
         params = bert_controller.get_trainable_parameters()
 
@@ -1355,9 +1343,7 @@ class TestBERTMetaController:
 
         # Predictions should be identical
         assert prediction_before.agent == prediction_after.agent
-        assert prediction_before.confidence == pytest.approx(
-            prediction_after.confidence, abs=1e-6
-        )
+        assert prediction_before.confidence == pytest.approx(prediction_after.confidence, abs=1e-6)
 
         for agent in ["hrm", "trm", "mcts"]:
             assert prediction_before.probabilities[agent] == pytest.approx(

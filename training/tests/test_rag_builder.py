@@ -13,21 +13,25 @@ from typing import Any, Dict
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 # Mock the torch import for data_pipeline before importing
-sys.modules['torch'] = MagicMock()
-sys.modules['torch.utils'] = MagicMock()
-sys.modules['torch.utils.data'] = MagicMock()
+sys.modules["torch"] = MagicMock()
+sys.modules["torch.utils"] = MagicMock()
+sys.modules["torch.utils.data"] = MagicMock()
+
 
 # Define DocumentChunk locally to avoid importing from data_pipeline
 @dataclass
 class DocumentChunk:
     """A chunk of a document."""
+
     doc_id: str
     chunk_id: int
     text: str
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+
 # Patch data_pipeline to use our local DocumentChunk
 import training.data_pipeline
+
 training.data_pipeline.DocumentChunk = DocumentChunk
 
 from training.rag_builder import (
@@ -36,7 +40,7 @@ from training.rag_builder import (
     RAGIndexManager,
     SearchResult,
     IndexStats,
-    RetrievalOptimizer
+    RetrievalOptimizer,
 )
 
 
@@ -59,13 +63,9 @@ def rag_config():
             "cloud": "aws",
             "index_name": "test-index",
             "namespace": "test",
-            "batch_size": 10
+            "batch_size": 10,
         },
-        "hybrid_search": {
-            "enabled": True,
-            "bm25_weight": 0.3,
-            "dense_weight": 0.7
-        }
+        "hybrid_search": {"enabled": True, "bm25_weight": 0.3, "dense_weight": 0.7},
     }
 
 
@@ -77,26 +77,26 @@ def sample_chunks():
             doc_id="doc1",
             chunk_id=0,
             text="MITRE ATT&CK framework provides a comprehensive knowledge base of adversary tactics and techniques.",
-            metadata={"category": "mitre", "source": "cybersecurity_docs"}
+            metadata={"category": "mitre", "source": "cybersecurity_docs"},
         ),
         DocumentChunk(
             doc_id="doc1",
             chunk_id=1,
             text="Critical vulnerability CVE-2023-1234 allows remote code execution in vulnerable systems.",
-            metadata={"category": "cyber_companies", "source": "vulnerability_report"}
+            metadata={"category": "cyber_companies", "source": "vulnerability_report"},
         ),
         DocumentChunk(
             doc_id="doc2",
             chunk_id=0,
             text="Anomaly detection systems monitor network traffic for suspicious patterns.",
-            metadata={"category": "wikipedia", "source": "general_knowledge"}
+            metadata={"category": "wikipedia", "source": "general_knowledge"},
         ),
         DocumentChunk(
             doc_id="doc3",
             chunk_id=0,
             text="Low priority information about system administration best practices.",
-            metadata={"category": "general", "source": "documentation"}
-        )
+            metadata={"category": "general", "source": "documentation"},
+        ),
     ]
 
 
@@ -161,11 +161,11 @@ class TestChunkingStrategy:
 class TestVectorIndexBuilder:
     """Tests for Pinecone vector index builder."""
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_initialization_without_transformers(self, rag_config):
         """Test builder initializes without sentence transformers."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -175,11 +175,11 @@ class TestVectorIndexBuilder:
             assert builder.embedding_model is None
             assert builder.embedding_dim == 384
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_embed_text_fallback(self, rag_config):
         """Test embedding fallback to random when no model available."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = MagicMock()
 
@@ -189,11 +189,11 @@ class TestVectorIndexBuilder:
             assert isinstance(embedding, np.ndarray)
             assert embedding.shape == (384,)
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_estimate_threat_level(self, rag_config):
         """Test threat level estimation."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = MagicMock()
 
@@ -203,12 +203,12 @@ class TestVectorIndexBuilder:
             assert builder._estimate_threat_level("warning about suspicious activity") == "medium"
             assert builder._estimate_threat_level("normal system operation") == "low"
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
-    @patch('training.rag_builder.HAS_BM25', True)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
+    @patch("training.rag_builder.HAS_BM25", True)
     def test_build_index(self, rag_config, sample_chunks):
         """Test building index with sample chunks."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -223,11 +223,11 @@ class TestVectorIndexBuilder:
             assert "mitre" in stats.domains
             assert builder.bm25_index is not None
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_upsert_batch(self, rag_config):
         """Test batch upsert to Pinecone."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -235,7 +235,7 @@ class TestVectorIndexBuilder:
             builder = VectorIndexBuilder(rag_config)
             vectors = [
                 {"id": "v1", "values": [0.1] * 384, "metadata": {"text": "test"}},
-                {"id": "v2", "values": [0.2] * 384, "metadata": {"text": "test2"}}
+                {"id": "v2", "values": [0.2] * 384, "metadata": {"text": "test2"}},
             ]
             builder._upsert_batch(vectors)
 
@@ -243,11 +243,11 @@ class TestVectorIndexBuilder:
             call_args = mock_index.upsert.call_args
             assert call_args.kwargs["namespace"] == "test"
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_search(self, rag_config):
         """Test search functionality."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -261,8 +261,8 @@ class TestVectorIndexBuilder:
                             "doc_id": "doc1",
                             "chunk_id": 0,
                             "text": "MITRE ATT&CK framework",
-                            "category": "mitre"
-                        }
+                            "category": "mitre",
+                        },
                     }
                 ]
             }
@@ -276,11 +276,11 @@ class TestVectorIndexBuilder:
             assert results[0].doc_id == "doc1"
             assert results[0].score == 0.95
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_search_by_category(self, rag_config):
         """Test search with category filter."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -293,11 +293,11 @@ class TestVectorIndexBuilder:
             call_args = mock_index.query.call_args
             assert call_args.kwargs["filter"] == {"category": {"$eq": "mitre"}}
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_search_by_threat_level(self, rag_config):
         """Test search with threat level filter."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -310,12 +310,12 @@ class TestVectorIndexBuilder:
             call_args = mock_index.query.call_args
             assert call_args.kwargs["filter"] == {"threat_level": {"$eq": "high"}}
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_save_and_load_index(self, rag_config):
         """Test saving and loading index metadata."""
         with tempfile.TemporaryDirectory() as tmp_dir:
-            with patch('training.rag_builder.Pinecone') as mock_pc:
+            with patch("training.rag_builder.Pinecone") as mock_pc:
                 mock_pc.return_value.list_indexes.return_value = []
                 mock_pc.return_value.Index.return_value = MagicMock()
 
@@ -337,11 +337,11 @@ class TestVectorIndexBuilder:
                 assert len(builder2.chunk_store) == 1
                 assert builder2.chunk_store[0]["doc_id"] == "doc1"
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_add_documents(self, rag_config, sample_chunks):
         """Test adding documents to existing index."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -352,11 +352,11 @@ class TestVectorIndexBuilder:
             assert added == 2
             assert len(builder.chunk_store) == 2
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_delete_namespace(self, rag_config):
         """Test deleting namespace."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -370,18 +370,18 @@ class TestVectorIndexBuilder:
             assert len(builder.chunk_store) == 0
             mock_index.delete.assert_called_once_with(delete_all=True, namespace="test")
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_get_index_stats(self, rag_config):
         """Test getting index statistics."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
             mock_index.describe_index_stats.return_value = {
                 "total_vector_count": 100,
                 "dimension": 384,
-                "namespaces": {"test": {"vector_count": 100}}
+                "namespaces": {"test": {"vector_count": 100}},
             }
 
             builder = VectorIndexBuilder(rag_config)
@@ -393,7 +393,7 @@ class TestVectorIndexBuilder:
             assert stats["total_vector_count"] == 100
             assert stats["local_chunks"] == 5
 
-    @patch('training.rag_builder.HAS_PINECONE', False)
+    @patch("training.rag_builder.HAS_PINECONE", False)
     def test_pinecone_not_available(self, rag_config):
         """Test behavior when Pinecone is not available."""
         builder = VectorIndexBuilder(rag_config)
@@ -402,11 +402,11 @@ class TestVectorIndexBuilder:
         results = builder.search("test query")
         assert results == []
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_is_available_property(self, rag_config):
         """Test is_available property."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = MagicMock()
 
@@ -449,25 +449,19 @@ class TestRAGIndexManager:
     @pytest.fixture
     def temp_config_file(self, rag_config, tmp_path):
         """Create temporary config file."""
-        full_config = {
-            "rag": rag_config,
-            "data": {
-                "primus_seed": {
-                    "categories": ["mitre", "cyber_companies"]
-                }
-            }
-        }
+        full_config = {"rag": rag_config, "data": {"primus_seed": {"categories": ["mitre", "cyber_companies"]}}}
         config_path = tmp_path / "config.yaml"
         import yaml
-        with open(config_path, 'w') as f:
+
+        with open(config_path, "w") as f:
             yaml.dump(full_config, f)
         return str(config_path)
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_manager_initialization(self, temp_config_file):
         """Test manager initialization."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = MagicMock()
 
@@ -476,11 +470,11 @@ class TestRAGIndexManager:
             assert manager is not None
             assert manager.chunking_strategy is not None
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_save_all_indices(self, temp_config_file, tmp_path):
         """Test saving all indices."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = MagicMock()
 
@@ -503,12 +497,12 @@ class TestRAGIndexManager:
 class TestIntegration:
     """Integration tests for RAG builder components."""
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
-    @patch('training.rag_builder.HAS_BM25', True)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
+    @patch("training.rag_builder.HAS_BM25", True)
     def test_full_indexing_and_search_pipeline(self, rag_config, sample_chunks):
         """Test complete indexing and search pipeline."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -523,8 +517,8 @@ class TestIntegration:
                             "chunk_id": 0,
                             "text": "MITRE ATT&CK framework provides a comprehensive knowledge base",
                             "category": "mitre",
-                            "threat_level": "high"
-                        }
+                            "threat_level": "high",
+                        },
                     },
                     {
                         "id": "doc1_1_def456",
@@ -534,9 +528,9 @@ class TestIntegration:
                             "chunk_id": 1,
                             "text": "Critical vulnerability CVE-2023-1234",
                             "category": "cyber_companies",
-                            "threat_level": "high"
-                        }
-                    }
+                            "threat_level": "high",
+                        },
+                    },
                 ]
             }
 
@@ -551,11 +545,11 @@ class TestIntegration:
             assert len(results) == 2
             assert results[0].score > results[1].score
 
-    @patch('training.rag_builder.HAS_PINECONE', True)
-    @patch('training.rag_builder.HAS_SENTENCE_TRANSFORMERS', False)
+    @patch("training.rag_builder.HAS_PINECONE", True)
+    @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_metadata_filtering_integration(self, rag_config):
         """Test metadata filtering works correctly."""
-        with patch('training.rag_builder.Pinecone') as mock_pc:
+        with patch("training.rag_builder.Pinecone") as mock_pc:
             mock_index = MagicMock()
             mock_pc.return_value.list_indexes.return_value = []
             mock_pc.return_value.Index.return_value = mock_index
@@ -565,16 +559,18 @@ class TestIntegration:
                 filter_val = kwargs.get("filter", {})
                 if filter_val.get("category", {}).get("$eq") == "mitre":
                     return {
-                        "matches": [{
-                            "id": "mitre_doc",
-                            "score": 0.9,
-                            "metadata": {
-                                "doc_id": "mitre1",
-                                "chunk_id": 0,
-                                "text": "MITRE specific content",
-                                "category": "mitre"
+                        "matches": [
+                            {
+                                "id": "mitre_doc",
+                                "score": 0.9,
+                                "metadata": {
+                                    "doc_id": "mitre1",
+                                    "chunk_id": 0,
+                                    "text": "MITRE specific content",
+                                    "category": "mitre",
+                                },
                             }
-                        }]
+                        ]
                     }
                 return {"matches": []}
 

@@ -23,6 +23,7 @@ try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -33,6 +34,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FeedbackSample:
     """Feedback sample from production deployment."""
+
     sample_id: str
     input_data: Dict[str, Any]
     model_output: Any
@@ -45,6 +47,7 @@ class FeedbackSample:
 @dataclass
 class DriftReport:
     """Report of detected data drift."""
+
     timestamp: str
     drift_type: str  # "feature", "label", "concept"
     severity: float  # 0.0 to 1.0
@@ -71,12 +74,7 @@ class FeedbackCollector:
         self.storage_path = Path("training/data/feedback")
         self.storage_path.mkdir(parents=True, exist_ok=True)
 
-        self.statistics = {
-            "total_collected": 0,
-            "positive": 0,
-            "negative": 0,
-            "neutral": 0
-        }
+        self.statistics = {"total_collected": 0, "positive": 0, "negative": 0, "neutral": 0}
 
         logger.info(f"FeedbackCollector initialized with buffer size {self.buffer_size}")
 
@@ -106,7 +104,7 @@ class FeedbackCollector:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         file_path = self.storage_path / f"feedback_{timestamp}.jsonl"
 
-        with open(file_path, 'w') as f:
+        with open(file_path, "w") as f:
             for sample in list(self.feedback_buffer)[-1000:]:
                 record = {
                     "sample_id": sample.sample_id,
@@ -115,7 +113,7 @@ class FeedbackCollector:
                     "user_feedback": sample.user_feedback,
                     "corrected_output": str(sample.corrected_output) if sample.corrected_output else None,
                     "timestamp": sample.timestamp,
-                    "metadata": sample.metadata
+                    "metadata": sample.metadata,
                 }
                 f.write(json.dumps(record) + "\n")
 
@@ -148,7 +146,7 @@ class FeedbackCollector:
                 sample = {
                     "input": feedback.input_data,
                     "target": feedback.corrected_output or feedback.model_output,
-                    "weight": quality
+                    "weight": quality,
                 }
                 training_samples.append(sample)
 
@@ -254,7 +252,7 @@ class IncrementalTrainer:
                     log_likelihood = output.get("output", torch.zeros(1)).sum()
             else:
                 # For regression or other outputs, use negative squared error
-                log_likelihood = -0.5 * (output ** 2).sum()
+                log_likelihood = -0.5 * (output**2).sum()
 
             # Compute gradients
             log_likelihood.backward()
@@ -262,7 +260,7 @@ class IncrementalTrainer:
             # Accumulate Fisher information (squared gradients)
             for name, param in model.named_parameters():
                 if param.grad is not None:
-                    fisher_info[name] += param.grad.data ** 2
+                    fisher_info[name] += param.grad.data**2
 
             num_samples += 1
 
@@ -274,10 +272,7 @@ class IncrementalTrainer:
         self.fisher_information = fisher_info
 
         # Store optimal parameters
-        self.optimal_params = {
-            name: param.data.clone()
-            for name, param in model.named_parameters()
-        }
+        self.optimal_params = {name: param.data.clone() for name, param in model.named_parameters()}
 
         logger.info(f"Computed Fisher Information for {len(fisher_info)} parameters")
         return fisher_info
@@ -307,11 +302,7 @@ class IncrementalTrainer:
         return self.ewc_lambda * ewc_loss
 
     def incremental_update(
-        self,
-        model: Any,
-        new_dataloader: Any,
-        old_dataloader: Optional[Any] = None,
-        num_epochs: int = 3
+        self, model: Any, new_dataloader: Any, old_dataloader: Optional[Any] = None, num_epochs: int = 3
     ) -> Dict[str, float]:
         """
         Perform incremental model update.
@@ -459,8 +450,10 @@ class DriftDetector:
         affected_features = []
         p_values = []
 
-        num_features = min(current_data.shape[1] if current_data.ndim > 1 else 1,
-                          self.reference_distribution.shape[1] if self.reference_distribution.ndim > 1 else 1)
+        num_features = min(
+            current_data.shape[1] if current_data.ndim > 1 else 1,
+            self.reference_distribution.shape[1] if self.reference_distribution.ndim > 1 else 1,
+        )
 
         for i in range(num_features):
             if current_data.ndim > 1:
@@ -484,7 +477,7 @@ class DriftDetector:
                 severity=severity,
                 affected_features=affected_features,
                 p_value=np.mean(p_values),
-                recommendation="Consider retraining or feature recalibration"
+                recommendation="Consider retraining or feature recalibration",
             )
 
         return None
@@ -516,7 +509,7 @@ class DriftDetector:
                 severity=np.mean(psi_values),
                 affected_features=affected_features,
                 p_value=0.0,  # Not applicable for PSI
-                recommendation="Significant distribution shift detected"
+                recommendation="Significant distribution shift detected",
             )
 
         return None
@@ -547,13 +540,9 @@ class DriftDetector:
             "total_drifts": len(self.drift_history),
             "avg_severity": np.mean([d.severity for d in self.drift_history]),
             "recent_drifts": [
-                {
-                    "timestamp": d.timestamp,
-                    "type": d.drift_type,
-                    "severity": d.severity
-                }
+                {"timestamp": d.timestamp, "type": d.drift_type, "severity": d.severity}
                 for d in self.drift_history[-5:]
-            ]
+            ],
         }
 
         return summary
@@ -580,13 +569,7 @@ class ABTestFramework:
 
         logger.info(f"ABTestFramework initialized, traffic split: {self.traffic_split}")
 
-    def create_test(
-        self,
-        test_name: str,
-        model_a: Any,
-        model_b: Any,
-        metric_fn: Callable[[Any, Any], float]
-    ) -> str:
+    def create_test(self, test_name: str, model_a: Any, model_b: Any, metric_fn: Callable[[Any, Any], float]) -> str:
         """
         Create a new A/B test.
 
@@ -609,7 +592,7 @@ class ABTestFramework:
             "samples_a": [],
             "samples_b": [],
             "created_at": datetime.now().isoformat(),
-            "status": "running"
+            "status": "running",
         }
 
         logger.info(f"Created A/B test: {test_id}")
@@ -635,14 +618,7 @@ class ABTestFramework:
 
         return group
 
-    def record_result(
-        self,
-        test_id: str,
-        group: str,
-        input_data: Any,
-        output: Any,
-        success_metric: float
-    ) -> None:
+    def record_result(self, test_id: str, group: str, input_data: Any, output: Any, success_metric: float) -> None:
         """
         Record test result.
 
@@ -660,7 +636,7 @@ class ABTestFramework:
             "input": input_data,
             "output": output,
             "metric": success_metric,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
         }
 
         if group == "A":
@@ -676,8 +652,8 @@ class ABTestFramework:
         """Check if test has enough samples for analysis."""
         test = self.tests[test_id]
         return (
-            len(test["samples_a"]) >= self.min_samples and
-            len(test["samples_b"]) >= self.min_samples * self.traffic_split
+            len(test["samples_a"]) >= self.min_samples
+            and len(test["samples_b"]) >= self.min_samples * self.traffic_split
         )
 
     def _analyze_test(self, test_id: str) -> Dict[str, Any]:
@@ -706,7 +682,7 @@ class ABTestFramework:
             "p_value": p_value,
             "is_significant": is_significant,
             "recommendation": "Deploy B" if is_significant and improvement > 0 else "Keep A",
-            "analyzed_at": datetime.now().isoformat()
+            "analyzed_at": datetime.now().isoformat(),
         }
 
         self.results[test_id] = result
@@ -728,7 +704,7 @@ class ABTestFramework:
             "status": test["status"],
             "samples_control": len(test["samples_a"]),
             "samples_treatment": len(test["samples_b"]),
-            "progress": min(len(test["samples_a"]) / self.min_samples, 1.0)
+            "progress": min(len(test["samples_a"]) / self.min_samples, 1.0),
         }
 
         if test_id in self.results:
@@ -760,7 +736,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     cl_config = config.get("continual_learning", {})
@@ -777,7 +753,7 @@ if __name__ == "__main__":
             model_output=f"Result {i}",
             user_feedback=["positive", "negative", "neutral"][i % 3],
             corrected_output=f"Corrected {i}" if i % 5 == 0 else None,
-            timestamp=float(i)
+            timestamp=float(i),
         )
         collector.add_feedback(feedback)
 
@@ -820,10 +796,7 @@ if __name__ == "__main__":
 
     # Create test
     test_id = ab_framework.create_test(
-        "model_v2_test",
-        model_a="model_v1",
-        model_b="model_v2",
-        metric_fn=lambda inp, out: np.random.random()
+        "model_v2_test", model_a="model_v1", model_b="model_v2", metric_fn=lambda inp, out: np.random.random()
     )
 
     # Simulate test traffic

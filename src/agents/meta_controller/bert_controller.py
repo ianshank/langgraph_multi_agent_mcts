@@ -28,8 +28,7 @@ try:
     _TRANSFORMERS_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "transformers library not installed. "
-        "Install it with: pip install transformers",
+        "transformers library not installed. " "Install it with: pip install transformers",
         ImportWarning,
         stacklevel=2,
     )
@@ -42,8 +41,7 @@ try:
     _PEFT_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "peft library not installed. "
-        "Install it with: pip install peft",
+        "peft library not installed. " "Install it with: pip install peft",
         ImportWarning,
         stacklevel=2,
     )
@@ -138,15 +136,11 @@ class BERTMetaController(AbstractMetaController):
         # Check for required dependencies
         if not _TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "transformers library is required for BERTMetaController. "
-                "Install it with: pip install transformers"
+                "transformers library is required for BERTMetaController. " "Install it with: pip install transformers"
             )
 
         if use_lora and not _PEFT_AVAILABLE:
-            raise ImportError(
-                "peft library is required for LoRA support. "
-                "Install it with: pip install peft"
-            )
+            raise ImportError("peft library is required for LoRA support. " "Install it with: pip install peft")
 
         # Set random seed for reproducibility
         torch.manual_seed(seed)
@@ -173,9 +167,7 @@ class BERTMetaController(AbstractMetaController):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
         # Initialize base model for sequence classification
-        base_model = AutoModelForSequenceClassification.from_pretrained(
-            self.model_name, num_labels=self.NUM_LABELS
-        )
+        base_model = AutoModelForSequenceClassification.from_pretrained(self.model_name, num_labels=self.NUM_LABELS)
 
         # Apply LoRA adapters if requested
         if self.use_lora:
@@ -399,10 +391,7 @@ class BERTMetaController(AbstractMetaController):
             True
         """
         # Truncate keys for display (first 50 chars)
-        truncated_keys = [
-            key[:50] + "..." if len(key) > 50 else key
-            for key in self._tokenization_cache.keys()
-        ]
+        truncated_keys = [key[:50] + "..." if len(key) > 50 else key for key in self._tokenization_cache.keys()]
 
         return {
             "cache_size": len(self._tokenization_cache),

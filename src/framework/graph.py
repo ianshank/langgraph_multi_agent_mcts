@@ -268,9 +268,7 @@ class GraphBuilder:
 
         return {
             "rag_context": context,
-            "retrieved_docs": [
-                {"content": doc.page_content, "metadata": doc.metadata} for doc in docs
-            ],
+            "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
         }
 
     def _route_decision_node(self, state: AgentState) -> Dict:
@@ -285,10 +283,7 @@ class GraphBuilder:
             config: MetaControllerConfig or dict with configuration
         """
         if not _META_CONTROLLER_AVAILABLE:
-            self.logger.warning(
-                "Meta-controller modules not available. "
-                "Falling back to rule-based routing."
-            )
+            self.logger.warning("Meta-controller modules not available. " "Falling back to rule-based routing.")
             return
 
         try:
@@ -336,9 +331,7 @@ class GraphBuilder:
                 raise ValueError(f"Unknown meta-controller type: {mc_config.type}")
 
             self.use_neural_routing = True
-            self.logger.info(
-                f"Initialized {mc_config.type.upper()} neural meta-controller"
-            )
+            self.logger.info(f"Initialized {mc_config.type.upper()} neural meta-controller")
 
         except Exception as e:
             self.logger.error(f"Failed to initialize meta-controller: {e}")
@@ -363,16 +356,12 @@ class GraphBuilder:
         # Extract HRM confidence
         hrm_conf = 0.0
         if "hrm_results" in state:
-            hrm_conf = state["hrm_results"].get("metadata", {}).get(
-                "decomposition_quality_score", 0.5
-            )
+            hrm_conf = state["hrm_results"].get("metadata", {}).get("decomposition_quality_score", 0.5)
 
         # Extract TRM confidence
         trm_conf = 0.0
         if "trm_results" in state:
-            trm_conf = state["trm_results"].get("metadata", {}).get(
-                "final_quality_score", 0.5
-            )
+            trm_conf = state["trm_results"].get("metadata", {}).get("final_quality_score", 0.5)
 
         # Extract MCTS value
         mcts_val = 0.0
@@ -527,16 +516,12 @@ class GraphBuilder:
                 {
                     "agent": "hrm",
                     "response": hrm_result["response"],
-                    "confidence": hrm_result["metadata"].get(
-                        "decomposition_quality_score", 0.7
-                    ),
+                    "confidence": hrm_result["metadata"].get("decomposition_quality_score", 0.7),
                 },
                 {
                     "agent": "trm",
                     "response": trm_result["response"],
-                    "confidence": trm_result["metadata"].get(
-                        "final_quality_score", 0.7
-                    ),
+                    "confidence": trm_result["metadata"].get("final_quality_score", 0.7),
                 },
             ],
         }
@@ -559,9 +544,7 @@ class GraphBuilder:
                 {
                     "agent": "hrm",
                     "response": result["response"],
-                    "confidence": result["metadata"].get(
-                        "decomposition_quality_score", 0.7
-                    ),
+                    "confidence": result["metadata"].get("decomposition_quality_score", 0.7),
                 }
             ],
         }
@@ -643,15 +626,11 @@ class GraphBuilder:
 
             # Bias based on agent confidence
             if state.get("hrm_results"):
-                hrm_conf = state["hrm_results"]["metadata"].get(
-                    "decomposition_quality_score", 0.5
-                )
+                hrm_conf = state["hrm_results"]["metadata"].get("decomposition_quality_score", 0.5)
                 base += hrm_conf * 0.2
 
             if state.get("trm_results"):
-                trm_conf = state["trm_results"]["metadata"].get(
-                    "final_quality_score", 0.5
-                )
+                trm_conf = state["trm_results"]["metadata"].get("final_quality_score", 0.5)
                 base += trm_conf * 0.2
 
             return min(base, 1.0)
@@ -715,9 +694,7 @@ class GraphBuilder:
                         f"value={stats['best_action_value']:.3f})"
                     ),
                     "confidence": min(
-                        stats["best_action_visits"] / stats["iterations"]
-                        if stats["iterations"] > 0
-                        else 0.5,
+                        stats["best_action_visits"] / stats["iterations"] if stats["iterations"] > 0 else 0.5,
                         1.0,
                     ),
                 }
@@ -730,9 +707,7 @@ class GraphBuilder:
 
         agent_outputs = state.get("agent_outputs", [])
 
-        confidence_scores = {
-            output["agent"]: output["confidence"] for output in agent_outputs
-        }
+        confidence_scores = {output["agent"]: output["confidence"] for output in agent_outputs}
 
         return {"confidence_scores": confidence_scores}
 
@@ -746,15 +721,11 @@ class GraphBuilder:
                 "consensus_score": 1.0,
             }
 
-        avg_confidence = sum(o["confidence"] for o in agent_outputs) / len(
-            agent_outputs
-        )
+        avg_confidence = sum(o["confidence"] for o in agent_outputs) / len(agent_outputs)
 
         consensus_reached = avg_confidence >= self.consensus_threshold
 
-        self.logger.info(
-            f"Consensus: {consensus_reached} (score={avg_confidence:.2f})"
-        )
+        self.logger.info(f"Consensus: {consensus_reached} (score={avg_confidence:.2f})")
 
         return {
             "consensus_reached": consensus_reached,
@@ -891,11 +862,7 @@ class IntegratedFramework:
         if StateGraph is not None:
             self.graph = self.graph_builder.build_graph()
             self.memory = MemorySaver() if MemorySaver else None
-            self.app = (
-                self.graph.compile(checkpointer=self.memory)
-                if self.memory
-                else self.graph.compile()
-            )
+            self.app = self.graph.compile(checkpointer=self.memory) if self.memory else self.graph.compile()
         else:
             self.graph = None
             self.app = None

@@ -28,11 +28,11 @@ try:
         TrainingArguments,
         EvalPrediction,
     )
+
     _TRANSFORMERS_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "transformers library not installed. "
-        "Install it with: pip install transformers",
+        "transformers library not installed. " "Install it with: pip install transformers",
         ImportWarning,
         stacklevel=2,
     )
@@ -43,11 +43,11 @@ except ImportError:
 
 try:
     from datasets import Dataset
+
     _DATASETS_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "datasets library not installed. "
-        "Install it with: pip install datasets",
+        "datasets library not installed. " "Install it with: pip install datasets",
         ImportWarning,
         stacklevel=2,
     )
@@ -142,14 +142,12 @@ class BERTLoRATrainer:
         """
         if not _TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "transformers library is required for BERTLoRATrainer. "
-                "Install it with: pip install transformers"
+                "transformers library is required for BERTLoRATrainer. " "Install it with: pip install transformers"
             )
 
         if not _DATASETS_AVAILABLE:
             raise ImportError(
-                "datasets library is required for BERTLoRATrainer. "
-                "Install it with: pip install datasets"
+                "datasets library is required for BERTLoRATrainer. " "Install it with: pip install datasets"
             )
 
         # Setup logging
@@ -230,10 +228,7 @@ class BERTLoRATrainer:
             True
         """
         if len(texts) != len(labels):
-            raise ValueError(
-                f"texts and labels must have same length, "
-                f"got {len(texts)} and {len(labels)}"
-            )
+            raise ValueError(f"texts and labels must have same length, " f"got {len(texts)} and {len(labels)}")
 
         self.logger.info(f"Preparing dataset with {len(texts)} samples")
 
@@ -388,9 +383,7 @@ class BERTLoRATrainer:
         history = {
             "train_loss": train_result.training_loss,
             "train_runtime": train_result.metrics.get("train_runtime", 0),
-            "train_samples_per_second": train_result.metrics.get(
-                "train_samples_per_second", 0
-            ),
+            "train_samples_per_second": train_result.metrics.get("train_samples_per_second", 0),
             "epochs": self.epochs,
             "final_metrics": train_result.metrics,
         }
@@ -477,9 +470,7 @@ class BERTLoRATrainer:
 
         # Calculate metrics
         avg_loss = total_loss / len(test_texts)
-        correct = sum(
-            1 for pred, label in zip(all_predictions, test_labels) if pred == label
-        )
+        correct = sum(1 for pred, label in zip(all_predictions, test_labels) if pred == label)
         accuracy = correct / len(test_labels)
 
         self.logger.info(f"Test Loss: {avg_loss:.4f}")
@@ -516,9 +507,7 @@ def main() -> None:
     Parses command-line arguments, generates or loads dataset, trains the model,
     and saves results.
     """
-    parser = argparse.ArgumentParser(
-        description="Train BERT Meta-Controller with LoRA adapters"
-    )
+    parser = argparse.ArgumentParser(description="Train BERT Meta-Controller with LoRA adapters")
 
     # Model arguments
     parser.add_argument(
@@ -636,9 +625,7 @@ def main() -> None:
             )
             logger.info(f"Generated balanced dataset with {samples_per_class} samples per class")
         else:
-            features_list, labels_list = data_generator.generate_dataset(
-                num_samples=args.num_samples
-            )
+            features_list, labels_list = data_generator.generate_dataset(num_samples=args.num_samples)
 
         # Save generated dataset
         output_path = Path(args.output_dir)
@@ -662,9 +649,7 @@ def main() -> None:
 
     # Split dataset
     logger.info("Splitting dataset into train/val/test sets")
-    splits = data_generator.split_dataset(
-        texts, label_indices, train_ratio=0.7, val_ratio=0.15
-    )
+    splits = data_generator.split_dataset(texts, label_indices, train_ratio=0.7, val_ratio=0.15)
 
     train_texts = splits["X_train"]
     train_labels = splits["y_train"]

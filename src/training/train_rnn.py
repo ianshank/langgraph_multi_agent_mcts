@@ -26,6 +26,7 @@ from src.training.data_generator import MetaControllerDataGenerator
 # Braintrust integration (optional)
 try:
     from src.observability.braintrust_tracker import create_training_tracker, BraintrustTracker
+
     BRAINTRUST_AVAILABLE = True
 except ImportError:
     BRAINTRUST_AVAILABLE = False
@@ -139,10 +140,7 @@ class RNNTrainer:
             dropout=dropout,
         )
         self.model = self.model.to(self.device)
-        self.logger.info(
-            f"Model initialized: hidden_dim={hidden_dim}, "
-            f"num_layers={num_layers}, dropout={dropout}"
-        )
+        self.logger.info(f"Model initialized: hidden_dim={hidden_dim}, " f"num_layers={num_layers}, dropout={dropout}")
 
         # Setup optimizer
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
@@ -154,20 +152,22 @@ class RNNTrainer:
 
         # Braintrust experiment tracking (optional)
         self.braintrust_tracker = braintrust_tracker
-        if self.braintrust_tracker and hasattr(self.braintrust_tracker, 'is_available'):
+        if self.braintrust_tracker and hasattr(self.braintrust_tracker, "is_available"):
             if self.braintrust_tracker.is_available:
                 self.logger.info("Braintrust experiment tracking enabled")
-                self.braintrust_tracker.log_hyperparameters({
-                    "hidden_dim": hidden_dim,
-                    "num_layers": num_layers,
-                    "dropout": dropout,
-                    "learning_rate": lr,
-                    "batch_size": batch_size,
-                    "max_epochs": epochs,
-                    "early_stopping_patience": early_stopping_patience,
-                    "seed": seed,
-                    "device": str(self.device),
-                })
+                self.braintrust_tracker.log_hyperparameters(
+                    {
+                        "hidden_dim": hidden_dim,
+                        "num_layers": num_layers,
+                        "dropout": dropout,
+                        "learning_rate": lr,
+                        "batch_size": batch_size,
+                        "max_epochs": epochs,
+                        "early_stopping_patience": early_stopping_patience,
+                        "seed": seed,
+                        "device": str(self.device),
+                    }
+                )
             else:
                 self.logger.info("Braintrust tracker provided but not available")
 
@@ -387,9 +387,7 @@ class RNNTrainer:
         self.logger.info(f"Early stopping patience: {self.early_stopping_patience}")
 
         # Create data loaders
-        train_loader = self.create_dataloader(
-            train_data[0], train_data[1], shuffle=True
-        )
+        train_loader = self.create_dataloader(train_data[0], train_data[1], shuffle=True)
         val_loader = self.create_dataloader(val_data[0], val_data[1], shuffle=False)
 
         # Initialize tracking variables
@@ -424,7 +422,7 @@ class RNNTrainer:
             )
 
             # Log to Braintrust if available
-            if self.braintrust_tracker and hasattr(self.braintrust_tracker, 'log_epoch_summary'):
+            if self.braintrust_tracker and hasattr(self.braintrust_tracker, "log_epoch_summary"):
                 self.braintrust_tracker.log_epoch_summary(
                     epoch=epoch,
                     train_loss=train_loss,
@@ -447,16 +445,11 @@ class RNNTrainer:
                     self.logger.info(f"  -> Model checkpoint saved to {save_path}")
             else:
                 patience_counter += 1
-                self.logger.info(
-                    f"  -> No improvement for {patience_counter} epoch(s)"
-                )
+                self.logger.info(f"  -> No improvement for {patience_counter} epoch(s)")
 
                 # Check for early stopping
                 if patience_counter >= self.early_stopping_patience:
-                    self.logger.info(
-                        f"Early stopping triggered at epoch {epoch}. "
-                        f"Best epoch was {best_epoch}."
-                    )
+                    self.logger.info(f"Early stopping triggered at epoch {epoch}. " f"Best epoch was {best_epoch}.")
                     stopped_early = True
                     break
 
@@ -491,7 +484,7 @@ class RNNTrainer:
         self.logger.info(f"Best validation accuracy: {best_val_accuracy:.4f}")
 
         # Log final model artifact to Braintrust
-        if self.braintrust_tracker and hasattr(self.braintrust_tracker, 'log_model_artifact'):
+        if self.braintrust_tracker and hasattr(self.braintrust_tracker, "log_model_artifact"):
             self.braintrust_tracker.log_model_artifact(
                 model_path=str(save_path) if save_path else "in_memory",
                 model_type="rnn",
@@ -583,18 +576,10 @@ class RNNTrainer:
             tp = confusion_matrix[class_idx][class_idx]
 
             # False positives: predicted as this class but actually other class
-            fp = sum(
-                confusion_matrix[i][class_idx]
-                for i in range(num_classes)
-                if i != class_idx
-            )
+            fp = sum(confusion_matrix[i][class_idx] for i in range(num_classes) if i != class_idx)
 
             # False negatives: actually this class but predicted as other class
-            fn = sum(
-                confusion_matrix[class_idx][j]
-                for j in range(num_classes)
-                if j != class_idx
-            )
+            fn = sum(confusion_matrix[class_idx][j] for j in range(num_classes) if j != class_idx)
 
             # Support: total number of samples in this class
             support = sum(confusion_matrix[class_idx])
@@ -606,11 +591,7 @@ class RNNTrainer:
             recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
 
             # F1 Score: 2 * (Precision * Recall) / (Precision + Recall)
-            f1_score = (
-                2 * (precision * recall) / (precision + recall)
-                if (precision + recall) > 0
-                else 0.0
-            )
+            f1_score = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
 
             per_class_metrics[agent_name] = {
                 "precision": precision,
@@ -774,9 +755,7 @@ def main() -> None:
             logger.info(f"Loaded {len(features_list)} samples")
         else:
             logger.info(f"Generating balanced dataset with {args.num_samples} samples per class...")
-            features_list, labels_list = generator.generate_balanced_dataset(
-                num_samples_per_class=args.num_samples
-            )
+            features_list, labels_list = generator.generate_balanced_dataset(num_samples_per_class=args.num_samples)
             total_samples = len(features_list)
             logger.info(f"Generated {total_samples} total samples")
 
@@ -854,9 +833,7 @@ def main() -> None:
         # Evaluate on test set
         logger.info("Evaluating on test set...")
         logger.info("-" * 60)
-        test_loader = trainer.create_dataloader(
-            splits["X_test"], splits["y_test"], shuffle=False
-        )
+        test_loader = trainer.create_dataloader(splits["X_test"], splits["y_test"], shuffle=False)
         test_results = trainer.evaluate(test_loader)
         logger.info("-" * 60)
         logger.info("")
@@ -913,7 +890,7 @@ def main() -> None:
             )
 
         # End Braintrust experiment
-        if braintrust_tracker and hasattr(braintrust_tracker, 'end_experiment'):
+        if braintrust_tracker and hasattr(braintrust_tracker, "end_experiment"):
             experiment_url = braintrust_tracker.end_experiment()
             if experiment_url:
                 logger.info(f"Braintrust experiment URL: {experiment_url}")

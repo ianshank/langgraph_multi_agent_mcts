@@ -38,13 +38,13 @@ class MCTSNode:
     def __init__(
         self,
         state_id: str,
-        parent: Optional['MCTSNode'] = None,
+        parent: Optional["MCTSNode"] = None,
         action: Optional[str] = None,
     ):
         self.state_id = state_id
         self.parent = parent
         self.action = action
-        self.children: List['MCTSNode'] = []
+        self.children: List["MCTSNode"] = []
         self.visits = 0
         self.value = 0.0
         self.terminal = False
@@ -52,21 +52,19 @@ class MCTSNode:
     def ucb1(self, exploration_weight: float = 1.414) -> float:
         """Upper Confidence Bound for tree selection."""
         if self.visits == 0:
-            return float('inf')
+            return float("inf")
 
         exploitation = self.value / self.visits
-        exploration = exploration_weight * math.sqrt(
-            math.log(self.parent.visits) / self.visits
-        )
+        exploration = exploration_weight * math.sqrt(math.log(self.parent.visits) / self.visits)
         return exploitation + exploration
 
-    def best_child(self) -> Optional['MCTSNode']:
+    def best_child(self) -> Optional["MCTSNode"]:
         """Select best child using UCB1."""
         if not self.children:
             return None
         return max(self.children, key=lambda c: c.ucb1())
 
-    def add_child(self, action: str, state_id: str) -> 'MCTSNode':
+    def add_child(self, action: str, state_id: str) -> "MCTSNode":
         """Add child node."""
         child = MCTSNode(state_id=state_id, parent=self, action=action)
         self.children.append(child)
@@ -205,7 +203,7 @@ class LangGraphMultiAgentFramework:
                 "trm": "trm_agent",
                 "mcts": "mcts_simulator",
                 "aggregate": "aggregate_results",
-            }
+            },
         )
 
         # Agent nodes flow to aggregation
@@ -223,7 +221,7 @@ class LangGraphMultiAgentFramework:
             {
                 "synthesize": "synthesize",
                 "iterate": "route_decision",
-            }
+            },
         )
 
         # Synthesis to end
@@ -250,9 +248,7 @@ class LangGraphMultiAgentFramework:
         query = state["query"]
 
         # Retrieve documents
-        docs = self.vector_store.similarity_search(
-            query, k=self.top_k_retrieval
-        )
+        docs = self.vector_store.similarity_search(query, k=self.top_k_retrieval)
 
         # Format context
         context = "\n\n".join([doc.page_content for doc in docs])
@@ -261,10 +257,7 @@ class LangGraphMultiAgentFramework:
 
         return {
             "rag_context": context,
-            "retrieved_docs": [
-                {"content": doc.page_content, "metadata": doc.metadata}
-                for doc in docs
-            ],
+            "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
         }
 
     def route_decision_node(self, state: AgentState) -> Dict:
@@ -308,11 +301,13 @@ class LangGraphMultiAgentFramework:
                 "response": result["response"],
                 "metadata": result["metadata"],
             },
-            "agent_outputs": [{
-                "agent": "hrm",
-                "response": result["response"],
-                "confidence": result["metadata"].get("decomposition_quality_score", 0.7),
-            }],
+            "agent_outputs": [
+                {
+                    "agent": "hrm",
+                    "response": result["response"],
+                    "confidence": result["metadata"].get("decomposition_quality_score", 0.7),
+                }
+            ],
         }
 
     async def trm_agent_node(self, state: AgentState) -> Dict:
@@ -330,11 +325,13 @@ class LangGraphMultiAgentFramework:
                 "response": result["response"],
                 "metadata": result["metadata"],
             },
-            "agent_outputs": [{
-                "agent": "trm",
-                "response": result["response"],
-                "confidence": result["metadata"].get("final_quality_score", 0.7),
-            }],
+            "agent_outputs": [
+                {
+                    "agent": "trm",
+                    "response": result["response"],
+                    "confidence": result["metadata"].get("final_quality_score", 0.7),
+                }
+            ],
         }
 
     async def mcts_simulator_node(self, state: AgentState) -> Dict:
@@ -380,11 +377,13 @@ class LangGraphMultiAgentFramework:
             "mcts_root": root,
             "mcts_best_action": best_action,
             "mcts_stats": stats,
-            "agent_outputs": [{
-                "agent": "mcts",
-                "response": f"Simulated {self.mcts_iterations} scenarios. Recommended action: {best_action}",
-                "confidence": min(best_child.visits / self.mcts_iterations if best_child else 0.5, 1.0),
-            }],
+            "agent_outputs": [
+                {
+                    "agent": "mcts",
+                    "response": f"Simulated {self.mcts_iterations} scenarios. Recommended action: {best_action}",
+                    "confidence": min(best_child.visits / self.mcts_iterations if best_child else 0.5, 1.0),
+                }
+            ],
         }
 
     def _mcts_select(self, node: MCTSNode) -> MCTSNode:
@@ -433,15 +432,11 @@ class LangGraphMultiAgentFramework:
 
         # Bias based on agent confidence
         if state.get("hrm_results"):
-            hrm_confidence = state["hrm_results"]["metadata"].get(
-                "decomposition_quality_score", 0.5
-            )
+            hrm_confidence = state["hrm_results"]["metadata"].get("decomposition_quality_score", 0.5)
             base_value += hrm_confidence * 0.15
 
         if state.get("trm_results"):
-            trm_confidence = state["trm_results"]["metadata"].get(
-                "final_quality_score", 0.5
-            )
+            trm_confidence = state["trm_results"]["metadata"].get("final_quality_score", 0.5)
             base_value += trm_confidence * 0.15
 
         return min(base_value, 1.0)
@@ -461,10 +456,7 @@ class LangGraphMultiAgentFramework:
         agent_outputs = state.get("agent_outputs", [])
 
         # Compute confidence scores
-        confidence_scores = {
-            output["agent"]: output["confidence"]
-            for output in agent_outputs
-        }
+        confidence_scores = {output["agent"]: output["confidence"] for output in agent_outputs}
 
         return {
             "confidence_scores": confidence_scores,
@@ -482,15 +474,11 @@ class LangGraphMultiAgentFramework:
             }
 
         # Simplified consensus: average confidence
-        avg_confidence = sum(
-            o["confidence"] for o in agent_outputs
-        ) / len(agent_outputs)
+        avg_confidence = sum(o["confidence"] for o in agent_outputs) / len(agent_outputs)
 
         consensus_reached = avg_confidence >= self.consensus_threshold
 
-        self.logger.info(
-            f"Consensus: {consensus_reached} (score={avg_confidence:.2f})"
-        )
+        self.logger.info(f"Consensus: {consensus_reached} (score={avg_confidence:.2f})")
 
         return {
             "consensus_reached": consensus_reached,

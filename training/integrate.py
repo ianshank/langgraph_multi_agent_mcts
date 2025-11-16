@@ -16,6 +16,7 @@ import yaml
 
 try:
     import torch
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
@@ -33,7 +34,7 @@ class ModelIntegrator:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
 
         self.models_dir = Path("training/models")
@@ -72,18 +73,13 @@ class ModelIntegrator:
             "config": checkpoint.get("config", {}),
             "epoch": checkpoint.get("current_epoch", 0),
             "metrics": checkpoint.get("training_history", []),
-            "loaded_at": datetime.now().isoformat()
+            "loaded_at": datetime.now().isoformat(),
         }
 
         logger.info(f"Loaded {model_type} model from {checkpoint_path}")
         return self.loaded_models[model_type]
 
-    def inject_into_agent(
-        self,
-        agent_class: type,
-        model_type: str,
-        **kwargs
-    ) -> Any:
+    def inject_into_agent(self, agent_class: type, model_type: str, **kwargs) -> Any:
         """
         Inject trained model into agent class.
 
@@ -115,17 +111,12 @@ class ModelIntegrator:
         self.model_versions[agent] = {
             "model_type": model_type,
             "epoch": model_info["epoch"],
-            "loaded_at": model_info["loaded_at"]
+            "loaded_at": model_info["loaded_at"],
         }
 
         return agent
 
-    def update_mcts_components(
-        self,
-        mcts_engine: Any,
-        value_checkpoint: str,
-        policy_checkpoint: str
-    ) -> None:
+    def update_mcts_components(self, mcts_engine: Any, value_checkpoint: str, policy_checkpoint: str) -> None:
         """
         Update MCTS with trained neural components.
 
@@ -150,11 +141,7 @@ class ModelIntegrator:
 
         logger.info("Updated MCTS neural components")
 
-    def replace_rag_index(
-        self,
-        current_rag: Any,
-        new_index_path: str
-    ) -> None:
+    def replace_rag_index(self, current_rag: Any, new_index_path: str) -> None:
         """
         Replace RAG index with trained version.
 
@@ -175,10 +162,7 @@ class ModelIntegrator:
             logger.info(f"Replaced RAG index with {new_index_path}")
 
     def wire_meta_controller(
-        self,
-        graph_config: Dict[str, Any],
-        router_checkpoint: str,
-        aggregator_checkpoint: str
+        self, graph_config: Dict[str, Any], router_checkpoint: str, aggregator_checkpoint: str
     ) -> Dict[str, Any]:
         """
         Wire trained meta-controller into graph configuration.
@@ -199,7 +183,7 @@ class ModelIntegrator:
         updated_config["meta_controller"] = {
             "router_path": router_checkpoint,
             "aggregator_path": aggregator_checkpoint,
-            "enabled": True
+            "enabled": True,
         }
 
         logger.info("Wired meta-controller into graph configuration")
@@ -225,15 +209,18 @@ class ModelIntegrator:
             model_file = export_path / f"{model_type}_production.pt"
 
             if HAS_TORCH:
-                torch.save({
-                    "model_state_dict": model_info["state_dict"],
-                    "config": model_info["config"],
-                    "version": self._generate_version(),
-                    "exported_at": datetime.now().isoformat()
-                }, model_file)
+                torch.save(
+                    {
+                        "model_state_dict": model_info["state_dict"],
+                        "config": model_info["config"],
+                        "version": self._generate_version(),
+                        "exported_at": datetime.now().isoformat(),
+                    },
+                    model_file,
+                )
             else:
                 # Save metadata only
-                with open(export_path / f"{model_type}_metadata.json", 'w') as f:
+                with open(export_path / f"{model_type}_metadata.json", "w") as f:
                     json.dump(model_info, f, indent=2, default=str)
 
             exported[model_type] = str(model_file)
@@ -260,7 +247,7 @@ class ConfigurationManager:
         self.configs_dir = Path("training/configs")
         self.configs_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.current_config = yaml.safe_load(f)
 
         self.config_history = []
@@ -275,10 +262,7 @@ class ConfigurationManager:
             updates: Dictionary of updates
         """
         # Save current config to history
-        self.config_history.append({
-            "config": self.current_config.copy(),
-            "timestamp": datetime.now().isoformat()
-        })
+        self.config_history.append({"config": self.current_config.copy(), "timestamp": datetime.now().isoformat()})
 
         # Apply updates
         self._deep_update(self.current_config, updates)
@@ -299,12 +283,12 @@ class ConfigurationManager:
 
     def _save_config(self) -> None:
         """Save current configuration."""
-        with open(self.config_path, 'w') as f:
+        with open(self.config_path, "w") as f:
             yaml.dump(self.current_config, f, default_flow_style=False, sort_keys=False)
 
         # Also save timestamped version
         timestamped = self.configs_dir / f"config_{datetime.now().strftime('%Y%m%d_%H%M%S')}.yaml"
-        with open(timestamped, 'w') as f:
+        with open(timestamped, "w") as f:
             yaml.dump(self.current_config, f, default_flow_style=False, sort_keys=False)
 
     def rollback_config(self, steps: int = 1) -> None:
@@ -386,7 +370,7 @@ class ConfigurationManager:
 
         # Save production config
         prod_path = self.configs_dir / "production_config.yaml"
-        with open(prod_path, 'w') as f:
+        with open(prod_path, "w") as f:
             yaml.dump(prod_config, f, default_flow_style=False)
 
         logger.info(f"Created production config at {prod_path}")
@@ -404,12 +388,7 @@ class HotSwapper:
 
         logger.info("HotSwapper initialized")
 
-    def prepare_swap(
-        self,
-        model_name: str,
-        new_model: Any,
-        validation_fn: Optional[callable] = None
-    ) -> bool:
+    def prepare_swap(self, model_name: str, new_model: Any, validation_fn: Optional[callable] = None) -> bool:
         """
         Prepare a model for hot-swapping.
 
@@ -433,10 +412,7 @@ class HotSwapper:
                 return False
 
         # Store in standby
-        self.standby_models[model_name] = {
-            "model": new_model,
-            "prepared_at": datetime.now().isoformat()
-        }
+        self.standby_models[model_name] = {"model": new_model, "prepared_at": datetime.now().isoformat()}
 
         logger.info(f"Model {model_name} prepared for hot-swap")
         return True
@@ -458,11 +434,9 @@ class HotSwapper:
         # Backup current model
         if model_name in self.active_models:
             old_model = self.active_models[model_name]
-            self.swap_history.append({
-                "model_name": model_name,
-                "old_model": old_model,
-                "timestamp": datetime.now().isoformat()
-            })
+            self.swap_history.append(
+                {"model_name": model_name, "old_model": old_model, "timestamp": datetime.now().isoformat()}
+            )
 
         # Perform swap
         self.active_models[model_name] = self.standby_models[model_name]["model"]
@@ -500,16 +474,10 @@ class HotSwapper:
             "active_models": list(self.active_models.keys()),
             "standby_models": list(self.standby_models.keys()),
             "swap_history_count": len(self.swap_history),
-            "last_swap": self.swap_history[-1] if self.swap_history else None
+            "last_swap": self.swap_history[-1] if self.swap_history else None,
         }
 
-    def create_ab_split(
-        self,
-        model_name: str,
-        model_a: Any,
-        model_b: Any,
-        split_ratio: float = 0.5
-    ) -> callable:
+    def create_ab_split(self, model_name: str, model_a: Any, model_b: Any, split_ratio: float = 0.5) -> callable:
         """
         Create A/B split function for gradual rollout.
 
@@ -554,7 +522,7 @@ if __name__ == "__main__":
             "model_state_dict": {},
             "config": {"type": "test"},
             "current_epoch": 10,
-            "training_history": []
+            "training_history": [],
         }
         torch.save(mock_checkpoint, mock_checkpoint_path)
 
@@ -574,11 +542,7 @@ if __name__ == "__main__":
     logger.info(f"Config valid: {is_valid}, errors: {errors}")
 
     # Update config
-    config_manager.update_config({
-        "training": {
-            "batch_size": 64
-        }
-    })
+    config_manager.update_config({"training": {"batch_size": 64}})
     logger.info(f"Updated batch_size to {config_manager.current_config['training']['batch_size']}")
 
     # Rollback

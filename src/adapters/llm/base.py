@@ -94,10 +94,7 @@ class TokenBucketRateLimiter:
             elapsed = now - self.last_refill
 
             # Refill tokens based on elapsed time
-            self.tokens = min(
-                self.max_tokens,
-                self.tokens + elapsed * self.rate_per_second
-            )
+            self.tokens = min(self.max_tokens, self.tokens + elapsed * self.rate_per_second)
             self.last_refill = now
 
             wait_time = 0.0

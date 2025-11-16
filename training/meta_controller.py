@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ExecutionTrace:
     """Record of a single agent execution."""
+
     trace_id: str
     task_id: str
     agent_type: str  # hrm, trm, mcts
@@ -43,6 +44,7 @@ class ExecutionTrace:
 @dataclass
 class RoutingDecision:
     """Routing decision made by meta-controller."""
+
     task_id: str
     selected_agent: str
     confidence: float
@@ -90,7 +92,7 @@ class ExecutionTraceCollector:
         """Write traces to disk."""
         self.trace_file.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(self.trace_file, 'a') as f:
+        with open(self.trace_file, "a") as f:
             for trace in list(self.traces)[-100:]:  # Write last 100
                 trace_dict = {
                     "trace_id": trace.trace_id,
@@ -104,7 +106,7 @@ class ExecutionTraceCollector:
                     "memory_mb": trace.memory_mb,
                     "success": trace.success,
                     "output_quality": trace.output_quality,
-                    "timestamp": trace.timestamp
+                    "timestamp": trace.timestamp,
                 }
                 f.write(json.dumps(trace_dict) + "\n")
 
@@ -125,11 +127,7 @@ class ExecutionTraceCollector:
             # Weight by success and quality
             weight = trace.output_quality if trace.success else 0.1
 
-            training_data.append({
-                "features": features,
-                "label": label,
-                "weight": weight
-            })
+            training_data.append({"features": features, "label": label, "weight": weight})
 
         return training_data
 
@@ -162,21 +160,24 @@ class ExecutionTraceCollector:
         success = float(trace.success)
         quality = trace.output_quality
 
-        features = np.array([
-            complexity,
-            num_steps / 10.0,
-            has_dependencies,
-            agent_confidence,
-            iteration_count,
-            consensus_score,
-            latency_norm,
-            memory_norm,
-            success,
-            quality,
-            # Derived features
-            complexity * num_steps,  # Interaction
-            agent_confidence * quality  # Calibration
-        ], dtype=np.float32)
+        features = np.array(
+            [
+                complexity,
+                num_steps / 10.0,
+                has_dependencies,
+                agent_confidence,
+                iteration_count,
+                consensus_score,
+                latency_norm,
+                memory_norm,
+                success,
+                quality,
+                # Derived features
+                complexity * num_steps,  # Interaction
+                agent_confidence * quality,  # Calibration
+            ],
+            dtype=np.float32,
+        )
 
         return features
 
@@ -221,7 +222,7 @@ class ExecutionTraceCollector:
                 task_features={
                     "complexity": complexity,
                     "num_steps": num_steps,
-                    "has_dependencies": float(np.random.random() < 0.3)
+                    "has_dependencies": float(np.random.random() < 0.3),
                 },
                 agent_confidence=np.random.uniform(0.5, 1.0),
                 iteration_count=np.random.randint(1, 10),
@@ -230,7 +231,7 @@ class ExecutionTraceCollector:
                 memory_mb=np.random.uniform(50, 500),
                 success=success,
                 output_quality=quality,
-                timestamp=float(i)
+                timestamp=float(i),
             )
 
             self.add_trace(trace)
@@ -254,14 +255,8 @@ class ExecutionTraceCollector:
         stats = {
             "total_traces": len(self.traces),
             "agent_distribution": agent_counts,
-            "success_rates": {
-                agent: np.mean(rates) if rates else 0
-                for agent, rates in success_rates.items()
-            },
-            "avg_quality": {
-                agent: np.mean(quals) if quals else 0
-                for agent, quals in qualities.items()
-            }
+            "success_rates": {agent: np.mean(rates) if rates else 0 for agent, rates in success_rates.items()},
+            "avg_quality": {agent: np.mean(quals) if quals else 0 for agent, quals in qualities.items()},
         }
 
         return stats
@@ -289,12 +284,7 @@ class NeuralRouter(nn.Module):
         prev_dim = self.input_features
 
         for hidden_dim in hidden_layers:
-            layers.extend([
-                nn.Linear(prev_dim, hidden_dim),
-                nn.LayerNorm(hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(dropout)
-            ])
+            layers.extend([nn.Linear(prev_dim, hidden_dim), nn.LayerNorm(hidden_dim), nn.ReLU(), nn.Dropout(dropout)])
             prev_dim = hidden_dim
 
         layers.append(nn.Linear(prev_dim, self.num_agents))
@@ -302,12 +292,7 @@ class NeuralRouter(nn.Module):
         self.network = nn.Sequential(*layers)
 
         # Confidence head (separate)
-        self.confidence_head = nn.Sequential(
-            nn.Linear(prev_dim, 16),
-            nn.ReLU(),
-            nn.Linear(16, 1),
-            nn.Sigmoid()
-        )
+        self.confidence_head = nn.Sequential(nn.Linear(prev_dim, 16), nn.ReLU(), nn.Linear(16, 1), nn.Sigmoid())
 
         # Store last hidden for confidence
         self._last_hidden = None
@@ -338,11 +323,7 @@ class NeuralRouter(nn.Module):
         # Confidence score
         confidence = self.confidence_head(hidden)
 
-        return {
-            "logits": logits,
-            "probabilities": F.softmax(logits, dim=-1),
-            "confidence": confidence.squeeze(-1)
-        }
+        return {"logits": logits, "probabilities": F.softmax(logits, dim=-1), "confidence": confidence.squeeze(-1)}
 
     def route(self, features: torch.Tensor) -> RoutingDecision:
         """
@@ -364,11 +345,7 @@ class NeuralRouter(nn.Module):
         selected_idx = probs.argmax().item()
         selected_agent = agent_names[selected_idx]
 
-        alternatives = [
-            (agent_names[i], probs[i].item())
-            for i in range(len(agent_names))
-            if i != selected_idx
-        ]
+        alternatives = [(agent_names[i], probs[i].item()) for i in range(len(agent_names)) if i != selected_idx]
         alternatives.sort(key=lambda x: x[1], reverse=True)
 
         reasoning = f"Selected {selected_agent} with confidence {confidence:.3f}"
@@ -378,7 +355,7 @@ class NeuralRouter(nn.Module):
             selected_agent=selected_agent,
             confidence=confidence,
             alternative_agents=alternatives,
-            reasoning=reasoning
+            reasoning=reasoning,
         )
 
 
@@ -400,11 +377,7 @@ class EnsembleAggregator(nn.Module):
 
         if self.method == "attention":
             # Attention-based aggregation
-            self.attention = nn.MultiheadAttention(
-                embed_dim=256,
-                num_heads=4,
-                dropout=0.1
-            )
+            self.attention = nn.MultiheadAttention(embed_dim=256, num_heads=4, dropout=0.1)
             self.output_projection = nn.Linear(256, 256)
         elif self.method == "ensemble":
             # Learned ensemble weights
@@ -412,11 +385,7 @@ class EnsembleAggregator(nn.Module):
 
         logger.info(f"EnsembleAggregator using {self.method} method")
 
-    def forward(
-        self,
-        agent_outputs: List[torch.Tensor],
-        agent_confidences: torch.Tensor
-    ) -> Dict[str, torch.Tensor]:
+    def forward(self, agent_outputs: List[torch.Tensor], agent_confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
         """
         Aggregate agent outputs.
 
@@ -434,11 +403,7 @@ class EnsembleAggregator(nn.Module):
         else:  # ensemble
             return self._learned_ensemble(agent_outputs, agent_confidences)
 
-    def _weighted_voting(
-        self,
-        outputs: List[torch.Tensor],
-        confidences: torch.Tensor
-    ) -> Dict[str, torch.Tensor]:
+    def _weighted_voting(self, outputs: List[torch.Tensor], confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Weighted voting based on confidence."""
         weights = F.softmax(confidences, dim=-1)
 
@@ -459,23 +424,13 @@ class EnsembleAggregator(nn.Module):
             reshaped_weights = weights.t().unsqueeze(-1)  # [num_agents, batch_size, 1]
             # Expand to match stacked dimensions if needed
             if stacked.dim() > 2:
-                reshaped_weights = reshaped_weights.view(
-                    self.num_agents, weights.size(0), *([1] * (stacked.dim() - 2))
-                )
+                reshaped_weights = reshaped_weights.view(self.num_agents, weights.size(0), *([1] * (stacked.dim() - 2)))
 
         aggregated = (stacked * reshaped_weights).sum(dim=0)
 
-        return {
-            "output": aggregated,
-            "weights": weights,
-            "disagreement": self._compute_disagreement(outputs)
-        }
+        return {"output": aggregated, "weights": weights, "disagreement": self._compute_disagreement(outputs)}
 
-    def _attention_aggregation(
-        self,
-        outputs: List[torch.Tensor],
-        confidences: torch.Tensor
-    ) -> Dict[str, torch.Tensor]:
+    def _attention_aggregation(self, outputs: List[torch.Tensor], confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Attention-based aggregation."""
         # Reshape for attention
         stacked = torch.stack(outputs, dim=0)  # (num_agents, batch, features)
@@ -489,25 +444,17 @@ class EnsembleAggregator(nn.Module):
         return {
             "output": aggregated,
             "attention_weights": attn_weights,
-            "disagreement": self._compute_disagreement(outputs)
+            "disagreement": self._compute_disagreement(outputs),
         }
 
-    def _learned_ensemble(
-        self,
-        outputs: List[torch.Tensor],
-        confidences: torch.Tensor
-    ) -> Dict[str, torch.Tensor]:
+    def _learned_ensemble(self, outputs: List[torch.Tensor], confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
         """Learned ensemble weights."""
         weights = F.softmax(self.agent_weights, dim=0)
         stacked = torch.stack(outputs, dim=0)
 
         aggregated = (stacked * weights.view(-1, *([1] * (stacked.dim() - 1)))).sum(dim=0)
 
-        return {
-            "output": aggregated,
-            "weights": weights,
-            "disagreement": self._compute_disagreement(outputs)
-        }
+        return {"output": aggregated, "weights": weights, "disagreement": self._compute_disagreement(outputs)}
 
     def _compute_disagreement(self, outputs: List[torch.Tensor]) -> torch.Tensor:
         """Compute disagreement between agent outputs."""
@@ -534,7 +481,7 @@ class MetaControllerTrainer:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
 
         self.mc_config = self.config["meta_controller"]
@@ -548,7 +495,7 @@ class MetaControllerTrainer:
         # Setup optimizer
         self.optimizer = AdamW(
             list(self.router.parameters()) + list(self.aggregator.parameters()),
-            lr=self.mc_config["router"]["learning_rate"]
+            lr=self.mc_config["router"]["learning_rate"],
         )
 
         self.checkpoint_path = Path("training/models/checkpoints/meta_controller.pt")
@@ -597,7 +544,7 @@ class MetaControllerTrainer:
                 logits = outputs["logits"]
 
                 # Weighted cross-entropy loss
-                loss = F.cross_entropy(logits, labels, reduction='none')
+                loss = F.cross_entropy(logits, labels, reduction="none")
                 loss = (loss * weights).mean()
 
                 # Add confidence calibration loss
@@ -666,16 +613,14 @@ class MetaControllerTrainer:
             "accuracy": correct / total,
             "avg_confidence": np.mean(confidences),
             "expected_calibration_error": np.mean(calibration_errors),
-            "confidence_std": np.std(confidences)
+            "confidence_std": np.std(confidences),
         }
 
         logger.info(f"Router evaluation: {metrics}")
         return metrics
 
     def train_aggregator_end_to_end(
-        self,
-        agent_outputs_dataset: Dataset,
-        num_epochs: int = 5
+        self, agent_outputs_dataset: Dataset, num_epochs: int = 5
     ) -> Dict[str, List[float]]:
         """
         Train aggregator on real agent outputs.
@@ -734,7 +679,7 @@ class MetaControllerTrainer:
             "router_state": self.router.state_dict(),
             "aggregator_state": self.aggregator.state_dict(),
             "optimizer_state": self.optimizer.state_dict(),
-            "trace_statistics": self.trace_collector.get_statistics()
+            "trace_statistics": self.trace_collector.get_statistics(),
         }
 
         torch.save(checkpoint, self.checkpoint_path)
@@ -778,10 +723,7 @@ class MetaControllerTrainer:
         else:
             routing_accuracy = 0
 
-        stats = {
-            **trace_stats,
-            "routing_accuracy": routing_accuracy
-        }
+        stats = {**trace_stats, "routing_accuracy": routing_accuracy}
 
         return stats
 
@@ -800,7 +742,7 @@ class RouterDataset(Dataset):
         return {
             "features": torch.tensor(sample["features"], dtype=torch.float32),
             "labels": torch.tensor(sample["label"], dtype=torch.long),
-            "weights": torch.tensor(sample["weight"], dtype=torch.float32)
+            "weights": torch.tensor(sample["weight"], dtype=torch.float32),
         }
 
 

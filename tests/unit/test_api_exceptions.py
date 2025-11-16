@@ -15,7 +15,8 @@ from unittest.mock import patch
 
 # Import the exception classes
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 from src.api.exceptions import (
     FrameworkError,
     ValidationError,
@@ -91,10 +92,7 @@ class TestSanitization:
 
     def test_sanitize_unix_file_paths(self):
         """Test that Unix file paths are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Failed to read /home/user/config/secrets.json"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Failed to read /home/user/config/secrets.json")
 
         sanitized = error.sanitize_details()
 
@@ -103,10 +101,7 @@ class TestSanitization:
 
     def test_sanitize_windows_file_paths(self):
         """Test that Windows file paths are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Error in C:\\Users\\admin\\passwords.txt"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Error in C:\\Users\\admin\\passwords.txt")
 
         sanitized = error.sanitize_details()
 
@@ -115,10 +110,7 @@ class TestSanitization:
 
     def test_sanitize_api_keys(self):
         """Test that API keys are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Request failed with api_key=sk_live_12345678"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Request failed with api_key=sk_live_12345678")
 
         sanitized = error.sanitize_details()
 
@@ -127,10 +119,7 @@ class TestSanitization:
 
     def test_sanitize_secrets(self):
         """Test that secret values are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Connection with secret: mysupersecretvalue123"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Connection with secret: mysupersecretvalue123")
 
         sanitized = error.sanitize_details()
 
@@ -139,10 +128,7 @@ class TestSanitization:
 
     def test_sanitize_passwords(self):
         """Test that passwords are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Login failed: password=P@ssw0rd123!"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Login failed: password=P@ssw0rd123!")
 
         sanitized = error.sanitize_details()
 
@@ -152,8 +138,7 @@ class TestSanitization:
     def test_sanitize_tokens(self):
         """Test that tokens are sanitized."""
         error = FrameworkError(
-            user_message="Error",
-            internal_details="Invalid token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
+            user_message="Error", internal_details="Invalid token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9"
         )
 
         sanitized = error.sanitize_details()
@@ -164,8 +149,7 @@ class TestSanitization:
     def test_sanitize_mongodb_connection_string(self):
         """Test that MongoDB connection strings are sanitized."""
         error = FrameworkError(
-            user_message="Error",
-            internal_details="Connection failed: mongodb://user:pass@host:27017/db"
+            user_message="Error", internal_details="Connection failed: mongodb://user:pass@host:27017/db"
         )
 
         sanitized = error.sanitize_details()
@@ -178,8 +162,7 @@ class TestSanitization:
     def test_sanitize_postgresql_connection_string(self):
         """Test that PostgreSQL connection strings are sanitized."""
         error = FrameworkError(
-            user_message="Error",
-            internal_details="Error: postgresql://admin:secret@db.example.com:5432/app"
+            user_message="Error", internal_details="Error: postgresql://admin:secret@db.example.com:5432/app"
         )
 
         sanitized = error.sanitize_details()
@@ -191,10 +174,7 @@ class TestSanitization:
 
     def test_sanitize_redis_connection_string(self):
         """Test that Redis connection strings are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Cache error: redis://localhost:6379/0"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Cache error: redis://localhost:6379/0")
 
         sanitized = error.sanitize_details()
 
@@ -205,10 +185,7 @@ class TestSanitization:
 
     def test_sanitize_ip_addresses(self):
         """Test that IP addresses are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Connection refused from 192.168.1.100:8080"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Connection refused from 192.168.1.100:8080")
 
         sanitized = error.sanitize_details()
 
@@ -217,10 +194,7 @@ class TestSanitization:
 
     def test_sanitize_email_addresses(self):
         """Test that email addresses are sanitized."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="User john.doe@company.com not found"
-        )
+        error = FrameworkError(user_message="Error", internal_details="User john.doe@company.com not found")
 
         sanitized = error.sanitize_details()
 
@@ -235,7 +209,7 @@ class TestSanitization:
                 "Failed at /var/www/app/config.py "
                 "with api_key=secret123 "
                 "connecting to mongodb://user:pass@192.168.1.1:27017"
-            )
+            ),
         )
 
         sanitized = error.sanitize_details()
@@ -248,10 +222,7 @@ class TestSanitization:
 
     def test_sanitize_preserves_non_sensitive_data(self):
         """Test that non-sensitive data is preserved."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Error code 500: Internal server error occurred"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Error code 500: Internal server error occurred")
 
         sanitized = error.sanitize_details()
 
@@ -283,10 +254,7 @@ class TestLogDictConversion:
 
     def test_to_log_dict_contains_sanitized_details(self):
         """Test that log dict contains sanitized details."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Secret at /home/user/.ssh/id_rsa"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Secret at /home/user/.ssh/id_rsa")
 
         log_dict = error.to_log_dict()
 
@@ -315,8 +283,7 @@ class TestLogDictConversion:
     def test_to_log_dict_context_conversion(self):
         """Test that context values are converted to strings."""
         error = FrameworkError(
-            user_message="Test",
-            context={"number": 42, "list": [1, 2, 3], "dict": {"nested": "value"}}
+            user_message="Test", context={"number": 42, "list": [1, 2, 3], "dict": {"nested": "value"}}
         )
 
         log_dict = error.to_log_dict()
@@ -344,7 +311,7 @@ class TestUserResponseConversion:
         """Test that user response doesn't contain internal details."""
         error = FrameworkError(
             user_message="Something went wrong",
-            internal_details="Database connection to postgresql://admin:pass@db:5432 failed"
+            internal_details="Database connection to postgresql://admin:pass@db:5432 failed",
         )
 
         response = error.to_user_response()
@@ -365,10 +332,7 @@ class TestUserResponseConversion:
 
     def test_to_user_response_includes_error_code(self):
         """Test that error code is included in response."""
-        error = FrameworkError(
-            user_message="Error",
-            error_code="CUSTOM_CODE"
-        )
+        error = FrameworkError(user_message="Error", error_code="CUSTOM_CODE")
 
         response = error.to_user_response()
 
@@ -388,10 +352,7 @@ class TestValidationError:
 
     def test_validation_error_with_field_name(self):
         """Test ValidationError with field name."""
-        error = ValidationError(
-            user_message="Email is invalid",
-            field_name="email"
-        )
+        error = ValidationError(user_message="Email is invalid", field_name="email")
 
         assert error.field_name == "email"
         assert error.context["field_name"] == "email"
@@ -417,8 +378,7 @@ class TestAuthenticationError:
     def test_authentication_error_custom_message(self):
         """Test AuthenticationError with custom message."""
         error = AuthenticationError(
-            user_message="Invalid credentials",
-            internal_details="Token expired at 2024-01-01T00:00:00Z"
+            user_message="Invalid credentials", internal_details="Token expired at 2024-01-01T00:00:00Z"
         )
 
         assert error.user_message == "Invalid credentials"
@@ -443,10 +403,7 @@ class TestAuthorizationError:
 
     def test_authorization_error_with_permission(self):
         """Test AuthorizationError with required permission."""
-        error = AuthorizationError(
-            user_message="You cannot access this resource",
-            required_permission="admin"
-        )
+        error = AuthorizationError(user_message="You cannot access this resource", required_permission="admin")
 
         assert error.context["required_permission"] == "admin"
 
@@ -470,10 +427,7 @@ class TestRateLimitError:
 
     def test_rate_limit_error_with_retry_after(self):
         """Test RateLimitError with retry_after_seconds."""
-        error = RateLimitError(
-            user_message="Too many requests",
-            retry_after_seconds=60
-        )
+        error = RateLimitError(user_message="Too many requests", retry_after_seconds=60)
 
         assert error.retry_after_seconds == 60
         assert error.context["retry_after_seconds"] == 60
@@ -497,10 +451,7 @@ class TestLLMError:
 
     def test_llm_error_with_provider(self):
         """Test LLMError with provider information."""
-        error = LLMError(
-            user_message="AI service error",
-            provider="OpenAI"
-        )
+        error = LLMError(user_message="AI service error", provider="OpenAI")
 
         assert error.context["provider"] == "OpenAI"
 
@@ -523,10 +474,7 @@ class TestMCTSError:
 
     def test_mcts_error_with_iteration(self):
         """Test MCTSError with iteration number."""
-        error = MCTSError(
-            user_message="Simulation failed",
-            iteration=42
-        )
+        error = MCTSError(user_message="Simulation failed", iteration=42)
 
         assert error.context["iteration"] == 42
 
@@ -567,9 +515,7 @@ class TestTimeoutError:
     def test_timeout_error_with_operation(self):
         """Test TimeoutError with operation details."""
         error = FrameworkTimeoutError(
-            user_message="Request timed out",
-            operation="database_query",
-            timeout_seconds=30.0
+            user_message="Request timed out", operation="database_query", timeout_seconds=30.0
         )
 
         assert error.context["operation"] == "database_query"
@@ -594,10 +540,7 @@ class TestConfigurationError:
 
     def test_configuration_error_with_config_key(self):
         """Test ConfigurationError with config key."""
-        error = ConfigurationError(
-            user_message="Configuration invalid",
-            config_key="DATABASE_URL"
-        )
+        error = ConfigurationError(user_message="Configuration invalid", config_key="DATABASE_URL")
 
         assert error.context["config_key"] == "DATABASE_URL"
 
@@ -626,10 +569,7 @@ class TestWrapException:
         """Test wrapping with custom user message."""
         original = KeyError("missing_key")
 
-        wrapped = wrap_exception(
-            original,
-            user_message="Required field is missing"
-        )
+        wrapped = wrap_exception(original, user_message="Required field is missing")
 
         assert wrapped.user_message == "Required field is missing"
 
@@ -637,11 +577,7 @@ class TestWrapException:
         """Test wrapping with custom error class."""
         original = IOError("File not found")
 
-        wrapped = wrap_exception(
-            original,
-            user_message="Resource unavailable",
-            error_class=ConfigurationError
-        )
+        wrapped = wrap_exception(original, user_message="Resource unavailable", error_class=ConfigurationError)
 
         assert isinstance(wrapped, ConfigurationError)
         assert wrapped.error_code == "CONFIG_ERROR"
@@ -658,11 +594,7 @@ class TestWrapException:
         """Test wrapping with additional context."""
         original = RuntimeError("System failure")
 
-        wrapped = wrap_exception(
-            original,
-            user_message="System error",
-            context={"request_id": "abc123"}
-        )
+        wrapped = wrap_exception(original, user_message="System error", context={"request_id": "abc123"})
 
         assert wrapped.context["request_id"] == "abc123"
 
@@ -760,18 +692,14 @@ class TestEdgeCases:
     def test_very_long_internal_details(self):
         """Test error with very long internal details."""
         long_details = "x" * 10000
-        error = FrameworkError(
-            user_message="Error",
-            internal_details=long_details
-        )
+        error = FrameworkError(user_message="Error", internal_details=long_details)
 
         assert len(error.internal_details) == 10000
 
     def test_special_characters_in_messages(self):
         """Test error with special characters."""
         error = FrameworkError(
-            user_message="Error: !@#$%^&*()_+-=[]{}|;':\",./<>?",
-            internal_details="Details with \n\t\r special chars"
+            user_message="Error: !@#$%^&*()_+-=[]{}|;':\",./<>?", internal_details="Details with \n\t\r special chars"
         )
 
         assert error.user_message is not None
@@ -780,18 +708,14 @@ class TestEdgeCases:
     def test_unicode_in_messages(self):
         """Test error with unicode characters."""
         error = FrameworkError(
-            user_message="Error: \u4e2d\u6587\u6d4b\u8bd5",
-            internal_details="Path: /\u00e9\u00f1/\u4e2d\u6587"
+            user_message="Error: \u4e2d\u6587\u6d4b\u8bd5", internal_details="Path: /\u00e9\u00f1/\u4e2d\u6587"
         )
 
         assert "\u4e2d\u6587\u6d4b\u8bd5" in error.user_message
 
     def test_none_in_context(self):
         """Test error with None values in context."""
-        error = FrameworkError(
-            user_message="Error",
-            context={"key": None}
-        )
+        error = FrameworkError(user_message="Error", context={"key": None})
 
         log_dict = error.to_log_dict()
         assert log_dict["context"]["key"] == "None"
@@ -807,10 +731,7 @@ class TestEdgeCases:
 
     def test_error_code_with_spaces_preserved(self):
         """Test that custom error codes with spaces are preserved."""
-        error = FrameworkError(
-            user_message="Error",
-            error_code="CUSTOM ERROR CODE"
-        )
+        error = FrameworkError(user_message="Error", error_code="CUSTOM ERROR CODE")
 
         assert error.error_code == "CUSTOM ERROR CODE"
 
@@ -822,10 +743,7 @@ class TestEdgeCases:
             "tuple": (4, 5, 6),
         }
 
-        error = FrameworkError(
-            user_message="Error",
-            context=context
-        )
+        error = FrameworkError(user_message="Error", context=context)
 
         log_dict = error.to_log_dict()
         # Complex objects should be converted to strings
@@ -834,10 +752,7 @@ class TestEdgeCases:
 
     def test_sanitization_case_insensitivity(self):
         """Test that sanitization is case-insensitive."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="API_KEY=secret PASSWORD=hidden"
-        )
+        error = FrameworkError(user_message="Error", internal_details="API_KEY=secret PASSWORD=hidden")
 
         sanitized = error.sanitize_details()
         assert "secret" not in sanitized
@@ -845,10 +760,7 @@ class TestEdgeCases:
 
     def test_partial_path_matching(self):
         """Test that partial paths are handled correctly."""
-        error = FrameworkError(
-            user_message="Error",
-            internal_details="Error at /var/log/app.log with code 404"
-        )
+        error = FrameworkError(user_message="Error", internal_details="Error at /var/log/app.log with code 404")
 
         sanitized = error.sanitize_details()
         # Path should be sanitized but "404" should remain

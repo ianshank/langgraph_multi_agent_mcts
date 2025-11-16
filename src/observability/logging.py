@@ -63,8 +63,8 @@ SENSITIVE_PATTERNS = [
     (re.compile(r'("?token"?\s*[:=]\s*)"[^"]*"', re.IGNORECASE), r'\1"***REDACTED***"'),
     (re.compile(r'("?authorization"?\s*[:=]\s*)"[^"]*"', re.IGNORECASE), r'\1"***REDACTED***"'),
     (re.compile(r'("?aws[_-]?secret[_-]?access[_-]?key"?\s*[:=]\s*)"[^"]*"', re.IGNORECASE), r'\1"***REDACTED***"'),
-    (re.compile(r'(Bearer\s+)\S+', re.IGNORECASE), r'\1***REDACTED***'),
-    (re.compile(r'(Basic\s+)\S+', re.IGNORECASE), r'\1***REDACTED***'),
+    (re.compile(r"(Bearer\s+)\S+", re.IGNORECASE), r"\1***REDACTED***"),
+    (re.compile(r"(Basic\s+)\S+", re.IGNORECASE), r"\1***REDACTED***"),
 ]
 
 
@@ -78,8 +78,16 @@ def sanitize_message(message: str) -> str:
 def sanitize_dict(data: dict) -> dict:
     """Recursively sanitize sensitive data from dictionaries."""
     sensitive_keys = {
-        "api_key", "apikey", "password", "secret", "token", "authorization",
-        "auth", "credentials", "aws_secret_access_key", "private_key",
+        "api_key",
+        "apikey",
+        "password",
+        "secret",
+        "token",
+        "authorization",
+        "auth",
+        "credentials",
+        "aws_secret_access_key",
+        "private_key",
     }
 
     result = {}
@@ -90,10 +98,7 @@ def sanitize_dict(data: dict) -> dict:
         elif isinstance(value, dict):
             result[key] = sanitize_dict(value)
         elif isinstance(value, list):
-            result[key] = [
-                sanitize_dict(item) if isinstance(item, dict) else item
-                for item in value
-            ]
+            result[key] = [sanitize_dict(item) if isinstance(item, dict) else item for item in value]
         elif isinstance(value, str):
             result[key] = sanitize_message(value)
         else:
@@ -130,6 +135,7 @@ class JSONFormatter(logging.Formatter):
         self.include_process = include_process
         if include_hostname:
             import socket
+
             self.hostname = socket.gethostname()
         else:
             self.hostname = None
@@ -184,12 +190,33 @@ class JSONFormatter(logging.Formatter):
         extra_fields = {}
         for key, value in record.__dict__.items():
             if key not in {
-                "name", "msg", "args", "created", "filename", "funcName",
-                "levelname", "levelno", "lineno", "module", "msecs", "message",
-                "pathname", "process", "processName", "relativeCreated",
-                "thread", "threadName", "exc_info", "exc_text", "stack_info",
-                "correlation_id", "request_metadata", "memory_mb", "cpu_percent",
-                "thread_count", "taskName",
+                "name",
+                "msg",
+                "args",
+                "created",
+                "filename",
+                "funcName",
+                "levelname",
+                "levelno",
+                "lineno",
+                "module",
+                "msecs",
+                "message",
+                "pathname",
+                "process",
+                "processName",
+                "relativeCreated",
+                "thread",
+                "threadName",
+                "exc_info",
+                "exc_text",
+                "stack_info",
+                "correlation_id",
+                "request_metadata",
+                "memory_mb",
+                "cpu_percent",
+                "thread_count",
+                "taskName",
             }:
                 if isinstance(value, dict):
                     extra_fields[key] = sanitize_dict(value)
@@ -382,6 +409,7 @@ def log_execution_time(logger: Optional[logging.Logger] = None, level: int = log
         def my_function():
             ...
     """
+
     def decorator(func):
         @wraps(func)
         def sync_wrapper(*args, **kwargs):
@@ -415,7 +443,7 @@ def log_execution_time(logger: Optional[logging.Logger] = None, level: int = log
                             "error": error,
                             "memory_delta_mb": round(memory_delta_mb, 2),
                         }
-                    }
+                    },
                 )
 
             return result
@@ -452,7 +480,7 @@ def log_execution_time(logger: Optional[logging.Logger] = None, level: int = log
                             "error": error,
                             "memory_delta_mb": round(memory_delta_mb, 2),
                         }
-                    }
+                    },
                 )
 
             return result

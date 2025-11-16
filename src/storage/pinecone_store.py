@@ -60,10 +60,7 @@ class PineconeVectorStore:
         self._operation_buffer: List[Dict[str, Any]] = []
 
         if not PINECONE_AVAILABLE:
-            print(
-                "Warning: pinecone package not installed. "
-                "Install with: pip install pinecone"
-            )
+            print("Warning: pinecone package not installed. " "Install with: pip install pinecone")
             return
 
         if auto_init and self._api_key and self._host:
@@ -86,12 +83,7 @@ class PineconeVectorStore:
     @property
     def is_available(self) -> bool:
         """Check if Pinecone is available and configured."""
-        return (
-            PINECONE_AVAILABLE
-            and self._is_initialized
-            and self._api_key is not None
-            and self._host is not None
-        )
+        return PINECONE_AVAILABLE and self._is_initialized and self._api_key is not None and self._host is not None
 
     def store_prediction(
         self,

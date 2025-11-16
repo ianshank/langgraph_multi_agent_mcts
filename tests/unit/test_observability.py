@@ -21,7 +21,8 @@ import pytest
 
 # Import observability modules
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 from src.observability.metrics import (
     MCTSMetrics,
@@ -67,11 +68,12 @@ from src.observability.logging import (
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def mock_process():
     """Mock psutil.Process for all tests."""
-    with patch('src.observability.metrics.PROMETHEUS_AVAILABLE', False):
-        with patch('src.observability.metrics.psutil.Process') as mock:
+    with patch("src.observability.metrics.PROMETHEUS_AVAILABLE", False):
+        with patch("src.observability.metrics.psutil.Process") as mock:
             process_instance = MagicMock()
             mock.return_value = process_instance
 
@@ -91,7 +93,7 @@ def mock_process():
 @pytest.fixture
 def mock_profiling_process():
     """Mock psutil.Process for profiling tests."""
-    with patch('src.observability.profiling.psutil.Process') as mock:
+    with patch("src.observability.profiling.psutil.Process") as mock:
         process_instance = MagicMock()
         mock.return_value = process_instance
 
@@ -109,7 +111,7 @@ def mock_profiling_process():
 @pytest.fixture
 def mock_logging_process():
     """Mock psutil.Process for logging tests."""
-    with patch('src.observability.logging.psutil.Process') as mock:
+    with patch("src.observability.logging.psutil.Process") as mock:
         process_instance = MagicMock()
         mock.return_value = process_instance
 
@@ -158,6 +160,7 @@ def reset_tracing_manager():
 def reset_correlation_id():
     """Reset correlation ID context variable."""
     from src.observability.logging import _correlation_id, _request_metadata
+
     # Save current state and reset to clean state
     old_cid = _correlation_id.get()
     old_metadata = _request_metadata.get()
@@ -172,6 +175,7 @@ def reset_correlation_id():
 # ============================================================================
 # MCTSMetrics Tests
 # ============================================================================
+
 
 class TestMCTSMetrics:
     """Test suite for MCTSMetrics dataclass."""
@@ -227,6 +231,7 @@ class TestMCTSMetrics:
 # AgentMetrics Tests
 # ============================================================================
 
+
 class TestAgentMetrics:
     """Test suite for AgentMetrics dataclass."""
 
@@ -259,6 +264,7 @@ class TestAgentMetrics:
 # ============================================================================
 # MetricsCollector Tests
 # ============================================================================
+
 
 class TestMetricsCollector:
     """Test suite for MetricsCollector."""
@@ -565,6 +571,7 @@ class TestMetricsCollector:
 # MetricsTimer Tests
 # ============================================================================
 
+
 class TestMetricsTimer:
     """Test suite for MetricsTimer context manager."""
 
@@ -623,12 +630,13 @@ class TestMetricsTimer:
 # AsyncProfiler Tests
 # ============================================================================
 
+
 class TestAsyncProfiler:
     """Test suite for AsyncProfiler."""
 
     def test_singleton_pattern(self, reset_async_profiler, mock_profiling_process):
         """Test AsyncProfiler follows singleton pattern."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler1 = AsyncProfiler.get_instance()
             profiler2 = AsyncProfiler.get_instance()
 
@@ -636,7 +644,7 @@ class TestAsyncProfiler:
 
     def test_start_session_creates_session(self, reset_async_profiler, mock_profiling_process):
         """Test that start_session creates a new profiling session."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             session_id = profiler.start_session("test_session")
@@ -648,7 +656,7 @@ class TestAsyncProfiler:
 
     def test_start_session_auto_generates_id(self, reset_async_profiler, mock_profiling_process):
         """Test that start_session auto-generates ID if not provided."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             session_id = profiler.start_session()
@@ -658,7 +666,7 @@ class TestAsyncProfiler:
 
     def test_end_session_returns_session(self, reset_async_profiler, mock_profiling_process):
         """Test that end_session returns the session data."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             profiler.start_session("test_session")
@@ -670,7 +678,7 @@ class TestAsyncProfiler:
 
     def test_end_session_uses_current_session(self, reset_async_profiler, mock_profiling_process):
         """Test that end_session uses current session if not specified."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             profiler.start_session("test_session")
@@ -680,7 +688,7 @@ class TestAsyncProfiler:
 
     def test_end_session_raises_for_unknown(self, reset_async_profiler, mock_profiling_process):
         """Test that end_session raises ValueError for unknown session."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             with pytest.raises(ValueError, match="Unknown session"):
@@ -688,7 +696,7 @@ class TestAsyncProfiler:
 
     def test_time_block_records_timing(self, reset_async_profiler, mock_profiling_process):
         """Test that time_block records timing in session."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -703,7 +711,7 @@ class TestAsyncProfiler:
 
     def test_time_block_records_memory_delta(self, reset_async_profiler, mock_profiling_process):
         """Test that time_block records memory usage."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -717,7 +725,7 @@ class TestAsyncProfiler:
 
     def test_time_block_handles_exceptions(self, reset_async_profiler, mock_profiling_process):
         """Test that time_block records failed operations correctly."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -731,7 +739,7 @@ class TestAsyncProfiler:
 
     def test_time_block_records_metadata(self, reset_async_profiler, mock_profiling_process):
         """Test that time_block records custom metadata."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -744,7 +752,7 @@ class TestAsyncProfiler:
 
     def test_sample_memory(self, reset_async_profiler, mock_profiling_process):
         """Test memory sampling."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -760,7 +768,7 @@ class TestAsyncProfiler:
 
     def test_sample_cpu(self, reset_async_profiler, mock_profiling_process):
         """Test CPU sampling."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -774,7 +782,7 @@ class TestAsyncProfiler:
 
     def test_add_marker(self, reset_async_profiler, mock_profiling_process):
         """Test adding custom markers."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -787,7 +795,7 @@ class TestAsyncProfiler:
 
     def test_get_timing_summary_specific(self, reset_async_profiler, mock_profiling_process):
         """Test getting timing summary for specific operation."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             # Manually add aggregate timings
@@ -804,7 +812,7 @@ class TestAsyncProfiler:
 
     def test_get_timing_summary_all(self, reset_async_profiler, mock_profiling_process):
         """Test getting timing summary for all operations."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             profiler._aggregate_timings["op1"] = [10.0, 20.0]
@@ -819,7 +827,7 @@ class TestAsyncProfiler:
 
     def test_reset(self, reset_async_profiler, mock_profiling_process):
         """Test that reset clears all profiling data."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
 
             profiler.start_session("test_session")
@@ -836,12 +844,13 @@ class TestAsyncProfiler:
 # MemoryProfiler Tests
 # ============================================================================
 
+
 class TestMemoryProfiler:
     """Test suite for MemoryProfiler."""
 
     def test_set_baseline(self, mock_profiling_process):
         """Test setting memory baseline."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
 
             baseline = profiler.set_baseline()
@@ -851,7 +860,7 @@ class TestMemoryProfiler:
 
     def test_get_current(self, mock_profiling_process):
         """Test getting current memory usage."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
 
             current = profiler.get_current()
@@ -860,7 +869,7 @@ class TestMemoryProfiler:
 
     def test_get_delta_sets_baseline_if_none(self, mock_profiling_process):
         """Test that get_delta sets baseline if not already set."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
 
             delta = profiler.get_delta()
@@ -870,7 +879,7 @@ class TestMemoryProfiler:
 
     def test_get_delta_calculates_correctly(self, mock_profiling_process):
         """Test that get_delta calculates memory change correctly."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
             profiler._baseline = 100.0
 
@@ -881,7 +890,7 @@ class TestMemoryProfiler:
 
     def test_sample_creates_record(self, mock_profiling_process):
         """Test that sample creates a comprehensive memory record."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
             profiler._baseline = 100.0
 
@@ -897,7 +906,7 @@ class TestMemoryProfiler:
 
     def test_sample_tracks_peak(self, mock_profiling_process):
         """Test that sample tracks peak memory usage."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
 
             # First sample sets peak to 150MB
@@ -911,7 +920,7 @@ class TestMemoryProfiler:
 
     def test_check_leak_no_baseline(self, mock_profiling_process):
         """Test check_leak with no baseline returns appropriate status."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
 
             result = profiler.check_leak()
@@ -920,7 +929,7 @@ class TestMemoryProfiler:
 
     def test_check_leak_detects_potential_leak(self, mock_profiling_process):
         """Test check_leak detects memory increase above threshold."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
             profiler._baseline = 100.0  # Current is 150MB, so delta is 50MB
 
@@ -931,7 +940,7 @@ class TestMemoryProfiler:
 
     def test_check_leak_ok_when_below_threshold(self, mock_profiling_process):
         """Test check_leak returns OK when below threshold."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
             profiler._baseline = 145.0  # Current is 150MB, so delta is 5MB
 
@@ -942,7 +951,7 @@ class TestMemoryProfiler:
 
     def test_get_summary(self, mock_profiling_process):
         """Test getting memory profiler summary."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
             profiler._baseline = 100.0
 
@@ -966,7 +975,7 @@ class TestMemoryProfiler:
 
     def test_get_summary_no_samples(self, mock_profiling_process):
         """Test getting summary with no samples."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = MemoryProfiler()
 
             summary = profiler.get_summary()
@@ -979,12 +988,13 @@ class TestMemoryProfiler:
 # profile_block Tests
 # ============================================================================
 
+
 class TestProfileBlock:
     """Test suite for profile_block convenience context manager."""
 
     def test_profile_block_uses_singleton(self, reset_async_profiler, mock_profiling_process):
         """Test that profile_block uses the global AsyncProfiler singleton."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -996,7 +1006,7 @@ class TestProfileBlock:
 
     def test_profile_block_with_metadata(self, reset_async_profiler, mock_profiling_process):
         """Test profile_block passes metadata correctly."""
-        with patch('src.observability.profiling.get_logger'):
+        with patch("src.observability.profiling.get_logger"):
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
@@ -1012,6 +1022,7 @@ class TestProfileBlock:
 # TracingManager Tests
 # ============================================================================
 
+
 class TestTracingManager:
     """Test suite for TracingManager."""
 
@@ -1024,10 +1035,10 @@ class TestTracingManager:
 
     def test_initialize_with_defaults(self, reset_tracing_manager):
         """Test initialization with default values."""
-        with patch('src.observability.tracing.trace.set_tracer_provider'):
-            with patch('src.observability.tracing.OTLPSpanExporter'):
-                with patch('src.observability.tracing.BatchSpanProcessor'):
-                    with patch('src.observability.tracing.HTTPXClientInstrumentor'):
+        with patch("src.observability.tracing.trace.set_tracer_provider"):
+            with patch("src.observability.tracing.OTLPSpanExporter"):
+                with patch("src.observability.tracing.BatchSpanProcessor"):
+                    with patch("src.observability.tracing.HTTPXClientInstrumentor"):
                         manager = TracingManager.get_instance()
                         manager.initialize()
 
@@ -1038,7 +1049,7 @@ class TestTracingManager:
         manager = TracingManager()
 
         # Test that initialization with console exporter sets the initialized flag
-        with patch.object(manager, '_instrument_httpx'):
+        with patch.object(manager, "_instrument_httpx"):
             manager.initialize(exporter_type="console")
 
             assert manager._initialized is True
@@ -1046,8 +1057,8 @@ class TestTracingManager:
 
     def test_initialize_with_none_exporter(self, reset_tracing_manager):
         """Test initialization with no exporter."""
-        with patch('src.observability.tracing.trace.set_tracer_provider'):
-            with patch('src.observability.tracing.HTTPXClientInstrumentor'):
+        with patch("src.observability.tracing.trace.set_tracer_provider"):
+            with patch("src.observability.tracing.HTTPXClientInstrumentor"):
                 manager = TracingManager.get_instance()
                 manager.initialize(exporter_type="none")
 
@@ -1065,7 +1076,7 @@ class TestTracingManager:
         manager = TracingManager()
 
         # Patch _instrument_httpx to avoid external dependencies
-        with patch.object(manager, '_instrument_httpx'):
+        with patch.object(manager, "_instrument_httpx"):
             manager.initialize()
             first_provider = manager._provider
 
@@ -1081,19 +1092,19 @@ class TestTracingManager:
         manager = TracingManager()
 
         # Patch _instrument_httpx to avoid external dependencies
-        with patch.object(manager, '_instrument_httpx'):
+        with patch.object(manager, "_instrument_httpx"):
             tracer = manager.get_tracer("test")
 
             assert manager._initialized is True
             # Tracer should have start_span method
-            assert hasattr(tracer, 'start_span')
+            assert hasattr(tracer, "start_span")
 
     def test_shutdown(self, reset_tracing_manager):
         """Test shutdown cleans up resources."""
-        with patch('src.observability.tracing.trace.set_tracer_provider'):
-            with patch('src.observability.tracing.OTLPSpanExporter'):
-                with patch('src.observability.tracing.BatchSpanProcessor'):
-                    with patch('src.observability.tracing.HTTPXClientInstrumentor'):
+        with patch("src.observability.tracing.trace.set_tracer_provider"):
+            with patch("src.observability.tracing.OTLPSpanExporter"):
+                with patch("src.observability.tracing.BatchSpanProcessor"):
+                    with patch("src.observability.tracing.HTTPXClientInstrumentor"):
                         manager = TracingManager.get_instance()
                         manager.initialize()
 
@@ -1108,19 +1119,21 @@ class TestTracingManager:
     def test_get_tracer_module_function(self, reset_tracing_manager):
         """Test get_tracer module-level function."""
         # Test that get_tracer returns a tracer object
-        with patch('src.observability.tracing.trace.set_tracer_provider'):
-            with patch('src.observability.tracing.OTLPSpanExporter'):
-                with patch('src.observability.tracing.BatchSpanProcessor'):
-                    with patch('src.observability.tracing.HTTPXClientInstrumentor'):
+        with patch("src.observability.tracing.trace.set_tracer_provider"):
+            with patch("src.observability.tracing.OTLPSpanExporter"):
+                with patch("src.observability.tracing.BatchSpanProcessor"):
+                    with patch("src.observability.tracing.HTTPXClientInstrumentor"):
                         result = get_tracer("test_tracer")
                         # Verify it's a tracer-like object
                         from opentelemetry.trace import Tracer
-                        assert hasattr(result, 'start_span') or isinstance(result, Tracer)
+
+                        assert hasattr(result, "start_span") or isinstance(result, Tracer)
 
 
 # ============================================================================
 # SpanContextPropagator Tests
 # ============================================================================
+
 
 class TestSpanContextPropagator:
     """Test suite for SpanContextPropagator."""
@@ -1143,6 +1156,7 @@ class TestSpanContextPropagator:
         result = propagator.extract(carrier)
         # Should return a Context object
         from opentelemetry.context import Context
+
         assert isinstance(result, Context)
 
     def test_get_trace_parent(self):
@@ -1159,6 +1173,7 @@ class TestSpanContextPropagator:
 # add_mcts_attributes Tests
 # ============================================================================
 
+
 class TestAddMCTSAttributes:
     """Test suite for add_mcts_attributes helper function."""
 
@@ -1172,7 +1187,7 @@ class TestAddMCTSAttributes:
                 "mcts.iteration": 5,
                 "agent.confidence": 0.85,
                 "framework.version": "1.0",
-            }
+            },
         )
 
         calls = mock_span.set_attribute.call_args_list
@@ -1201,6 +1216,7 @@ class TestAddMCTSAttributes:
 # ============================================================================
 # Logging - CorrelationIdFilter Tests
 # ============================================================================
+
 
 class TestCorrelationIdFilter:
     """Test suite for CorrelationIdFilter."""
@@ -1269,6 +1285,7 @@ class TestCorrelationIdFilter:
 # Logging - PerformanceMetricsFilter Tests
 # ============================================================================
 
+
 class TestPerformanceMetricsFilter:
     """Test suite for PerformanceMetricsFilter."""
 
@@ -1302,6 +1319,7 @@ class TestPerformanceMetricsFilter:
 # ============================================================================
 # Logging - Sanitization Tests
 # ============================================================================
+
 
 class TestSanitization:
     """Test suite for log sanitization functions."""
@@ -1405,6 +1423,7 @@ class TestSanitization:
 # Logging - JSONFormatter Tests
 # ============================================================================
 
+
 class TestJSONFormatter:
     """Test suite for JSONFormatter."""
 
@@ -1436,7 +1455,7 @@ class TestJSONFormatter:
 
     def test_format_includes_hostname(self):
         """Test that hostname is included when configured."""
-        with patch('socket.gethostname', return_value="test-host"):
+        with patch("socket.gethostname", return_value="test-host"):
             formatter = JSONFormatter(include_hostname=True, include_process=False)
             record = logging.LogRecord(
                 name="test",
@@ -1534,6 +1553,7 @@ class TestJSONFormatter:
             raise ValueError("Test error")
         except ValueError:
             import sys
+
             exc_info = sys.exc_info()
 
         record = logging.LogRecord(
@@ -1585,6 +1605,7 @@ class TestJSONFormatter:
 # Logging - Correlation ID Functions Tests
 # ============================================================================
 
+
 class TestCorrelationIdFunctions:
     """Test suite for correlation ID management functions."""
 
@@ -1592,6 +1613,7 @@ class TestCorrelationIdFunctions:
         """Test that get_correlation_id generates new ID if none exists."""
         import uuid
         from src.observability.logging import _correlation_id
+
         # Force reset to None
         token = _correlation_id.set(None)
         try:
@@ -1626,6 +1648,7 @@ class TestCorrelationIdFunctions:
     def test_correlation_id_propagated(self):
         """Test that correlation ID is propagated correctly."""
         from src.observability.logging import _correlation_id
+
         # Force reset
         token = _correlation_id.set(None)
         try:
@@ -1643,6 +1666,7 @@ class TestCorrelationIdFunctions:
 # ============================================================================
 # Logging - LogContext Tests
 # ============================================================================
+
 
 class TestLogContext:
     """Test suite for LogContext context manager."""
@@ -1688,12 +1712,13 @@ class TestLogContext:
 # Logging - setup_logging Tests
 # ============================================================================
 
+
 class TestSetupLogging:
     """Test suite for setup_logging function."""
 
     def test_setup_logging_basic(self, reset_correlation_id):
         """Test basic logging setup."""
-        with patch('logging.config.dictConfig') as mock_config:
+        with patch("logging.config.dictConfig") as mock_config:
             setup_logging(
                 log_level="DEBUG",
                 json_output=True,
@@ -1710,8 +1735,8 @@ class TestSetupLogging:
 
     def test_setup_logging_uses_env_var(self, reset_correlation_id):
         """Test that setup_logging uses LOG_LEVEL environment variable."""
-        with patch.dict('os.environ', {"LOG_LEVEL": "WARNING"}):
-            with patch('logging.config.dictConfig') as mock_config:
+        with patch.dict("os.environ", {"LOG_LEVEL": "WARNING"}):
+            with patch("logging.config.dictConfig") as mock_config:
                 setup_logging()
 
                 config = mock_config.call_args[0][0]
@@ -1719,7 +1744,7 @@ class TestSetupLogging:
 
     def test_setup_logging_with_file_handler(self, reset_correlation_id):
         """Test setup with file handler."""
-        with patch('logging.config.dictConfig') as mock_config:
+        with patch("logging.config.dictConfig") as mock_config:
             setup_logging(log_file="/tmp/test.log")
 
             config = mock_config.call_args[0][0]
@@ -1731,7 +1756,7 @@ class TestSetupLogging:
 
     def test_setup_logging_with_performance_metrics(self, reset_correlation_id):
         """Test setup includes performance metrics filter."""
-        with patch('logging.config.dictConfig') as mock_config:
+        with patch("logging.config.dictConfig") as mock_config:
             setup_logging(include_performance_metrics=True)
 
             config = mock_config.call_args[0][0]
@@ -1741,7 +1766,7 @@ class TestSetupLogging:
 
     def test_setup_logging_standard_format(self, reset_correlation_id):
         """Test setup with standard (non-JSON) format."""
-        with patch('logging.config.dictConfig') as mock_config:
+        with patch("logging.config.dictConfig") as mock_config:
             setup_logging(json_output=False)
 
             config = mock_config.call_args[0][0]
@@ -1753,19 +1778,20 @@ class TestSetupLogging:
 # Logging - get_logger Tests
 # ============================================================================
 
+
 class TestGetLogger:
     """Test suite for get_logger function."""
 
     def test_get_logger_adds_prefix(self):
         """Test that get_logger adds mcts. prefix."""
-        with patch('logging.getLogger') as mock_get:
+        with patch("logging.getLogger") as mock_get:
             get_logger("framework.graph")
 
             mock_get.assert_called_once_with("mcts.framework.graph")
 
     def test_get_logger_preserves_prefix(self):
         """Test that get_logger preserves existing mcts. prefix."""
-        with patch('logging.getLogger') as mock_get:
+        with patch("logging.getLogger") as mock_get:
             get_logger("mcts.agents")
 
             mock_get.assert_called_once_with("mcts.agents")

@@ -20,18 +20,21 @@ import numpy as np
 
 try:
     import torch
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
 
 try:
     import wandb
+
     HAS_WANDB = True
 except ImportError:
     HAS_WANDB = False
 
 try:
     import mlflow
+
     HAS_MLFLOW = True
 except ImportError:
     HAS_MLFLOW = False
@@ -72,7 +75,7 @@ class PhaseManager:
                 "components": ["hrm", "trm", "rag"],
                 "learning_rate": self.config["training"]["learning_rate"],
                 "batch_size": self.config["training"]["batch_size"],
-                "priority": "training"
+                "priority": "training",
             },
             {
                 "name": "instruction_finetuning",
@@ -81,7 +84,7 @@ class PhaseManager:
                 "components": ["hrm", "trm"],
                 "learning_rate": self.config["training"]["learning_rate"] / 2,
                 "batch_size": self.config["training"]["batch_size"] * 2,
-                "priority": "finetuning"
+                "priority": "finetuning",
             },
             {
                 "name": "mcts_self_play",
@@ -90,7 +93,7 @@ class PhaseManager:
                 "components": ["mcts"],
                 "learning_rate": self.config["agents"]["mcts"]["value_network"]["learning_rate"],
                 "batch_size": 64,
-                "priority": "training"
+                "priority": "training",
             },
             {
                 "name": "meta_controller_training",
@@ -99,15 +102,15 @@ class PhaseManager:
                 "components": ["router", "aggregator"],
                 "learning_rate": self.config["meta_controller"]["router"]["learning_rate"],
                 "batch_size": 64,
-                "priority": "training"
+                "priority": "training",
             },
             {
                 "name": "evaluation_and_validation",
                 "description": "Comprehensive evaluation and production validation",
                 "duration_hours": 4,
                 "components": ["evaluation"],
-                "priority": "validation"
-            }
+                "priority": "validation",
+            },
         ]
         return phases
 
@@ -131,11 +134,13 @@ class PhaseManager:
             return False
 
         # Record phase completion
-        self.phase_history.append({
-            "phase": self.phases[self.current_phase]["name"],
-            "completed_at": datetime.now().isoformat(),
-            "metrics": metrics
-        })
+        self.phase_history.append(
+            {
+                "phase": self.phases[self.current_phase]["name"],
+                "completed_at": datetime.now().isoformat(),
+                "metrics": metrics,
+            }
+        )
 
         self.current_phase += 1
 
@@ -148,10 +153,7 @@ class PhaseManager:
 
     def estimate_remaining_time(self) -> timedelta:
         """Estimate remaining training time."""
-        remaining_hours = sum(
-            phase["duration_hours"]
-            for phase in self.phases[self.current_phase:]
-        )
+        remaining_hours = sum(phase["duration_hours"] for phase in self.phases[self.current_phase :])
         return timedelta(hours=remaining_hours)
 
     def get_resource_allocation(self, phase: Dict[str, Any]) -> Dict[str, Any]:
@@ -160,7 +162,7 @@ class PhaseManager:
             "num_gpus": 1,
             "cpu_workers": self.config["resources"]["max_cpu_workers"],
             "memory_gb": 32,
-            "priority": phase["priority"]
+            "priority": phase["priority"],
         }
 
         # Adjust for specific phases
@@ -195,12 +197,7 @@ class ExperimentTracker:
     def start_run(self, run_config: Dict[str, Any]) -> None:
         """Start a new experiment run."""
         if self.platform == "wandb" and HAS_WANDB:
-            self.run = wandb.init(
-                project=self.project_name,
-                name=self.run_name,
-                tags=self.tags,
-                config=run_config
-            )
+            self.run = wandb.init(project=self.project_name, name=self.run_name, tags=self.tags, config=run_config)
             self._initialized = True
             logger.info(f"Started W&B run: {self.run_name}")
 
@@ -215,7 +212,7 @@ class ExperimentTracker:
             # Fallback to local JSON logging
             self.run_dir = Path(f"./experiments/{self.run_name}")
             self.run_dir.mkdir(parents=True, exist_ok=True)
-            with open(self.run_dir / "config.json", 'w') as f:
+            with open(self.run_dir / "config.json", "w") as f:
                 json.dump(run_config, f, indent=2)
             self._initialized = True
             logger.info(f"Started local experiment tracking: {self.run_dir}")
@@ -246,7 +243,7 @@ class ExperimentTracker:
         else:
             # Local logging
             metrics_file = self.run_dir / "metrics.jsonl"
-            with open(metrics_file, 'a') as f:
+            with open(metrics_file, "a") as f:
                 record = {"step": step, **metrics, "timestamp": time.time()}
                 f.write(json.dumps(record) + "\n")
 
@@ -266,6 +263,7 @@ class ExperimentTracker:
         else:
             # Copy to local artifacts
             import shutil
+
             dest = self.run_dir / "artifacts"
             dest.mkdir(exist_ok=True)
             shutil.copy(artifact_path, dest)
@@ -274,10 +272,12 @@ class ExperimentTracker:
 
     def log_phase_completion(self, phase_name: str, metrics: Dict[str, Any]) -> None:
         """Log completion of a training phase."""
-        self.log_metrics({
-            f"phase_{phase_name}_complete": 1.0,
-            **{f"{phase_name}_{k}": v for k, v in metrics.items() if isinstance(v, (int, float))}
-        })
+        self.log_metrics(
+            {
+                f"phase_{phase_name}_complete": 1.0,
+                **{f"{phase_name}_{k}": v for k, v in metrics.items() if isinstance(v, (int, float))},
+            }
+        )
 
     def end_run(self) -> None:
         """End the current experiment run."""
@@ -293,12 +293,12 @@ class ExperimentTracker:
         else:
             # Finalize local run
             summary_file = self.run_dir / "summary.json"
-            with open(summary_file, 'w') as f:
-                json.dump({
-                    "run_name": self.run_name,
-                    "end_time": datetime.now().isoformat(),
-                    "status": "completed"
-                }, f, indent=2)
+            with open(summary_file, "w") as f:
+                json.dump(
+                    {"run_name": self.run_name, "end_time": datetime.now().isoformat(), "status": "completed"},
+                    f,
+                    indent=2,
+                )
 
         logger.info(f"Ended experiment run: {self.run_name}")
 
@@ -313,7 +313,7 @@ class TrainingPipeline:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
 
         self.config_path = config_path
@@ -383,11 +383,7 @@ class TrainingPipeline:
         data_stats = self.data_orchestrator.get_data_statistics()
         self.experiment_tracker.log_metrics({"data_samples": data_stats["dabstep"]["train_samples"]})
 
-        results = {
-            "phases": [],
-            "final_metrics": {},
-            "total_time": 0.0
-        }
+        results = {"phases": [], "final_metrics": {}, "total_time": 0.0}
 
         # Run each phase
         while self.phase_manager.current_phase < len(self.phase_manager.phases):
@@ -433,7 +429,7 @@ class TrainingPipeline:
             "phase_name": phase["name"],
             "started_at": datetime.now().isoformat(),
             "metrics": {},
-            "duration_seconds": 0.0
+            "duration_seconds": 0.0,
         }
 
         if phase["name"] == "base_pretraining":
@@ -485,11 +481,9 @@ class TrainingPipeline:
             metrics[f"trm_loss_epoch_{epoch}"] = trm_loss
 
             # Log to tracker
-            self.experiment_tracker.log_metrics({
-                "hrm_loss": hrm_loss,
-                "trm_loss": trm_loss,
-                "epoch": epoch
-            }, step=self.global_step)
+            self.experiment_tracker.log_metrics(
+                {"hrm_loss": hrm_loss, "trm_loss": trm_loss, "epoch": epoch}, step=self.global_step
+            )
 
             self.global_step += 1
 
@@ -515,10 +509,9 @@ class TrainingPipeline:
         for i, sample in enumerate(instruction_samples[:100]):  # Subset for demo
             # Simulate fine-tuning step
             if i % 10 == 0:
-                self.experiment_tracker.log_metrics({
-                    "instruction_step": i,
-                    "instruction_progress": i / len(instruction_samples)
-                }, step=self.global_step)
+                self.experiment_tracker.log_metrics(
+                    {"instruction_step": i, "instruction_progress": i / len(instruction_samples)}, step=self.global_step
+                )
                 self.global_step += 1
 
         metrics["instruction_steps_completed"] = min(100, len(instruction_samples))
@@ -536,18 +529,16 @@ class TrainingPipeline:
 
         for iteration in range(num_iterations):
             # Generate self-play data
-            experiences = self.agent_trainer.mcts_trainer.generate_self_play_data(
-                num_games=games_per_iteration
-            )
+            experiences = self.agent_trainer.mcts_trainer.generate_self_play_data(num_games=games_per_iteration)
             metrics[f"iteration_{iteration}_experiences"] = len(experiences)
 
             # Train on experiences
             # (Would implement actual MCTS training here)
 
-            self.experiment_tracker.log_metrics({
-                "mcts_iteration": iteration,
-                "buffer_size": len(self.agent_trainer.mcts_trainer.replay_buffer)
-            }, step=self.global_step)
+            self.experiment_tracker.log_metrics(
+                {"mcts_iteration": iteration, "buffer_size": len(self.agent_trainer.mcts_trainer.replay_buffer)},
+                step=self.global_step,
+            )
 
             self.global_step += 1
 
@@ -574,9 +565,7 @@ class TrainingPipeline:
         # Save checkpoint
         self.meta_controller_trainer.save_checkpoint()
 
-        self.experiment_tracker.log_metrics({
-            "router_accuracy": router_history["accuracy"][-1]
-        }, step=self.global_step)
+        self.experiment_tracker.log_metrics({"router_accuracy": router_history["accuracy"][-1]}, step=self.global_step)
 
         self.global_step += 1
 
@@ -596,7 +585,7 @@ class TrainingPipeline:
                 "expected_output": f"Result {i}",
                 "steps": [f"Step {j}" for j in range(3)],
                 "difficulty": ["easy", "medium", "hard"][i % 3],
-                "category": "reasoning"
+                "category": "reasoning",
             }
             for i in range(50)
         ]
@@ -609,7 +598,7 @@ class TrainingPipeline:
                     "steps": len(sample.get("steps", [])),
                     "reasoning": sample.get("steps", []),
                     "confidence": 0.85,
-                    "consensus": 0.9
+                    "consensus": 0.9,
                 }
 
         model = MockTrainedModel()
@@ -639,7 +628,7 @@ class TrainingPipeline:
             "pipeline_completed": True,
             "total_phases": len(self.phase_manager.phases),
             "completed_phases": self.phase_manager.current_phase,
-            "estimated_remaining_hours": self.phase_manager.estimate_remaining_time().total_seconds() / 3600
+            "estimated_remaining_hours": self.phase_manager.estimate_remaining_time().total_seconds() / 3600,
         }
 
         return metrics
@@ -666,11 +655,11 @@ class TrainingPipeline:
             "phase_history": self.phase_manager.phase_history,
             "global_step": self.global_step,
             "start_time": self.start_time.isoformat() if self.start_time else None,
-            "config": self.config
+            "config": self.config,
         }
 
         state_path = self.checkpoint_dir / "pipeline_state.json"
-        with open(state_path, 'w') as f:
+        with open(state_path, "w") as f:
             json.dump(state, f, indent=2)
 
         # Save agent checkpoints
@@ -680,7 +669,7 @@ class TrainingPipeline:
 
     def _load_pipeline_state(self, checkpoint_path: str) -> None:
         """Load pipeline state from checkpoint."""
-        with open(checkpoint_path, 'r') as f:
+        with open(checkpoint_path, "r") as f:
             state = json.load(f)
 
         self.phase_manager.current_phase = state["current_phase"]
@@ -705,10 +694,7 @@ def main():
     args = parser.parse_args()
 
     # Setup logging
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Initialize pipeline
     pipeline = TrainingPipeline(args.config)

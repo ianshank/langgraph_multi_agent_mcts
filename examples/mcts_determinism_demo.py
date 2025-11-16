@@ -118,14 +118,16 @@ async def demonstrate_deterministic_mcts():
             selection_policy=SelectionPolicy.MAX_VISITS,
         )
 
-        results.append({
-            "run": run + 1,
-            "best_action": best_action,
-            "best_visits": stats["best_action_visits"],
-            "best_value": stats["best_action_value"],
-            "root_visits": stats["root_visits"],
-            "cache_hit_rate": stats["cache_hit_rate"],
-        })
+        results.append(
+            {
+                "run": run + 1,
+                "best_action": best_action,
+                "best_visits": stats["best_action_visits"],
+                "best_value": stats["best_action_value"],
+                "root_visits": stats["root_visits"],
+                "cache_hit_rate": stats["cache_hit_rate"],
+            }
+        )
 
         print(f"   Run {run + 1}:")
         print(f"      Best Action: {best_action}")
@@ -136,8 +138,7 @@ async def demonstrate_deterministic_mcts():
     # Verify determinism
     print(f"\n3. Determinism Verification:")
     is_deterministic = (
-        len(set(r["best_action"] for r in results)) == 1
-        and len(set(r["best_visits"] for r in results)) == 1
+        len(set(r["best_action"] for r in results)) == 1 and len(set(r["best_visits"] for r in results)) == 1
     )
     print(f"   All runs identical: {is_deterministic}")
 
@@ -155,7 +156,7 @@ async def demonstrate_deterministic_mcts():
     # Simulate expansion decisions
     for num_children in [0, 1, 2, 4, 9]:
         for visits in [1, 2, 4, 10, 20]:
-            should_expand = visits > 1.0 * (num_children ** 0.5)
+            should_expand = visits > 1.0 * (num_children**0.5)
             if num_children == 0 or num_children == 4:  # Show selected cases
                 print(f"   Children={num_children}, Visits={visits}: Expand={should_expand}")
 
@@ -185,6 +186,7 @@ async def demonstrate_deterministic_mcts():
 
     for i, result in enumerate(results):
         from src.framework.mcts.experiments import ExperimentResult
+
         exp_result = ExperimentResult(
             experiment_id=f"demo_run_{i}",
             config=config.to_dict(),
@@ -213,7 +215,7 @@ async def demonstrate_deterministic_mcts():
     for visits, value_sum in [(10, 8.0), (20, 12.0), (5, 4.5)]:
         ucb_score = ucb1(value_sum, visits, parent_visits, c=1.414)
         avg_value = value_sum / visits
-        exploration_term = 1.414 * (parent_visits ** 0.5) / (visits ** 0.5)
+        exploration_term = 1.414 * (parent_visits**0.5) / (visits**0.5)
         print(f"   Visits={visits}, Value={avg_value:.2f}: UCB1={ucb_score:.3f}")
         print(f"      (Exploitation={avg_value:.2f} + Exploration={exploration_term:.2f})")
 
@@ -226,7 +228,8 @@ async def demonstrate_deterministic_mcts():
     print(f"\n" + "=" * 70)
     print(f"CODE SNIPPET: Running MCTS with Seed")
     print("=" * 70)
-    print("""
+    print(
+        """
 from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
 from src.framework.mcts.config import MCTSConfig
 from src.framework.mcts.policies import HybridRolloutPolicy, SelectionPolicy
@@ -256,7 +259,8 @@ best_action, stats = await engine.search(
 # Results are deterministic for same seed
 print(f"Best Action: {best_action}")
 print(f"Statistics: {stats}")
-""")
+"""
+    )
 
     print("=" * 70)
     print("DEMONSTRATION COMPLETE")

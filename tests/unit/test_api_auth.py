@@ -17,7 +17,8 @@ from datetime import datetime, timedelta
 
 # Import the authentication classes
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 from src.api.auth import (
     APIKeyAuthenticator,
     JWTAuthenticator,
@@ -459,7 +460,7 @@ class TestRateLimiting:
         auth = APIKeyAuthenticator(valid_keys=[api_key])
 
         # Add some old timestamps manually
-        with patch('time.time') as mock_time:
+        with patch("time.time") as mock_time:
             # First set of requests at t=0
             mock_time.return_value = 0.0
             auth._rate_limits["client_0"] = [0.0, 1.0, 2.0]
@@ -490,10 +491,7 @@ class TestRateLimiting:
     def test_rate_limits_are_per_client(self):
         """Test that rate limits apply independently per client."""
         config = RateLimitConfig(burst_limit=2)
-        auth = APIKeyAuthenticator(
-            valid_keys=["key1", "key2"],
-            rate_limit_config=config
-        )
+        auth = APIKeyAuthenticator(valid_keys=["key1", "key2"], rate_limit_config=config)
 
         # Client 1 uses their limit
         auth.authenticate("key1")
@@ -528,10 +526,7 @@ class TestJWTAuthenticator:
 
         assert auth.algorithm == "HS512"
 
-    @pytest.mark.skipif(
-        True,  # Skip if PyJWT not installed
-        reason="PyJWT library required for full JWT tests"
-    )
+    @pytest.mark.skipif(True, reason="PyJWT library required for full JWT tests")  # Skip if PyJWT not installed
     def test_create_token_requires_pyjwt(self):
         """Test that create_token raises ImportError without PyJWT."""
         auth = JWTAuthenticator(secret_key="secret")
@@ -568,6 +563,7 @@ class TestGlobalAuthenticator:
     def teardown_method(self):
         """Reset global authenticator after each test."""
         import src.api.auth as auth_module
+
         auth_module._default_authenticator = None
 
     def test_get_authenticator_creates_default(self):

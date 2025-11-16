@@ -69,96 +69,118 @@ def run_security_checks(root: Path) -> List[CheckResult]:
     if check_file_exists(main_file, "Main framework file"):
         content = main_file.read_text()
         if "VALIDATION_AVAILABLE" in content and "validate_query" in content:
-            results.append(CheckResult(
-                name="Validation Models Integrated",
-                status=Status.PASS,
-                priority=Priority.P0,
-                message="Input validation is integrated into main framework"
-            ))
+            results.append(
+                CheckResult(
+                    name="Validation Models Integrated",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message="Input validation is integrated into main framework",
+                )
+            )
         else:
-            results.append(CheckResult(
+            results.append(
+                CheckResult(
+                    name="Validation Models Integrated",
+                    status=Status.FAIL,
+                    priority=Priority.P0,
+                    message="Validation models NOT integrated into main framework",
+                    details="Check langgraph_multi_agent_mcts.py for validation imports",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
                 name="Validation Models Integrated",
                 status=Status.FAIL,
                 priority=Priority.P0,
-                message="Validation models NOT integrated into main framework",
-                details="Check langgraph_multi_agent_mcts.py for validation imports"
-            ))
-    else:
-        results.append(CheckResult(
-            name="Validation Models Integrated",
-            status=Status.FAIL,
-            priority=Priority.P0,
-            message="Main framework file not found"
-        ))
+                message="Main framework file not found",
+            )
+        )
 
     # Check 2: Authentication layer exists
     auth_file = root / "src" / "api" / "auth.py"
     if check_file_exists(auth_file, "Authentication module"):
         content = auth_file.read_text()
         if "APIKeyAuthenticator" in content and "RateLimitError" in content:
-            results.append(CheckResult(
-                name="Authentication Layer",
-                status=Status.PASS,
-                priority=Priority.P0,
-                message="Authentication and rate limiting implemented"
-            ))
+            results.append(
+                CheckResult(
+                    name="Authentication Layer",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message="Authentication and rate limiting implemented",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Authentication Layer",
-                status=Status.WARN,
-                priority=Priority.P0,
-                message="Authentication module incomplete"
-            ))
+            results.append(
+                CheckResult(
+                    name="Authentication Layer",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message="Authentication module incomplete",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Authentication Layer",
-            status=Status.FAIL,
-            priority=Priority.P0,
-            message="Authentication module NOT found at src/api/auth.py"
-        ))
+        results.append(
+            CheckResult(
+                name="Authentication Layer",
+                status=Status.FAIL,
+                priority=Priority.P0,
+                message="Authentication module NOT found at src/api/auth.py",
+            )
+        )
 
     # Check 3: Custom exceptions
     exceptions_file = root / "src" / "api" / "exceptions.py"
     if check_file_exists(exceptions_file, "Custom exceptions"):
         content = exceptions_file.read_text()
         if "sanitize_details" in content and "FrameworkError" in content:
-            results.append(CheckResult(
-                name="Error Sanitization",
-                status=Status.PASS,
-                priority=Priority.P0,
-                message="Custom exceptions with error sanitization implemented"
-            ))
+            results.append(
+                CheckResult(
+                    name="Error Sanitization",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message="Custom exceptions with error sanitization implemented",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Error Sanitization",
-                status=Status.WARN,
-                priority=Priority.P0,
-                message="Exception module exists but may lack sanitization"
-            ))
+            results.append(
+                CheckResult(
+                    name="Error Sanitization",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message="Exception module exists but may lack sanitization",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Error Sanitization",
-            status=Status.FAIL,
-            priority=Priority.P0,
-            message="Custom exceptions module NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="Error Sanitization",
+                status=Status.FAIL,
+                priority=Priority.P0,
+                message="Custom exceptions module NOT found",
+            )
+        )
 
     # Check 4: No hardcoded secrets
     env_example = root / ".env.example"
     if check_file_exists(env_example, "Environment example"):
-        results.append(CheckResult(
-            name="Environment Configuration",
-            status=Status.PASS,
-            priority=Priority.P0,
-            message=".env.example file exists for secure configuration"
-        ))
+        results.append(
+            CheckResult(
+                name="Environment Configuration",
+                status=Status.PASS,
+                priority=Priority.P0,
+                message=".env.example file exists for secure configuration",
+            )
+        )
     else:
-        results.append(CheckResult(
-            name="Environment Configuration",
-            status=Status.WARN,
-            priority=Priority.P0,
-            message=".env.example not found"
-        ))
+        results.append(
+            CheckResult(
+                name="Environment Configuration",
+                status=Status.WARN,
+                priority=Priority.P0,
+                message=".env.example not found",
+            )
+        )
 
     return results
 
@@ -175,35 +197,40 @@ def run_infrastructure_checks(root: Path) -> List[CheckResult]:
         non_root = "USER" in content and "root" not in content.split("USER")[-1][:20]
 
         if multi_stage and non_root:
-            results.append(CheckResult(
-                name="Containerization",
-                status=Status.PASS,
-                priority=Priority.P0,
-                message="Multi-stage Dockerfile with non-root user"
-            ))
+            results.append(
+                CheckResult(
+                    name="Containerization",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message="Multi-stage Dockerfile with non-root user",
+                )
+            )
         elif multi_stage:
-            results.append(CheckResult(
-                name="Containerization",
-                status=Status.WARN,
-                priority=Priority.P0,
-                message="Dockerfile exists but may not use non-root user",
-                details="Consider adding USER directive for security"
-            ))
+            results.append(
+                CheckResult(
+                    name="Containerization",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message="Dockerfile exists but may not use non-root user",
+                    details="Consider adding USER directive for security",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Containerization",
-                status=Status.WARN,
-                priority=Priority.P0,
-                message="Dockerfile exists but not multi-stage",
-                details="Consider multi-stage build for smaller images"
-            ))
+            results.append(
+                CheckResult(
+                    name="Containerization",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message="Dockerfile exists but not multi-stage",
+                    details="Consider multi-stage build for smaller images",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Containerization",
-            status=Status.FAIL,
-            priority=Priority.P0,
-            message="Dockerfile NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="Containerization", status=Status.FAIL, priority=Priority.P0, message="Dockerfile NOT found"
+            )
+        )
 
     # Check 2: Docker Compose
     docker_compose = root / "docker-compose.yml"
@@ -211,52 +238,64 @@ def run_infrastructure_checks(root: Path) -> List[CheckResult]:
         content = docker_compose.read_text()
         has_monitoring = "prometheus" in content.lower() and "grafana" in content.lower()
         if has_monitoring:
-            results.append(CheckResult(
-                name="Docker Compose Setup",
-                status=Status.PASS,
-                priority=Priority.P0,
-                message="Docker Compose with monitoring stack configured"
-            ))
+            results.append(
+                CheckResult(
+                    name="Docker Compose Setup",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message="Docker Compose with monitoring stack configured",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Docker Compose Setup",
-                status=Status.WARN,
-                priority=Priority.P0,
-                message="Docker Compose exists but may lack monitoring"
-            ))
+            results.append(
+                CheckResult(
+                    name="Docker Compose Setup",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message="Docker Compose exists but may lack monitoring",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Docker Compose Setup",
-            status=Status.FAIL,
-            priority=Priority.P0,
-            message="docker-compose.yml NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="Docker Compose Setup",
+                status=Status.FAIL,
+                priority=Priority.P0,
+                message="docker-compose.yml NOT found",
+            )
+        )
 
     # Check 3: Kubernetes manifests
     k8s_dir = root / "kubernetes"
     if check_dir_exists(k8s_dir, "Kubernetes directory"):
         deployment_file = k8s_dir / "deployment.yaml"
         if check_file_exists(deployment_file, "K8s deployment"):
-            results.append(CheckResult(
-                name="Kubernetes Deployment",
-                status=Status.PASS,
-                priority=Priority.P1,
-                message="Kubernetes deployment manifests configured"
-            ))
+            results.append(
+                CheckResult(
+                    name="Kubernetes Deployment",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message="Kubernetes deployment manifests configured",
+                )
+            )
         else:
-            results.append(CheckResult(
+            results.append(
+                CheckResult(
+                    name="Kubernetes Deployment",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message="Kubernetes directory exists but no deployment.yaml",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
                 name="Kubernetes Deployment",
                 status=Status.WARN,
                 priority=Priority.P1,
-                message="Kubernetes directory exists but no deployment.yaml"
-            ))
-    else:
-        results.append(CheckResult(
-            name="Kubernetes Deployment",
-            status=Status.WARN,
-            priority=Priority.P1,
-            message="Kubernetes manifests not found (optional for non-K8s deployments)"
-        ))
+                message="Kubernetes manifests not found (optional for non-K8s deployments)",
+            )
+        )
 
     # Check 4: Monitoring configuration
     monitoring_dir = root / "monitoring"
@@ -264,28 +303,35 @@ def run_infrastructure_checks(root: Path) -> List[CheckResult]:
         prometheus_config = monitoring_dir / "prometheus.yml"
         alerts_config = monitoring_dir / "alerts.yml"
 
-        if check_file_exists(prometheus_config, "Prometheus config") and \
-           check_file_exists(alerts_config, "Alerts config"):
-            results.append(CheckResult(
-                name="Monitoring Configuration",
-                status=Status.PASS,
-                priority=Priority.P1,
-                message="Prometheus and alerting configured"
-            ))
+        if check_file_exists(prometheus_config, "Prometheus config") and check_file_exists(
+            alerts_config, "Alerts config"
+        ):
+            results.append(
+                CheckResult(
+                    name="Monitoring Configuration",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message="Prometheus and alerting configured",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Monitoring Configuration",
-                status=Status.WARN,
-                priority=Priority.P1,
-                message="Monitoring directory exists but configs incomplete"
-            ))
+            results.append(
+                CheckResult(
+                    name="Monitoring Configuration",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message="Monitoring directory exists but configs incomplete",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Monitoring Configuration",
-            status=Status.FAIL,
-            priority=Priority.P1,
-            message="Monitoring configuration NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="Monitoring Configuration",
+                status=Status.FAIL,
+                priority=Priority.P1,
+                message="Monitoring configuration NOT found",
+            )
+        )
 
     return results
 
@@ -301,69 +347,82 @@ def run_testing_checks(root: Path) -> List[CheckResult]:
     if check_dir_exists(unit_tests, "Unit tests directory"):
         test_files = list(unit_tests.glob("test_*.py"))
         if len(test_files) >= 2:
-            results.append(CheckResult(
-                name="Unit Tests",
-                status=Status.PASS,
-                priority=Priority.P1,
-                message=f"{len(test_files)} unit test files found"
-            ))
+            results.append(
+                CheckResult(
+                    name="Unit Tests",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message=f"{len(test_files)} unit test files found",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Unit Tests",
-                status=Status.WARN,
-                priority=Priority.P1,
-                message=f"Only {len(test_files)} unit test files found"
-            ))
+            results.append(
+                CheckResult(
+                    name="Unit Tests",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message=f"Only {len(test_files)} unit test files found",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Unit Tests",
-            status=Status.FAIL,
-            priority=Priority.P1,
-            message="Unit tests directory NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="Unit Tests", status=Status.FAIL, priority=Priority.P1, message="Unit tests directory NOT found"
+            )
+        )
 
     # Check 2: Performance tests
     perf_tests = tests_dir / "performance"
     if check_dir_exists(perf_tests, "Performance tests"):
         test_files = list(perf_tests.glob("test_*.py"))
         if test_files:
-            results.append(CheckResult(
-                name="Performance Tests",
-                status=Status.PASS,
-                priority=Priority.P1,
-                message=f"{len(test_files)} performance test files found"
-            ))
+            results.append(
+                CheckResult(
+                    name="Performance Tests",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message=f"{len(test_files)} performance test files found",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="Performance Tests",
-                status=Status.WARN,
-                priority=Priority.P1,
-                message="Performance test directory exists but no tests"
-            ))
+            results.append(
+                CheckResult(
+                    name="Performance Tests",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message="Performance test directory exists but no tests",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="Performance Tests",
-            status=Status.FAIL,
-            priority=Priority.P1,
-            message="Performance tests NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="Performance Tests",
+                status=Status.FAIL,
+                priority=Priority.P1,
+                message="Performance tests NOT found",
+            )
+        )
 
     # Check 3: Chaos tests
     chaos_tests = tests_dir / "chaos"
     if check_dir_exists(chaos_tests, "Chaos tests"):
-        results.append(CheckResult(
-            name="Chaos Engineering Tests",
-            status=Status.PASS,
-            priority=Priority.P1,
-            message="Chaos engineering tests configured"
-        ))
+        results.append(
+            CheckResult(
+                name="Chaos Engineering Tests",
+                status=Status.PASS,
+                priority=Priority.P1,
+                message="Chaos engineering tests configured",
+            )
+        )
     else:
-        results.append(CheckResult(
-            name="Chaos Engineering Tests",
-            status=Status.WARN,
-            priority=Priority.P1,
-            message="Chaos tests not found (recommended for resilience)"
-        ))
+        results.append(
+            CheckResult(
+                name="Chaos Engineering Tests",
+                status=Status.WARN,
+                priority=Priority.P1,
+                message="Chaos tests not found (recommended for resilience)",
+            )
+        )
 
     return results
 
@@ -377,71 +436,84 @@ def run_documentation_checks(root: Path) -> List[CheckResult]:
     # Check 1: SLA documentation
     sla_doc = docs_dir / "SLA.md"
     if check_file_exists(sla_doc, "SLA documentation"):
-        results.append(CheckResult(
-            name="SLA Documentation",
-            status=Status.PASS,
-            priority=Priority.P2,
-            message="Service Level Agreement documented"
-        ))
+        results.append(
+            CheckResult(
+                name="SLA Documentation",
+                status=Status.PASS,
+                priority=Priority.P2,
+                message="Service Level Agreement documented",
+            )
+        )
     else:
-        results.append(CheckResult(
-            name="SLA Documentation",
-            status=Status.WARN,
-            priority=Priority.P2,
-            message="SLA documentation not found"
-        ))
+        results.append(
+            CheckResult(
+                name="SLA Documentation",
+                status=Status.WARN,
+                priority=Priority.P2,
+                message="SLA documentation not found",
+            )
+        )
 
     # Check 2: Runbooks
     runbooks_dir = docs_dir / "runbooks"
     if check_dir_exists(runbooks_dir, "Runbooks directory"):
         runbook_files = list(runbooks_dir.glob("*.md"))
         if runbook_files:
-            results.append(CheckResult(
-                name="Operational Runbooks",
-                status=Status.PASS,
-                priority=Priority.P2,
-                message=f"{len(runbook_files)} runbook(s) documented"
-            ))
+            results.append(
+                CheckResult(
+                    name="Operational Runbooks",
+                    status=Status.PASS,
+                    priority=Priority.P2,
+                    message=f"{len(runbook_files)} runbook(s) documented",
+                )
+            )
         else:
-            results.append(CheckResult(
+            results.append(
+                CheckResult(
+                    name="Operational Runbooks",
+                    status=Status.WARN,
+                    priority=Priority.P2,
+                    message="Runbooks directory exists but empty",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
                 name="Operational Runbooks",
                 status=Status.WARN,
                 priority=Priority.P2,
-                message="Runbooks directory exists but empty"
-            ))
-    else:
-        results.append(CheckResult(
-            name="Operational Runbooks",
-            status=Status.WARN,
-            priority=Priority.P2,
-            message="Operational runbooks not found"
-        ))
+                message="Operational runbooks not found",
+            )
+        )
 
     # Check 3: API documentation (FastAPI auto-generates)
     api_server = root / "src" / "api" / "rest_server.py"
     if check_file_exists(api_server, "REST API server"):
         content = api_server.read_text()
         if "FastAPI" in content and "/docs" in content:
-            results.append(CheckResult(
-                name="API Documentation",
-                status=Status.PASS,
-                priority=Priority.P1,
-                message="OpenAPI/Swagger documentation auto-generated via FastAPI"
-            ))
+            results.append(
+                CheckResult(
+                    name="API Documentation",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message="OpenAPI/Swagger documentation auto-generated via FastAPI",
+                )
+            )
         else:
-            results.append(CheckResult(
-                name="API Documentation",
-                status=Status.WARN,
-                priority=Priority.P1,
-                message="API server exists but may lack documentation"
-            ))
+            results.append(
+                CheckResult(
+                    name="API Documentation",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message="API server exists but may lack documentation",
+                )
+            )
     else:
-        results.append(CheckResult(
-            name="API Documentation",
-            status=Status.FAIL,
-            priority=Priority.P1,
-            message="REST API server NOT found"
-        ))
+        results.append(
+            CheckResult(
+                name="API Documentation", status=Status.FAIL, priority=Priority.P1, message="REST API server NOT found"
+            )
+        )
 
     return results
 
@@ -459,34 +531,42 @@ def run_dependency_checks(root: Path) -> List[CheckResult]:
         unpinned = sum(1 for l in lines if ">=" in l and "==" not in l)
 
         if unpinned == 0 and pinned > 0:
-            results.append(CheckResult(
-                name="Dependencies Pinned",
-                status=Status.PASS,
-                priority=Priority.P0,
-                message=f"All {pinned} dependencies are pinned to specific versions"
-            ))
+            results.append(
+                CheckResult(
+                    name="Dependencies Pinned",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message=f"All {pinned} dependencies are pinned to specific versions",
+                )
+            )
         elif pinned > unpinned:
-            results.append(CheckResult(
-                name="Dependencies Pinned",
-                status=Status.WARN,
-                priority=Priority.P0,
-                message=f"{unpinned} dependencies not pinned (>= instead of ==)",
-                details="Pin all dependencies for reproducible builds"
-            ))
+            results.append(
+                CheckResult(
+                    name="Dependencies Pinned",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message=f"{unpinned} dependencies not pinned (>= instead of ==)",
+                    details="Pin all dependencies for reproducible builds",
+                )
+            )
         else:
-            results.append(CheckResult(
+            results.append(
+                CheckResult(
+                    name="Dependencies Pinned",
+                    status=Status.FAIL,
+                    priority=Priority.P0,
+                    message=f"Most dependencies NOT pinned ({unpinned} unpinned)",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
                 name="Dependencies Pinned",
                 status=Status.FAIL,
                 priority=Priority.P0,
-                message=f"Most dependencies NOT pinned ({unpinned} unpinned)"
-            ))
-    else:
-        results.append(CheckResult(
-            name="Dependencies Pinned",
-            status=Status.FAIL,
-            priority=Priority.P0,
-            message="requirements.txt NOT found"
-        ))
+                message="requirements.txt NOT found",
+            )
+        )
 
     return results
 
@@ -522,8 +602,7 @@ def generate_report(results: List[CheckResult], verbose: bool = False) -> int:
     failed = sum(1 for r in results if r.status == Status.FAIL)
     warnings = sum(1 for r in results if r.status == Status.WARN)
 
-    p0_failed = sum(1 for r in results
-                    if r.status == Status.FAIL and r.priority == Priority.P0)
+    p0_failed = sum(1 for r in results if r.status == Status.FAIL and r.priority == Priority.P0)
 
     print("\n" + "=" * 70)
     print(" SUMMARY")
@@ -555,26 +634,16 @@ def generate_report(results: List[CheckResult], verbose: bool = False) -> int:
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Check production readiness of MCTS Framework"
-    )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Show detailed information for each check"
-    )
-    parser.add_argument(
-        "--json-output",
-        action="store_true",
-        help="Output results as JSON"
-    )
+    parser = argparse.ArgumentParser(description="Check production readiness of MCTS Framework")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Show detailed information for each check")
+    parser.add_argument("--json-output", action="store_true", help="Output results as JSON")
 
     args = parser.parse_args()
 
     # Fix Windows console encoding
     if sys.platform == "win32":
         try:
-            sys.stdout.reconfigure(encoding='utf-8')
+            sys.stdout.reconfigure(encoding="utf-8")
         except AttributeError:
             pass
 
@@ -609,7 +678,7 @@ def main():
                     "status": r.status.name,
                     "priority": r.priority.name,
                     "message": r.message,
-                    "details": r.details
+                    "details": r.details,
                 }
                 for r in all_results
             ],
@@ -618,7 +687,7 @@ def main():
                 "passed": sum(1 for r in all_results if r.status == Status.PASS),
                 "failed": sum(1 for r in all_results if r.status == Status.FAIL),
                 "warnings": sum(1 for r in all_results if r.status == Status.WARN),
-            }
+            },
         }
         print(json.dumps(output, indent=2))
         return 0

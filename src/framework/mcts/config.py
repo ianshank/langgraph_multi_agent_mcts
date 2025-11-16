@@ -137,9 +137,7 @@ class MCTSConfig:
         if self.max_rollout_depth < 1:
             errors.append("max_rollout_depth must be >= 1")
         if self.rollout_policy not in ["random", "greedy", "hybrid", "llm"]:
-            errors.append(
-                f"rollout_policy must be one of: random, greedy, hybrid, llm"
-            )
+            errors.append(f"rollout_policy must be one of: random, greedy, hybrid, llm")
 
         # Parallelization
         if self.max_parallel_rollouts < 1:
@@ -163,18 +161,14 @@ class MCTSConfig:
         if self.min_iterations_before_termination < 1:
             errors.append("min_iterations_before_termination must be >= 1")
         if self.min_iterations_before_termination > self.num_iterations:
-            errors.append(
-                "min_iterations_before_termination must be <= num_iterations"
-            )
+            errors.append("min_iterations_before_termination must be <= num_iterations")
 
         # Value bounds
         if self.min_value >= self.max_value:
             errors.append("min_value must be < max_value")
 
         if errors:
-            raise ValueError(
-                f"Invalid MCTS configuration:\n" + "\n".join(f"  - {e}" for e in errors)
-            )
+            raise ValueError(f"Invalid MCTS configuration:\n" + "\n".join(f"  - {e}" for e in errors))
 
     def to_dict(self) -> Dict[str, Any]:
         """

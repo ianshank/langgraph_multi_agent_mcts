@@ -29,20 +29,22 @@ from tests.mocks.mock_external_services import (
 def mock_llm_client():
     """Create mock LLM client with tactical responses."""
     client = create_mock_llm(provider="openai")
-    client.set_responses([
-        # HRM agent response
-        """Based on hierarchical decomposition:
+    client.set_responses(
+        [
+            # HRM agent response
+            """Based on hierarchical decomposition:
         1. Primary objective: Secure northern perimeter
         2. Secondary objective: Establish observation posts
         3. Tertiary objective: Coordinate communication
         Confidence: 0.85""",
-        # TRM agent response
-        """After iterative refinement:
+            # TRM agent response
+            """After iterative refinement:
         - Position Alpha provides best coverage
         - Risk assessment: Medium
         - Resource utilization: 78%
         Confidence: 0.82""",
-    ])
+        ]
+    )
     return client
 
 
@@ -51,8 +53,8 @@ def tactical_query():
     """Sample tactical query for testing."""
     return {
         "query": "Enemy forces spotted approaching from north. Night conditions with limited visibility. "
-                 "Available assets: Infantry platoon, UAV support, limited ammunition. "
-                 "Recommend optimal defensive position and engagement strategy.",
+        "Available assets: Infantry platoon, UAV support, limited ammunition. "
+        "Recommend optimal defensive position and engagement strategy.",
         "use_rag": True,
         "use_mcts": False,
         "thread_id": "test_thread_001",
@@ -64,8 +66,8 @@ def cybersecurity_query():
     """Sample cybersecurity query for testing."""
     return {
         "query": "APT28 indicators detected on critical infrastructure network. "
-                 "Evidence of credential harvesting and lateral movement. "
-                 "Recommend immediate containment and response actions.",
+        "Evidence of credential harvesting and lateral movement. "
+        "Recommend immediate containment and response actions.",
         "use_rag": True,
         "use_mcts": True,
         "thread_id": "test_thread_002",
@@ -137,12 +139,8 @@ class TestMultiAgentProcessing:
         start_time = datetime.now()
 
         # Simulate parallel execution
-        hrm_response = await mock_llm_client.generate(
-            f"HRM Analysis: {tactical_query['query']}"
-        )
-        trm_response = await mock_llm_client.generate(
-            f"TRM Refinement: {tactical_query['query']}"
-        )
+        hrm_response = await mock_llm_client.generate(f"HRM Analysis: {tactical_query['query']}")
+        trm_response = await mock_llm_client.generate(f"TRM Refinement: {tactical_query['query']}")
 
         elapsed_time = (datetime.now() - start_time).total_seconds()
 
@@ -170,6 +168,7 @@ class TestMultiAgentProcessing:
     def _extract_confidence(self, response_text: str) -> Optional[float]:
         """Extract confidence score from response text."""
         import re
+
         match = re.search(r"Confidence:\s*([\d.]+)", response_text)
         if match:
             return float(match.group(1))
@@ -292,12 +291,8 @@ class TestCompleteFlow:
         assert query_input.query is not None
 
         # Step 2: Process through agents
-        hrm_response = await mock_llm_client.generate(
-            f"HRM: {query_input.query}"
-        )
-        trm_response = await mock_llm_client.generate(
-            f"TRM: {query_input.query}"
-        )
+        hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
+        trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
 
         # Step 3: Calculate consensus
         hrm_conf = 0.85

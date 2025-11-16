@@ -16,18 +16,19 @@ from typing import Dict, Any
 
 # Import storage modules
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 # Mock the observability module before importing storage modules
 # This avoids import issues with opentelemetry instrumentation
-sys.modules['src.observability'] = MagicMock()
-sys.modules['src.observability.logging'] = MagicMock()
-sys.modules['src.observability.tracing'] = MagicMock()
+sys.modules["src.observability"] = MagicMock()
+sys.modules["src.observability.logging"] = MagicMock()
+sys.modules["src.observability.tracing"] = MagicMock()
 
 # Create a mock get_logger that returns a Mock logger
 mock_logger_module = MagicMock()
 mock_logger_module.get_logger = Mock(return_value=Mock())
-sys.modules['src.observability.logging'] = mock_logger_module
+sys.modules["src.observability.logging"] = mock_logger_module
 
 from src.storage.s3_client import S3Config, S3StorageClient
 from src.storage.pinecone_store import PineconeVectorStore, PINECONE_AVAILABLE
@@ -39,7 +40,7 @@ class TestS3Config:
 
     def test_default_configuration(self):
         """Test that default configuration values are set correctly."""
-        with patch.dict('os.environ', {}, clear=True):
+        with patch.dict("os.environ", {}, clear=True):
             config = S3Config()
 
             assert config.bucket_name == "mcts-framework-storage"
@@ -70,7 +71,7 @@ class TestS3Config:
             "AWS_REGION": "eu-west-1",
             "S3_ENDPOINT_URL": "http://localhost:9000",
         }
-        with patch.dict('os.environ', env_vars, clear=True):
+        with patch.dict("os.environ", env_vars, clear=True):
             config = S3Config()
 
             assert config.bucket_name == "custom-bucket"
@@ -310,7 +311,7 @@ class TestS3StorageClient:
     @pytest.mark.asyncio
     async def test_initialize_creates_session(self):
         """Test that initialize creates aioboto3 session."""
-        with patch('src.storage.s3_client.aioboto3.Session') as mock_session:
+        with patch("src.storage.s3_client.aioboto3.Session") as mock_session:
             client = S3StorageClient()
 
             await client.initialize()
@@ -322,7 +323,7 @@ class TestS3StorageClient:
     @pytest.mark.asyncio
     async def test_initialize_idempotent(self):
         """Test that initialize is idempotent (only runs once)."""
-        with patch('src.storage.s3_client.aioboto3.Session') as mock_session:
+        with patch("src.storage.s3_client.aioboto3.Session") as mock_session:
             client = S3StorageClient()
 
             await client.initialize()
@@ -372,8 +373,8 @@ class TestPineconeVectorStore:
 
     def test_initialization_without_api_key(self):
         """Test initialization when API key is not provided."""
-        with patch.dict('os.environ', {}, clear=True):
-            with patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True):
+        with patch.dict("os.environ", {}, clear=True):
+            with patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True):
                 store = PineconeVectorStore(auto_init=False)
 
                 assert store._api_key is None
@@ -398,7 +399,7 @@ class TestPineconeVectorStore:
             "PINECONE_API_KEY": "env-api-key",
             "PINECONE_HOST": "env-host-url",
         }
-        with patch.dict('os.environ', env_vars, clear=True):
+        with patch.dict("os.environ", env_vars, clear=True):
             store = PineconeVectorStore(auto_init=False)
 
             assert store._api_key == "env-api-key"
@@ -415,7 +416,7 @@ class TestPineconeVectorStore:
         # Not initialized yet
         assert store.is_available is False
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', False)
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", False)
     def test_initialization_when_pinecone_not_available(self):
         """Test initialization when pinecone package is not installed."""
         store = PineconeVectorStore(
@@ -544,8 +545,8 @@ class TestPineconeVectorStore:
 
         assert flushed == 0
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
     def test_initialization_success(self, mock_pinecone_class):
         """Test successful Pinecone initialization."""
         mock_client = Mock()
@@ -565,8 +566,8 @@ class TestPineconeVectorStore:
         mock_pinecone_class.assert_called_once_with(api_key="test-api-key")
         mock_client.Index.assert_called_once_with(host="test-host-url")
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
     def test_initialization_failure_handled_gracefully(self, mock_pinecone_class):
         """Test that initialization failures are handled gracefully."""
         mock_pinecone_class.side_effect = Exception("Connection error")
@@ -579,9 +580,9 @@ class TestPineconeVectorStore:
 
         assert store._is_initialized is False
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
-    @patch('src.storage.pinecone_store.normalize_features')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    @patch("src.storage.pinecone_store.normalize_features")
     def test_store_prediction_success(self, mock_normalize, mock_pinecone_class):
         """Test successful prediction storage."""
         mock_client = Mock()
@@ -610,9 +611,9 @@ class TestPineconeVectorStore:
         assert call_args.kwargs["namespace"] == "meta_controller"
         assert len(call_args.kwargs["vectors"]) == 1
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
-    @patch('src.storage.pinecone_store.normalize_features')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    @patch("src.storage.pinecone_store.normalize_features")
     def test_find_similar_decisions_success(self, mock_normalize, mock_pinecone_class):
         """Test successful similarity search."""
         mock_client = Mock()
@@ -654,9 +655,9 @@ class TestPineconeVectorStore:
         assert results[1]["id"] == "vec-2"
         assert results[1]["score"] == 0.88
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
-    @patch('src.storage.pinecone_store.normalize_features')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    @patch("src.storage.pinecone_store.normalize_features")
     def test_get_agent_distribution_calculates_correctly(self, mock_normalize, mock_pinecone_class):
         """Test agent distribution calculation from similar decisions."""
         mock_client = Mock()
@@ -690,8 +691,8 @@ class TestPineconeVectorStore:
         assert distribution["trm"] == 0.25
         assert distribution["mcts"] == 0.25
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
     def test_get_stats_success(self, mock_pinecone_class):
         """Test getting index statistics."""
         mock_client = Mock()
@@ -718,8 +719,8 @@ class TestPineconeVectorStore:
         assert stats["dimension"] == 10
         assert "namespace_stats" in stats  # Actual key name in the implementation
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
     def test_delete_namespace_success(self, mock_pinecone_class):
         """Test successful namespace deletion."""
         mock_client = Mock()
@@ -739,8 +740,8 @@ class TestPineconeVectorStore:
         assert result is True
         mock_index.delete.assert_called_once_with(delete_all=True, namespace="test_namespace")
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
     def test_delete_namespace_failure_handled(self, mock_pinecone_class):
         """Test delete namespace handles errors gracefully."""
         mock_client = Mock()
@@ -759,9 +760,9 @@ class TestPineconeVectorStore:
 
         assert result is False
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
-    @patch('src.storage.pinecone_store.normalize_features')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    @patch("src.storage.pinecone_store.normalize_features")
     def test_store_batch_success(self, mock_normalize, mock_pinecone_class):
         """Test successful batch storage."""
         mock_client = Mock()
@@ -801,7 +802,7 @@ class TestS3StorageClientIntegration:
         client = S3StorageClient(config=config)
 
         # Mock the internal method
-        with patch.object(client, '_put_object_with_retry', new_callable=AsyncMock) as mock_put:
+        with patch.object(client, "_put_object_with_retry", new_callable=AsyncMock) as mock_put:
             mock_put.return_value = {
                 "key": "test-key",
                 "etag": '"abc123"',
@@ -828,7 +829,7 @@ class TestS3StorageClientIntegration:
         )
         client = S3StorageClient(config=config)
 
-        with patch.object(client, '_put_object_with_retry', new_callable=AsyncMock) as mock_put:
+        with patch.object(client, "_put_object_with_retry", new_callable=AsyncMock) as mock_put:
             mock_put.return_value = {
                 "key": "test-key.gz",
                 "etag": '"abc123"',
@@ -851,7 +852,7 @@ class TestS3StorageClientIntegration:
         """Test storing MCTS stats with iteration number."""
         client = S3StorageClient()
 
-        with patch.object(client, '_put_object_with_retry', new_callable=AsyncMock) as mock_put:
+        with patch.object(client, "_put_object_with_retry", new_callable=AsyncMock) as mock_put:
             mock_put.return_value = {"key": "test-key", "etag": '"abc"', "size_bytes": 100}
 
             result = await client.store_mcts_stats(
@@ -872,7 +873,7 @@ class TestS3StorageClientIntegration:
         config = S3Config(enable_compression=False)  # Disable compression for this test
         client = S3StorageClient(config=config)
 
-        with patch.object(client, '_put_object_with_retry', new_callable=AsyncMock) as mock_put:
+        with patch.object(client, "_put_object_with_retry", new_callable=AsyncMock) as mock_put:
             mock_put.return_value = {"key": "test.ndjson", "etag": '"abc"', "size_bytes": 100}
 
             log_entries = [
@@ -902,7 +903,7 @@ class TestS3StorageClientIntegration:
         json_bytes = json.dumps(original_data).encode("utf-8")
         compressed_bytes = gzip.compress(json_bytes)
 
-        with patch.object(client, '_get_object_with_retry', new_callable=AsyncMock) as mock_get:
+        with patch.object(client, "_get_object_with_retry", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = compressed_bytes
 
             result = await client.retrieve_json("configs/test.gz")
@@ -916,7 +917,7 @@ class TestS3StorageClientIntegration:
 
         raw_data = b"raw bytes data"
 
-        with patch.object(client, '_get_object_with_retry', new_callable=AsyncMock) as mock_get:
+        with patch.object(client, "_get_object_with_retry", new_callable=AsyncMock) as mock_get:
             mock_get.return_value = raw_data
 
             result = await client.retrieve_object("data/file.bin")
@@ -927,9 +928,9 @@ class TestS3StorageClientIntegration:
 class TestErrorHandling:
     """Test error handling in storage modules."""
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
-    @patch('src.storage.pinecone_store.normalize_features')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    @patch("src.storage.pinecone_store.normalize_features")
     def test_pinecone_store_prediction_handles_exception(self, mock_normalize, mock_pinecone_class):
         """Test that store_prediction handles exceptions gracefully."""
         mock_client = Mock()
@@ -967,9 +968,9 @@ class TestErrorHandling:
         # Should return None on error
         assert result is None
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
-    @patch('src.storage.pinecone_store.normalize_features')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    @patch("src.storage.pinecone_store.normalize_features")
     def test_pinecone_find_similar_handles_exception(self, mock_normalize, mock_pinecone_class):
         """Test that find_similar_decisions handles exceptions gracefully."""
         mock_client = Mock()
@@ -1002,8 +1003,8 @@ class TestErrorHandling:
         # Should return empty list on error
         assert results == []
 
-    @patch('src.storage.pinecone_store.PINECONE_AVAILABLE', True)
-    @patch('src.storage.pinecone_store.Pinecone')
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
     def test_pinecone_get_stats_handles_exception(self, mock_pinecone_class):
         """Test that get_stats handles exceptions gracefully."""
         mock_client = Mock()

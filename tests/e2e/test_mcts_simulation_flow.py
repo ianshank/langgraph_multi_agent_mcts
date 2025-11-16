@@ -159,9 +159,7 @@ class TestMCTSSelection:
         scores = {}
         for child in children:
             exploitation = child["value"] / child["visits"]
-            exploration = exploration_weight * math.sqrt(
-                math.log(parent_visits) / child["visits"]
-            )
+            exploration = exploration_weight * math.sqrt(math.log(parent_visits) / child["visits"])
             scores[child["action"]] = exploitation + exploration
 
         # Find best action

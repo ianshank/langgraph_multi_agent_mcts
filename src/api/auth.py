@@ -26,6 +26,7 @@ from src.api.exceptions import (
 @dataclass
 class ClientInfo:
     """Information about an authenticated client."""
+
     client_id: str
     roles: Set[str] = field(default_factory=lambda: {"user"})
     created_at: datetime = field(default_factory=datetime.utcnow)
@@ -36,6 +37,7 @@ class ClientInfo:
 @dataclass
 class RateLimitConfig:
     """Rate limiting configuration."""
+
     requests_per_minute: int = 60
     requests_per_hour: int = 1000
     requests_per_day: int = 10000
@@ -79,12 +81,7 @@ class APIKeyAuthenticator:
         """
         return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
 
-    def _add_key(
-        self,
-        api_key: str,
-        client_id: str,
-        roles: Optional[Set[str]] = None
-    ) -> None:
+    def _add_key(self, api_key: str, client_id: str, roles: Optional[Set[str]] = None) -> None:
         """
         Add a new API key.
 

@@ -21,12 +21,15 @@ try:
         DataOrchestrator,
         TrainingDataset,
     )
-    __all__.extend([
-        "DABStepLoader",
-        "PRIMUSProcessor",
-        "DataOrchestrator",
-        "TrainingDataset",
-    ])
+
+    __all__.extend(
+        [
+            "DABStepLoader",
+            "PRIMUSProcessor",
+            "DataOrchestrator",
+            "TrainingDataset",
+        ]
+    )
 except ImportError:
     pass
 
@@ -37,12 +40,15 @@ try:
         MCTSTrainer,
         AgentTrainingOrchestrator,
     )
-    __all__.extend([
-        "HRMTrainer",
-        "TRMTrainer",
-        "MCTSTrainer",
-        "AgentTrainingOrchestrator",
-    ])
+
+    __all__.extend(
+        [
+            "HRMTrainer",
+            "TRMTrainer",
+            "MCTSTrainer",
+            "AgentTrainingOrchestrator",
+        ]
+    )
 except ImportError:
     pass
 
@@ -53,12 +59,15 @@ try:
         RetrievalOptimizer,
         RAGIndexManager,
     )
-    __all__.extend([
-        "VectorIndexBuilder",
-        "ChunkingStrategy",
-        "RetrievalOptimizer",
-        "RAGIndexManager",
-    ])
+
+    __all__.extend(
+        [
+            "VectorIndexBuilder",
+            "ChunkingStrategy",
+            "RetrievalOptimizer",
+            "RAGIndexManager",
+        ]
+    )
 except ImportError:
     pass
 
@@ -69,12 +78,15 @@ try:
         EnsembleAggregator,
         MetaControllerTrainer,
     )
-    __all__.extend([
-        "ExecutionTraceCollector",
-        "NeuralRouter",
-        "EnsembleAggregator",
-        "MetaControllerTrainer",
-    ])
+
+    __all__.extend(
+        [
+            "ExecutionTraceCollector",
+            "NeuralRouter",
+            "EnsembleAggregator",
+            "MetaControllerTrainer",
+        ]
+    )
 except ImportError:
     pass
 
@@ -85,12 +97,15 @@ try:
         PerformanceProfiler,
         ProductionValidator,
     )
-    __all__.extend([
-        "DABStepBenchmark",
-        "MultiAgentEvaluator",
-        "PerformanceProfiler",
-        "ProductionValidator",
-    ])
+
+    __all__.extend(
+        [
+            "DABStepBenchmark",
+            "MultiAgentEvaluator",
+            "PerformanceProfiler",
+            "ProductionValidator",
+        ]
+    )
 except ImportError:
     pass
 
@@ -100,11 +115,14 @@ try:
         PhaseManager,
         ExperimentTracker,
     )
-    __all__.extend([
-        "TrainingPipeline",
-        "PhaseManager",
-        "ExperimentTracker",
-    ])
+
+    __all__.extend(
+        [
+            "TrainingPipeline",
+            "PhaseManager",
+            "ExperimentTracker",
+        ]
+    )
 except ImportError:
     pass
 
@@ -115,12 +133,15 @@ try:
         DriftDetector,
         ABTestFramework,
     )
-    __all__.extend([
-        "FeedbackCollector",
-        "IncrementalTrainer",
-        "DriftDetector",
-        "ABTestFramework",
-    ])
+
+    __all__.extend(
+        [
+            "FeedbackCollector",
+            "IncrementalTrainer",
+            "DriftDetector",
+            "ABTestFramework",
+        ]
+    )
 except ImportError:
     pass
 
@@ -130,11 +151,14 @@ try:
         MetricsDashboard,
         AlertManager,
     )
-    __all__.extend([
-        "TrainingMonitor",
-        "MetricsDashboard",
-        "AlertManager",
-    ])
+
+    __all__.extend(
+        [
+            "TrainingMonitor",
+            "MetricsDashboard",
+            "AlertManager",
+        ]
+    )
 except ImportError:
     pass
 
@@ -144,10 +168,13 @@ try:
         ConfigurationManager,
         HotSwapper,
     )
-    __all__.extend([
-        "ModelIntegrator",
-        "ConfigurationManager",
-        "HotSwapper",
-    ])
+
+    __all__.extend(
+        [
+            "ModelIntegrator",
+            "ConfigurationManager",
+            "HotSwapper",
+        ]
+    )
 except ImportError:
     pass

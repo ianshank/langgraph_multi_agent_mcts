@@ -232,7 +232,7 @@ class TokenizerWrapper:
             Tuple of (tokens, token_ids)
         """
         if self.backend == "simple":
-            tokens = text.split()[:self.max_length]
+            tokens = text.split()[: self.max_length]
             return tokens, None
 
         elif self.backend == "huggingface" and self._tokenizer:

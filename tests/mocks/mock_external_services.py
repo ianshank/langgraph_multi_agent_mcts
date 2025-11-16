@@ -85,9 +85,7 @@ class MockPineconeClient:
         upserted_count = 0
         for vec in vectors:
             if len(vec["values"]) != self.dimension:
-                raise ValueError(
-                    f"Vector dimension mismatch: expected {self.dimension}, got {len(vec['values'])}"
-                )
+                raise ValueError(f"Vector dimension mismatch: expected {self.dimension}, got {len(vec['values'])}")
 
             record = MockVectorRecord(
                 id=vec["id"],

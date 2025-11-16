@@ -78,14 +78,14 @@ def create_progressive_widening_test_scenario() -> Dict[str, Any]:
         "num_actions": 20,
         "expected_expansions": {
             "k=1.0, alpha=0.5": {
-                "visits_1": 1,   # After 1 visit, expand to 1 child
-                "visits_2": 2,   # After 2 visits, can have 2 children
-                "visits_4": 2,   # After 4 visits, can have 4 children (but 2**0.5=1.41, so 4 > 1.41*2)
+                "visits_1": 1,  # After 1 visit, expand to 1 child
+                "visits_2": 2,  # After 2 visits, can have 2 children
+                "visits_4": 2,  # After 4 visits, can have 4 children (but 2**0.5=1.41, so 4 > 1.41*2)
             },
             "k=2.0, alpha=0.5": {
-                "visits_1": 0,   # Threshold = 2*0^0.5 = 0, so expand
-                "visits_2": 1,   # Threshold = 2*1^0.5 = 2, so 2 > 2 = False
-                "visits_4": 1,   # Threshold = 2*1^0.5 = 2, so 4 > 2 = True
+                "visits_1": 0,  # Threshold = 2*0^0.5 = 0, so expand
+                "visits_2": 1,  # Threshold = 2*1^0.5 = 2, so 2 > 2 = False
+                "visits_4": 1,  # Threshold = 2*1^0.5 = 2, so 4 > 2 = True
             },
         },
     }
@@ -151,9 +151,7 @@ class DeterministicTestFixture:
             return ["consolidate", "reinforce", "exploit"]
         return []
 
-    def simple_state_transition(
-        self, state: MCTSState, action: str
-    ) -> MCTSState:
+    def simple_state_transition(self, state: MCTSState, action: str) -> MCTSState:
         """Simple state transition appending action to ID."""
         new_id = f"{state.state_id}_{action}"
         new_features = state.features.copy()

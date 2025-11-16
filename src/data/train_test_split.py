@@ -110,8 +110,7 @@ class DataSplitter:
         }
 
         logger.info(
-            f"Split {n} samples: train={len(train_samples)}, "
-            f"val={len(val_samples)}, test={len(test_samples)}"
+            f"Split {n} samples: train={len(train_samples)}, " f"val={len(val_samples)}, test={len(test_samples)}"
         )
 
         return DataSplit(

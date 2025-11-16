@@ -49,20 +49,23 @@ class MetaControllerFeatures:
 
     def to_vector(self) -> np.ndarray:
         """Convert features to numpy vector for model input."""
-        return np.array([
-            self.hrm_confidence,
-            self.trm_confidence,
-            self.mcts_confidence,
-            self.hrm_decomposition_quality,
-            self.trm_final_quality,
-            self.mcts_best_action_value,
-            self.mcts_cache_hit_rate,
-            self.mcts_exploration_ratio,
-            self.consensus_score,
-            self.iteration_count / 10.0,  # Normalize iteration count
-            self.query_length / 1000.0,  # Normalize query length
-            self.query_complexity_score,
-        ], dtype=np.float32)
+        return np.array(
+            [
+                self.hrm_confidence,
+                self.trm_confidence,
+                self.mcts_confidence,
+                self.hrm_decomposition_quality,
+                self.trm_final_quality,
+                self.mcts_best_action_value,
+                self.mcts_cache_hit_rate,
+                self.mcts_exploration_ratio,
+                self.consensus_score,
+                self.iteration_count / 10.0,  # Normalize iteration count
+                self.query_length / 1000.0,  # Normalize query length
+                self.query_complexity_score,
+            ],
+            dtype=np.float32,
+        )
 
     @classmethod
     def from_vector(cls, vector: np.ndarray) -> "MetaControllerFeatures":
@@ -139,16 +142,11 @@ class MetaControllerTestFixture:
             "query": "Analyze the strategic implications of deploying multiple reconnaissance units in urban terrain.",
             "use_mcts": True,
             "use_rag": True,
-
             # RAG context
             "rag_context": "Urban operations require careful consideration of civilian presence and limited lines of sight.",
             "retrieved_docs": [
-                {
-                    "content": "Urban terrain analysis guidelines.",
-                    "metadata": {"source": "doctrine_manual", "page": 42}
-                }
+                {"content": "Urban terrain analysis guidelines.", "metadata": {"source": "doctrine_manual", "page": 42}}
             ],
-
             # Agent results
             "hrm_results": {
                 "response": "Decomposed into 3 sub-problems: unit positioning, communication lines, civilian safety.",
@@ -156,7 +154,7 @@ class MetaControllerTestFixture:
                     "decomposition_quality_score": 0.82,
                     "num_subproblems": 3,
                     "reasoning_depth": 4,
-                }
+                },
             },
             "trm_results": {
                 "response": "Sequential reasoning chain established with 5 steps leading to tactical recommendation.",
@@ -164,7 +162,7 @@ class MetaControllerTestFixture:
                     "final_quality_score": 0.79,
                     "num_reasoning_steps": 5,
                     "chain_coherence": 0.85,
-                }
+                },
             },
             "agent_outputs": [
                 {
@@ -178,7 +176,6 @@ class MetaControllerTestFixture:
                     "confidence": 0.79,
                 },
             ],
-
             # MCTS simulation
             "mcts_root": None,  # MCTSNode would be here
             "mcts_iterations": 100,
@@ -200,7 +197,6 @@ class MetaControllerTestFixture:
                 "num_iterations": 100,
                 "exploration_weight": 1.414,
             },
-
             # Evaluation
             "confidence_scores": {
                 "hrm": 0.82,
@@ -209,19 +205,15 @@ class MetaControllerTestFixture:
             },
             "consensus_reached": False,
             "consensus_score": 0.78,
-
             # Control flow
             "iteration": 1,
             "max_iterations": 3,
-
             # Output (may not be present yet)
             "final_response": "",
             "metadata": {},
         }
 
-    def create_training_batch(
-        self, batch_size: int = 32
-    ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    def create_training_batch(self, batch_size: int = 32) -> Tuple[List[MetaControllerFeatures], List[str]]:
         """
         Create a training batch with features and corresponding labels.
 
@@ -277,16 +269,10 @@ class MetaControllerTestFixture:
         """
         # Compute weighted scores for each agent
         hrm_score = (
-            features.hrm_confidence * 0.4
-            + features.hrm_decomposition_quality * 0.4
-            + features.consensus_score * 0.2
+            features.hrm_confidence * 0.4 + features.hrm_decomposition_quality * 0.4 + features.consensus_score * 0.2
         )
 
-        trm_score = (
-            features.trm_confidence * 0.4
-            + features.trm_final_quality * 0.4
-            + features.consensus_score * 0.2
-        )
+        trm_score = features.trm_confidence * 0.4 + features.trm_final_quality * 0.4 + features.consensus_score * 0.2
 
         mcts_score = (
             features.mcts_confidence * 0.3
@@ -376,6 +362,7 @@ class MetaControllerTestFixture:
         self, features: MetaControllerFeatures, noise_scale: float = 0.05
     ) -> MetaControllerFeatures:
         """Add small random noise to features for variety."""
+
         def clip_value(val: float, min_val: float = 0.0, max_val: float = 1.0) -> float:
             noise = self.rng.normal(0, noise_scale)
             return float(np.clip(val + noise, min_val, max_val))
@@ -659,12 +646,8 @@ def agent_state_to_features(state: AgentStateDict) -> MetaControllerFeatures:
         hrm_confidence=confidence_scores.get("hrm", 0.5),
         trm_confidence=confidence_scores.get("trm", 0.5),
         mcts_confidence=confidence_scores.get("mcts", 0.5),
-        hrm_decomposition_quality=hrm_results.get("metadata", {}).get(
-            "decomposition_quality_score", 0.5
-        ),
-        trm_final_quality=trm_results.get("metadata", {}).get(
-            "final_quality_score", 0.5
-        ),
+        hrm_decomposition_quality=hrm_results.get("metadata", {}).get("decomposition_quality_score", 0.5),
+        trm_final_quality=trm_results.get("metadata", {}).get("final_quality_score", 0.5),
         mcts_best_action_value=mcts_stats.get("best_action_value", 0.5),
         mcts_cache_hit_rate=mcts_stats.get("cache_hit_rate", 0.0),
         mcts_exploration_ratio=mcts_stats.get("exploration_ratio", 0.0),

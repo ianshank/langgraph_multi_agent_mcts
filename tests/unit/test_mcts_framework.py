@@ -297,9 +297,7 @@ class TestMCTSNode:
             assert selected is child1
 
     @pytest.mark.parametrize("exploration_weight", [0.1, 0.5, 1.0, 1.414, 2.0, 5.0])
-    def test_select_child_various_exploration_weights(
-        self, root_node, exploration_weight
-    ):
+    def test_select_child_various_exploration_weights(self, root_node, exploration_weight):
         """Test select_child with various exploration weights."""
         root_node.visits = 100
 
@@ -449,18 +447,14 @@ class TestMCTSEngine:
         root_node.visits = 100  # High visits
         assert seeded_engine.should_expand(root_node) is False
 
-    def test_should_expand_progressive_widening_no_children(
-        self, seeded_engine, root_node
-    ):
+    def test_should_expand_progressive_widening_no_children(self, seeded_engine, root_node):
         """Test progressive widening with no children."""
         root_node.available_actions = ["a", "b", "c"]
         root_node.visits = 1
         # Threshold = k * 0^alpha = 0, visits (1) > 0
         assert seeded_engine.should_expand(root_node) is True
 
-    def test_should_expand_progressive_widening_with_children(
-        self, seeded_engine, root_node
-    ):
+    def test_should_expand_progressive_widening_with_children(self, seeded_engine, root_node):
         """Test progressive widening with existing children."""
         root_node.available_actions = ["a", "b", "c", "d", "e"]
         root_node.expanded_actions = {"a", "b"}
@@ -490,9 +484,7 @@ class TestMCTSEngine:
             (0.5, 0.5, 4, 2, True),  # 2 > 1
         ],
     )
-    def test_should_expand_various_parameters(
-        self, k, alpha, num_children, visits, expected
-    ):
+    def test_should_expand_various_parameters(self, k, alpha, num_children, visits, expected):
         """Test progressive widening with various parameters."""
         engine = MCTSEngine(progressive_widening_k=k, progressive_widening_alpha=alpha)
         state = MCTSState(state_id="test")
@@ -560,19 +552,13 @@ class TestMCTSEngine:
         # When should_expand is True, select breaks the loop early
         assert selected is root_node
 
-    def test_expand_terminal_node(
-        self, seeded_engine, root_node, simple_action_generator, simple_state_transition
-    ):
+    def test_expand_terminal_node(self, seeded_engine, root_node, simple_action_generator, simple_state_transition):
         """Test expand returns same node for terminal."""
         root_node.terminal = True
-        result = seeded_engine.expand(
-            root_node, simple_action_generator, simple_state_transition
-        )
+        result = seeded_engine.expand(root_node, simple_action_generator, simple_state_transition)
         assert result is root_node
 
-    def test_expand_generates_actions(
-        self, seeded_engine, root_node, simple_action_generator, simple_state_transition
-    ):
+    def test_expand_generates_actions(self, seeded_engine, root_node, simple_action_generator, simple_state_transition):
         """Test expand generates available actions."""
         root_node.visits = 1
         seeded_engine.expand(root_node, simple_action_generator, simple_state_transition)
@@ -602,9 +588,7 @@ class TestMCTSEngine:
         root_node.visits = 1
 
         # With no children, threshold = 0, so 1 > 0 means we should expand
-        result = seeded_engine.expand(
-            root_node, simple_action_generator, simple_state_transition
-        )
+        result = seeded_engine.expand(root_node, simple_action_generator, simple_state_transition)
         assert len(root_node.children) == 1
         assert result in root_node.children
 
@@ -613,9 +597,7 @@ class TestMCTSEngine:
     ):
         """Test expand creates child with proper state transition."""
         root_node.visits = 1
-        child = seeded_engine.expand(
-            root_node, simple_action_generator, simple_state_transition
-        )
+        child = seeded_engine.expand(root_node, simple_action_generator, simple_state_transition)
 
         assert child.parent is root_node
         assert child.action in root_node.expanded_actions
@@ -665,9 +647,7 @@ class TestMCTSEngine:
         assert root_node.value_sum == pytest.approx(1.8)
 
     @pytest.mark.asyncio
-    async def test_simulate_returns_bounded_value(
-        self, seeded_engine, root_node, random_rollout_policy
-    ):
+    async def test_simulate_returns_bounded_value(self, seeded_engine, root_node, random_rollout_policy):
         """Test simulate returns value in [0, 1] range."""
         for _ in range(20):
             value = await seeded_engine.simulate(root_node, random_rollout_policy)
@@ -821,6 +801,7 @@ class TestMCTSEngine:
     @pytest.mark.asyncio
     async def test_search_determinism(self, simple_action_generator, simple_state_transition):
         """Test that search is deterministic with same seed."""
+
         # Create deterministic rollout policy
         class DeterministicPolicy(RolloutPolicy):
             async def evaluate(self, state, rng, max_depth=10):
@@ -862,7 +843,9 @@ class TestMCTSEngine:
         assert stats1["num_children"] == stats2["num_children"]
 
     @pytest.mark.asyncio
-    @pytest.mark.parametrize("policy", [SelectionPolicy.MAX_VISITS, SelectionPolicy.MAX_VALUE, SelectionPolicy.ROBUST_CHILD])
+    @pytest.mark.parametrize(
+        "policy", [SelectionPolicy.MAX_VISITS, SelectionPolicy.MAX_VALUE, SelectionPolicy.ROBUST_CHILD]
+    )
     async def test_search_selection_policies(
         self,
         seeded_engine,
@@ -915,7 +898,7 @@ class TestMCTSEngine:
         configs = [
             (50, 25.0),  # High visits, medium value (0.5)
             (30, 24.0),  # Medium visits, high value (0.8)
-            (10, 3.0),   # Low visits, low value (0.3)
+            (10, 3.0),  # Low visits, low value (0.3)
         ]
         for i, (visits, value_sum) in enumerate(configs):
             state = MCTSState(state_id=f"child_{i}")

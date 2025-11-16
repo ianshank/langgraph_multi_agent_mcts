@@ -19,17 +19,20 @@ from dataclasses import dataclass
 
 try:
     import psutil
+
     PSUTIL_AVAILABLE = True
 except ImportError:
     PSUTIL_AVAILABLE = False
 
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
 
 
 @dataclass
 class PerformanceMetrics:
     """Container for performance test metrics."""
+
     total_requests: int
     successful_requests: int
     failed_requests: int
@@ -63,28 +66,20 @@ class TestConcurrentRequestHandling:
         from langgraph_multi_agent_mcts import LangGraphMultiAgentFramework
 
         mock_adapter = AsyncMock()
-        mock_adapter.generate = AsyncMock(
-            return_value=Mock(text="Response", tokens_used=10)
-        )
+        mock_adapter.generate = AsyncMock(return_value=Mock(text="Response", tokens_used=10))
         mock_logger = Mock()
         mock_logger.info = Mock()
         mock_logger.error = Mock()
 
-        with patch('langgraph_multi_agent_mcts.HRMAgent') as mock_hrm:
-            with patch('langgraph_multi_agent_mcts.TRMAgent') as mock_trm:
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
+        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
+            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
                     # Mock agent process methods
                     mock_hrm.return_value.process = AsyncMock(
-                        return_value={
-                            "response": "HRM response",
-                            "metadata": {"decomposition_quality_score": 0.8}
-                        }
+                        return_value={"response": "HRM response", "metadata": {"decomposition_quality_score": 0.8}}
                     )
                     mock_trm.return_value.process = AsyncMock(
-                        return_value={
-                            "response": "TRM response",
-                            "metadata": {"final_quality_score": 0.8}
-                        }
+                        return_value={"response": "TRM response", "metadata": {"final_quality_score": 0.8}}
                     )
 
                     framework = LangGraphMultiAgentFramework(
@@ -108,11 +103,7 @@ class TestConcurrentRequestHandling:
         async def process_query(query: str, index: int):
             try:
                 req_start = time.perf_counter()
-                result = await mock_framework.process(
-                    query=query,
-                    use_rag=False,
-                    use_mcts=False
-                )
+                result = await mock_framework.process(query=query, use_rag=False, use_mcts=False)
                 req_end = time.perf_counter()
                 latencies.append((req_end - req_start) * 1000)  # ms
                 return result
@@ -127,8 +118,7 @@ class TestConcurrentRequestHandling:
         successful = sum(1 for r in results if r is not None)
 
         # Performance requirements
-        assert successful >= num_concurrent * 0.95, \
-            f"Success rate {successful}/{num_concurrent} < 95%"
+        assert successful >= num_concurrent * 0.95, f"Success rate {successful}/{num_concurrent} < 95%"
 
         # Calculate metrics
         if latencies:
@@ -166,9 +156,7 @@ class TestConcurrentRequestHandling:
                 req_start = time.perf_counter()
                 try:
                     await mock_framework.process(
-                        query=f"Sustained load query {request_id}",
-                        use_rag=False,
-                        use_mcts=False
+                        query=f"Sustained load query {request_id}", use_rag=False, use_mcts=False
                     )
                     latencies.append((time.perf_counter() - req_start) * 1000)
                 except Exception as e:
@@ -205,11 +193,7 @@ class TestConcurrentRequestHandling:
 
         async def process_request():
             start = time.perf_counter()
-            await mock_framework.process(
-                query="Burst test",
-                use_rag=False,
-                use_mcts=False
-            )
+            await mock_framework.process(query="Burst test", use_rag=False, use_mcts=False)
             latencies.append((time.perf_counter() - start) * 1000)
 
         # Burst phase
@@ -243,9 +227,9 @@ class TestMemoryStability:
         mock_adapter = AsyncMock()
         mock_logger = Mock()
 
-        with patch('langgraph_multi_agent_mcts.HRMAgent'):
-            with patch('langgraph_multi_agent_mcts.TRMAgent'):
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
+        with patch("langgraph_multi_agent_mcts.HRMAgent"):
+            with patch("langgraph_multi_agent_mcts.TRMAgent"):
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
                     return LangGraphMultiAgentFramework(
                         model_adapter=mock_adapter,
                         logger=mock_logger,
@@ -266,6 +250,7 @@ class TestMemoryStability:
         for i in range(num_iterations):
             # Simulate framework usage
             from langgraph_multi_agent_mcts import MCTSNode
+
             root = MCTSNode(state_id=f"root_{i}")
             for j in range(10):
                 child = root.add_child(f"action_{j}", f"state_{j}")
@@ -338,21 +323,15 @@ class TestMCTSScaling:
         from langgraph_multi_agent_mcts import LangGraphMultiAgentFramework
 
         mock_adapter = AsyncMock()
-        mock_adapter.generate = AsyncMock(
-            return_value=Mock(text="Response", tokens_used=10)
-        )
+        mock_adapter.generate = AsyncMock(return_value=Mock(text="Response", tokens_used=10))
         mock_logger = Mock()
         mock_logger.info = Mock()
 
-        with patch('langgraph_multi_agent_mcts.HRMAgent') as mock_hrm:
-            with patch('langgraph_multi_agent_mcts.TRMAgent') as mock_trm:
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
-                    mock_hrm.return_value.process = AsyncMock(
-                        return_value={"response": "R", "metadata": {}}
-                    )
-                    mock_trm.return_value.process = AsyncMock(
-                        return_value={"response": "R", "metadata": {}}
-                    )
+        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
+            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                    mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
+                    mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
 
                     return LangGraphMultiAgentFramework(
                         model_adapter=mock_adapter,
@@ -383,8 +362,7 @@ class TestMCTSScaling:
 
         # Performance bounds (should scale roughly linearly)
         max_time = iterations * 0.01  # 10ms per iteration max
-        assert elapsed < max_time, \
-            f"{iterations} iterations took {elapsed:.2f}s (max: {max_time:.2f}s)"
+        assert elapsed < max_time, f"{iterations} iterations took {elapsed:.2f}s (max: {max_time:.2f}s)"
 
     @pytest.mark.slow
     def test_ucb1_computation_scaling(self):
@@ -431,25 +409,17 @@ class TestThroughputBenchmarks:
         from langgraph_multi_agent_mcts import LangGraphMultiAgentFramework
 
         mock_adapter = AsyncMock()
-        mock_adapter.generate = AsyncMock(
-            return_value=Mock(text="OK", tokens_used=5)
-        )
+        mock_adapter.generate = AsyncMock(return_value=Mock(text="OK", tokens_used=5))
         mock_logger = Mock()
 
-        with patch('langgraph_multi_agent_mcts.HRMAgent') as mock_hrm:
-            with patch('langgraph_multi_agent_mcts.TRMAgent') as mock_trm:
-                with patch('langgraph_multi_agent_mcts.OpenAIEmbeddings'):
-                    mock_hrm.return_value.process = AsyncMock(
-                        return_value={"response": "R", "metadata": {}}
-                    )
-                    mock_trm.return_value.process = AsyncMock(
-                        return_value={"response": "R", "metadata": {}}
-                    )
+        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
+            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
+                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                    mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
+                    mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
 
                     return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                        mcts_iterations=10
+                        model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10
                     )
 
     @pytest.mark.asyncio
@@ -465,11 +435,7 @@ class TestThroughputBenchmarks:
             nonlocal request_count, error_count
             while time.perf_counter() - start_time < test_duration:
                 try:
-                    await mock_framework.process(
-                        query="Throughput test",
-                        use_rag=False,
-                        use_mcts=False
-                    )
+                    await mock_framework.process(query="Throughput test", use_rag=False, use_mcts=False)
                     request_count += 1
                 except Exception:
                     # Count errors but continue processing

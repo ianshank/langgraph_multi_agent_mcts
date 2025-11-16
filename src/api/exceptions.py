@@ -58,38 +58,22 @@ class FrameworkError(Exception):
         sanitized = self.internal_details
 
         # Remove file paths (Unix and Windows)
-        sanitized = re.sub(r'/[\w/.-]+', '/***', sanitized)
-        sanitized = re.sub(r'[A-Za-z]:\\[\w\\.-]+', 'C:\\***', sanitized)
+        sanitized = re.sub(r"/[\w/.-]+", "/***", sanitized)
+        sanitized = re.sub(r"[A-Za-z]:\\[\w\\.-]+", "C:\\***", sanitized)
 
         # Remove API keys and secrets
         sanitized = re.sub(
-            r'(api[_-]?key|secret|password|token|credential)[\s=:]+[\S]+',
-            r'\1=***',
-            sanitized,
-            flags=re.IGNORECASE
+            r"(api[_-]?key|secret|password|token|credential)[\s=:]+[\S]+", r"\1=***", sanitized, flags=re.IGNORECASE
         )
 
         # Remove connection strings
-        sanitized = re.sub(
-            r'(mongodb|postgresql|mysql|redis)://[^\s]+',
-            r'\1://***',
-            sanitized,
-            flags=re.IGNORECASE
-        )
+        sanitized = re.sub(r"(mongodb|postgresql|mysql|redis)://[^\s]+", r"\1://***", sanitized, flags=re.IGNORECASE)
 
         # Remove IP addresses
-        sanitized = re.sub(
-            r'\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b',
-            '***.***.***',
-            sanitized
-        )
+        sanitized = re.sub(r"\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b", "***.***.***", sanitized)
 
         # Remove email addresses
-        sanitized = re.sub(
-            r'\b[\w.-]+@[\w.-]+\.\w+\b',
-            '***@***',
-            sanitized
-        )
+        sanitized = re.sub(r"\b[\w.-]+@[\w.-]+\.\w+\b", "***@***", sanitized)
 
         return sanitized
 
@@ -128,7 +112,7 @@ class ValidationError(FrameworkError):
         user_message: str = "Invalid input provided",
         internal_details: Optional[str] = None,
         field_name: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if field_name:
@@ -138,7 +122,7 @@ class ValidationError(FrameworkError):
             internal_details=internal_details,
             error_code="VALIDATION_ERROR",
             context=context,
-            **kwargs
+            **kwargs,
         )
         self.field_name = field_name
 
@@ -146,17 +130,9 @@ class ValidationError(FrameworkError):
 class AuthenticationError(FrameworkError):
     """Raised when authentication fails."""
 
-    def __init__(
-        self,
-        user_message: str = "Authentication failed",
-        internal_details: Optional[str] = None,
-        **kwargs
-    ):
+    def __init__(self, user_message: str = "Authentication failed", internal_details: Optional[str] = None, **kwargs):
         super().__init__(
-            user_message=user_message,
-            internal_details=internal_details,
-            error_code="AUTH_ERROR",
-            **kwargs
+            user_message=user_message, internal_details=internal_details, error_code="AUTH_ERROR", **kwargs
         )
 
 
@@ -168,7 +144,7 @@ class AuthorizationError(FrameworkError):
         user_message: str = "Access denied",
         internal_details: Optional[str] = None,
         required_permission: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if required_permission:
@@ -178,7 +154,7 @@ class AuthorizationError(FrameworkError):
             internal_details=internal_details,
             error_code="AUTHZ_ERROR",
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -190,7 +166,7 @@ class RateLimitError(FrameworkError):
         user_message: str = "Rate limit exceeded. Please try again later.",
         internal_details: Optional[str] = None,
         retry_after_seconds: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if retry_after_seconds:
@@ -200,7 +176,7 @@ class RateLimitError(FrameworkError):
             internal_details=internal_details,
             error_code="RATE_LIMIT",
             context=context,
-            **kwargs
+            **kwargs,
         )
         self.retry_after_seconds = retry_after_seconds
 
@@ -213,7 +189,7 @@ class LLMError(FrameworkError):
         user_message: str = "Language model service temporarily unavailable",
         internal_details: Optional[str] = None,
         provider: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if provider:
@@ -223,7 +199,7 @@ class LLMError(FrameworkError):
             internal_details=internal_details,
             error_code="LLM_ERROR",
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -235,7 +211,7 @@ class MCTSError(FrameworkError):
         user_message: str = "Tactical simulation failed",
         internal_details: Optional[str] = None,
         iteration: Optional[int] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if iteration is not None:
@@ -245,7 +221,7 @@ class MCTSError(FrameworkError):
             internal_details=internal_details,
             error_code="MCTS_ERROR",
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -253,17 +229,9 @@ class RAGError(FrameworkError):
     """Raised when RAG retrieval fails."""
 
     def __init__(
-        self,
-        user_message: str = "Context retrieval failed",
-        internal_details: Optional[str] = None,
-        **kwargs
+        self, user_message: str = "Context retrieval failed", internal_details: Optional[str] = None, **kwargs
     ):
-        super().__init__(
-            user_message=user_message,
-            internal_details=internal_details,
-            error_code="RAG_ERROR",
-            **kwargs
-        )
+        super().__init__(user_message=user_message, internal_details=internal_details, error_code="RAG_ERROR", **kwargs)
 
 
 class TimeoutError(FrameworkError):
@@ -275,7 +243,7 @@ class TimeoutError(FrameworkError):
         internal_details: Optional[str] = None,
         operation: Optional[str] = None,
         timeout_seconds: Optional[float] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if operation:
@@ -287,7 +255,7 @@ class TimeoutError(FrameworkError):
             internal_details=internal_details,
             error_code="TIMEOUT",
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -299,7 +267,7 @@ class ConfigurationError(FrameworkError):
         user_message: str = "System configuration error",
         internal_details: Optional[str] = None,
         config_key: Optional[str] = None,
-        **kwargs
+        **kwargs,
     ):
         context = kwargs.pop("context", {})
         if config_key:
@@ -309,16 +277,13 @@ class ConfigurationError(FrameworkError):
             internal_details=internal_details,
             error_code="CONFIG_ERROR",
             context=context,
-            **kwargs
+            **kwargs,
         )
 
 
 # Convenience function for wrapping exceptions
 def wrap_exception(
-    exc: Exception,
-    user_message: str = "An unexpected error occurred",
-    error_class: type = FrameworkError,
-    **kwargs
+    exc: Exception, user_message: str = "An unexpected error occurred", error_class: type = FrameworkError, **kwargs
 ) -> FrameworkError:
     """
     Wrap a standard exception in a FrameworkError with sanitized details.
@@ -333,8 +298,4 @@ def wrap_exception(
         FrameworkError instance with sanitized details
     """
     internal_details = f"{type(exc).__name__}: {str(exc)}"
-    return error_class(
-        user_message=user_message,
-        internal_details=internal_details,
-        **kwargs
-    )
+    return error_class(user_message=user_message, internal_details=internal_details, **kwargs)

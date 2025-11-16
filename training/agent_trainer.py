@@ -26,17 +26,15 @@ from torch.utils.data import DataLoader
 import yaml
 
 try:
-    from transformers import (
-        AutoModel,
-        AutoTokenizer,
-        get_linear_schedule_with_warmup
-    )
+    from transformers import AutoModel, AutoTokenizer, get_linear_schedule_with_warmup
+
     HAS_TRANSFORMERS = True
 except ImportError:
     HAS_TRANSFORMERS = False
 
 try:
     from peft import LoraConfig, get_peft_model, TaskType
+
     HAS_PEFT = True
 except ImportError:
     HAS_PEFT = False
@@ -47,6 +45,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class TrainingMetrics:
     """Container for training metrics."""
+
     epoch: int
     step: int
     loss: float
@@ -76,7 +75,7 @@ class BaseAgentTrainer(ABC):
 
         self.current_epoch = 0
         self.global_step = 0
-        self.best_metric = float('inf')
+        self.best_metric = float("inf")
         self.training_history = []
 
         logger.info(f"Initialized {self.__class__.__name__} on device: {self.device}")
@@ -101,18 +100,18 @@ class BaseAgentTrainer(ABC):
         self.optimizer = AdamW(
             self.model.parameters(),
             lr=self.config["training"]["learning_rate"],
-            weight_decay=self.config["training"]["weight_decay"]
+            weight_decay=self.config["training"]["weight_decay"],
         )
 
         total_steps = self.config["training"]["epochs"] * 1000  # Approximate
         warmup_steps = int(total_steps * self.config["training"]["warmup_ratio"])
 
-        self.scheduler = get_linear_schedule_with_warmup(
-            self.optimizer,
-            num_warmup_steps=warmup_steps,
-            num_training_steps=total_steps
-        ) if HAS_TRANSFORMERS else CosineAnnealingWarmRestarts(
-            self.optimizer, T_0=100
+        self.scheduler = (
+            get_linear_schedule_with_warmup(
+                self.optimizer, num_warmup_steps=warmup_steps, num_training_steps=total_steps
+            )
+            if HAS_TRANSFORMERS
+            else CosineAnnealingWarmRestarts(self.optimizer, T_0=100)
         )
 
     def train_epoch(self, dataloader: DataLoader) -> float:
@@ -145,10 +144,7 @@ class BaseAgentTrainer(ABC):
             # Gradient accumulation
             if (batch_idx + 1) % accumulation_steps == 0:
                 # Gradient clipping
-                torch.nn.utils.clip_grad_norm_(
-                    self.model.parameters(),
-                    self.config["training"]["gradient_clip_norm"]
-                )
+                torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.config["training"]["gradient_clip_norm"])
 
                 self.optimizer.step()
                 if self.scheduler:
@@ -163,8 +159,7 @@ class BaseAgentTrainer(ABC):
             # Logging
             if batch_idx % 100 == 0:
                 logger.info(
-                    f"Epoch {self.current_epoch}, Batch {batch_idx}, "
-                    f"Loss: {loss.item() * accumulation_steps:.4f}"
+                    f"Epoch {self.current_epoch}, Batch {batch_idx}, " f"Loss: {loss.item() * accumulation_steps:.4f}"
                 )
 
         return total_loss / num_batches if num_batches > 0 else 0.0
@@ -246,12 +241,8 @@ class HRMTrainer(BaseAgentTrainer):
             return self.model
 
         # Load base model
-        base_model = AutoModel.from_pretrained(
-            self.hrm_config["model_name"]
-        )
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.hrm_config["model_name"]
-        )
+        base_model = AutoModel.from_pretrained(self.hrm_config["model_name"])
+        self.tokenizer = AutoTokenizer.from_pretrained(self.hrm_config["model_name"])
 
         # Apply LoRA if available
         if HAS_PEFT:
@@ -260,7 +251,7 @@ class HRMTrainer(BaseAgentTrainer):
                 r=self.hrm_config["lora_rank"],
                 lora_alpha=self.config["training"]["lora"]["alpha"],
                 lora_dropout=self.config["training"]["lora"]["dropout"],
-                target_modules=self.config["training"]["lora"]["target_modules"]
+                target_modules=self.config["training"]["lora"]["target_modules"],
             )
             base_model = get_peft_model(base_model, lora_config)
             logger.info(f"Applied LoRA with rank {self.hrm_config['lora_rank']}")
@@ -270,7 +261,7 @@ class HRMTrainer(BaseAgentTrainer):
             base_model=base_model,
             hidden_size=self.hrm_config["hidden_size"],
             num_labels=self.hrm_config["num_labels"],
-            max_depth=self.hrm_config["max_decomposition_depth"]
+            max_depth=self.hrm_config["max_decomposition_depth"],
         ).to(self.device)
 
         return self.model
@@ -281,7 +272,7 @@ class HRMTrainer(BaseAgentTrainer):
             vocab_size=30000,
             embedding_dim=256,
             hidden_size=self.hrm_config["hidden_size"],
-            num_labels=self.hrm_config["num_labels"]
+            num_labels=self.hrm_config["num_labels"],
         ).to(self.device)
 
     def compute_loss(self, batch: Dict[str, Any]) -> torch.Tensor:
@@ -297,11 +288,7 @@ class HRMTrainer(BaseAgentTrainer):
         # Tokenize input if needed
         if self.tokenizer and "input_ids" not in batch:
             inputs = self.tokenizer(
-                batch["input_text"],
-                padding=True,
-                truncation=True,
-                max_length=512,
-                return_tensors="pt"
+                batch["input_text"], padding=True, truncation=True, max_length=512, return_tensors="pt"
             )
             input_ids = inputs["input_ids"].to(self.device)
             attention_mask = inputs["attention_mask"].to(self.device)
@@ -313,29 +300,19 @@ class HRMTrainer(BaseAgentTrainer):
 
         # Forward pass
         if hasattr(self.model, "decomposition_head"):
-            outputs = self.model(
-                input_ids=input_ids,
-                attention_mask=attention_mask
-            )
+            outputs = self.model(input_ids=input_ids, attention_mask=attention_mask)
             logits = outputs["logits"]
         else:
             logits = self.model(input_ids)
 
         # Compute cross-entropy loss
-        loss = F.cross_entropy(
-            logits.view(-1, self.hrm_config["num_labels"]),
-            labels.view(-1),
-            ignore_index=-100
-        )
+        loss = F.cross_entropy(logits.view(-1, self.hrm_config["num_labels"]), labels.view(-1), ignore_index=-100)
 
         # Add depth regularization
         if "depth" in batch:
             target_depth = batch["depth"]
             predicted_depth = self._predict_depth(logits)
-            depth_loss = F.mse_loss(
-                predicted_depth.float(),
-                target_depth.float()
-            )
+            depth_loss = F.mse_loss(predicted_depth.float(), target_depth.float())
             loss = loss + 0.1 * depth_loss
 
         return loss
@@ -372,11 +349,7 @@ class HRMTrainer(BaseAgentTrainer):
                 # Calculate accuracy
                 if self.tokenizer and "input_ids" not in batch:
                     inputs = self.tokenizer(
-                        batch["input_text"],
-                        padding=True,
-                        truncation=True,
-                        max_length=512,
-                        return_tensors="pt"
+                        batch["input_text"], padding=True, truncation=True, max_length=512, return_tensors="pt"
                     )
                     input_ids = inputs["input_ids"].to(self.device)
                 else:
@@ -395,17 +368,13 @@ class HRMTrainer(BaseAgentTrainer):
 
                 # Depth error
                 if "depth" in batch:
-                    pred_depth = self._predict_depth(
-                        self.model(input_ids).get("logits", self.model(input_ids))
-                    )
-                    depth_errors.extend(
-                        (pred_depth - batch["depth"]).abs().cpu().tolist()
-                    )
+                    pred_depth = self._predict_depth(self.model(input_ids).get("logits", self.model(input_ids)))
+                    depth_errors.extend((pred_depth - batch["depth"]).abs().cpu().tolist())
 
         metrics = {
             "loss": total_loss / len(dataloader),
             "accuracy": correct / total if total > 0 else 0.0,
-            "avg_depth_error": np.mean(depth_errors) if depth_errors else 0.0
+            "avg_depth_error": np.mean(depth_errors) if depth_errors else 0.0,
         }
 
         self.model.train()
@@ -429,12 +398,8 @@ class TRMTrainer(BaseAgentTrainer):
             return self.model
 
         # Load base model (can share with HRM)
-        base_model = AutoModel.from_pretrained(
-            self.trm_config["model_name"]
-        )
-        self.tokenizer = AutoTokenizer.from_pretrained(
-            self.trm_config["model_name"]
-        )
+        base_model = AutoModel.from_pretrained(self.trm_config["model_name"])
+        self.tokenizer = AutoTokenizer.from_pretrained(self.trm_config["model_name"])
 
         # Apply LoRA
         if HAS_PEFT:
@@ -443,7 +408,7 @@ class TRMTrainer(BaseAgentTrainer):
                 r=self.trm_config["lora_rank"],
                 lora_alpha=self.config["training"]["lora"]["alpha"],
                 lora_dropout=self.config["training"]["lora"]["dropout"],
-                target_modules=self.config["training"]["lora"]["target_modules"]
+                target_modules=self.config["training"]["lora"]["target_modules"],
             )
             base_model = get_peft_model(base_model, lora_config)
 
@@ -452,7 +417,7 @@ class TRMTrainer(BaseAgentTrainer):
             base_model=base_model,
             hidden_size=self.trm_config["hidden_size"],
             max_iterations=self.trm_config["max_refinement_iterations"],
-            convergence_threshold=self.trm_config["convergence_threshold"]
+            convergence_threshold=self.trm_config["convergence_threshold"],
         ).to(self.device)
 
         return self.model
@@ -463,7 +428,7 @@ class TRMTrainer(BaseAgentTrainer):
             vocab_size=30000,
             embedding_dim=256,
             hidden_size=self.trm_config["hidden_size"],
-            max_iterations=self.trm_config["max_refinement_iterations"]
+            max_iterations=self.trm_config["max_refinement_iterations"],
         ).to(self.device)
 
     def compute_loss(self, batch: Dict[str, Any]) -> torch.Tensor:
@@ -479,11 +444,7 @@ class TRMTrainer(BaseAgentTrainer):
         # Tokenize
         if self.tokenizer and "input_ids" not in batch:
             inputs = self.tokenizer(
-                batch["initial_task"],
-                padding=True,
-                truncation=True,
-                max_length=512,
-                return_tensors="pt"
+                batch["initial_task"], padding=True, truncation=True, max_length=512, return_tensors="pt"
             )
             input_ids = inputs["input_ids"].to(self.device)
         else:
@@ -503,19 +464,12 @@ class TRMTrainer(BaseAgentTrainer):
 
         # Add convergence penalty
         # Penalize not reaching high scores quickly
-        convergence_loss = self._compute_convergence_penalty(
-            predicted_scores,
-            target_scores
-        )
+        convergence_loss = self._compute_convergence_penalty(predicted_scores, target_scores)
         loss = loss + 0.1 * convergence_loss
 
         return loss
 
-    def _compute_convergence_penalty(
-        self,
-        predicted: torch.Tensor,
-        target: torch.Tensor
-    ) -> torch.Tensor:
+    def _compute_convergence_penalty(self, predicted: torch.Tensor, target: torch.Tensor) -> torch.Tensor:
         """Compute penalty for slow convergence."""
         # Higher penalty for later steps that don't reach target
         step_weights = torch.arange(1, predicted.shape[-1] + 1).float().to(self.device)
@@ -554,7 +508,9 @@ class TRMTrainer(BaseAgentTrainer):
                 # argmax returns 0 for non-converging, but we need first True index
                 first_convergence = converged_mask.int().argmax(dim=-1)
                 # Set non-converging samples to max_iterations
-                iterations = torch.where(has_converged, first_convergence, max_iterations * torch.ones_like(first_convergence))
+                iterations = torch.where(
+                    has_converged, first_convergence, max_iterations * torch.ones_like(first_convergence)
+                )
                 avg_iterations.extend(iterations.cpu().tolist())
 
                 # Convergence rate
@@ -565,7 +521,7 @@ class TRMTrainer(BaseAgentTrainer):
         metrics = {
             "loss": total_loss / len(dataloader),
             "avg_iterations": np.mean(avg_iterations),
-            "convergence_rate": np.mean(convergence_rates)
+            "convergence_rate": np.mean(convergence_rates),
         }
 
         self.model.train()
@@ -593,7 +549,7 @@ class MCTSTrainer(BaseAgentTrainer):
             value_hidden_layers=self.mcts_config["value_network"]["hidden_layers"],
             policy_hidden_layers=self.mcts_config["policy_network"]["hidden_layers"],
             value_lr=self.mcts_config["value_network"]["learning_rate"],
-            policy_lr=self.mcts_config["policy_network"]["learning_rate"]
+            policy_lr=self.mcts_config["policy_network"]["learning_rate"],
         ).to(self.device)
 
         return self.model
@@ -648,7 +604,7 @@ class MCTSTrainer(BaseAgentTrainer):
         # Add to replay buffer
         self.replay_buffer.extend(experiences)
         if len(self.replay_buffer) > self.buffer_size:
-            self.replay_buffer = self.replay_buffer[-self.buffer_size:]
+            self.replay_buffer = self.replay_buffer[-self.buffer_size :]
 
         return experiences
 
@@ -674,13 +630,7 @@ class MCTSTrainer(BaseAgentTrainer):
             # Value target (temporal difference)
             value = reward + self.mcts_config["discount_factor"] * np.random.randn()
 
-            experiences.append({
-                "state": state,
-                "action": action,
-                "policy": policy,
-                "value": value,
-                "reward": reward
-            })
+            experiences.append({"state": state, "action": action, "policy": policy, "value": value, "reward": reward})
 
         return experiences
 
@@ -721,7 +671,7 @@ class MCTSTrainer(BaseAgentTrainer):
         metrics = {
             "value_mae": np.mean(value_errors),
             "policy_accuracy": np.mean(policy_accuracies),
-            "buffer_size": len(self.replay_buffer)
+            "buffer_size": len(self.replay_buffer),
         }
 
         self.model.train()
@@ -738,7 +688,7 @@ class AgentTrainingOrchestrator:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, 'r') as f:
+        with open(config_path, "r") as f:
             self.config = yaml.safe_load(f)
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -768,7 +718,7 @@ class AgentTrainingOrchestrator:
         phase_name: str,
         hrm_dataloader: Optional[DataLoader] = None,
         trm_dataloader: Optional[DataLoader] = None,
-        val_dataloaders: Optional[Dict[str, DataLoader]] = None
+        val_dataloaders: Optional[Dict[str, DataLoader]] = None,
     ) -> Dict[str, Any]:
         """
         Run a training phase.
@@ -784,12 +734,7 @@ class AgentTrainingOrchestrator:
         """
         logger.info(f"Starting training phase: {phase_name}")
 
-        results = {
-            "phase": phase_name,
-            "hrm_metrics": [],
-            "trm_metrics": [],
-            "mcts_metrics": []
-        }
+        results = {"phase": phase_name, "hrm_metrics": [], "trm_metrics": [], "mcts_metrics": []}
 
         num_epochs = self.config["training"]["epochs"]
 
@@ -874,16 +819,11 @@ class AgentTrainingOrchestrator:
 
 # Model Architectures
 
+
 class HRMModel(nn.Module):
     """Hierarchical Reasoning Model with decomposition head."""
 
-    def __init__(
-        self,
-        base_model: nn.Module,
-        hidden_size: int,
-        num_labels: int,
-        max_depth: int
-    ):
+    def __init__(self, base_model: nn.Module, hidden_size: int, num_labels: int, max_depth: int):
         super().__init__()
         self.base_model = base_model
         self.decomposition_head = nn.Linear(hidden_size, num_labels)
@@ -891,9 +831,7 @@ class HRMModel(nn.Module):
         self.max_depth = max_depth
 
     def forward(
-        self,
-        input_ids: torch.Tensor,
-        attention_mask: Optional[torch.Tensor] = None
+        self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None
     ) -> Dict[str, torch.Tensor]:
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask)
 
@@ -909,22 +847,13 @@ class HRMModel(nn.Module):
         # Depth prediction (from CLS token)
         depth_logits = self.depth_predictor(sequence_output[:, 0, :])
 
-        return {
-            "logits": logits,
-            "depth_logits": depth_logits
-        }
+        return {"logits": logits, "depth_logits": depth_logits}
 
 
 class SimpleHRMModel(nn.Module):
     """Simplified HRM model without transformer backbone."""
 
-    def __init__(
-        self,
-        vocab_size: int,
-        embedding_dim: int,
-        hidden_size: int,
-        num_labels: int
-    ):
+    def __init__(self, vocab_size: int, embedding_dim: int, hidden_size: int, num_labels: int):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_size, batch_first=True, bidirectional=True)
@@ -940,19 +869,11 @@ class SimpleHRMModel(nn.Module):
 class TRMModel(nn.Module):
     """Task Refinement Model with improvement prediction."""
 
-    def __init__(
-        self,
-        base_model: nn.Module,
-        hidden_size: int,
-        max_iterations: int,
-        convergence_threshold: float
-    ):
+    def __init__(self, base_model: nn.Module, hidden_size: int, max_iterations: int, convergence_threshold: float):
         super().__init__()
         self.base_model = base_model
         self.refinement_head = nn.Sequential(
-            nn.Linear(hidden_size, hidden_size // 2),
-            nn.ReLU(),
-            nn.Linear(hidden_size // 2, max_iterations)
+            nn.Linear(hidden_size, hidden_size // 2), nn.ReLU(), nn.Linear(hidden_size // 2, max_iterations)
         )
         self.convergence_threshold = convergence_threshold
 
@@ -968,21 +889,13 @@ class TRMModel(nn.Module):
         cls_output = sequence_output[:, 0, :]
         improvement_predictions = torch.sigmoid(self.refinement_head(cls_output))
 
-        return {
-            "improvement_predictions": improvement_predictions
-        }
+        return {"improvement_predictions": improvement_predictions}
 
 
 class SimpleTRMModel(nn.Module):
     """Simplified TRM model without transformer backbone."""
 
-    def __init__(
-        self,
-        vocab_size: int,
-        embedding_dim: int,
-        hidden_size: int,
-        max_iterations: int
-    ):
+    def __init__(self, vocab_size: int, embedding_dim: int, hidden_size: int, max_iterations: int):
         super().__init__()
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_size, batch_first=True)
@@ -1005,7 +918,7 @@ class MCTSNeuralComponents(nn.Module):
         value_hidden_layers: List[int],
         policy_hidden_layers: List[int],
         value_lr: float,
-        policy_lr: float
+        policy_lr: float,
     ):
         super().__init__()
 
@@ -1013,11 +926,7 @@ class MCTSNeuralComponents(nn.Module):
         value_layers = []
         prev_dim = state_dim
         for hidden_dim in value_hidden_layers:
-            value_layers.extend([
-                nn.Linear(prev_dim, hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(0.1)
-            ])
+            value_layers.extend([nn.Linear(prev_dim, hidden_dim), nn.ReLU(), nn.Dropout(0.1)])
             prev_dim = hidden_dim
         value_layers.append(nn.Linear(prev_dim, 1))
         self.value_network = nn.Sequential(*value_layers)
@@ -1026,11 +935,7 @@ class MCTSNeuralComponents(nn.Module):
         policy_layers = []
         prev_dim = state_dim
         for hidden_dim in policy_hidden_layers:
-            policy_layers.extend([
-                nn.Linear(prev_dim, hidden_dim),
-                nn.ReLU(),
-                nn.Dropout(0.1)
-            ])
+            policy_layers.extend([nn.Linear(prev_dim, hidden_dim), nn.ReLU(), nn.Dropout(0.1)])
             prev_dim = hidden_dim
         policy_layers.append(nn.Linear(prev_dim, action_dim))
         self.policy_network = nn.Sequential(*policy_layers)
@@ -1049,7 +954,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         config = yaml.safe_load(f)
 
     # Test HRM trainer

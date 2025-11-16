@@ -62,7 +62,7 @@ class MCTSDebugger:
                 "debug_event": "iteration_start",
                 "mcts_iteration": iteration,
                 "session_id": self.session_id,
-            }
+            },
         )
 
     def log_selection(
@@ -92,10 +92,7 @@ class MCTSDebugger:
 
         self._selection_history.append(selection_data)
 
-        log_msg = (
-            f"Selection: node={node_id} UCB={ucb_score:.4f} "
-            f"visits={visits} value={value:.4f} depth={depth}"
-        )
+        log_msg = f"Selection: node={node_id} UCB={ucb_score:.4f} " f"visits={visits} value={value:.4f} depth={depth}"
 
         if is_selected:
             log_msg += " [SELECTED]"
@@ -107,7 +104,7 @@ class MCTSDebugger:
                 "selection": selection_data,
                 "session_id": self.session_id,
                 "mcts_iteration": self._iteration_count,
-            }
+            },
         )
 
     def log_ucb_comparison(
@@ -122,10 +119,12 @@ class MCTSDebugger:
 
         self._ucb_history.append(children_ucb)
 
-        ucb_summary = ", ".join([
-            f"{cid}={score:.4f}{'*' if cid == selected_child else ''}"
-            for cid, score in sorted(children_ucb.items(), key=lambda x: x[1], reverse=True)
-        ])
+        ucb_summary = ", ".join(
+            [
+                f"{cid}={score:.4f}{'*' if cid == selected_child else ''}"
+                for cid, score in sorted(children_ucb.items(), key=lambda x: x[1], reverse=True)
+            ]
+        )
 
         self.logger.debug(
             f"UCB Comparison at {parent_id}: {ucb_summary}",
@@ -136,7 +135,7 @@ class MCTSDebugger:
                 "selected_child": selected_child,
                 "session_id": self.session_id,
                 "mcts_iteration": self._iteration_count,
-            }
+            },
         )
 
     def log_expansion(
@@ -161,7 +160,7 @@ class MCTSDebugger:
                 "available_actions": available_actions,
                 "session_id": self.session_id,
                 "mcts_iteration": self._iteration_count,
-            }
+            },
         )
 
     def log_simulation(
@@ -183,7 +182,7 @@ class MCTSDebugger:
                 "simulation_details": simulation_details or {},
                 "session_id": self.session_id,
                 "mcts_iteration": self._iteration_count,
-            }
+            },
         )
 
     def log_backpropagation(
@@ -205,7 +204,7 @@ class MCTSDebugger:
                 "updates": updates,
                 "session_id": self.session_id,
                 "mcts_iteration": self._iteration_count,
-            }
+            },
         )
 
     def log_iteration_end(
@@ -229,7 +228,7 @@ class MCTSDebugger:
                 "best_ucb": round(best_ucb, 6),
                 "tree_size": tree_size,
                 "session_id": self.session_id,
-            }
+            },
         )
 
     def log_state_diff(
@@ -245,11 +244,13 @@ class MCTSDebugger:
         diff = self._compute_state_diff(old_state, new_state)
 
         if diff:
-            self._state_history.append({
-                "iteration": self._iteration_count,
-                "description": description,
-                "diff": diff,
-            })
+            self._state_history.append(
+                {
+                    "iteration": self._iteration_count,
+                    "description": description,
+                    "diff": diff,
+                }
+            )
 
             self.logger.debug(
                 f"State diff: {description}",
@@ -259,7 +260,7 @@ class MCTSDebugger:
                     "diff": diff,
                     "session_id": self.session_id,
                     "mcts_iteration": self._iteration_count,
-                }
+                },
             )
 
     def _compute_state_diff(
@@ -392,8 +393,8 @@ def export_tree_to_dot(
     lines = [
         "digraph MCTSTree {",
         '    graph [rankdir=TB, label="MCTS Tree", fontsize=16];',
-        '    node [shape=box, style=filled, fillcolor=lightblue];',
-        '    edge [fontsize=10];',
+        "    node [shape=box, style=filled, fillcolor=lightblue];",
+        "    edge [fontsize=10];",
         "",
     ]
 
@@ -501,7 +502,7 @@ def log_agent_state_snapshot(
             "debug_event": "agent_state_snapshot",
             "agent_name": agent_name,
             "state": filtered_state,
-        }
+        },
     )
 
 

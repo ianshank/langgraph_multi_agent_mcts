@@ -8,6 +8,7 @@ import tempfile
 import yaml
 
 import sys
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from training.agent_trainer import (
@@ -17,7 +18,7 @@ from training.agent_trainer import (
     AgentTrainingOrchestrator,
     SimpleHRMModel,
     SimpleTRMModel,
-    MCTSNeuralComponents
+    MCTSNeuralComponents,
 )
 
 
@@ -34,12 +35,7 @@ def training_config():
             "gradient_accumulation_steps": 1,
             "gradient_clip_norm": 1.0,
             "fp16": False,
-            "lora": {
-                "rank": 8,
-                "alpha": 16,
-                "dropout": 0.1,
-                "target_modules": ["query", "key"]
-            }
+            "lora": {"rank": 8, "alpha": 16, "dropout": 0.1, "target_modules": ["query", "key"]},
         },
         "agents": {
             "hrm": {
@@ -47,34 +43,24 @@ def training_config():
                 "max_decomposition_depth": 5,
                 "lora_rank": 8,
                 "hidden_size": 256,
-                "num_labels": 3
+                "num_labels": 3,
             },
             "trm": {
                 "model_name": "bert-base-uncased",
                 "max_refinement_iterations": 3,
                 "convergence_threshold": 0.95,
                 "lora_rank": 8,
-                "hidden_size": 256
+                "hidden_size": 256,
             },
             "mcts": {
                 "simulations": 50,
                 "exploration_constant": 1.414,
                 "discount_factor": 0.99,
-                "value_network": {
-                    "hidden_layers": [64, 32],
-                    "learning_rate": 1e-3
-                },
-                "policy_network": {
-                    "hidden_layers": [64, 32],
-                    "learning_rate": 1e-3
-                },
-                "self_play": {
-                    "games_per_iteration": 10,
-                    "buffer_size": 1000,
-                    "update_frequency": 5
-                }
-            }
-        }
+                "value_network": {"hidden_layers": [64, 32], "learning_rate": 1e-3},
+                "policy_network": {"hidden_layers": [64, 32], "learning_rate": 1e-3},
+                "self_play": {"games_per_iteration": 10, "buffer_size": 1000, "update_frequency": 5},
+            },
+        },
     }
 
 
@@ -92,12 +78,7 @@ class TestHRMTrainer:
 
     def test_simple_hrm_model(self, training_config):
         """Test simple HRM model architecture."""
-        model = SimpleHRMModel(
-            vocab_size=100,
-            embedding_dim=32,
-            hidden_size=64,
-            num_labels=3
-        )
+        model = SimpleHRMModel(vocab_size=100, embedding_dim=32, hidden_size=64, num_labels=3)
 
         # Test forward pass
         input_ids = torch.randint(0, 100, (2, 10))
@@ -110,10 +91,7 @@ class TestHRMTrainer:
         trainer = HRMTrainer(training_config)
 
         # Create mock batch
-        batch = {
-            "input_text": ["Test task 1", "Test task 2"],
-            "labels": torch.randint(0, 3, (2, 10))
-        }
+        batch = {"input_text": ["Test task 1", "Test task 2"], "labels": torch.randint(0, 3, (2, 10))}
 
         loss = trainer.compute_loss(batch)
 
@@ -150,12 +128,7 @@ class TestTRMTrainer:
 
     def test_simple_trm_model(self, training_config):
         """Test simple TRM model architecture."""
-        model = SimpleTRMModel(
-            vocab_size=100,
-            embedding_dim=32,
-            hidden_size=64,
-            max_iterations=3
-        )
+        model = SimpleTRMModel(vocab_size=100, embedding_dim=32, hidden_size=64, max_iterations=3)
 
         input_ids = torch.randint(0, 100, (2, 10))
         output = model(input_ids)
@@ -195,7 +168,7 @@ class TestMCTSTrainer:
             value_hidden_layers=[32, 16],
             policy_hidden_layers=[32],
             value_lr=1e-3,
-            policy_lr=1e-3
+            policy_lr=1e-3,
         )
 
         state = torch.randn(4, 64)
@@ -235,7 +208,7 @@ class TestAgentTrainingOrchestrator:
     def temp_config_file(self, training_config, tmp_path):
         """Create temporary config file."""
         config_path = tmp_path / "config.yaml"
-        with open(config_path, 'w') as f:
+        with open(config_path, "w") as f:
             yaml.dump(training_config, f)
         return str(config_path)
 

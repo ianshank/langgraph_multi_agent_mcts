@@ -15,22 +15,28 @@ Usage:
 """
 
 import sys
+from datetime import datetime
 from pathlib import Path
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-import torch
-from datetime import datetime
-
-from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction
-from src.agents.meta_controller.rnn_controller import RNNMetaController
-from src.agents.meta_controller.bert_controller import BERTMetaController
-from src.agents.meta_controller.utils import normalize_features, features_to_text
-from src.training.data_generator import MetaControllerDataGenerator
-from src.training.train_rnn import RNNTrainer
-from src.agents.meta_controller.config_loader import MetaControllerConfigLoader
+from src.agents.meta_controller.base import (  # noqa: E402
+    MetaControllerFeatures,
+    MetaControllerPrediction,
+)
+from src.agents.meta_controller.bert_controller import BERTMetaController  # noqa: E402
+from src.agents.meta_controller.config_loader import (  # noqa: E402
+    MetaControllerConfigLoader,
+)
+from src.agents.meta_controller.rnn_controller import RNNMetaController  # noqa: E402
+from src.agents.meta_controller.utils import (  # noqa: E402
+    features_to_text,
+    normalize_features,
+)
+from src.training.data_generator import MetaControllerDataGenerator  # noqa: E402
+from src.training.train_rnn import RNNTrainer  # noqa: E402
 
 
 def print_header(title: str) -> None:
@@ -73,10 +79,19 @@ def demo_feature_extraction() -> None:
 
     print_subheader("Normalized 10-D Vector")
     normalized = normalize_features(features)
-    labels = ["hrm_conf", "trm_conf", "mcts_val", "consensus",
-              "last_hrm", "last_trm", "last_mcts", "iter_norm",
-              "query_norm", "has_rag"]
-    for i, (label, value) in enumerate(zip(labels, normalized)):
+    labels = [
+        "hrm_conf",
+        "trm_conf",
+        "mcts_val",
+        "consensus",
+        "last_hrm",
+        "last_trm",
+        "last_mcts",
+        "iter_norm",
+        "query_norm",
+        "has_rag",
+    ]
+    for i, (label, value) in enumerate(zip(labels, normalized, strict=True)):
         print(f"  [{i}] {label}: {value:.4f}")
 
     print_subheader("Text Representation (for BERT)")
@@ -111,9 +126,11 @@ def demo_rnn_controller() -> None:
         print(f"\n  {name}:")
         print(f"    Selected Agent: {prediction.agent.upper()}")
         print(f"    Confidence: {prediction.confidence:.4f}")
-        print(f"    Probabilities: HRM={prediction.probabilities['hrm']:.3f}, "
-              f"TRM={prediction.probabilities['trm']:.3f}, "
-              f"MCTS={prediction.probabilities['mcts']:.3f}")
+        print(
+            f"    Probabilities: HRM={prediction.probabilities['hrm']:.3f}, "
+            f"TRM={prediction.probabilities['trm']:.3f}, "
+            f"MCTS={prediction.probabilities['mcts']:.3f}"
+        )
 
 
 def demo_bert_controller() -> None:
@@ -149,7 +166,7 @@ def demo_bert_controller() -> None:
     first_time = (datetime.now() - start).total_seconds()
 
     start = datetime.now()
-    pred2 = controller.predict(features)
+    _ = controller.predict(features)  # Test cached prediction
     second_time = (datetime.now() - start).total_seconds()
 
     print(f"  First prediction time: {first_time:.4f}s")
@@ -254,7 +271,10 @@ def demo_braintrust_integration() -> None:
     print_header("Braintrust Experiment Tracking (Optional)")
 
     try:
-        from src.observability.braintrust_tracker import BraintrustTracker, BRAINTRUST_AVAILABLE
+        from src.observability.braintrust_tracker import (
+            BRAINTRUST_AVAILABLE,
+            BraintrustTracker,
+        )
 
         if not BRAINTRUST_AVAILABLE:
             print("  Braintrust not installed. Install with: pip install braintrust")
@@ -289,7 +309,10 @@ def demo_pinecone_integration() -> None:
     print_header("Pinecone Vector Storage (Optional)")
 
     try:
-        from src.storage.pinecone_store import PineconeVectorStore, PINECONE_AVAILABLE
+        from src.storage.pinecone_store import (
+            PINECONE_AVAILABLE,
+            PineconeVectorStore,
+        )
 
         if not PINECONE_AVAILABLE:
             print("  Pinecone not installed. Install with: pip install pinecone")
@@ -387,6 +410,7 @@ def main():
         except Exception as e:
             print(f"\n[ERROR] Error in {name} demo: {e}")
             import traceback
+
             traceback.print_exc()
 
     print("\n" + "=" * 70)

@@ -102,9 +102,7 @@ class AnthropicClient(BaseLLMClient):
 
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
-            raise LLMAuthenticationError(
-                self.PROVIDER_NAME, "API key not provided and ANTHROPIC_API_KEY not set"
-            )
+            raise LLMAuthenticationError(self.PROVIDER_NAME, "API key not provided and ANTHROPIC_API_KEY not set")
 
         # Resolve model alias
         model_name = model or self.DEFAULT_MODEL
@@ -141,9 +139,7 @@ class AnthropicClient(BaseLLMClient):
             )
         return self._client
 
-    def _convert_messages_to_anthropic(
-        self, messages: list[dict]
-    ) -> tuple[str | None, list[dict]]:
+    def _convert_messages_to_anthropic(self, messages: list[dict]) -> tuple[str | None, list[dict]]:
         """
         Convert OpenAI-style messages to Anthropic format.
 
@@ -166,16 +162,18 @@ class AnthropicClient(BaseLLMClient):
                 anthropic_messages.append({"role": "user", "content": content})
             elif role == "tool":
                 # Tool result message
-                anthropic_messages.append({
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": msg.get("tool_call_id", ""),
-                            "content": content,
-                        }
-                    ],
-                })
+                anthropic_messages.append(
+                    {
+                        "role": "user",
+                        "content": [
+                            {
+                                "type": "tool_result",
+                                "tool_use_id": msg.get("tool_call_id", ""),
+                                "content": content,
+                            }
+                        ],
+                    }
+                )
 
         return system_prompt, anthropic_messages
 
@@ -186,11 +184,13 @@ class AnthropicClient(BaseLLMClient):
         for tool in tools:
             if tool.get("type") == "function":
                 func = tool["function"]
-                anthropic_tools.append({
-                    "name": func["name"],
-                    "description": func.get("description", ""),
-                    "input_schema": func.get("parameters", {"type": "object"}),
-                })
+                anthropic_tools.append(
+                    {
+                        "name": func["name"],
+                        "description": func.get("description", ""),
+                        "input_schema": func.get("parameters", {"type": "object"}),
+                    }
+                )
             else:
                 # Already in Anthropic format
                 anthropic_tools.append(tool)
@@ -214,9 +214,7 @@ class AnthropicClient(BaseLLMClient):
         elif status_code == 429:
             retry_after = response.headers.get("retry-after")
             retry_after_float = float(retry_after) if retry_after else None
-            raise LLMRateLimitError(
-                self.PROVIDER_NAME, retry_after=retry_after_float, message=error_message
-            )
+            raise LLMRateLimitError(self.PROVIDER_NAME, retry_after=retry_after_float, message=error_message)
         elif status_code == 402 or "billing" in error_type.lower():
             raise LLMQuotaExceededError(self.PROVIDER_NAME, error_message)
         elif status_code == 404 or error_type == "not_found_error":
@@ -230,18 +228,14 @@ class AnthropicClient(BaseLLMClient):
         elif status_code >= 500:
             raise LLMServerError(self.PROVIDER_NAME, status_code, error_message)
         else:
-            raise LLMClientError(
-                error_message, self.PROVIDER_NAME, status_code=status_code
-            )
+            raise LLMClientError(error_message, self.PROVIDER_NAME, status_code=status_code)
 
     def _make_retry_decorator(self):
         """Create retry decorator with exponential backoff."""
         return retry(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=2, max=120),
-            retry=retry_if_exception_type(
-                (LLMRateLimitError, LLMServerError, LLMConnectionError)
-            ),
+            retry=retry_if_exception_type((LLMRateLimitError, LLMServerError, LLMConnectionError)),
             before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True,
         )
@@ -329,9 +323,7 @@ class AnthropicClient(BaseLLMClient):
 
             # Convert messages
             built_messages = self._build_messages(messages, prompt)
-            system_prompt, anthropic_messages = self._convert_messages_to_anthropic(
-                built_messages
-            )
+            system_prompt, anthropic_messages = self._convert_messages_to_anthropic(built_messages)
 
             # Build request payload
             payload = {
@@ -445,9 +437,7 @@ class AnthropicClient(BaseLLMClient):
 
         # Convert messages
         built_messages = self._build_messages(messages, prompt)
-        system_prompt, anthropic_messages = self._convert_messages_to_anthropic(
-            built_messages
-        )
+        system_prompt, anthropic_messages = self._convert_messages_to_anthropic(built_messages)
 
         # Build request payload
         payload = {

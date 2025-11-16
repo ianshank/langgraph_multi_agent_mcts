@@ -52,10 +52,7 @@ class BraintrustTracker:
         self._metrics_buffer: List[Dict[str, Any]] = []
 
         if not BRAINTRUST_AVAILABLE:
-            print(
-                "Warning: braintrust package not installed. "
-                "Install with: pip install braintrust"
-            )
+            print("Warning: braintrust package not installed. " "Install with: pip install braintrust")
             return
 
         if auto_init and self._api_key:
