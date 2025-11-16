@@ -407,7 +407,7 @@ class MultiAgentEvaluator:
 
         # Accuracy per agent
         for agent_name, outputs in agent_outputs.items():
-            correct = sum(1 for pred, truth in zip(outputs, ground_truths) if self._outputs_match(pred, truth))
+            correct = sum(1 for pred, truth in zip(outputs, ground_truths, strict=True) if self._outputs_match(pred, truth))
             metrics[f"{agent_name}_accuracy"] = correct / len(ground_truths)
 
         # Ensemble accuracy (majority voting)
@@ -458,7 +458,7 @@ class MultiAgentEvaluator:
         most_common = counter.most_common(1)[0][0]
 
         # Return original type
-        for o, h in zip(outputs, hashable_outputs):
+        for o, h in zip(outputs, hashable_outputs, strict=True):
             if h == most_common:
                 return o
         return outputs[0]

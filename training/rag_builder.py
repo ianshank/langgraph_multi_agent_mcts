@@ -654,7 +654,7 @@ class RetrievalOptimizer:
         """Evaluate retrieval quality."""
         precisions, recalls, mrrs = [], [], []
 
-        for query, expected_docs in zip(queries, ground_truth):
+        for query, expected_docs in zip(queries, ground_truth, strict=True):
             results = index.search(query)
             retrieved_docs = [r.doc_id for r in results]
 
