@@ -95,35 +95,35 @@ print("PROJECT IMPORTS")
 print("=" * 60)
 
 try:
-    from src.config.settings import get_settings
+    from src.config.settings import get_settings  # noqa: F401
 
     print("✓ src.config.settings - Configuration management")
 except ImportError as e:
     print(f"✗ src.config.settings - {str(e)}")
 
 try:
-    from src.adapters.llm import create_client
+    from src.adapters.llm import create_client  # noqa: F401
 
     print("✓ src.adapters.llm - LLM provider abstraction")
 except ImportError as e:
     print(f"✗ src.adapters.llm - {str(e)}")
 
 try:
-    from src.framework.mcts.core import MCTSEngine
+    from src.framework.mcts.core import MCTSEngine  # noqa: F401
 
     print("✓ src.framework.mcts.core - MCTS engine")
 except ImportError as e:
     print(f"✗ src.framework.mcts.core - {str(e)}")
 
 try:
-    from src.observability.logging import setup_logging
+    from src.observability.logging import setup_logging  # noqa: F401
 
     print("✓ src.observability.logging - Structured logging")
 except ImportError as e:
     print(f"✗ src.observability.logging - {str(e)}")
 
 try:
-    from src.storage.s3_client import S3Client
+    from src.storage.s3_client import S3Client  # noqa: F401
 
     print("✓ src.storage.s3_client - S3 storage client")
 except ImportError as e:
