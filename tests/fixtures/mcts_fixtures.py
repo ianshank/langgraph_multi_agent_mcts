@@ -9,27 +9,22 @@ Provides:
 """
 
 from __future__ import annotations
-import asyncio
-from typing import List, Dict, Any, Optional, Tuple
+
+import asyncio  # noqa: F401
+from typing import Any
+
 import numpy as np
 
+from src.framework.mcts.config import MCTSConfig
 from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
-from src.framework.mcts.config import MCTSConfig, create_preset_config, ConfigPreset
-from src.framework.mcts.policies import (
-    RandomRolloutPolicy,
-    HybridRolloutPolicy,
-    GreedyRolloutPolicy,
-    SelectionPolicy,
-)
-from src.framework.mcts.experiments import ExperimentTracker
-
+from src.framework.mcts.policies import RandomRolloutPolicy, SelectionPolicy  # noqa: F401
 
 # ============================================================================
 # KNOWN DETERMINISTIC SCENARIOS
 # ============================================================================
 
 
-def create_simple_binary_tree_scenario() -> Dict[str, Any]:
+def create_simple_binary_tree_scenario() -> dict[str, Any]:
     """
     Create a simple binary decision tree scenario.
 
@@ -45,7 +40,7 @@ def create_simple_binary_tree_scenario() -> Dict[str, Any]:
     }
 
 
-def create_tactical_decision_scenario() -> Dict[str, Any]:
+def create_tactical_decision_scenario() -> dict[str, Any]:
     """
     Create a tactical decision scenario with multiple actions.
 
@@ -66,7 +61,7 @@ def create_tactical_decision_scenario() -> Dict[str, Any]:
     }
 
 
-def create_progressive_widening_test_scenario() -> Dict[str, Any]:
+def create_progressive_widening_test_scenario() -> dict[str, Any]:
     """
     Create scenario to test progressive widening behavior.
 
@@ -107,7 +102,7 @@ class DeterministicTestFixture:
         self.seed = seed
         self.rng = np.random.default_rng(seed)
 
-    def create_engine(self, config: Optional[MCTSConfig] = None) -> MCTSEngine:
+    def create_engine(self, config: MCTSConfig | None = None) -> MCTSEngine:
         """Create MCTS engine with fixture seed."""
         if config is None:
             config = MCTSConfig(seed=self.seed)
@@ -135,14 +130,14 @@ class DeterministicTestFixture:
         root_state = self.create_root_state()
         return MCTSNode(state=root_state, rng=engine.rng)
 
-    def binary_action_generator(self, state: MCTSState) -> List[str]:
+    def binary_action_generator(self, state: MCTSState) -> list[str]:
         """Generate binary actions (left/right)."""
         depth = len(state.state_id.split("_")) - 1
         if depth < 3:
             return ["left", "right"]
         return []
 
-    def tactical_action_generator(self, state: MCTSState) -> List[str]:
+    def tactical_action_generator(self, state: MCTSState) -> list[str]:
         """Generate tactical actions based on depth."""
         depth = len(state.state_id.split("_")) - 1
         if depth == 0:
@@ -246,7 +241,7 @@ class KnownGoodTreeFixture:
         return root
 
     @staticmethod
-    def create_known_optimal_tree() -> Tuple[MCTSNode, str, float]:
+    def create_known_optimal_tree() -> tuple[MCTSNode, str, float]:
         """
         Create tree with known optimal action.
 
@@ -289,7 +284,7 @@ async def run_determinism_verification(
     num_runs: int = 3,
     num_iterations: int = 50,
     seed: int = 42,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Verify MCTS produces identical results with same seed.
 
@@ -362,7 +357,7 @@ async def test_progressive_widening_behavior(
     alpha: float = 0.5,
     num_iterations: int = 100,
     seed: int = 42,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Test progressive widening with given parameters.
 
@@ -387,7 +382,7 @@ async def test_progressive_widening_behavior(
     root = fixture.create_root_node(engine)
 
     # Large action space to test widening
-    def large_action_generator(state: MCTSState) -> List[str]:
+    def large_action_generator(state: MCTSState) -> list[str]:
         depth = len(state.state_id.split("_")) - 1
         if depth < 3:
             return [f"action_{i}" for i in range(10)]
@@ -425,7 +420,7 @@ async def test_cache_effectiveness(
     num_iterations: int = 100,
     cache_enabled: bool = True,
     seed: int = 42,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Test simulation caching effectiveness.
 
@@ -493,7 +488,7 @@ KNOWN_GOOD_RESULTS = {
 """Known-good results for regression testing."""
 
 
-def get_test_config_matrix() -> List[MCTSConfig]:
+def get_test_config_matrix() -> list[MCTSConfig]:
     """
     Get matrix of test configurations.
 
