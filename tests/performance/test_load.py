@@ -71,23 +71,25 @@ class TestConcurrentRequestHandling:
         mock_logger.info = Mock()
         mock_logger.error = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
-            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    # Mock agent process methods
-                    mock_hrm.return_value.process = AsyncMock(
-                        return_value={"response": "HRM response", "metadata": {"decomposition_quality_score": 0.8}}
-                    )
-                    mock_trm.return_value.process = AsyncMock(
-                        return_value={"response": "TRM response", "metadata": {"final_quality_score": 0.8}}
-                    )
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm,
+            patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm,
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            # Mock agent process methods
+            mock_hrm.return_value.process = AsyncMock(
+                return_value={"response": "HRM response", "metadata": {"decomposition_quality_score": 0.8}}
+            )
+            mock_trm.return_value.process = AsyncMock(
+                return_value={"response": "TRM response", "metadata": {"final_quality_score": 0.8}}
+            )
 
-                    framework = LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                        mcts_iterations=10,
-                    )
-                    return framework
+            framework = LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+                mcts_iterations=10,
+            )
+            return framework
 
     @pytest.mark.asyncio
     @pytest.mark.timeout(120)
@@ -226,12 +228,15 @@ class TestMemoryStability:
         mock_adapter = AsyncMock()
         mock_logger = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
-            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                return LangGraphMultiAgentFramework(
-                    model_adapter=mock_adapter,
-                    logger=mock_logger,
-                )
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent"),
+            patch("langgraph_multi_agent_mcts.TRMAgent"),
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.slow
@@ -325,16 +330,18 @@ class TestMCTSScaling:
         mock_logger = Mock()
         mock_logger.info = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
-            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
-                    mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm,
+            patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm,
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
+            mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
 
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                    )
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter,
+                logger=mock_logger,
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.parametrize("iterations", [10, 50, 100, 500, 1000])
@@ -410,15 +417,17 @@ class TestThroughputBenchmarks:
         mock_adapter.generate = AsyncMock(return_value=Mock(text="OK", tokens_used=5))
         mock_logger = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm:
-            with patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm:
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
-                    mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
+        with (
+            patch("langgraph_multi_agent_mcts.HRMAgent") as mock_hrm,
+            patch("langgraph_multi_agent_mcts.TRMAgent") as mock_trm,
+            patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"),
+        ):
+            mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
+            mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
 
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10
-                    )
+            return LangGraphMultiAgentFramework(
+                model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10
+            )
 
     @pytest.mark.asyncio
     @pytest.mark.slow
