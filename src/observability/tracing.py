@@ -18,7 +18,7 @@ from typing import Any, Dict, Optional
 from opentelemetry import trace
 from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentation
+from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.propagate import extract, inject
 from opentelemetry.sdk.resources import Resource, SERVICE_NAME
 from opentelemetry.sdk.trace import TracerProvider
@@ -129,7 +129,7 @@ class TracingManager:
             return
 
         try:
-            HTTPXClientInstrumentation().instrument()
+            HTTPXClientInstrumentor().instrument()
             self._httpx_instrumented = True
         except Exception:
             # httpx instrumentation is optional
