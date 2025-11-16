@@ -6,16 +6,16 @@ Tests:
 - PineconeVectorStore: Vector operations, namespace management, buffering
 """
 
-import pytest
-import hashlib
 import gzip
+import hashlib
 import json
-from datetime import datetime
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, ANY
-from typing import Dict, Any
 
 # Import storage modules
 import sys
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, Mock, patch
+
+import pytest
 
 sys.path.insert(0, ".")
 
@@ -30,9 +30,9 @@ mock_logger_module = MagicMock()
 mock_logger_module.get_logger = Mock(return_value=Mock())
 sys.modules["src.observability.logging"] = mock_logger_module
 
-from src.storage.s3_client import S3Config, S3StorageClient
-from src.storage.pinecone_store import PineconeVectorStore, PINECONE_AVAILABLE
 from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction
+from src.storage.pinecone_store import PineconeVectorStore
+from src.storage.s3_client import S3Config, S3StorageClient
 
 
 class TestS3Config:

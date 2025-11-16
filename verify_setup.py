@@ -3,8 +3,8 @@
 Verification script to check that all dependencies are installed correctly.
 """
 
-import sys
 import os
+import sys
 
 # Set UTF-8 encoding for Windows
 os.environ["PYTHONIOENCODING"] = "utf-8"
@@ -87,7 +87,7 @@ for module_name, description in dev_modules:
         module = __import__(module_name.replace("-", "_"))
         version = getattr(module, "__version__", "")
         print(f"✓ {module_name:<20} {version:<10} - {description}")
-    except ImportError as e:
+    except ImportError:
         print(f"✗ {module_name:<20} FAILED - {description}")
 
 print("\n" + "=" * 60)

@@ -9,9 +9,10 @@ import json
 import logging
 import os
 import uuid
-from dataclasses import dataclass, field
+from collections.abc import Iterator
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import yaml
@@ -50,7 +51,7 @@ class SearchResult:
     chunk_id: int
     text: str
     score: float
-    metadata: Dict[str, Any]
+    metadata: dict[str, Any]
 
 
 @dataclass
@@ -61,13 +62,13 @@ class IndexStats:
     total_chunks: int
     index_size_mb: float
     avg_chunk_length: float
-    domains: Dict[str, int]
+    domains: dict[str, int]
 
 
 class ChunkingStrategy:
     """Smart document chunking strategies."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize chunking strategy.
 
@@ -82,7 +83,7 @@ class ChunkingStrategy:
             f"ChunkingStrategy: size={self.chunk_size}, " f"overlap={self.chunk_overlap}, strategy={self.strategy}"
         )
 
-    def chunk_document(self, text: str, doc_id: str = "") -> List[DocumentChunk]:
+    def chunk_document(self, text: str, doc_id: str = "") -> list[DocumentChunk]:
         """
         Chunk a document using the configured strategy.
 
@@ -100,7 +101,7 @@ class ChunkingStrategy:
         else:  # fixed
             return self._fixed_chunking(text, doc_id)
 
-    def _fixed_chunking(self, text: str, doc_id: str) -> List[DocumentChunk]:
+    def _fixed_chunking(self, text: str, doc_id: str) -> list[DocumentChunk]:
         """Fixed-size chunking with overlap."""
         chunks = []
         start = 0
@@ -127,7 +128,7 @@ class ChunkingStrategy:
 
         return chunks
 
-    def _semantic_chunking(self, text: str, doc_id: str) -> List[DocumentChunk]:
+    def _semantic_chunking(self, text: str, doc_id: str) -> list[DocumentChunk]:
         """Semantic chunking based on sentence boundaries."""
         chunks = []
         sentences = self._split_into_sentences(text)
@@ -170,14 +171,14 @@ class ChunkingStrategy:
 
         return chunks
 
-    def _recursive_chunking(self, text: str, doc_id: str) -> List[DocumentChunk]:
+    def _recursive_chunking(self, text: str, doc_id: str) -> list[DocumentChunk]:
         """Recursive chunking with multiple separators."""
         separators = ["\n\n", "\n", ". ", " "]
         return self._recursive_split(text, separators, doc_id, 0, [])
 
     def _recursive_split(
-        self, text: str, separators: List[str], doc_id: str, chunk_id: int, results: List[DocumentChunk]
-    ) -> List[DocumentChunk]:
+        self, text: str, separators: list[str], doc_id: str, chunk_id: int, results: list[DocumentChunk]
+    ) -> list[DocumentChunk]:
         """Recursively split text with separators."""
         if len(text) <= self.chunk_size:
             results.append(
@@ -232,7 +233,7 @@ class ChunkingStrategy:
 
         return results
 
-    def _split_into_sentences(self, text: str) -> List[str]:
+    def _split_into_sentences(self, text: str) -> list[str]:
         """Split text into sentences."""
         import re
 
@@ -243,7 +244,7 @@ class ChunkingStrategy:
 class VectorIndexBuilder:
     """Build and manage vector indices for RAG using Pinecone."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize vector index builder with Pinecone.
 
@@ -409,7 +410,7 @@ class VectorIndexBuilder:
         logger.info(f"Index built: {stats.total_chunks} chunks in Pinecone")
         return stats
 
-    def _upsert_batch(self, vectors: List[Dict[str, Any]]) -> None:
+    def _upsert_batch(self, vectors: list[dict[str, Any]]) -> None:
         """Upsert batch of vectors to Pinecone."""
         if not self.is_available:
             return
@@ -433,7 +434,7 @@ class VectorIndexBuilder:
             return "medium"
         return "low"
 
-    def search(self, query: str, k: int = None, filter_metadata: Optional[Dict[str, Any]] = None) -> List[SearchResult]:
+    def search(self, query: str, k: int = None, filter_metadata: dict[str, Any] | None = None) -> list[SearchResult]:
         """
         Search for similar chunks using Pinecone.
 
@@ -506,15 +507,15 @@ class VectorIndexBuilder:
             logger.error(f"Search failed: {e}")
             return []
 
-    def search_by_category(self, query: str, category: str, k: int = None) -> List[SearchResult]:
+    def search_by_category(self, query: str, category: str, k: int = None) -> list[SearchResult]:
         """Search within a specific category."""
         return self.search(query, k=k, filter_metadata={"category": {"$eq": category}})
 
-    def search_by_threat_level(self, query: str, threat_level: str, k: int = None) -> List[SearchResult]:
+    def search_by_threat_level(self, query: str, threat_level: str, k: int = None) -> list[SearchResult]:
         """Search for documents with specific threat level."""
         return self.search(query, k=k, filter_metadata={"threat_level": {"$eq": threat_level}})
 
-    def save_index(self, path: Optional[Path] = None) -> None:
+    def save_index(self, path: Path | None = None) -> None:
         """Save local index metadata (Pinecone data is persisted automatically)."""
         if path is None:
             path = Path(self.config.get("index_path", "./cache/rag_index"))
@@ -541,18 +542,18 @@ class VectorIndexBuilder:
 
         logger.info(f"Index metadata saved to {path}")
 
-    def load_index(self, path: Optional[Path] = None) -> None:
+    def load_index(self, path: Path | None = None) -> None:
         """Load local index metadata."""
         if path is None:
             path = Path(self.config.get("index_path", "./cache/rag_index"))
         path = Path(path)
 
         if (path / "chunks.json").exists():
-            with open(path / "chunks.json", "r") as f:
+            with open(path / "chunks.json") as f:
                 self.chunk_store = json.load(f)
 
         if HAS_BM25 and (path / "bm25_corpus.json").exists():
-            with open(path / "bm25_corpus.json", "r") as f:
+            with open(path / "bm25_corpus.json") as f:
                 corpus = json.load(f)
             self.bm25_index = BM25Okapi(corpus)
 
@@ -624,7 +625,7 @@ class VectorIndexBuilder:
             logger.error(f"Failed to delete namespace: {e}")
             return False
 
-    def get_index_stats(self) -> Dict[str, Any]:
+    def get_index_stats(self) -> dict[str, Any]:
         """Get Pinecone index statistics."""
         if not self.is_available:
             return {"available": False, "local_chunks": len(self.chunk_store)}
@@ -644,12 +645,12 @@ class VectorIndexBuilder:
 class RetrievalOptimizer:
     """Optimize retrieval quality and performance."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         self.config = config
 
     def evaluate_retrieval(
-        self, index: VectorIndexBuilder, queries: List[str], ground_truth: List[List[str]]
-    ) -> Dict[str, float]:
+        self, index: VectorIndexBuilder, queries: list[str], ground_truth: list[list[str]]
+    ) -> dict[str, float]:
         """Evaluate retrieval quality."""
         precisions, recalls, mrrs = [], [], []
 
@@ -679,7 +680,7 @@ class RetrievalOptimizer:
         logger.info(f"Retrieval metrics: {metrics}")
         return metrics
 
-    def query_expansion(self, query: str) -> List[str]:
+    def query_expansion(self, query: str) -> list[str]:
         """Expand query with synonyms."""
         expansions = [query]
         cybersecurity_synonyms = {
@@ -700,7 +701,7 @@ class RAGIndexManager:
     """Manage multiple domain-specific indices using Pinecone namespaces."""
 
     def __init__(self, config_path: str = "training/config.yaml"):
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
         self.rag_config = self.config["rag"]
@@ -709,7 +710,7 @@ class RAGIndexManager:
         self.optimizer = RetrievalOptimizer(self.rag_config)
         logger.info("RAGIndexManager initialized with Pinecone backend")
 
-    def build_domain_indices(self, processor: PRIMUSProcessor) -> Dict[str, IndexStats]:
+    def build_domain_indices(self, processor: PRIMUSProcessor) -> dict[str, IndexStats]:
         """Build separate indices for each domain using Pinecone namespaces."""
         stats = {}
 
@@ -736,7 +737,7 @@ class RAGIndexManager:
 
         return stats
 
-    def search_all_domains(self, query: str, k: int = 10) -> Dict[str, List[SearchResult]]:
+    def search_all_domains(self, query: str, k: int = 10) -> dict[str, list[SearchResult]]:
         """Search across all domain indices."""
         results = {}
         for domain_name, index in self.indices.items():
@@ -780,7 +781,7 @@ if __name__ == "__main__":
     logger.info("Testing RAG Builder Module with Pinecone")
 
     config_path = "training/config.yaml"
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         config = yaml.safe_load(f)
 
     rag_config = config["rag"]

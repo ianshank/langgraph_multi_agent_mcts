@@ -7,19 +7,20 @@ Handles dataset loading, preprocessing, and data orchestration for:
 - PRIMUS-Instruct instruction samples
 """
 
-import json
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader, IterableDataset
 import yaml
+from torch.utils.data import DataLoader, Dataset
 
 try:
-    from datasets import load_dataset, Dataset as HFDataset
+    from datasets import Dataset as HFDataset
+    from datasets import load_dataset
 
     HAS_DATASETS = True
 except ImportError:
@@ -36,9 +37,9 @@ class TaskSample:
     task_text: str
     difficulty: str  # easy, medium, hard
     category: str
-    steps: List[str]
+    steps: list[str]
     expected_output: Any
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -46,9 +47,9 @@ class HRMSample:
     """Sample formatted for HRM (hierarchical decomposition) training."""
 
     input_text: str
-    decomposition: List[str]
+    decomposition: list[str]
     depth: int
-    labels: List[int]  # Token-level decomposition labels
+    labels: list[int]  # Token-level decomposition labels
 
 
 @dataclass
@@ -56,9 +57,9 @@ class TRMSample:
     """Sample formatted for TRM (task refinement) training."""
 
     initial_task: str
-    refinement_steps: List[str]
+    refinement_steps: list[str]
     final_task: str
-    improvement_scores: List[float]
+    improvement_scores: list[float]
 
 
 @dataclass
@@ -68,14 +69,14 @@ class DocumentChunk:
     doc_id: str
     chunk_id: int
     text: str
-    metadata: Dict[str, Any]
-    embedding: Optional[np.ndarray] = None
+    metadata: dict[str, Any]
+    embedding: np.ndarray | None = None
 
 
 class DABStepLoader:
     """Load and preprocess DABStep multi-step reasoning tasks."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize DABStep loader.
 
@@ -119,7 +120,7 @@ class DABStepLoader:
                         range(min(self.max_samples, len(self._dataset["train"])))
                     )
 
-            logger.info(f"Loaded DABStep dataset successfully")
+            logger.info("Loaded DABStep dataset successfully")
 
         except Exception as e:
             logger.error(f"Failed to load DABStep dataset: {e}")
@@ -153,7 +154,7 @@ class DABStepLoader:
 
         self._dataset = {"train": HFDataset.from_list(synthetic_tasks)}
 
-    def create_splits(self) -> Dict[str, List[TaskSample]]:
+    def create_splits(self) -> dict[str, list[TaskSample]]:
         """
         Create train/val/test splits from the dataset.
 
@@ -198,7 +199,7 @@ class DABStepLoader:
 
         return self._splits
 
-    def _convert_to_task_sample(self, item: Dict[str, Any]) -> Optional[TaskSample]:
+    def _convert_to_task_sample(self, item: dict[str, Any]) -> TaskSample | None:
         """Convert raw dataset item to TaskSample."""
         try:
             # Handle different dataset formats
@@ -273,7 +274,7 @@ class DABStepLoader:
             improvement_scores=improvement_scores,
         )
 
-    def augment_task(self, sample: TaskSample, num_variations: int = 3) -> List[TaskSample]:
+    def augment_task(self, sample: TaskSample, num_variations: int = 3) -> list[TaskSample]:
         """
         Generate augmented variations of a task.
 
@@ -310,7 +311,7 @@ class DABStepLoader:
 
         return augmented
 
-    def get_curriculum_batches(self) -> Iterator[List[TaskSample]]:
+    def get_curriculum_batches(self) -> Iterator[list[TaskSample]]:
         """
         Generate batches following curriculum learning (easy → medium → hard).
 
@@ -338,7 +339,7 @@ class DABStepLoader:
 class PRIMUSProcessor:
     """Process PRIMUS cybersecurity datasets."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize PRIMUS processor.
 
@@ -425,7 +426,7 @@ class PRIMUSProcessor:
             sample = {
                 "instruction": f"Analyze the cybersecurity threat scenario {i}",
                 "input": f"Context for scenario {i}: A potential security breach...",
-                "output": f"Analysis: Based on the provided context, the threat level is moderate...",
+                "output": "Analysis: Based on the provided context, the threat level is moderate...",
             }
             synthetic_instruct.append(sample)
 
@@ -470,7 +471,7 @@ class PRIMUSProcessor:
                 if self.max_documents and chunk_id >= self.max_documents:
                     return
 
-    def _chunk_text(self, text: str, chunk_size: int = 512, overlap: int = 50) -> List[str]:
+    def _chunk_text(self, text: str, chunk_size: int = 512, overlap: int = 50) -> list[str]:
         """
         Chunk text into smaller pieces with overlap.
 
@@ -510,7 +511,7 @@ class PRIMUSProcessor:
 
         return chunks
 
-    def get_instruction_samples(self) -> List[Dict[str, str]]:
+    def get_instruction_samples(self) -> list[dict[str, str]]:
         """
         Get PRIMUS-Instruct samples for instruction fine-tuning.
 
@@ -534,7 +535,7 @@ class PRIMUSProcessor:
         logger.info(f"Retrieved {len(samples)} instruction samples")
         return samples
 
-    def extract_domain_metadata(self, chunk: DocumentChunk) -> Dict[str, Any]:
+    def extract_domain_metadata(self, chunk: DocumentChunk) -> dict[str, Any]:
         """
         Extract domain-specific metadata from document chunk.
 
@@ -582,7 +583,7 @@ class DataOrchestrator:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
         self.dabstep_loader = DABStepLoader(self.config["data"]["dabstep"])
@@ -671,13 +672,13 @@ class DataOrchestrator:
         """
         return self.primus_processor.stream_documents()
 
-    def get_instruction_samples(self) -> List[Dict[str, str]]:
+    def get_instruction_samples(self) -> list[dict[str, str]]:
         """Get instruction tuning samples."""
         return self.primus_processor.get_instruction_samples()
 
     def create_balanced_batch(
-        self, hrm_samples: List[HRMSample], trm_samples: List[TRMSample], instruction_samples: List[Dict[str, str]]
-    ) -> Dict[str, Any]:
+        self, hrm_samples: list[HRMSample], trm_samples: list[TRMSample], instruction_samples: list[dict[str, str]]
+    ) -> dict[str, Any]:
         """
         Create a balanced batch across different training objectives.
 
@@ -696,7 +697,7 @@ class DataOrchestrator:
         }
         return batch
 
-    def get_data_statistics(self) -> Dict[str, Any]:
+    def get_data_statistics(self) -> dict[str, Any]:
         """
         Get statistics about loaded datasets.
 
@@ -730,13 +731,13 @@ class DataOrchestrator:
 class HRMDataset(Dataset):
     """PyTorch Dataset for HRM training."""
 
-    def __init__(self, samples: List[HRMSample]):
+    def __init__(self, samples: list[HRMSample]):
         self.samples = samples
 
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         sample = self.samples[idx]
         return {
             "input_text": sample.input_text,
@@ -749,13 +750,13 @@ class HRMDataset(Dataset):
 class TRMDataset(Dataset):
     """PyTorch Dataset for TRM training."""
 
-    def __init__(self, samples: List[TRMSample]):
+    def __init__(self, samples: list[TRMSample]):
         self.samples = samples
 
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         sample = self.samples[idx]
         return {
             "initial_task": sample.initial_task,
@@ -769,7 +770,7 @@ class TrainingDataset(Dataset):
     """Combined dataset for multi-objective training."""
 
     def __init__(
-        self, hrm_samples: List[HRMSample], trm_samples: List[TRMSample], instruction_samples: List[Dict[str, str]]
+        self, hrm_samples: list[HRMSample], trm_samples: list[TRMSample], instruction_samples: list[dict[str, str]]
     ):
         self.hrm_samples = hrm_samples
         self.trm_samples = trm_samples
@@ -787,7 +788,7 @@ class TrainingDataset(Dataset):
     def __len__(self) -> int:
         return len(self.sample_map)
 
-    def __getitem__(self, idx: int) -> Dict[str, Any]:
+    def __getitem__(self, idx: int) -> dict[str, Any]:
         sample_type, sample_idx = self.sample_map[idx]
 
         if sample_type == "hrm":

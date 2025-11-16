@@ -12,7 +12,6 @@ Run this script to check the status of all integrations at once.
 import os
 import sys
 from datetime import datetime
-from typing import Dict, Tuple
 
 
 class Colors:
@@ -56,7 +55,7 @@ def print_status(status: str, message: str, details: str = ""):
         print(f"    {details}")
 
 
-def check_pinecone() -> Tuple[bool, bool, Dict[str, any]]:
+def check_pinecone() -> tuple[bool, bool, dict[str, any]]:
     """Check Pinecone integration status."""
     print_header("PINECONE VECTOR STORAGE")
 
@@ -111,7 +110,7 @@ def check_pinecone() -> Tuple[bool, bool, Dict[str, any]]:
     return results["installed"], results["configured"] and results["connected"], results
 
 
-def check_braintrust() -> Tuple[bool, bool, Dict[str, any]]:
+def check_braintrust() -> tuple[bool, bool, dict[str, any]]:
     """Check Braintrust integration status."""
     print_header("BRAINTRUST EXPERIMENT TRACKING")
 
@@ -159,16 +158,16 @@ def check_braintrust() -> Tuple[bool, bool, Dict[str, any]]:
 
     # Check training integration
     try:
-        with open("src/training/train_rnn.py", "r") as f:
+        with open("src/training/train_rnn.py") as f:
             if "BraintrustTracker" in f.read():
                 print_status("OK", "Integrated in RNN training script", "Use --use_braintrust flag")
-    except (OSError, IOError):
+    except OSError:
         pass  # File may not exist in all environments
 
     return results["installed"], results["configured"] and results["connected"], results
 
 
-def check_wandb() -> Tuple[bool, bool, Dict[str, any]]:
+def check_wandb() -> tuple[bool, bool, dict[str, any]]:
     """Check Weights & Biases integration status."""
     print_header("WEIGHTS & BIASES (WANDB)")
 
@@ -204,7 +203,7 @@ def check_wandb() -> Tuple[bool, bool, Dict[str, any]]:
 
         # Suppress wandb output temporarily
         import io
-        from contextlib import redirect_stdout, redirect_stderr
+        from contextlib import redirect_stderr, redirect_stdout
 
         with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
             _run = wandb.init(  # noqa: F841 - run object managed by wandb.finish()
@@ -230,10 +229,10 @@ def check_wandb() -> Tuple[bool, bool, Dict[str, any]]:
 
     # Check training integration
     try:
-        with open("src/training/train_bert_lora.py", "r") as f:
+        with open("src/training/train_bert_lora.py") as f:
             if "wandb" in f.read().lower():
                 print_status("OK", "Compatible with BERT training", "Set report_to='wandb' in TrainingArguments")
-    except (OSError, IOError):
+    except OSError:
         pass  # File may not exist in all environments
 
     return results["installed"], results["configured"], results

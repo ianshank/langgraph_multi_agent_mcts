@@ -12,43 +12,41 @@ Tests:
 - Provider enum validation
 """
 
-import pytest
-import warnings
-from unittest.mock import patch, MagicMock
 import os
-
 import sys
+import warnings
+from unittest.mock import patch
+
+import pytest
 
 sys.path.insert(0, ".")
 
-from pydantic import ValidationError, SecretStr
-from src.models.validation import (
-    QueryInput,
-    MCTSConfig,
-    AgentConfig,
-    RAGConfig,
-    MCPToolInput,
-    FileReadInput,
-    WebFetchInput,
-    BatchQueryInput,
-    APIRequestMetadata,
-    validate_query,
-    validate_mcts_config,
-    validate_tool_input,
-    MAX_QUERY_LENGTH,
-    MIN_QUERY_LENGTH,
-    MAX_ITERATIONS,
-    MIN_ITERATIONS,
-    MAX_EXPLORATION_WEIGHT,
-    MIN_EXPLORATION_WEIGHT,
-    MAX_BATCH_SIZE,
-)
+from pydantic import SecretStr, ValidationError
+
 from src.config.settings import (
-    Settings,
     LLMProvider,
     LogLevel,
+    Settings,
     get_settings,
     reset_settings,
+)
+from src.models.validation import (
+    MAX_BATCH_SIZE,
+    MAX_ITERATIONS,
+    MAX_QUERY_LENGTH,
+    MIN_QUERY_LENGTH,
+    AgentConfig,
+    APIRequestMetadata,
+    BatchQueryInput,
+    FileReadInput,
+    MCPToolInput,
+    MCTSConfig,
+    QueryInput,
+    RAGConfig,
+    WebFetchInput,
+    validate_mcts_config,
+    validate_query,
+    validate_tool_input,
 )
 
 
@@ -805,7 +803,6 @@ class TestProviderEnumValidation:
     def test_openai_requires_api_key(self):
         """Test OpenAI provider requires API key."""
         # Create environment without OpenAI key - need to patch _env_file to prevent loading from .env
-        from pydantic_settings import BaseSettings
 
         env_without_key = {
             "LLM_PROVIDER": "openai",

@@ -13,10 +13,9 @@ import logging
 import time
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import yaml
-import numpy as np
 
 try:
     import torch
@@ -39,11 +38,11 @@ try:
 except ImportError:
     HAS_MLFLOW = False
 
-from training.data_pipeline import DataOrchestrator
 from training.agent_trainer import AgentTrainingOrchestrator
-from training.rag_builder import RAGIndexManager
-from training.meta_controller import MetaControllerTrainer
+from training.data_pipeline import DataOrchestrator
 from training.evaluation import DABStepBenchmark, ProductionValidator
+from training.meta_controller import MetaControllerTrainer
+from training.rag_builder import RAGIndexManager
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +50,7 @@ logger = logging.getLogger(__name__)
 class PhaseManager:
     """Manage training phases with scheduling and resource allocation."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize phase manager.
 
@@ -65,7 +64,7 @@ class PhaseManager:
 
         logger.info(f"PhaseManager initialized with {len(self.phases)} phases")
 
-    def _define_phases(self) -> List[Dict[str, Any]]:
+    def _define_phases(self) -> list[dict[str, Any]]:
         """Define training phases."""
         phases = [
             {
@@ -114,13 +113,13 @@ class PhaseManager:
         ]
         return phases
 
-    def get_current_phase(self) -> Dict[str, Any]:
+    def get_current_phase(self) -> dict[str, Any]:
         """Get current training phase."""
         if self.current_phase < len(self.phases):
             return self.phases[self.current_phase]
         return None
 
-    def advance_phase(self, metrics: Dict[str, Any]) -> bool:
+    def advance_phase(self, metrics: dict[str, Any]) -> bool:
         """
         Advance to next phase if current phase is complete.
 
@@ -156,7 +155,7 @@ class PhaseManager:
         remaining_hours = sum(phase["duration_hours"] for phase in self.phases[self.current_phase :])
         return timedelta(hours=remaining_hours)
 
-    def get_resource_allocation(self, phase: Dict[str, Any]) -> Dict[str, Any]:
+    def get_resource_allocation(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Get resource allocation for a phase."""
         allocation = {
             "num_gpus": 1,
@@ -176,7 +175,7 @@ class PhaseManager:
 class ExperimentTracker:
     """Track experiments with MLflow, W&B, or other platforms."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize experiment tracker.
 
@@ -194,7 +193,7 @@ class ExperimentTracker:
 
         logger.info(f"ExperimentTracker using {self.platform}")
 
-    def start_run(self, run_config: Dict[str, Any]) -> None:
+    def start_run(self, run_config: dict[str, Any]) -> None:
         """Start a new experiment run."""
         if self.platform == "wandb" and HAS_WANDB:
             self.run = wandb.init(project=self.project_name, name=self.run_name, tags=self.tags, config=run_config)
@@ -217,7 +216,7 @@ class ExperimentTracker:
             self._initialized = True
             logger.info(f"Started local experiment tracking: {self.run_dir}")
 
-    def _flatten_config(self, config: Dict[str, Any], prefix: str = "") -> Dict[str, Any]:
+    def _flatten_config(self, config: dict[str, Any], prefix: str = "") -> dict[str, Any]:
         """Flatten nested config for MLflow."""
         flat = {}
         for key, value in config.items():
@@ -228,7 +227,7 @@ class ExperimentTracker:
                 flat[full_key] = value
         return flat
 
-    def log_metrics(self, metrics: Dict[str, float], step: int = None) -> None:
+    def log_metrics(self, metrics: dict[str, float], step: int = None) -> None:
         """Log metrics for current step."""
         if not self._initialized:
             return
@@ -270,7 +269,7 @@ class ExperimentTracker:
 
         logger.info(f"Logged artifact: {artifact_path}")
 
-    def log_phase_completion(self, phase_name: str, metrics: Dict[str, Any]) -> None:
+    def log_phase_completion(self, phase_name: str, metrics: dict[str, Any]) -> None:
         """Log completion of a training phase."""
         self.log_metrics(
             {
@@ -313,7 +312,7 @@ class TrainingPipeline:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
         self.config_path = config_path
@@ -354,7 +353,7 @@ class TrainingPipeline:
 
         logger.info("All components initialized")
 
-    def run_full_pipeline(self, resume_from: Optional[str] = None) -> Dict[str, Any]:
+    def run_full_pipeline(self, resume_from: str | None = None) -> dict[str, Any]:
         """
         Run the complete training pipeline.
 
@@ -421,7 +420,7 @@ class TrainingPipeline:
         logger.info(f"Training pipeline completed in {results['total_time'] / 3600:.2f} hours")
         return results
 
-    def _run_phase(self, phase: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_phase(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Run a single training phase."""
         phase_start = time.time()
 
@@ -453,7 +452,7 @@ class TrainingPipeline:
         logger.info(f"Phase {phase['name']} completed in {result['duration_seconds'] / 3600:.2f} hours")
         return result
 
-    def _run_base_pretraining(self, phase: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_base_pretraining(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Run base pre-training phase."""
         logger.info("Running base pre-training on DABStep and PRIMUS")
 
@@ -494,7 +493,7 @@ class TrainingPipeline:
 
         return metrics
 
-    def _run_instruction_finetuning(self, phase: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_instruction_finetuning(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Run instruction fine-tuning phase."""
         logger.info("Running instruction fine-tuning with PRIMUS-Instruct")
 
@@ -518,7 +517,7 @@ class TrainingPipeline:
 
         return metrics
 
-    def _run_mcts_self_play(self, phase: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_mcts_self_play(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Run MCTS self-play reinforcement learning."""
         logger.info("Running MCTS self-play training")
 
@@ -547,7 +546,7 @@ class TrainingPipeline:
 
         return metrics
 
-    def _run_meta_controller_training(self, phase: Dict[str, Any]) -> Dict[str, Any]:
+    def _run_meta_controller_training(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Run meta-controller training."""
         logger.info("Training meta-controller")
 
@@ -571,7 +570,7 @@ class TrainingPipeline:
 
         return metrics
 
-    def _run_evaluation_phase(self) -> Dict[str, Any]:
+    def _run_evaluation_phase(self) -> dict[str, Any]:
         """Run comprehensive evaluation."""
         logger.info("Running evaluation and validation")
 
@@ -620,7 +619,7 @@ class TrainingPipeline:
 
         return metrics
 
-    def _run_final_evaluation(self) -> Dict[str, Any]:
+    def _run_final_evaluation(self) -> dict[str, Any]:
         """Run final comprehensive evaluation."""
         logger.info("Running final evaluation")
 
@@ -633,7 +632,7 @@ class TrainingPipeline:
 
         return metrics
 
-    def _should_stop_early(self, phase_result: Dict[str, Any]) -> bool:
+    def _should_stop_early(self, phase_result: dict[str, Any]) -> bool:
         """Check if training should stop early."""
         # Check for critical failures
         if "error" in phase_result:
@@ -669,7 +668,7 @@ class TrainingPipeline:
 
     def _load_pipeline_state(self, checkpoint_path: str) -> None:
         """Load pipeline state from checkpoint."""
-        with open(checkpoint_path, "r") as f:
+        with open(checkpoint_path) as f:
             state = json.load(f)
 
         self.phase_manager.current_phase = state["current_phase"]

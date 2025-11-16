@@ -9,26 +9,25 @@ Tests:
 - Context preservation
 """
 
-import pytest
-from datetime import datetime
-from unittest.mock import patch
-
 # Import the exception classes
 import sys
+from datetime import datetime
 
 sys.path.insert(0, ".")
 from src.api.exceptions import (
-    FrameworkError,
-    ValidationError,
     AuthenticationError,
     AuthorizationError,
-    RateLimitError,
+    ConfigurationError,
+    FrameworkError,
     LLMError,
     MCTSError,
     RAGError,
-    TimeoutError as FrameworkTimeoutError,
-    ConfigurationError,
+    RateLimitError,
+    ValidationError,
     wrap_exception,
+)
+from src.api.exceptions import (
+    TimeoutError as FrameworkTimeoutError,
 )
 
 
@@ -575,7 +574,7 @@ class TestWrapException:
 
     def test_wrap_with_custom_error_class(self):
         """Test wrapping with custom error class."""
-        original = IOError("File not found")
+        original = OSError("File not found")
 
         wrapped = wrap_exception(original, user_message="Resource unavailable", error_class=ConfigurationError)
 

@@ -6,7 +6,7 @@ for comprehensive end-to-end testing of the multi-agent system.
 """
 
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 
 @dataclass
@@ -17,11 +17,11 @@ class TacticalScenario:
     name: str
     domain: str
     query: str
-    initial_state: Dict[str, Any]
-    possible_actions: List[str]
-    expected_outcome: Dict[str, Any]
+    initial_state: dict[str, Any]
+    possible_actions: list[str]
+    expected_outcome: dict[str, Any]
     difficulty: str
-    constraints: List[str]
+    constraints: list[str]
 
 
 # Military Tactical Scenarios
@@ -315,7 +315,7 @@ DATA_ANALYSIS_SCENARIOS = [
 ]
 
 
-def get_scenario_by_id(scenario_id: str) -> Optional[TacticalScenario]:
+def get_scenario_by_id(scenario_id: str) -> TacticalScenario | None:
     """Get scenario by ID."""
     for scenario in ALL_TACTICAL_SCENARIOS:
         if scenario.id == scenario_id:
@@ -323,11 +323,11 @@ def get_scenario_by_id(scenario_id: str) -> Optional[TacticalScenario]:
     return None
 
 
-def get_scenarios_by_domain(domain: str) -> List[TacticalScenario]:
+def get_scenarios_by_domain(domain: str) -> list[TacticalScenario]:
     """Get all scenarios for a specific domain."""
     return [s for s in ALL_TACTICAL_SCENARIOS if s.domain == domain]
 
 
-def get_scenarios_by_difficulty(difficulty: str) -> List[TacticalScenario]:
+def get_scenarios_by_difficulty(difficulty: str) -> list[TacticalScenario]:
     """Get all scenarios of specific difficulty."""
     return [s for s in ALL_TACTICAL_SCENARIOS if s.difficulty == difficulty]

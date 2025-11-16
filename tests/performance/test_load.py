@@ -8,14 +8,14 @@ Tests:
 - Throughput and latency measurements
 """
 
-import pytest
 import asyncio
-import time
 import gc
 import statistics
-from typing import List, Dict, Any
-from unittest.mock import Mock, AsyncMock, patch
+import time
 from dataclasses import dataclass
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 try:
     import psutil
@@ -47,7 +47,7 @@ class PerformanceMetrics:
     memory_growth_mb: float
 
 
-def calculate_percentile(data: List[float], percentile: float) -> float:
+def calculate_percentile(data: list[float], percentile: float) -> float:
     """Calculate percentile from sorted data."""
     if not data:
         return 0.0
@@ -227,13 +227,12 @@ class TestMemoryStability:
         mock_adapter = AsyncMock()
         mock_logger = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                    )
+        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
+            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                return LangGraphMultiAgentFramework(
+                    model_adapter=mock_adapter,
+                    logger=mock_logger,
+                )
 
     @pytest.mark.asyncio
     @pytest.mark.slow
@@ -298,7 +297,7 @@ class TestMemoryStability:
         peak_mb = process.memory_info().rss / (1024 * 1024)
         tree_memory = peak_mb - baseline_mb
 
-        print(f"\n--- Large Tree Memory Test (10,000 nodes) ---")
+        print("\n--- Large Tree Memory Test (10,000 nodes) ---")
         print(f"Tree memory usage: {tree_memory:.2f}MB")
 
         # Clean up
@@ -450,7 +449,7 @@ class TestThroughputBenchmarks:
         total_attempts = request_count + error_count
         throughput = total_attempts / total_time if total_time > 0 else 0
 
-        print(f"\n--- Maximum Throughput Test ---")
+        print("\n--- Maximum Throughput Test ---")
         print(f"Workers: {num_workers}")
         print(f"Total requests: {request_count}")
         print(f"Total errors: {error_count}")

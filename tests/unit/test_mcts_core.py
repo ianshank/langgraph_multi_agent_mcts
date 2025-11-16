@@ -8,17 +8,17 @@ Tests:
 - Edge cases and error conditions
 """
 
-import pytest
 import math
 import random
-from unittest.mock import Mock, AsyncMock, patch, MagicMock
-from typing import Dict, List
 
 # Import the MCTS classes from the main module
 import sys
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 sys.path.insert(0, ".")
-from langgraph_multi_agent_mcts import MCTSNode, LangGraphMultiAgentFramework
+from langgraph_multi_agent_mcts import LangGraphMultiAgentFramework, MCTSNode
 
 
 class TestMCTSNode:
@@ -190,16 +190,15 @@ class TestMCTSFrameworkIntegration:
     @pytest.fixture
     def framework(self, mock_model_adapter, mock_logger):
         """Create a framework instance with mocks."""
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    framework = LangGraphMultiAgentFramework(
-                        model_adapter=mock_model_adapter,
-                        logger=mock_logger,
-                        mcts_iterations=10,
-                        mcts_exploration_weight=1.414,
-                    )
-                    return framework
+        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
+            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                framework = LangGraphMultiAgentFramework(
+                    model_adapter=mock_model_adapter,
+                    logger=mock_logger,
+                    mcts_iterations=10,
+                    mcts_exploration_weight=1.414,
+                )
+                return framework
 
     def test_mcts_select_traverses_to_leaf(self, framework):
         """Selection phase should traverse to leaf node."""
@@ -379,14 +378,13 @@ class TestMCTSDeterminism:
         mock_logger = Mock()
         mock_logger.info = Mock()
 
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    return LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                        mcts_iterations=5,
-                    )
+        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
+            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                return LangGraphMultiAgentFramework(
+                    model_adapter=mock_adapter,
+                    logger=mock_logger,
+                    mcts_iterations=5,
+                )
 
     def test_same_seed_produces_same_tree_structure(self, framework):
         """With same seed, expansion should create identical structure."""
@@ -518,28 +516,26 @@ class TestMCTSValidation:
     @pytest.mark.parametrize("exploration_weight", [0.0, 0.5, 1.0, 1.414, 2.0, 3.0])
     def test_valid_exploration_weights(self, exploration_weight, mock_adapter, mock_logger):
         """Valid exploration weights should work."""
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    framework = LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                        mcts_exploration_weight=exploration_weight,
-                    )
-                    assert framework.mcts_exploration_weight == exploration_weight
+        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
+            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                framework = LangGraphMultiAgentFramework(
+                    model_adapter=mock_adapter,
+                    logger=mock_logger,
+                    mcts_exploration_weight=exploration_weight,
+                )
+                assert framework.mcts_exploration_weight == exploration_weight
 
     @pytest.mark.parametrize("iterations", [1, 10, 100, 1000])
     def test_valid_iteration_counts(self, iterations, mock_adapter, mock_logger):
         """Valid iteration counts should work."""
-        with patch("langgraph_multi_agent_mcts.HRMAgent"):
-            with patch("langgraph_multi_agent_mcts.TRMAgent"):
-                with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-                    framework = LangGraphMultiAgentFramework(
-                        model_adapter=mock_adapter,
-                        logger=mock_logger,
-                        mcts_iterations=iterations,
-                    )
-                    assert framework.mcts_iterations == iterations
+        with patch("langgraph_multi_agent_mcts.HRMAgent"), patch("langgraph_multi_agent_mcts.TRMAgent"):
+            with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
+                framework = LangGraphMultiAgentFramework(
+                    model_adapter=mock_adapter,
+                    logger=mock_logger,
+                    mcts_iterations=iterations,
+                )
+                assert framework.mcts_iterations == iterations
 
 
 # Performance benchmarks

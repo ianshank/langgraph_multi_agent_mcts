@@ -9,20 +9,21 @@ Tests:
 - Security aspects (no sensitive data exposure)
 """
 
-import pytest
-import time
 import hashlib
-from unittest.mock import patch, Mock, MagicMock
-from datetime import datetime, timedelta
 
 # Import the authentication classes
 import sys
+import time
+from datetime import datetime
+from unittest.mock import patch
+
+import pytest
 
 sys.path.insert(0, ".")
 from src.api.auth import (
     APIKeyAuthenticator,
-    JWTAuthenticator,
     ClientInfo,
+    JWTAuthenticator,
     RateLimitConfig,
     get_authenticator,
     set_authenticator,

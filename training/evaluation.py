@@ -13,7 +13,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import yaml
@@ -42,7 +42,7 @@ class BenchmarkResult:
     latency_ms: float
     memory_mb: float
     agent_consensus: float
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -58,16 +58,16 @@ class EvaluationReport:
     avg_latency_ms: float
     avg_memory_mb: float
     avg_consensus: float
-    per_difficulty_metrics: Dict[str, Dict[str, float]]
-    agent_metrics: Dict[str, Dict[str, float]]
-    error_analysis: Dict[str, int]
-    recommendations: List[str]
+    per_difficulty_metrics: dict[str, dict[str, float]]
+    agent_metrics: dict[str, dict[str, float]]
+    error_analysis: dict[str, int]
+    recommendations: list[str]
 
 
 class DABStepBenchmark:
     """Evaluate on DABStep benchmark dataset."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize DABStep benchmark.
 
@@ -87,7 +87,7 @@ class DABStepBenchmark:
 
         logger.info(f"DABStepBenchmark initialized, report path: {self.report_path}")
 
-    def evaluate_model(self, model: Any, test_data: List[Dict[str, Any]], verbose: bool = True) -> EvaluationReport:
+    def evaluate_model(self, model: Any, test_data: list[dict[str, Any]], verbose: bool = True) -> EvaluationReport:
         """
         Evaluate model on DABStep test set.
 
@@ -151,7 +151,7 @@ class DABStepBenchmark:
 
         return report
 
-    def _get_model_prediction(self, model: Any, sample: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_model_prediction(self, model: Any, sample: dict[str, Any]) -> dict[str, Any]:
         """Get prediction from model."""
         # This would interface with actual model
         # For now, simulate prediction
@@ -183,7 +183,7 @@ class DABStepBenchmark:
         # Direct equality
         return predicted == expected
 
-    def _assess_reasoning_quality(self, predicted_steps: List[str], expected_steps: List[str]) -> float:
+    def _assess_reasoning_quality(self, predicted_steps: list[str], expected_steps: list[str]) -> float:
         """Assess quality of reasoning steps."""
         if not expected_steps:
             return 1.0 if predicted_steps else 0.5
@@ -304,8 +304,8 @@ class DABStepBenchmark:
         return report
 
     def _generate_recommendations(
-        self, accuracy: float, latency: float, consensus: float, errors: Dict[str, int]
-    ) -> List[str]:
+        self, accuracy: float, latency: float, consensus: float, errors: dict[str, int]
+    ) -> list[str]:
         """Generate actionable recommendations."""
         recommendations = []
 
@@ -353,9 +353,9 @@ class DABStepBenchmark:
 
         logger.info(f"Report saved to {self.report_path}")
 
-    def compare_with_baseline(self, baseline_report_path: str) -> Dict[str, float]:
+    def compare_with_baseline(self, baseline_report_path: str) -> dict[str, float]:
         """Compare current results with baseline."""
-        with open(baseline_report_path, "r") as f:
+        with open(baseline_report_path) as f:
             baseline = json.load(f)
 
         current = self._generate_report()
@@ -374,7 +374,7 @@ class DABStepBenchmark:
 class MultiAgentEvaluator:
     """Evaluate multi-agent coordination and consensus."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize multi-agent evaluator.
 
@@ -383,7 +383,7 @@ class MultiAgentEvaluator:
         """
         self.config = config
 
-    def evaluate_consensus(self, agent_outputs: Dict[str, List[Any]], ground_truths: List[Any]) -> Dict[str, float]:
+    def evaluate_consensus(self, agent_outputs: dict[str, list[Any]], ground_truths: list[Any]) -> dict[str, float]:
         """
         Evaluate consensus quality across agents.
 
@@ -427,7 +427,7 @@ class MultiAgentEvaluator:
         logger.info(f"Consensus metrics: {metrics}")
         return metrics
 
-    def _compute_agreement(self, outputs: List[Any]) -> float:
+    def _compute_agreement(self, outputs: list[Any]) -> float:
         """Compute agreement score between outputs."""
         if len(outputs) < 2:
             return 1.0
@@ -449,7 +449,7 @@ class MultiAgentEvaluator:
             return a.strip().lower() == b.strip().lower()
         return a == b
 
-    def _majority_vote(self, outputs: List[Any]) -> Any:
+    def _majority_vote(self, outputs: list[Any]) -> Any:
         """Get majority vote from outputs."""
         from collections import Counter
 
@@ -464,7 +464,7 @@ class MultiAgentEvaluator:
                 return o
         return outputs[0]
 
-    def analyze_agent_specialization(self, results: List[BenchmarkResult]) -> Dict[str, Any]:
+    def analyze_agent_specialization(self, results: list[BenchmarkResult]) -> dict[str, Any]:
         """Analyze which agents excel at which task types."""
         specialization = {}
 
@@ -489,7 +489,7 @@ class PerformanceProfiler:
         """Initialize performance profiler."""
         self.profiles = []
 
-    def profile_inference(self, model: Any, test_inputs: List[Any], num_runs: int = 10) -> Dict[str, Any]:
+    def profile_inference(self, model: Any, test_inputs: list[Any], num_runs: int = 10) -> dict[str, Any]:
         """
         Profile inference performance.
 
@@ -546,7 +546,7 @@ class PerformanceProfiler:
 
         return psutil.Process().memory_info().rss / (1024 * 1024)
 
-    def identify_bottlenecks(self, profile: Dict[str, Any]) -> List[str]:
+    def identify_bottlenecks(self, profile: dict[str, Any]) -> list[str]:
         """Identify performance bottlenecks."""
         bottlenecks = []
 
@@ -565,7 +565,7 @@ class PerformanceProfiler:
 class ProductionValidator:
     """Validate production readiness."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize production validator.
 
@@ -575,7 +575,7 @@ class ProductionValidator:
         self.config = config
         self.success_criteria = config.get("success_criteria", {})
 
-    def validate_all_criteria(self, evaluation_report: EvaluationReport) -> Tuple[bool, Dict[str, bool]]:
+    def validate_all_criteria(self, evaluation_report: EvaluationReport) -> tuple[bool, dict[str, bool]]:
         """
         Check if all production criteria are met.
 
@@ -608,7 +608,7 @@ class ProductionValidator:
 
         return overall_pass, checks
 
-    def run_adversarial_tests(self, model: Any, adversarial_samples: List[Dict[str, Any]]) -> Dict[str, float]:
+    def run_adversarial_tests(self, model: Any, adversarial_samples: list[dict[str, Any]]) -> dict[str, float]:
         """
         Test model robustness against adversarial inputs.
 
@@ -660,7 +660,7 @@ class ProductionValidator:
         logger.info(f"Adversarial test results: {results}")
         return results
 
-    def generate_production_checklist(self, validation_results: Dict[str, bool]) -> List[Dict[str, Any]]:
+    def generate_production_checklist(self, validation_results: dict[str, bool]) -> list[dict[str, Any]]:
         """Generate production deployment checklist."""
         checklist = [
             {
@@ -699,7 +699,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         config = yaml.safe_load(f)
 
     eval_config = config["evaluation"]
@@ -739,7 +739,7 @@ if __name__ == "__main__":
     # Run evaluation
     report = benchmark.evaluate_model(model, test_data, verbose=True)
 
-    logger.info(f"Evaluation Report:")
+    logger.info("Evaluation Report:")
     logger.info(f"  Accuracy: {report.accuracy:.2%}")
     logger.info(f"  F1 Score: {report.f1_score:.4f}")
     logger.info(f"  Avg Latency: {report.avg_latency_ms:.2f}ms")

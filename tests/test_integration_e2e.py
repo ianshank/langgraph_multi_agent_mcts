@@ -10,10 +10,9 @@ Tests the complete integration of:
 - Feature extraction and normalization
 """
 
-import json
 import tempfile
 from pathlib import Path
-from typing import Dict, Any
+from typing import Any
 
 import pytest
 import torch
@@ -22,15 +21,15 @@ from src.agents.meta_controller.base import (
     MetaControllerFeatures,
     MetaControllerPrediction,
 )
-from src.agents.meta_controller.rnn_controller import RNNMetaController
 from src.agents.meta_controller.bert_controller import BERTMetaController
-from src.agents.meta_controller.utils import normalize_features, features_to_tensor
+from src.agents.meta_controller.rnn_controller import RNNMetaController
+from src.agents.meta_controller.utils import normalize_features
 from src.training.data_generator import MetaControllerDataGenerator
 from src.training.train_rnn import RNNTrainer
 
 
 @pytest.fixture
-def sample_state() -> Dict[str, Any]:
+def sample_state() -> dict[str, Any]:
     """Create a sample agent state for testing."""
     return {
         "hrm_confidence": 0.85,
@@ -160,7 +159,7 @@ class TestEndToEndRNNPipeline:
             predictions_after = [loaded_controller.predict(f) for f in multiple_features]
 
             # Verify identical predictions
-            for before, after in zip(predictions_before, predictions_after):
+            for before, after in zip(predictions_before, predictions_after, strict=True):
                 assert before.agent == after.agent
                 assert before.confidence == pytest.approx(after.confidence, abs=1e-6)
 
@@ -181,7 +180,7 @@ class TestEndToEndRNNPipeline:
                 seed=42,
             )
 
-            history = trainer.train(
+            _history = trainer.train(
                 train_data=(splits["X_train"], splits["y_train"]),
                 val_data=(splits["X_val"], splits["y_val"]),
                 save_path=str(checkpoint_path),
@@ -309,7 +308,7 @@ class TestEndToEndBERTPipeline:
             # Verify predictions match
             predictions_after = [loaded_controller.predict(f) for f in multiple_features]
 
-            for before, after in zip(predictions_before, predictions_after):
+            for before, after in zip(predictions_before, predictions_after, strict=True):
                 assert before.agent == after.agent
                 assert before.confidence == pytest.approx(after.confidence, abs=1e-6)
 
@@ -354,7 +353,7 @@ class TestDataGeneration:
             assert len(loaded_features) == len(features_list)
             assert len(loaded_labels) == len(labels_list)
 
-            for original, loaded in zip(features_list, loaded_features):
+            for original, loaded in zip(features_list, loaded_features, strict=True):
                 assert original.hrm_confidence == loaded.hrm_confidence
                 assert original.iteration == loaded.iteration
 
@@ -379,7 +378,7 @@ class TestDataGeneration:
         features2, labels2 = gen2.generate_balanced_dataset(10)
 
         # Should be identical
-        for f1, f2 in zip(features1, features2):
+        for f1, f2 in zip(features1, features2, strict=True):
             assert f1.hrm_confidence == f2.hrm_confidence
             assert f1.iteration == f2.iteration
 
@@ -426,8 +425,9 @@ meta_controller:
 
     def test_settings_api_key_masking(self):
         """Test that API keys are properly masked in safe_dict."""
-        from src.config.settings import Settings
         import os
+
+        from src.config.settings import Settings
 
         # Create settings with test values
         os.environ["LLM_PROVIDER"] = "lmstudio"
@@ -496,8 +496,8 @@ class TestPineconeIntegration:
     def test_store_without_connection(self, multiple_features):
         """Test that store works gracefully without connection."""
         try:
-            from src.storage.pinecone_store import PineconeVectorStore
             from src.agents.meta_controller.base import MetaControllerPrediction
+            from src.storage.pinecone_store import PineconeVectorStore
 
             store = PineconeVectorStore(api_key=None, host=None, auto_init=False)
 

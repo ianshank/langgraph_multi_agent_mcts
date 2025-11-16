@@ -10,7 +10,7 @@ import logging
 import shutil
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import yaml
 
@@ -34,7 +34,7 @@ class ModelIntegrator:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
         self.models_dir = Path("training/models")
@@ -162,8 +162,8 @@ class ModelIntegrator:
             logger.info(f"Replaced RAG index with {new_index_path}")
 
     def wire_meta_controller(
-        self, graph_config: Dict[str, Any], router_checkpoint: str, aggregator_checkpoint: str
-    ) -> Dict[str, Any]:
+        self, graph_config: dict[str, Any], router_checkpoint: str, aggregator_checkpoint: str
+    ) -> dict[str, Any]:
         """
         Wire trained meta-controller into graph configuration.
 
@@ -189,7 +189,7 @@ class ModelIntegrator:
         logger.info("Wired meta-controller into graph configuration")
         return updated_config
 
-    def export_production_models(self, export_dir: str) -> Dict[str, str]:
+    def export_production_models(self, export_dir: str) -> dict[str, str]:
         """
         Export all trained models for production deployment.
 
@@ -247,14 +247,14 @@ class ConfigurationManager:
         self.configs_dir = Path("training/configs")
         self.configs_dir.mkdir(parents=True, exist_ok=True)
 
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.current_config = yaml.safe_load(f)
 
         self.config_history = []
 
         logger.info("ConfigurationManager initialized")
 
-    def update_config(self, updates: Dict[str, Any]) -> None:
+    def update_config(self, updates: dict[str, Any]) -> None:
         """
         Update configuration with new values.
 
@@ -272,7 +272,7 @@ class ConfigurationManager:
 
         logger.info(f"Configuration updated: {list(updates.keys())}")
 
-    def _deep_update(self, base: Dict, updates: Dict) -> Dict:
+    def _deep_update(self, base: dict, updates: dict) -> dict:
         """Deep update nested dictionary."""
         for key, value in updates.items():
             if isinstance(value, dict) and key in base and isinstance(base[key], dict):
@@ -314,7 +314,7 @@ class ConfigurationManager:
 
         logger.info(f"Configuration rolled back {steps} steps")
 
-    def validate_config(self) -> Tuple[bool, List[str]]:
+    def validate_config(self) -> tuple[bool, list[str]]:
         """
         Validate current configuration.
 
@@ -353,7 +353,7 @@ class ConfigurationManager:
 
         return is_valid, errors
 
-    def create_production_config(self) -> Dict[str, Any]:
+    def create_production_config(self) -> dict[str, Any]:
         """
         Create production-optimized configuration.
 
@@ -388,7 +388,7 @@ class HotSwapper:
 
         logger.info("HotSwapper initialized")
 
-    def prepare_swap(self, model_name: str, new_model: Any, validation_fn: Optional[callable] = None) -> bool:
+    def prepare_swap(self, model_name: str, new_model: Any, validation_fn: callable | None = None) -> bool:
         """
         Prepare a model for hot-swapping.
 
@@ -468,7 +468,7 @@ class HotSwapper:
         logger.warning(f"No previous version found for {model_name}")
         return False
 
-    def get_swap_status(self) -> Dict[str, Any]:
+    def get_swap_status(self) -> dict[str, Any]:
         """Get current swap status."""
         return {
             "active_models": list(self.active_models.keys()),

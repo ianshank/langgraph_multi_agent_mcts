@@ -51,7 +51,8 @@ def verify_braintrust():
     # Test the integration module
     print("\n3. Testing BraintrustTracker...")
     try:
-        from src.observability.braintrust_tracker import BraintrustTracker, BRAINTRUST_AVAILABLE as BT_AVAILABLE
+        from src.observability.braintrust_tracker import BRAINTRUST_AVAILABLE as BT_AVAILABLE
+        from src.observability.braintrust_tracker import BraintrustTracker
 
         if not BT_AVAILABLE:
             print("   [FAIL] Braintrust not available in tracker module")
@@ -186,7 +187,7 @@ def check_training_integration():
 
     print("\n1. Checking RNN training script...")
     try:
-        with open("src/training/train_rnn.py", "r") as f:
+        with open("src/training/train_rnn.py") as f:
             content = f.read()
 
         braintrust_integrated = "BraintrustTracker" in content
@@ -206,7 +207,7 @@ def check_training_integration():
 
     print("\n2. Checking BERT training script...")
     try:
-        with open("src/training/train_bert_lora.py", "r") as f:
+        with open("src/training/train_bert_lora.py") as f:
             content = f.read()
 
         braintrust_integrated = "braintrust" in content.lower()

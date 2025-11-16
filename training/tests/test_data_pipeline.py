@@ -1,24 +1,23 @@
 """Unit tests for data pipeline module."""
 
-import pytest
-import numpy as np
-from pathlib import Path
-import tempfile
-import yaml
-
 # Import modules to test
 import sys
+import tempfile
+from pathlib import Path
+
+import pytest
+import yaml
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from training.data_pipeline import (
     DABStepLoader,
-    PRIMUSProcessor,
     DataOrchestrator,
-    TaskSample,
-    HRMSample,
-    TRMSample,
     DocumentChunk,
+    HRMSample,
+    PRIMUSProcessor,
+    TaskSample,
+    TRMSample,
 )
 
 

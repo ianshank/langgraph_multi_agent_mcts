@@ -11,10 +11,11 @@ Implements online learning capabilities including:
 import json
 import logging
 from collections import deque
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import yaml
@@ -36,12 +37,12 @@ class FeedbackSample:
     """Feedback sample from production deployment."""
 
     sample_id: str
-    input_data: Dict[str, Any]
+    input_data: dict[str, Any]
     model_output: Any
     user_feedback: str  # "positive", "negative", "neutral"
-    corrected_output: Optional[Any]
+    corrected_output: Any | None
     timestamp: float
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -51,7 +52,7 @@ class DriftReport:
     timestamp: str
     drift_type: str  # "feature", "label", "concept"
     severity: float  # 0.0 to 1.0
-    affected_features: List[str]
+    affected_features: list[str]
     p_value: float
     recommendation: str
 
@@ -59,7 +60,7 @@ class DriftReport:
 class FeedbackCollector:
     """Collect and manage feedback from production deployments."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize feedback collector.
 
@@ -119,7 +120,7 @@ class FeedbackCollector:
 
         logger.info(f"Persisted feedback to {file_path}")
 
-    def get_training_samples(self, min_quality: float = 0.5) -> List[Dict[str, Any]]:
+    def get_training_samples(self, min_quality: float = 0.5) -> list[dict[str, Any]]:
         """
         Get high-quality samples for retraining.
 
@@ -153,7 +154,7 @@ class FeedbackCollector:
         logger.info(f"Retrieved {len(training_samples)} training samples from feedback")
         return training_samples
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get feedback collection statistics."""
         stats = self.statistics.copy()
         stats["buffer_size"] = len(self.feedback_buffer)
@@ -170,7 +171,7 @@ class FeedbackCollector:
 class IncrementalTrainer:
     """Train models incrementally without catastrophic forgetting."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize incremental trainer.
 
@@ -201,7 +202,7 @@ class IncrementalTrainer:
         self.accumulated_samples += num_new_samples
         return self.accumulated_samples >= self.retrain_threshold
 
-    def compute_fisher_information(self, model: Any, dataloader: Any) -> Dict[str, Any]:
+    def compute_fisher_information(self, model: Any, dataloader: Any) -> dict[str, Any]:
         """
         Compute Fisher Information Matrix for EWC.
 
@@ -302,8 +303,8 @@ class IncrementalTrainer:
         return self.ewc_lambda * ewc_loss
 
     def incremental_update(
-        self, model: Any, new_dataloader: Any, old_dataloader: Optional[Any] = None, num_epochs: int = 3
-    ) -> Dict[str, float]:
+        self, model: Any, new_dataloader: Any, old_dataloader: Any | None = None, num_epochs: int = 3
+    ) -> dict[str, float]:
         """
         Perform incremental model update.
 
@@ -376,7 +377,7 @@ class IncrementalTrainer:
 class DriftDetector:
     """Detect data drift in production."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize drift detector.
 
@@ -404,7 +405,7 @@ class DriftDetector:
         self.reference_distribution = data
         logger.info(f"Set reference distribution with {len(data)} samples")
 
-    def add_sample(self, sample: np.ndarray) -> Optional[DriftReport]:
+    def add_sample(self, sample: np.ndarray) -> DriftReport | None:
         """
         Add new sample and check for drift.
 
@@ -428,7 +429,7 @@ class DriftDetector:
 
         return drift_report
 
-    def _detect_drift(self) -> Optional[DriftReport]:
+    def _detect_drift(self) -> DriftReport | None:
         """Detect drift using configured method."""
         if self.reference_distribution is None:
             return None
@@ -442,7 +443,7 @@ class DriftDetector:
         else:
             return self._ks_test(current_data)
 
-    def _ks_test(self, current_data: np.ndarray) -> Optional[DriftReport]:
+    def _ks_test(self, current_data: np.ndarray) -> DriftReport | None:
         """Kolmogorov-Smirnov test for drift detection."""
         from scipy import stats
 
@@ -482,7 +483,7 @@ class DriftDetector:
 
         return None
 
-    def _psi_test(self, current_data: np.ndarray) -> Optional[DriftReport]:
+    def _psi_test(self, current_data: np.ndarray) -> DriftReport | None:
         """Population Stability Index test."""
         # Simplified PSI calculation
         if current_data.ndim == 1:
@@ -531,7 +532,7 @@ class DriftDetector:
 
         return psi
 
-    def get_drift_summary(self) -> Dict[str, Any]:
+    def get_drift_summary(self) -> dict[str, Any]:
         """Get summary of drift detection history."""
         if not self.drift_history:
             return {"total_drifts": 0}
@@ -551,7 +552,7 @@ class DriftDetector:
 class ABTestFramework:
     """A/B testing framework for model updates."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize A/B testing framework.
 
@@ -656,7 +657,7 @@ class ABTestFramework:
             and len(test["samples_b"]) >= self.min_samples * self.traffic_split
         )
 
-    def _analyze_test(self, test_id: str) -> Dict[str, Any]:
+    def _analyze_test(self, test_id: str) -> dict[str, Any]:
         """Analyze A/B test results."""
         from scipy import stats
 
@@ -691,7 +692,7 @@ class ABTestFramework:
         logger.info(f"A/B test {test_id} analyzed: {result['recommendation']}")
         return result
 
-    def get_test_status(self, test_id: str) -> Dict[str, Any]:
+    def get_test_status(self, test_id: str) -> dict[str, Any]:
         """Get current status of a test."""
         if test_id not in self.tests:
             return {"error": "Test not found"}
@@ -712,7 +713,7 @@ class ABTestFramework:
 
         return status
 
-    def end_test(self, test_id: str) -> Dict[str, Any]:
+    def end_test(self, test_id: str) -> dict[str, Any]:
         """End an A/B test and return final results."""
         if test_id not in self.tests:
             return {"error": "Test not found"}
@@ -736,7 +737,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         config = yaml.safe_load(f)
 
     cl_config = config.get("continual_learning", {})

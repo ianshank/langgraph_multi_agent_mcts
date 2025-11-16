@@ -13,56 +13,50 @@ All external dependencies (psutil, OpenTelemetry) are mocked for fast, isolated 
 import json
 import logging
 import logging.config
-import time
-import uuid
-from datetime import datetime
-from unittest.mock import Mock, MagicMock, patch, call, PropertyMock
-import pytest
 
 # Import observability modules
 import sys
+import time
+from unittest.mock import MagicMock, call, patch
+
+import pytest
 
 sys.path.insert(0, ".")
 
+from src.observability.logging import (
+    CorrelationIdFilter,
+    JSONFormatter,
+    LogContext,
+    PerformanceMetricsFilter,
+    get_correlation_id,
+    get_logger,
+    get_request_metadata,
+    sanitize_dict,
+    sanitize_message,
+    set_correlation_id,
+    set_request_metadata,
+    setup_logging,
+)
 from src.observability.metrics import (
-    MCTSMetrics,
     AgentMetrics,
+    MCTSMetrics,
     MetricsCollector,
     MetricsTimer,
-    mcts_metrics,
     agent_metrics,
+    mcts_metrics,
 )
 from src.observability.profiling import (
     AsyncProfiler,
     MemoryProfiler,
-    TimingResult,
     ProfilingSession,
     profile_block,
-    generate_performance_report,
-    profile_function,
 )
 from src.observability.tracing import (
-    TracingManager,
-    get_tracer,
-    add_mcts_attributes,
-    trace_span,
     SpanContextPropagator,
+    TracingManager,
+    add_mcts_attributes,
+    get_tracer,
 )
-from src.observability.logging import (
-    setup_logging,
-    get_logger,
-    get_correlation_id,
-    set_correlation_id,
-    CorrelationIdFilter,
-    PerformanceMetricsFilter,
-    JSONFormatter,
-    sanitize_message,
-    sanitize_dict,
-    LogContext,
-    set_request_metadata,
-    get_request_metadata,
-)
-
 
 # ============================================================================
 # Fixtures
@@ -729,9 +723,8 @@ class TestAsyncProfiler:
             profiler = AsyncProfiler.get_instance()
             profiler.start_session("test_session")
 
-            with pytest.raises(ValueError):
-                with profiler.time_block("failing_operation"):
-                    raise ValueError("Test error")
+            with pytest.raises(ValueError), profiler.time_block("failing_operation"):
+                raise ValueError("Test error")
 
             timing = profiler._sessions["test_session"].timings[0]
             assert timing.success is False
@@ -1611,7 +1604,6 @@ class TestCorrelationIdFunctions:
 
     def test_get_correlation_id_generates_new(self):
         """Test that get_correlation_id generates new ID if none exists."""
-        import uuid
         from src.observability.logging import _correlation_id
 
         # Force reset to None

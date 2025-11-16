@@ -9,24 +9,24 @@ Tests:
 - Mock-based isolation
 """
 
-import pytest
 import asyncio
-from unittest.mock import Mock, AsyncMock, patch, MagicMock, call
-from datetime import datetime
+from unittest.mock import AsyncMock, Mock, patch
+
 import httpx
+import pytest
 
 # Import adapters (with fallback if not available)
 try:
-    from src.adapters.llm.base import LLMClientProtocol, LLMResponse
-    from src.adapters.llm.openai_client import OpenAIClient
     from src.adapters.llm.anthropic_client import AnthropicClient
-    from src.adapters.llm.lmstudio_client import LMStudioClient
+    from src.adapters.llm.base import LLMClientProtocol, LLMResponse
     from src.adapters.llm.exceptions import (
         LLMConnectionError,
-        LLMTimeoutError,
-        LLMRateLimitError,
         LLMInvalidResponseError,
+        LLMRateLimitError,
+        LLMTimeoutError,
     )
+    from src.adapters.llm.lmstudio_client import LMStudioClient
+    from src.adapters.llm.openai_client import OpenAIClient
 
     ADAPTERS_AVAILABLE = True
 except ImportError:

@@ -10,15 +10,15 @@ import logging
 from collections import deque
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import yaml
 from torch.optim import AdamW
 from torch.utils.data import DataLoader, Dataset
-import yaml
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,7 @@ class ExecutionTrace:
     trace_id: str
     task_id: str
     agent_type: str  # hrm, trm, mcts
-    task_features: Dict[str, float]
+    task_features: dict[str, float]
     agent_confidence: float
     iteration_count: int
     consensus_score: float
@@ -48,14 +48,14 @@ class RoutingDecision:
     task_id: str
     selected_agent: str
     confidence: float
-    alternative_agents: List[Tuple[str, float]]  # (agent, probability)
+    alternative_agents: list[tuple[str, float]]  # (agent, probability)
     reasoning: str
 
 
 class ExecutionTraceCollector:
     """Collect and manage execution traces from multi-agent system."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize trace collector.
 
@@ -110,7 +110,7 @@ class ExecutionTraceCollector:
                 }
                 f.write(json.dumps(trace_dict) + "\n")
 
-    def get_training_data(self) -> List[Dict[str, Any]]:
+    def get_training_data(self) -> list[dict[str, Any]]:
         """
         Convert traces to training data format.
 
@@ -238,7 +238,7 @@ class ExecutionTraceCollector:
 
         logger.info(f"Generated {len(self.traces)} synthetic traces")
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """Get statistics about collected traces."""
         if not self.traces:
             return {"total_traces": 0}
@@ -265,7 +265,7 @@ class ExecutionTraceCollector:
 class NeuralRouter(nn.Module):
     """Neural network for agent routing decisions."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize neural router.
 
@@ -299,7 +299,7 @@ class NeuralRouter(nn.Module):
 
         logger.info(f"NeuralRouter: {self.input_features} -> {hidden_layers} -> {self.num_agents}")
 
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         Forward pass through router.
 
@@ -362,7 +362,7 @@ class NeuralRouter(nn.Module):
 class EnsembleAggregator(nn.Module):
     """Aggregate outputs from multiple agents."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize ensemble aggregator.
 
@@ -385,7 +385,7 @@ class EnsembleAggregator(nn.Module):
 
         logger.info(f"EnsembleAggregator using {self.method} method")
 
-    def forward(self, agent_outputs: List[torch.Tensor], agent_confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, agent_outputs: list[torch.Tensor], agent_confidences: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         Aggregate agent outputs.
 
@@ -403,7 +403,7 @@ class EnsembleAggregator(nn.Module):
         else:  # ensemble
             return self._learned_ensemble(agent_outputs, agent_confidences)
 
-    def _weighted_voting(self, outputs: List[torch.Tensor], confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def _weighted_voting(self, outputs: list[torch.Tensor], confidences: torch.Tensor) -> dict[str, torch.Tensor]:
         """Weighted voting based on confidence."""
         weights = F.softmax(confidences, dim=-1)
 
@@ -430,7 +430,7 @@ class EnsembleAggregator(nn.Module):
 
         return {"output": aggregated, "weights": weights, "disagreement": self._compute_disagreement(outputs)}
 
-    def _attention_aggregation(self, outputs: List[torch.Tensor], confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def _attention_aggregation(self, outputs: list[torch.Tensor], confidences: torch.Tensor) -> dict[str, torch.Tensor]:
         """Attention-based aggregation."""
         # Reshape for attention
         stacked = torch.stack(outputs, dim=0)  # (num_agents, batch, features)
@@ -447,7 +447,7 @@ class EnsembleAggregator(nn.Module):
             "disagreement": self._compute_disagreement(outputs),
         }
 
-    def _learned_ensemble(self, outputs: List[torch.Tensor], confidences: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def _learned_ensemble(self, outputs: list[torch.Tensor], confidences: torch.Tensor) -> dict[str, torch.Tensor]:
         """Learned ensemble weights."""
         weights = F.softmax(self.agent_weights, dim=0)
         stacked = torch.stack(outputs, dim=0)
@@ -456,7 +456,7 @@ class EnsembleAggregator(nn.Module):
 
         return {"output": aggregated, "weights": weights, "disagreement": self._compute_disagreement(outputs)}
 
-    def _compute_disagreement(self, outputs: List[torch.Tensor]) -> torch.Tensor:
+    def _compute_disagreement(self, outputs: list[torch.Tensor]) -> torch.Tensor:
         """Compute disagreement between agent outputs."""
         if len(outputs) < 2:
             return torch.tensor(0.0)
@@ -481,7 +481,7 @@ class MetaControllerTrainer:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
         self.mc_config = self.config["meta_controller"]
@@ -502,7 +502,7 @@ class MetaControllerTrainer:
 
         logger.info("MetaControllerTrainer initialized")
 
-    def train_router(self, num_epochs: int = 10) -> Dict[str, List[float]]:
+    def train_router(self, num_epochs: int = 10) -> dict[str, list[float]]:
         """
         Train the neural router on collected traces.
 
@@ -575,7 +575,7 @@ class MetaControllerTrainer:
 
         return history
 
-    def evaluate_router(self, test_dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate_router(self, test_dataloader: DataLoader) -> dict[str, float]:
         """
         Evaluate router performance.
 
@@ -621,7 +621,7 @@ class MetaControllerTrainer:
 
     def train_aggregator_end_to_end(
         self, agent_outputs_dataset: Dataset, num_epochs: int = 5
-    ) -> Dict[str, List[float]]:
+    ) -> dict[str, list[float]]:
         """
         Train aggregator on real agent outputs.
 
@@ -699,7 +699,7 @@ class MetaControllerTrainer:
 
         logger.info(f"Meta-controller loaded from {self.checkpoint_path}")
 
-    def get_routing_statistics(self) -> Dict[str, Any]:
+    def get_routing_statistics(self) -> dict[str, Any]:
         """Get statistics about routing performance."""
         trace_stats = self.trace_collector.get_statistics()
 
@@ -731,13 +731,13 @@ class MetaControllerTrainer:
 class RouterDataset(Dataset):
     """Dataset for router training."""
 
-    def __init__(self, training_data: List[Dict[str, Any]]):
+    def __init__(self, training_data: list[dict[str, Any]]):
         self.data = training_data
 
     def __len__(self) -> int:
         return len(self.data)
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         sample = self.data[idx]
         return {
             "features": torch.tensor(sample["features"], dtype=torch.float32),

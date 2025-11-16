@@ -8,10 +8,11 @@ Tests the core components:
 - Utility functions (normalize_features, one_hot_encode_agent, features_to_tensor, features_to_text)
 """
 
+from dataclasses import fields
+
 import pytest
 import torch
 import torch.nn as nn
-from dataclasses import fields
 
 from src.agents.meta_controller.base import (
     AbstractMetaController,
@@ -19,12 +20,11 @@ from src.agents.meta_controller.base import (
     MetaControllerPrediction,
 )
 from src.agents.meta_controller.utils import (
-    normalize_features,
-    one_hot_encode_agent,
     features_to_tensor,
     features_to_text,
+    normalize_features,
+    one_hot_encode_agent,
 )
-
 
 # ============================================================================
 # FIXTURES
@@ -841,11 +841,11 @@ class TestEdgeCases:
 # RNN META-CONTROLLER TESTS
 # ============================================================================
 
+from src.agents.meta_controller.bert_controller import BERTMetaController
 from src.agents.meta_controller.rnn_controller import (
     RNNMetaController,
     RNNMetaControllerModel,
 )
-from src.agents.meta_controller.bert_controller import BERTMetaController
 
 
 @pytest.fixture

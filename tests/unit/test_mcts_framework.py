@@ -14,20 +14,18 @@ Focus areas:
 - Basic search loop
 """
 
-import pytest
 import math
-import asyncio
-from typing import List, Dict, Any
-import numpy as np
 
-from src.framework.mcts.core import MCTSState, MCTSNode, MCTSEngine
+import numpy as np
+import pytest
+
+from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
 from src.framework.mcts.policies import (
-    SelectionPolicy,
-    RolloutPolicy,
     RandomRolloutPolicy,
+    RolloutPolicy,
+    SelectionPolicy,
     ucb1,
 )
-
 
 # ============================================================================
 # Test Fixtures
@@ -62,7 +60,7 @@ def seeded_engine():
 def simple_action_generator():
     """Create a simple action generator for testing."""
 
-    def generator(state: MCTSState) -> List[str]:
+    def generator(state: MCTSState) -> list[str]:
         depth = state.features.get("depth", 0)
         if depth >= 3:
             return []

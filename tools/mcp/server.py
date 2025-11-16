@@ -103,8 +103,8 @@ class MCPServer:
     async def initialize(self):
         """Initialize the framework and LLM client."""
         try:
-            from src.config.settings import get_settings
             from src.adapters.llm import create_client
+            from src.config.settings import get_settings
 
             settings = get_settings()
 

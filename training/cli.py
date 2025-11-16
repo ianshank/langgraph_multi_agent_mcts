@@ -69,14 +69,14 @@ def train_command(args):
 
 def evaluate_command(args):
     """Run evaluation on trained models."""
-    from training.evaluation import DABStepBenchmark, ProductionValidator
     from training.data_pipeline import DABStepLoader
+    from training.evaluation import DABStepBenchmark, ProductionValidator
 
     logger = logging.getLogger(__name__)
     logger.info(f"Evaluating model: {args.model}")
 
     # Load config
-    with open(args.config, "r") as f:
+    with open(args.config) as f:
         config = yaml.safe_load(f)
 
     # Setup evaluator
@@ -132,7 +132,7 @@ def evaluate_command(args):
     # Run evaluation
     report = benchmark.evaluate_model(model, test_data, verbose=True)
 
-    logger.info(f"Evaluation Results:")
+    logger.info("Evaluation Results:")
     logger.info(f"  Accuracy: {report.accuracy:.2%}")
     logger.info(f"  F1 Score: {report.f1_score:.4f}")
     logger.info(f"  Avg Latency: {report.avg_latency_ms:.2f}ms")
@@ -148,14 +148,14 @@ def evaluate_command(args):
 
 def build_rag_command(args):
     """Build RAG index from PRIMUS dataset."""
-    from training.rag_builder import RAGIndexManager
     from training.data_pipeline import PRIMUSProcessor
+    from training.rag_builder import RAGIndexManager
 
     logger = logging.getLogger(__name__)
     logger.info(f"Building RAG index to: {args.output}")
 
     # Load config
-    with open(args.config, "r") as f:
+    with open(args.config) as f:
         config = yaml.safe_load(f)
 
     # Setup processor
@@ -179,13 +179,13 @@ def build_rag_command(args):
 
 def monitor_command(args):
     """Start monitoring dashboard."""
-    from training.monitoring import TrainingMonitor, MetricsDashboard
+    from training.monitoring import MetricsDashboard, TrainingMonitor
 
     logger = logging.getLogger(__name__)
     logger.info(f"Starting monitoring dashboard on port {args.port}")
 
     # Load config
-    with open(args.config, "r") as f:
+    with open(args.config) as f:
         config = yaml.safe_load(f)
 
     monitor = TrainingMonitor(config.get("monitoring", {}))
@@ -216,7 +216,7 @@ def meta_controller_command(args):
     # Train router
     history = trainer.train_router(num_epochs=args.epochs)
 
-    logger.info(f"Training complete:")
+    logger.info("Training complete:")
     logger.info(f"  Final Loss: {history['loss'][-1]:.4f}")
     logger.info(f"  Final Accuracy: {history['accuracy'][-1]:.2%}")
 
@@ -227,7 +227,7 @@ def meta_controller_command(args):
 
 def integrate_command(args):
     """Integrate trained models into production system."""
-    from training.integrate import ModelIntegrator, ConfigurationManager
+    from training.integrate import ConfigurationManager, ModelIntegrator
 
     logger = logging.getLogger(__name__)
     logger.info(f"Integrating models from {args.models_dir}")

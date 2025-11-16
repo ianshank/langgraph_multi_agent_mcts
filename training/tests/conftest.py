@@ -1,7 +1,7 @@
 """Pytest configuration for training tests."""
 
 import sys
-from unittest.mock import MagicMock, Mock
+from unittest.mock import MagicMock
 
 # Create Pinecone mock with proper structure
 pinecone_mock = MagicMock()

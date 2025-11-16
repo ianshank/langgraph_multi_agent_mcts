@@ -1,14 +1,14 @@
 """Unit tests for Pinecone RAG builder."""
 
-import json
-import pytest
-import tempfile
-import numpy as np
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch, PropertyMock
 import sys
+import tempfile
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from pathlib import Path
+from typing import Any
+from unittest.mock import MagicMock, patch
+
+import numpy as np
+import pytest
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
@@ -26,7 +26,7 @@ class DocumentChunk:
     doc_id: str
     chunk_id: int
     text: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 # Patch data_pipeline to use our local DocumentChunk
@@ -36,11 +36,11 @@ training.data_pipeline.DocumentChunk = DocumentChunk
 
 from training.rag_builder import (
     ChunkingStrategy,
-    VectorIndexBuilder,
-    RAGIndexManager,
-    SearchResult,
     IndexStats,
+    RAGIndexManager,
     RetrievalOptimizer,
+    SearchResult,
+    VectorIndexBuilder,
 )
 
 
@@ -314,28 +314,27 @@ class TestVectorIndexBuilder:
     @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)
     def test_save_and_load_index(self, rag_config):
         """Test saving and loading index metadata."""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            with patch("training.rag_builder.Pinecone") as mock_pc:
-                mock_pc.return_value.list_indexes.return_value = []
-                mock_pc.return_value.Index.return_value = MagicMock()
+        with tempfile.TemporaryDirectory() as tmp_dir, patch("training.rag_builder.Pinecone") as mock_pc:
+            mock_pc.return_value.list_indexes.return_value = []
+            mock_pc.return_value.Index.return_value = MagicMock()
 
-                builder = VectorIndexBuilder(rag_config)
-                builder.chunk_store = [
-                    {"id": "v1", "doc_id": "doc1", "chunk_id": 0, "text": "test text", "metadata": {}}
-                ]
+            builder = VectorIndexBuilder(rag_config)
+            builder.chunk_store = [
+                {"id": "v1", "doc_id": "doc1", "chunk_id": 0, "text": "test text", "metadata": {}}
+            ]
 
-                save_path = Path(tmp_dir) / "index"
-                builder.save_index(save_path)
+            save_path = Path(tmp_dir) / "index"
+            builder.save_index(save_path)
 
-                assert (save_path / "chunks.json").exists()
-                assert (save_path / "index_config.json").exists()
+            assert (save_path / "chunks.json").exists()
+            assert (save_path / "index_config.json").exists()
 
-                # Load into new builder
-                builder2 = VectorIndexBuilder(rag_config)
-                builder2.load_index(save_path)
+            # Load into new builder
+            builder2 = VectorIndexBuilder(rag_config)
+            builder2.load_index(save_path)
 
-                assert len(builder2.chunk_store) == 1
-                assert builder2.chunk_store[0]["doc_id"] == "doc1"
+            assert len(builder2.chunk_store) == 1
+            assert builder2.chunk_store[0]["doc_id"] == "doc1"
 
     @patch("training.rag_builder.HAS_PINECONE", True)
     @patch("training.rag_builder.HAS_SENTENCE_TRANSFORMERS", False)

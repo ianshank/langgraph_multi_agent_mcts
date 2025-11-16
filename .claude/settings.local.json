@@ -14,7 +14,10 @@
       "Bash(huggingface-cli whoami:*)",
       "Bash(git add:*)",
       "Bash(git pull:*)",
-      "Bash(git fetch:*)"
+      "Bash(git fetch:*)",
+      "Bash(findstr:*)",
+      "Bash(git commit:*)",
+      "Bash(git push)"
     ],
     "deny": [],
     "ask": []

@@ -69,9 +69,8 @@ def test_pinecone_store():
     print("\n3. Testing PineconeVectorStore...")
 
     try:
-        from src.storage.pinecone_store import PineconeVectorStore, PINECONE_AVAILABLE
         from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction
-        from src.agents.meta_controller.utils import normalize_features
+        from src.storage.pinecone_store import PINECONE_AVAILABLE, PineconeVectorStore
 
         if not PINECONE_AVAILABLE:
             print("   [FAIL] Pinecone package not available")
@@ -86,7 +85,7 @@ def test_pinecone_store():
 
             # Get stats
             stats = store.get_stats()
-            print(f"   Index stats:")
+            print("   Index stats:")
             print(f"     - Total vectors: {stats.get('total_vectors', 0)}")
             print(f"     - Vector dimension: {store.VECTOR_DIMENSION}")
             print(f"     - Available: {stats.get('available', False)}")

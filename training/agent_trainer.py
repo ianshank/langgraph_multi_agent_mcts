@@ -9,21 +9,20 @@ Implements specialized training loops for:
 Supports LoRA/Alora parameter-efficient fine-tuning.
 """
 
-import json
 import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import yaml
 from torch.optim import AdamW
 from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
-import yaml
 
 try:
     from transformers import AutoModel, AutoTokenizer, get_linear_schedule_with_warmup
@@ -33,7 +32,7 @@ except ImportError:
     HAS_TRANSFORMERS = False
 
 try:
-    from peft import LoraConfig, get_peft_model, TaskType
+    from peft import LoraConfig, TaskType, get_peft_model
 
     HAS_PEFT = True
 except ImportError:
@@ -51,13 +50,13 @@ class TrainingMetrics:
     loss: float
     accuracy: float
     learning_rate: float
-    additional_metrics: Dict[str, float]
+    additional_metrics: dict[str, float]
 
 
 class BaseAgentTrainer(ABC):
     """Abstract base class for agent trainers."""
 
-    def __init__(self, config: Dict[str, Any], device: Optional[str] = None):
+    def __init__(self, config: dict[str, Any], device: str | None = None):
         """
         Initialize base trainer.
 
@@ -86,12 +85,12 @@ class BaseAgentTrainer(ABC):
         pass
 
     @abstractmethod
-    def compute_loss(self, batch: Dict[str, Any]) -> torch.Tensor:
+    def compute_loss(self, batch: dict[str, Any]) -> torch.Tensor:
         """Compute training loss for a batch."""
         pass
 
     @abstractmethod
-    def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, dataloader: DataLoader) -> dict[str, float]:
         """Evaluate model on validation data."""
         pass
 
@@ -164,7 +163,7 @@ class BaseAgentTrainer(ABC):
 
         return total_loss / num_batches if num_batches > 0 else 0.0
 
-    def _move_to_device(self, batch: Dict[str, Any]) -> Dict[str, Any]:
+    def _move_to_device(self, batch: dict[str, Any]) -> dict[str, Any]:
         """Move batch tensors to device."""
         moved_batch = {}
         for key, value in batch.items():
@@ -176,7 +175,7 @@ class BaseAgentTrainer(ABC):
                 moved_batch[key] = value
         return moved_batch
 
-    def save_checkpoint(self, path: str, additional_info: Optional[Dict] = None) -> None:
+    def save_checkpoint(self, path: str, additional_info: dict | None = None) -> None:
         """
         Save training checkpoint.
 
@@ -227,7 +226,7 @@ class BaseAgentTrainer(ABC):
 class HRMTrainer(BaseAgentTrainer):
     """Trainer for Hierarchical Reasoning Model."""
 
-    def __init__(self, config: Dict[str, Any], device: Optional[str] = None):
+    def __init__(self, config: dict[str, Any], device: str | None = None):
         super().__init__(config, device)
         self.hrm_config = config["agents"]["hrm"]
         self.build_model()
@@ -275,7 +274,7 @@ class HRMTrainer(BaseAgentTrainer):
             num_labels=self.hrm_config["num_labels"],
         ).to(self.device)
 
-    def compute_loss(self, batch: Dict[str, Any]) -> torch.Tensor:
+    def compute_loss(self, batch: dict[str, Any]) -> torch.Tensor:
         """
         Compute hierarchical decomposition loss.
 
@@ -324,7 +323,7 @@ class HRMTrainer(BaseAgentTrainer):
         depth = (predictions == 2).sum(dim=-1)
         return depth
 
-    def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, dataloader: DataLoader) -> dict[str, float]:
         """
         Evaluate HRM on validation data.
 
@@ -384,7 +383,7 @@ class HRMTrainer(BaseAgentTrainer):
 class TRMTrainer(BaseAgentTrainer):
     """Trainer for Task Refinement Model."""
 
-    def __init__(self, config: Dict[str, Any], device: Optional[str] = None):
+    def __init__(self, config: dict[str, Any], device: str | None = None):
         super().__init__(config, device)
         self.trm_config = config["agents"]["trm"]
         self.build_model()
@@ -431,7 +430,7 @@ class TRMTrainer(BaseAgentTrainer):
             max_iterations=self.trm_config["max_refinement_iterations"],
         ).to(self.device)
 
-    def compute_loss(self, batch: Dict[str, Any]) -> torch.Tensor:
+    def compute_loss(self, batch: dict[str, Any]) -> torch.Tensor:
         """
         Compute task refinement loss.
 
@@ -476,7 +475,7 @@ class TRMTrainer(BaseAgentTrainer):
         weighted_diff = (target - predicted) * step_weights
         return F.relu(weighted_diff).mean()
 
-    def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, dataloader: DataLoader) -> dict[str, float]:
         """
         Evaluate TRM on validation data.
 
@@ -531,7 +530,7 @@ class TRMTrainer(BaseAgentTrainer):
 class MCTSTrainer(BaseAgentTrainer):
     """Trainer for MCTS neural components (value and policy networks)."""
 
-    def __init__(self, config: Dict[str, Any], device: Optional[str] = None):
+    def __init__(self, config: dict[str, Any], device: str | None = None):
         super().__init__(config, device)
         self.mcts_config = config["agents"]["mcts"]
         self.build_model()
@@ -554,7 +553,7 @@ class MCTSTrainer(BaseAgentTrainer):
 
         return self.model
 
-    def compute_loss(self, batch: Dict[str, Any]) -> torch.Tensor:
+    def compute_loss(self, batch: dict[str, Any]) -> torch.Tensor:
         """
         Compute combined value and policy loss.
 
@@ -581,7 +580,7 @@ class MCTSTrainer(BaseAgentTrainer):
 
         return loss
 
-    def generate_self_play_data(self, num_games: int = 100) -> List[Dict[str, Any]]:
+    def generate_self_play_data(self, num_games: int = 100) -> list[dict[str, Any]]:
         """
         Generate training data through self-play.
 
@@ -608,7 +607,7 @@ class MCTSTrainer(BaseAgentTrainer):
 
         return experiences
 
-    def _play_game(self) -> List[Dict[str, Any]]:
+    def _play_game(self) -> list[dict[str, Any]]:
         """Simulate a single MCTS self-play game."""
         experiences = []
 
@@ -634,7 +633,7 @@ class MCTSTrainer(BaseAgentTrainer):
 
         return experiences
 
-    def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, dataloader: DataLoader) -> dict[str, float]:
         """
         Evaluate MCTS networks.
 
@@ -688,7 +687,7 @@ class AgentTrainingOrchestrator:
         Args:
             config_path: Path to configuration file
         """
-        with open(config_path, "r") as f:
+        with open(config_path) as f:
             self.config = yaml.safe_load(f)
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -716,10 +715,10 @@ class AgentTrainingOrchestrator:
     def train_phase(
         self,
         phase_name: str,
-        hrm_dataloader: Optional[DataLoader] = None,
-        trm_dataloader: Optional[DataLoader] = None,
-        val_dataloaders: Optional[Dict[str, DataLoader]] = None,
-    ) -> Dict[str, Any]:
+        hrm_dataloader: DataLoader | None = None,
+        trm_dataloader: DataLoader | None = None,
+        val_dataloaders: dict[str, DataLoader] | None = None,
+    ) -> dict[str, Any]:
         """
         Run a training phase.
 
@@ -770,7 +769,7 @@ class AgentTrainingOrchestrator:
 
         return results
 
-    def _run_validation(self, dataloaders: Dict[str, DataLoader]) -> Dict[str, Any]:
+    def _run_validation(self, dataloaders: dict[str, DataLoader]) -> dict[str, Any]:
         """Run validation for all agents."""
         val_results = {}
 
@@ -831,8 +830,8 @@ class HRMModel(nn.Module):
         self.max_depth = max_depth
 
     def forward(
-        self, input_ids: torch.Tensor, attention_mask: Optional[torch.Tensor] = None
-    ) -> Dict[str, torch.Tensor]:
+        self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None
+    ) -> dict[str, torch.Tensor]:
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask)
 
         # Get sequence output
@@ -877,7 +876,7 @@ class TRMModel(nn.Module):
         )
         self.convergence_threshold = convergence_threshold
 
-    def forward(self, input_ids: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, input_ids: torch.Tensor) -> dict[str, torch.Tensor]:
         outputs = self.base_model(input_ids=input_ids)
 
         if hasattr(outputs, "last_hidden_state"):
@@ -915,8 +914,8 @@ class MCTSNeuralComponents(nn.Module):
         self,
         state_dim: int,
         action_dim: int,
-        value_hidden_layers: List[int],
-        policy_hidden_layers: List[int],
+        value_hidden_layers: list[int],
+        policy_hidden_layers: list[int],
         value_lr: float,
         policy_lr: float,
     ):
@@ -940,7 +939,7 @@ class MCTSNeuralComponents(nn.Module):
         policy_layers.append(nn.Linear(prev_dim, action_dim))
         self.policy_network = nn.Sequential(*policy_layers)
 
-    def forward(self, state: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         value = self.value_network(state)
         policy = F.softmax(self.policy_network(state), dim=-1)
         return value, policy
@@ -954,7 +953,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         config = yaml.safe_load(f)
 
     # Test HRM trainer

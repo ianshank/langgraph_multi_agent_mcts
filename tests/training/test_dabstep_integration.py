@@ -14,9 +14,9 @@ Expected outcomes:
 - Feature extraction for meta-controller training
 """
 
+from unittest.mock import patch
+
 import pytest
-from typing import Any, Dict, List
-from unittest.mock import MagicMock, patch, Mock
 
 
 @pytest.fixture

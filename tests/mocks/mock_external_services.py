@@ -11,8 +11,7 @@ These mocks provide deterministic, offline-capable versions of:
 import logging
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
-from unittest.mock import AsyncMock, MagicMock
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -22,8 +21,8 @@ class MockVectorRecord:
     """Represents a vector stored in mock Pinecone."""
 
     id: str
-    values: List[float]
-    metadata: Dict[str, Any]
+    values: list[float]
+    metadata: dict[str, Any]
     namespace: str = "default"
 
 
@@ -46,9 +45,9 @@ class MockPineconeClient:
             dimension: Vector dimension (default 10 for meta-controller features)
         """
         self.dimension = dimension
-        self.vectors: Dict[str, Dict[str, MockVectorRecord]] = {}  # namespace -> id -> record
+        self.vectors: dict[str, dict[str, MockVectorRecord]] = {}  # namespace -> id -> record
         self._connected = False
-        self._operations_log: List[Dict[str, Any]] = []
+        self._operations_log: list[dict[str, Any]] = []
 
     def connect(self):
         """Simulate connection to Pinecone."""
@@ -63,9 +62,9 @@ class MockPineconeClient:
 
     def upsert(
         self,
-        vectors: List[Dict[str, Any]],
+        vectors: list[dict[str, Any]],
         namespace: str = "default",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Upsert vectors into mock database.
 
@@ -102,11 +101,11 @@ class MockPineconeClient:
 
     def query(
         self,
-        vector: List[float],
+        vector: list[float],
         top_k: int = 10,
         namespace: str = "default",
         include_metadata: bool = True,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Query for similar vectors.
 
@@ -150,7 +149,7 @@ class MockPineconeClient:
 
         return {"matches": matches}
 
-    def delete(self, ids: List[str], namespace: str = "default") -> Dict[str, Any]:
+    def delete(self, ids: list[str], namespace: str = "default") -> dict[str, Any]:
         """Delete vectors by ID."""
         if not self._connected:
             raise ConnectionError("Not connected to Pinecone")
@@ -165,7 +164,7 @@ class MockPineconeClient:
         self._log_operation("delete", {"namespace": namespace, "count": deleted})
         return {"deleted_count": deleted}
 
-    def describe_index_stats(self) -> Dict[str, Any]:
+    def describe_index_stats(self) -> dict[str, Any]:
         """Get index statistics."""
         total_vectors = sum(len(ns_vectors) for ns_vectors in self.vectors.values())
         return {
@@ -175,9 +174,9 @@ class MockPineconeClient:
             "namespaces": {ns: {"vector_count": len(vecs)} for ns, vecs in self.vectors.items()},
         }
 
-    def _cosine_similarity(self, vec_a: List[float], vec_b: List[float]) -> float:
+    def _cosine_similarity(self, vec_a: list[float], vec_b: list[float]) -> float:
         """Calculate cosine similarity between two vectors."""
-        dot_product = sum(a * b for a, b in zip(vec_a, vec_b))
+        dot_product = sum(a * b for a, b in zip(vec_a, vec_b, strict=True))
         norm_a = sum(a * a for a in vec_a) ** 0.5
         norm_b = sum(b * b for b in vec_b) ** 0.5
 
@@ -186,7 +185,7 @@ class MockPineconeClient:
 
         return dot_product / (norm_a * norm_b)
 
-    def _log_operation(self, operation: str, details: Dict[str, Any]):
+    def _log_operation(self, operation: str, details: dict[str, Any]):
         """Log operation for testing verification."""
         self._operations_log.append(
             {
@@ -196,7 +195,7 @@ class MockPineconeClient:
             }
         )
 
-    def get_operations_log(self) -> List[Dict[str, Any]]:
+    def get_operations_log(self) -> list[dict[str, Any]]:
         """Get all operations for test verification."""
         return self._operations_log
 
@@ -215,9 +214,9 @@ class MockExperiment:
     name: str
     project: str
     start_time: datetime
-    metrics: Dict[str, List[float]] = field(default_factory=dict)
-    hyperparameters: Dict[str, Any] = field(default_factory=dict)
-    artifacts: List[str] = field(default_factory=list)
+    metrics: dict[str, list[float]] = field(default_factory=dict)
+    hyperparameters: dict[str, Any] = field(default_factory=dict)
+    artifacts: list[str] = field(default_factory=list)
 
 
 class MockBraintrustTracker:
@@ -239,11 +238,11 @@ class MockBraintrustTracker:
             project_name: Project name for experiments
         """
         self.project_name = project_name
-        self.experiments: Dict[str, MockExperiment] = {}
-        self.current_experiment: Optional[MockExperiment] = None
+        self.experiments: dict[str, MockExperiment] = {}
+        self.current_experiment: MockExperiment | None = None
         self._experiment_counter = 0
 
-    def init_experiment(self, name: Optional[str] = None) -> str:
+    def init_experiment(self, name: str | None = None) -> str:
         """
         Initialize a new experiment.
 
@@ -270,7 +269,7 @@ class MockBraintrustTracker:
         logger.info(f"MockBraintrust: Initialized experiment {exp_name}")
         return exp_id
 
-    def log_metric(self, name: str, value: float, step: Optional[int] = None):
+    def log_metric(self, name: str, value: float, step: int | None = None):  # noqa: ARG002
         """
         Log a metric value.
 
@@ -288,7 +287,7 @@ class MockBraintrustTracker:
         self.current_experiment.metrics[name].append(value)
         logger.debug(f"MockBraintrust: Logged {name}={value}")
 
-    def log_hyperparameters(self, params: Dict[str, Any]):
+    def log_hyperparameters(self, params: dict[str, Any]):
         """
         Log hyperparameters.
 
@@ -301,7 +300,7 @@ class MockBraintrustTracker:
         self.current_experiment.hyperparameters.update(params)
         logger.debug(f"MockBraintrust: Logged hyperparameters {params}")
 
-    def log_artifact(self, artifact_path: str, name: Optional[str] = None):
+    def log_artifact(self, artifact_path: str, name: str | None = None):  # noqa: ARG002
         """
         Log an artifact (model, data file, etc.).
 
@@ -315,7 +314,7 @@ class MockBraintrustTracker:
         self.current_experiment.artifacts.append(artifact_path)
         logger.debug(f"MockBraintrust: Logged artifact {artifact_path}")
 
-    def end_experiment(self) -> Dict[str, Any]:
+    def end_experiment(self) -> dict[str, Any]:
         """
         End current experiment.
 
@@ -336,7 +335,7 @@ class MockBraintrustTracker:
         self.current_experiment = None
         return summary
 
-    def get_experiment_summary(self, exp_id: str) -> Dict[str, Any]:
+    def get_experiment_summary(self, exp_id: str) -> dict[str, Any]:
         """Get summary of a specific experiment."""
         if exp_id not in self.experiments:
             raise KeyError(f"Experiment {exp_id} not found")
@@ -363,7 +362,7 @@ class MockWandBRun:
     - Artifact logging
     """
 
-    def __init__(self, project: str = "test-project", name: Optional[str] = None):
+    def __init__(self, project: str = "test-project", name: str | None = None):
         """
         Initialize mock W&B run.
 
@@ -373,13 +372,13 @@ class MockWandBRun:
         """
         self.project = project
         self.name = name or f"run_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        self.config: Dict[str, Any] = {}
-        self.metrics: Dict[str, List[float]] = {}
-        self.summary: Dict[str, Any] = {}
+        self.config: dict[str, Any] = {}
+        self.metrics: dict[str, list[float]] = {}
+        self.summary: dict[str, Any] = {}
         self._step = 0
         self._finished = False
 
-    def log(self, data: Dict[str, Any], step: Optional[int] = None):
+    def log(self, data: dict[str, Any], step: int | None = None):
         """
         Log metrics.
 
@@ -401,7 +400,7 @@ class MockWandBRun:
         self._step += 1
         logger.debug(f"MockWandB: Logged {data}")
 
-    def update_config(self, config: Dict[str, Any]):
+    def update_config(self, config: dict[str, Any]):
         """Update run configuration."""
         self.config.update(config)
 
@@ -410,7 +409,7 @@ class MockWandBRun:
         self._finished = True
         logger.info(f"MockWandB: Run {self.name} finished")
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get run summary."""
         return {
             "project": self.project,
@@ -427,7 +426,7 @@ class MockLLMResponse:
 
     content: str
     model: str
-    usage: Dict[str, int]
+    usage: dict[str, int]
     finish_reason: str = "stop"
 
 
@@ -449,13 +448,13 @@ class MockLLMClient:
             provider: Provider name for identification
         """
         self.provider = provider
-        self.responses: List[MockLLMResponse] = []
-        self.call_history: List[Dict[str, Any]] = []
+        self.responses: list[MockLLMResponse] = []
+        self.call_history: list[dict[str, Any]] = []
         self._response_index = 0
         self._should_fail = False
         self._failure_message = ""
 
-    def set_responses(self, responses: List[str]):
+    def set_responses(self, responses: list[str]):
         """
         Set predefined responses.
 
@@ -522,7 +521,7 @@ class MockLLMClient:
         """Get number of calls made."""
         return len(self.call_history)
 
-    def get_last_call(self) -> Optional[Dict[str, Any]]:
+    def get_last_call(self) -> dict[str, Any] | None:
         """Get the last call made."""
         return self.call_history[-1] if self.call_history else None
 
@@ -546,12 +545,12 @@ def create_mock_braintrust(project: str = "test-project") -> MockBraintrustTrack
     return MockBraintrustTracker(project_name=project)
 
 
-def create_mock_wandb(project: str = "test-project", name: Optional[str] = None) -> MockWandBRun:
+def create_mock_wandb(project: str = "test-project", name: str | None = None) -> MockWandBRun:
     """Factory function for creating mock W&B run."""
     return MockWandBRun(project=project, name=name)
 
 
-def create_mock_llm(provider: str = "mock", responses: Optional[List[str]] = None) -> MockLLMClient:
+def create_mock_llm(provider: str = "mock", responses: list[str] | None = None) -> MockLLMClient:
     """Factory function for creating mock LLM client."""
     client = MockLLMClient(provider=provider)
     if responses:

@@ -12,10 +12,11 @@ import json
 import logging
 import time
 from collections import deque
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Callable, Tuple
+from typing import Any
 
 import numpy as np
 import yaml
@@ -43,15 +44,15 @@ class TrainingSnapshot:
     timestamp: float
     epoch: int
     global_step: int
-    metrics: Dict[str, float]
-    resource_usage: Dict[str, float]
-    model_info: Dict[str, Any]
+    metrics: dict[str, float]
+    resource_usage: dict[str, float]
+    model_info: dict[str, Any]
 
 
 class TrainingMonitor:
     """Monitor training progress and performance."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize training monitor.
 
@@ -104,7 +105,7 @@ class TrainingMonitor:
         root_logger = logging.getLogger()
         root_logger.addHandler(file_handler)
 
-    def log_metrics(self, metrics: Dict[str, float], step: int) -> None:
+    def log_metrics(self, metrics: dict[str, float], step: int) -> None:
         """
         Log training metrics.
 
@@ -220,7 +221,7 @@ class TrainingMonitor:
             }
             f.write(json.dumps(alert_dict) + "\n")
 
-    def check_resource_usage(self) -> Dict[str, float]:
+    def check_resource_usage(self) -> dict[str, float]:
         """Check system resource usage."""
         import psutil
 
@@ -302,7 +303,7 @@ class TrainingMonitor:
 
         return snapshot
 
-    def get_metric_summary(self, metric_name: str) -> Dict[str, float]:
+    def get_metric_summary(self, metric_name: str) -> dict[str, float]:
         """
         Get summary statistics for a metric.
 
@@ -482,7 +483,7 @@ class MetricsDashboard:
 
         return html
 
-    def generate_training_curves(self) -> Dict[str, List[Tuple[int, float]]]:
+    def generate_training_curves(self) -> dict[str, list[tuple[int, float]]]:
         """
         Generate data for training curves.
 
@@ -497,7 +498,7 @@ class MetricsDashboard:
 
         return curves
 
-    def get_live_metrics(self) -> Dict[str, Any]:
+    def get_live_metrics(self) -> dict[str, Any]:
         """Get current live metrics for real-time dashboard."""
         live_data = {
             "timestamp": datetime.now().isoformat(),
@@ -522,7 +523,7 @@ class MetricsDashboard:
 class AlertManager:
     """Manage and route alerts."""
 
-    def __init__(self, config: Dict[str, Any]):
+    def __init__(self, config: dict[str, Any]):
         """
         Initialize alert manager.
 
@@ -536,7 +537,7 @@ class AlertManager:
 
         logger.info("AlertManager initialized")
 
-    def _define_rules(self) -> List[Dict[str, Any]]:
+    def _define_rules(self) -> list[dict[str, Any]]:
         """Define alerting rules."""
         rules = [
             {
@@ -569,7 +570,7 @@ class AlertManager:
         """
         self.alert_handlers.append(handler)
 
-    def check_rules(self, metrics: Dict[str, float]) -> List[Alert]:
+    def check_rules(self, metrics: dict[str, float]) -> list[Alert]:
         """
         Check all alerting rules.
 
@@ -633,7 +634,7 @@ class AlertManager:
         # In production, would send Slack message
         logger.info(f"[SLACK] Alert: {alert.message}")
 
-    def get_alert_summary(self, alerts: List[Alert]) -> Dict[str, int]:
+    def get_alert_summary(self, alerts: list[Alert]) -> dict[str, int]:
         """Get summary of alerts by severity."""
         summary = {"critical": 0, "warning": 0, "info": 0}
 
@@ -651,7 +652,7 @@ if __name__ == "__main__":
 
     # Load config
     config_path = "training/config.yaml"
-    with open(config_path, "r") as f:
+    with open(config_path) as f:
         config = yaml.safe_load(f)
 
     monitoring_config = config.get("monitoring", {})
