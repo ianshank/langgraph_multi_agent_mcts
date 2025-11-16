@@ -133,9 +133,19 @@ rag:
   chunk_overlap: 50
   chunk_strategy: "semantic"  # semantic, fixed, recursive
 
-  # Index configuration
-  index_type: "faiss"  # faiss, chromadb
-  index_path: "./cache/rag_index"
+  # Pinecone configuration
+  pinecone:
+    api_key: null  # Set via environment variable PINECONE_API_KEY
+    environment: "us-east-1"  # AWS region for serverless
+    cloud: "aws"  # Cloud provider: aws, gcp, azure
+    index_name: "multi-agent-mcts-rag"
+    namespace: "training"  # Namespace for vector isolation
+    metric: "cosine"
+    batch_size: 100  # Vectors per upsert batch
+
+  # Index configuration (legacy for migration)
+  index_type: "pinecone"  # pinecone, faiss (deprecated)
+  index_path: "./cache/rag_index"  # For local BM25 cache
   num_neighbors: 10
   similarity_metric: "cosine"
 
@@ -145,14 +155,17 @@ rag:
     bm25_weight: 0.3
     dense_weight: 0.7
 
-  # Domain-specific indices
+  # Domain-specific indices (via Pinecone namespaces)
   domain_indices:
     - name: "cybersecurity"
       categories: ["mitre", "cyber_companies"]
+      namespace: "cybersecurity"
     - name: "tactical"
       categories: ["wikipedia"]
+      namespace: "tactical"
     - name: "general"
       categories: ["all"]
+      namespace: "general"
 
 meta_controller:
   # Router configuration

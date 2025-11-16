@@ -8,8 +8,9 @@ peft>=0.4.0
 
 # Sentence Embeddings and RAG
 sentence-transformers>=2.2.0
-faiss-cpu>=1.7.4  # Use faiss-gpu for GPU support
+pinecone>=5.0.0  # Serverless Pinecone vector database
 rank-bm25>=0.2.2
+# faiss-cpu>=1.7.4  # Legacy: use faiss-gpu for GPU support
 
 # Experiment Tracking
 wandb>=0.15.0
