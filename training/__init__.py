@@ -11,99 +11,143 @@ A comprehensive training pipeline for training multi-agent systems including:
 
 __version__ = "1.0.0"
 
-from training.data_pipeline import (
-    DABStepLoader,
-    PRIMUSProcessor,
-    DataOrchestrator,
-    TrainingDataset,
-)
-from training.agent_trainer import (
-    HRMTrainer,
-    TRMTrainer,
-    MCTSTrainer,
-    AgentTrainingOrchestrator,
-)
-from training.rag_builder import (
-    VectorIndexBuilder,
-    ChunkingStrategy,
-    RetrievalOptimizer,
-    RAGIndexManager,
-)
-from training.meta_controller import (
-    ExecutionTraceCollector,
-    NeuralRouter,
-    EnsembleAggregator,
-    MetaControllerTrainer,
-)
-from training.evaluation import (
-    DABStepBenchmark,
-    MultiAgentEvaluator,
-    PerformanceProfiler,
-    ProductionValidator,
-)
-from training.orchestrator import (
-    TrainingPipeline,
-    PhaseManager,
-    ExperimentTracker,
-)
-from training.continual_learning import (
-    FeedbackCollector,
-    IncrementalTrainer,
-    DriftDetector,
-    ABTestFramework,
-)
-from training.monitoring import (
-    TrainingMonitor,
-    MetricsDashboard,
-    AlertManager,
-)
-from training.integrate import (
-    ModelIntegrator,
-    ConfigurationManager,
-    HotSwapper,
-)
+# Optional imports - allow package to be importable even without all dependencies
+__all__ = []
 
-__all__ = [
-    # Data Pipeline
-    "DABStepLoader",
-    "PRIMUSProcessor",
-    "DataOrchestrator",
-    "TrainingDataset",
-    # Agent Training
-    "HRMTrainer",
-    "TRMTrainer",
-    "MCTSTrainer",
-    "AgentTrainingOrchestrator",
-    # RAG Builder
-    "VectorIndexBuilder",
-    "ChunkingStrategy",
-    "RetrievalOptimizer",
-    "RAGIndexManager",
-    # Meta-Controller
-    "ExecutionTraceCollector",
-    "NeuralRouter",
-    "EnsembleAggregator",
-    "MetaControllerTrainer",
-    # Evaluation
-    "DABStepBenchmark",
-    "MultiAgentEvaluator",
-    "PerformanceProfiler",
-    "ProductionValidator",
-    # Orchestration
-    "TrainingPipeline",
-    "PhaseManager",
-    "ExperimentTracker",
-    # Continual Learning
-    "FeedbackCollector",
-    "IncrementalTrainer",
-    "DriftDetector",
-    "ABTestFramework",
-    # Monitoring
-    "TrainingMonitor",
-    "MetricsDashboard",
-    "AlertManager",
-    # Integration
-    "ModelIntegrator",
-    "ConfigurationManager",
-    "HotSwapper",
-]
+try:
+    from training.data_pipeline import (
+        DABStepLoader,
+        PRIMUSProcessor,
+        DataOrchestrator,
+        TrainingDataset,
+    )
+    __all__.extend([
+        "DABStepLoader",
+        "PRIMUSProcessor",
+        "DataOrchestrator",
+        "TrainingDataset",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.agent_trainer import (
+        HRMTrainer,
+        TRMTrainer,
+        MCTSTrainer,
+        AgentTrainingOrchestrator,
+    )
+    __all__.extend([
+        "HRMTrainer",
+        "TRMTrainer",
+        "MCTSTrainer",
+        "AgentTrainingOrchestrator",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.rag_builder import (
+        VectorIndexBuilder,
+        ChunkingStrategy,
+        RetrievalOptimizer,
+        RAGIndexManager,
+    )
+    __all__.extend([
+        "VectorIndexBuilder",
+        "ChunkingStrategy",
+        "RetrievalOptimizer",
+        "RAGIndexManager",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.meta_controller import (
+        ExecutionTraceCollector,
+        NeuralRouter,
+        EnsembleAggregator,
+        MetaControllerTrainer,
+    )
+    __all__.extend([
+        "ExecutionTraceCollector",
+        "NeuralRouter",
+        "EnsembleAggregator",
+        "MetaControllerTrainer",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.evaluation import (
+        DABStepBenchmark,
+        MultiAgentEvaluator,
+        PerformanceProfiler,
+        ProductionValidator,
+    )
+    __all__.extend([
+        "DABStepBenchmark",
+        "MultiAgentEvaluator",
+        "PerformanceProfiler",
+        "ProductionValidator",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.orchestrator import (
+        TrainingPipeline,
+        PhaseManager,
+        ExperimentTracker,
+    )
+    __all__.extend([
+        "TrainingPipeline",
+        "PhaseManager",
+        "ExperimentTracker",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.continual_learning import (
+        FeedbackCollector,
+        IncrementalTrainer,
+        DriftDetector,
+        ABTestFramework,
+    )
+    __all__.extend([
+        "FeedbackCollector",
+        "IncrementalTrainer",
+        "DriftDetector",
+        "ABTestFramework",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.monitoring import (
+        TrainingMonitor,
+        MetricsDashboard,
+        AlertManager,
+    )
+    __all__.extend([
+        "TrainingMonitor",
+        "MetricsDashboard",
+        "AlertManager",
+    ])
+except ImportError:
+    pass
+
+try:
+    from training.integrate import (
+        ModelIntegrator,
+        ConfigurationManager,
+        HotSwapper,
+    )
+    __all__.extend([
+        "ModelIntegrator",
+        "ConfigurationManager",
+        "HotSwapper",
+    ])
+except ImportError:
+    pass
