@@ -5,12 +5,13 @@ This module defines the protocol and data structures for LLM clients,
 enabling seamless switching between providers (OpenAI, Anthropic, LM Studio, etc.)
 """
 
-from typing import Protocol, Any, AsyncIterator, runtime_checkable
-from dataclasses import dataclass, field
-from abc import ABC, abstractmethod
-from datetime import datetime
 import asyncio
 import time
+from abc import ABC, abstractmethod
+from collections.abc import AsyncIterator
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Protocol, runtime_checkable
 
 
 @dataclass
@@ -291,7 +292,7 @@ class BaseLLMClient(ABC):
 
         return base_stats
 
-    async def close(self) -> None:
+    async def close(self) -> None:  # noqa: B027
         """Clean up resources. Override in subclasses if needed."""
         pass
 

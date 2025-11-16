@@ -9,11 +9,9 @@ Provides:
 - Export tree to DOT format for graphviz
 """
 
-import json
 import logging
 import os
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 from .logging import get_logger
 
@@ -26,7 +24,7 @@ class MCTSDebugger:
     and state tracking for MCTS execution.
     """
 
-    def __init__(self, session_id: str = "default", enabled: Optional[bool] = None):
+    def __init__(self, session_id: str = "default", enabled: bool | None = None):
         """
         Initialize MCTS debugger.
 
@@ -46,9 +44,9 @@ class MCTSDebugger:
 
         # State tracking
         self._iteration_count = 0
-        self._state_history: List[Dict[str, Any]] = []
-        self._selection_history: List[Dict[str, Any]] = []
-        self._ucb_history: List[Dict[str, float]] = []
+        self._state_history: list[dict[str, Any]] = []
+        self._selection_history: list[dict[str, Any]] = []
+        self._ucb_history: list[dict[str, float]] = []
 
     def log_iteration_start(self, iteration: int) -> None:
         """Log the start of an MCTS iteration."""
@@ -110,7 +108,7 @@ class MCTSDebugger:
     def log_ucb_comparison(
         self,
         parent_id: str,
-        children_ucb: Dict[str, float],
+        children_ucb: dict[str, float],
         selected_child: str,
     ) -> None:
         """Log UCB score comparison for all children of a node."""
@@ -143,7 +141,7 @@ class MCTSDebugger:
         parent_id: str,
         action: str,
         new_node_id: str,
-        available_actions: List[str],
+        available_actions: list[str],
     ) -> None:
         """Log node expansion details."""
         if not self.enabled:
@@ -167,7 +165,7 @@ class MCTSDebugger:
         self,
         node_id: str,
         simulation_result: float,
-        simulation_details: Optional[Dict[str, Any]] = None,
+        simulation_details: dict[str, Any] | None = None,
     ) -> None:
         """Log simulation/rollout results."""
         if not self.enabled:
@@ -187,9 +185,9 @@ class MCTSDebugger:
 
     def log_backpropagation(
         self,
-        path: List[str],
+        path: list[str],
         value: float,
-        updates: List[Dict[str, Any]],
+        updates: list[dict[str, Any]],
     ) -> None:
         """Log backpropagation path and value updates."""
         if not self.enabled:
@@ -233,8 +231,8 @@ class MCTSDebugger:
 
     def log_state_diff(
         self,
-        old_state: Dict[str, Any],
-        new_state: Dict[str, Any],
+        old_state: dict[str, Any],
+        new_state: dict[str, Any],
         description: str = "State change",
     ) -> None:
         """Log differences between two states."""
@@ -265,10 +263,10 @@ class MCTSDebugger:
 
     def _compute_state_diff(
         self,
-        old: Dict[str, Any],
-        new: Dict[str, Any],
+        old: dict[str, Any],
+        new: dict[str, Any],
         prefix: str = "",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """Compute differences between two dictionaries."""
         diff = {}
 
@@ -290,7 +288,7 @@ class MCTSDebugger:
 
         return diff
 
-    def get_debug_summary(self) -> Dict[str, Any]:
+    def get_debug_summary(self) -> dict[str, Any]:
         """Get summary of debug information collected."""
         return {
             "session_id": self.session_id,
@@ -400,7 +398,7 @@ def export_tree_to_dot(
 
     node_counter = [0]  # Use list for mutable counter in closure
 
-    def add_node(node: Any, depth: int = 0, parent_dot_id: Optional[str] = None) -> None:
+    def add_node(node: Any, depth: int = 0, parent_dot_id: str | None = None) -> None:
         if depth > max_depth:
             return
 
@@ -478,8 +476,8 @@ def print_debug_banner(message: str, char: str = "=", width: int = 60) -> None:
 
 def log_agent_state_snapshot(
     agent_name: str,
-    state: Dict[str, Any],
-    include_keys: Optional[List[str]] = None,
+    state: dict[str, Any],
+    include_keys: list[str] | None = None,
 ) -> None:
     """
     Log a snapshot of agent state for debugging.
@@ -491,10 +489,7 @@ def log_agent_state_snapshot(
     """
     logger = get_logger("observability.debug")
 
-    if include_keys:
-        filtered_state = {k: state.get(k) for k in include_keys if k in state}
-    else:
-        filtered_state = state
+    filtered_state = {k: state.get(k) for k in include_keys if k in state} if include_keys else state
 
     logger.debug(
         f"Agent {agent_name} state snapshot",

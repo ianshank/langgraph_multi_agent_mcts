@@ -6,33 +6,35 @@ Includes retry logic, circuit breaker pattern, and streaming support.
 """
 
 import json
+import logging
 import time
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
+
 import httpx
 from tenacity import (
+    before_sleep_log,
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
-    before_sleep_log,
 )
-import logging
 
 from .base import BaseLLMClient, LLMResponse, LLMToolResponse, ToolCall
 from .exceptions import (
-    LLMClientError,
+    CircuitBreakerOpenError,
     LLMAuthenticationError,
-    LLMRateLimitError,
-    LLMQuotaExceededError,
-    LLMModelNotFoundError,
+    LLMClientError,
+    LLMConnectionError,
     LLMContextLengthError,
     LLMInvalidRequestError,
-    LLMTimeoutError,
-    LLMConnectionError,
-    LLMServerError,
+    LLMModelNotFoundError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
     LLMResponseParseError,
+    LLMServerError,
     LLMStreamError,
-    CircuitBreakerOpenError,
+    LLMTimeoutError,
 )
 
 logger = logging.getLogger(__name__)
@@ -86,9 +88,7 @@ class CircuitBreaker:
         self.failure_count += 1
         self.last_failure_time = time.time()
 
-        if self.state == "half-open":
-            self.state = "open"
-        elif self.failure_count >= self.failure_threshold:
+        if self.state == "half-open" or self.failure_count >= self.failure_threshold:
             self.state = "open"
 
     def get_reset_time(self) -> float:
@@ -333,7 +333,7 @@ class OpenAIClient(BaseLLMClient):
         try:
             response = await _request()
             self.circuit_breaker.record_success()
-        except Exception as e:
+        except Exception:
             self.circuit_breaker.record_failure()
             raise
 

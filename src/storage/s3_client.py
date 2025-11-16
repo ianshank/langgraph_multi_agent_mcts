@@ -17,7 +17,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 import aioboto3
 from botocore.config import Config as BotoConfig
@@ -27,8 +27,6 @@ from tenacity import (
     retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    before_sleep_log,
-    RetryError,
 )
 
 from src.observability.logging import get_logger
@@ -40,7 +38,7 @@ class S3Config:
 
     bucket_name: str = field(default_factory=lambda: os.environ.get("S3_BUCKET_NAME", "mcts-framework-storage"))
     region_name: str = field(default_factory=lambda: os.environ.get("AWS_REGION", "us-east-1"))
-    endpoint_url: Optional[str] = field(default_factory=lambda: os.environ.get("S3_ENDPOINT_URL"))
+    endpoint_url: str | None = field(default_factory=lambda: os.environ.get("S3_ENDPOINT_URL"))
 
     # Retry configuration
     max_retries: int = 5
@@ -72,7 +70,7 @@ class S3StorageClient:
     - Organized storage by data type
     """
 
-    def __init__(self, config: Optional[S3Config] = None):
+    def __init__(self, config: S3Config | None = None):
         """
         Initialize S3 storage client.
 
@@ -81,7 +79,7 @@ class S3StorageClient:
         """
         self.config = config or S3Config()
         self.logger = get_logger("storage.s3")
-        self._session: Optional[aioboto3.Session] = None
+        self._session: aioboto3.Session | None = None
         self._initialized = False
 
         # boto3 config with retries and timeouts
@@ -106,7 +104,7 @@ class S3StorageClient:
         self._initialized = False
         self.logger.info("S3 client closed")
 
-    def _get_client_params(self) -> Dict[str, Any]:
+    def _get_client_params(self) -> dict[str, Any]:
         """Get parameters for S3 client context manager."""
         params = {
             "region_name": self.config.region_name,
@@ -136,8 +134,8 @@ class S3StorageClient:
         self,
         prefix: str,
         name: str,
-        data: Optional[bytes] = None,
-        timestamp: Optional[datetime] = None,
+        data: bytes | None = None,
+        timestamp: datetime | None = None,
     ) -> str:
         """
         Generate S3 key for object.
@@ -174,8 +172,8 @@ class S3StorageClient:
         key: str,
         body: bytes,
         content_type: str = "application/octet-stream",
-        metadata: Optional[Dict[str, str]] = None,
-    ) -> Dict[str, Any]:
+        metadata: dict[str, str] | None = None,
+    ) -> dict[str, Any]:
         """
         Put object to S3 with retry logic.
 
@@ -199,7 +197,7 @@ class S3StorageClient:
             )
 
             self.logger.debug(
-                f"Uploaded object to S3",
+                "Uploaded object to S3",
                 extra={
                     "s3_key": key,
                     "size_bytes": len(body),
@@ -237,7 +235,7 @@ class S3StorageClient:
                 data = await stream.read()
 
             self.logger.debug(
-                f"Downloaded object from S3",
+                "Downloaded object from S3",
                 extra={
                     "s3_key": key,
                     "size_bytes": len(data),
@@ -249,9 +247,9 @@ class S3StorageClient:
     async def store_config(
         self,
         config_name: str,
-        config_data: Dict[str, Any],
-        session_id: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        config_data: dict[str, Any],
+        session_id: str | None = None,
+    ) -> dict[str, Any]:
         """
         Store configuration data to S3.
 
@@ -294,9 +292,9 @@ class S3StorageClient:
     async def store_mcts_stats(
         self,
         session_id: str,
-        stats: Dict[str, Any],
-        iteration: Optional[int] = None,
-    ) -> Dict[str, Any]:
+        stats: dict[str, Any],
+        iteration: int | None = None,
+    ) -> dict[str, Any]:
         """
         Store MCTS statistics to S3.
 
@@ -343,8 +341,8 @@ class S3StorageClient:
     async def store_traces(
         self,
         session_id: str,
-        trace_data: Union[Dict[str, Any], List[Dict[str, Any]]],
-    ) -> Dict[str, Any]:
+        trace_data: dict[str, Any] | list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """
         Store trace data to S3.
 
@@ -384,8 +382,8 @@ class S3StorageClient:
     async def store_logs(
         self,
         session_id: str,
-        log_entries: List[Dict[str, Any]],
-    ) -> Dict[str, Any]:
+        log_entries: list[dict[str, Any]],
+    ) -> dict[str, Any]:
         """
         Store log entries to S3.
 
@@ -428,9 +426,9 @@ class S3StorageClient:
     async def store_checkpoint(
         self,
         session_id: str,
-        checkpoint_data: Dict[str, Any],
+        checkpoint_data: dict[str, Any],
         checkpoint_name: str = "checkpoint",
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Store framework checkpoint/state to S3.
 
@@ -504,7 +502,7 @@ class S3StorageClient:
         self,
         prefix: str,
         max_keys: int = 1000,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         List objects with given prefix.
 
@@ -538,7 +536,7 @@ class S3StorageClient:
 
             return objects
 
-    async def delete_object(self, key: str) -> Dict[str, Any]:
+    async def delete_object(self, key: str) -> dict[str, Any]:
         """
         Delete object from S3.
 
@@ -565,7 +563,7 @@ class S3StorageClient:
                 "version_id": response.get("VersionId"),
             }
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """
         Check S3 connectivity and bucket access.
 

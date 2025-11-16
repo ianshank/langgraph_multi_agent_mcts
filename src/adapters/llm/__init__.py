@@ -5,26 +5,26 @@ This module provides a factory function to instantiate the correct LLM client
 based on provider settings, with lazy loading of adapters.
 """
 
-from typing import Any, Type
 import importlib
 import logging
+from typing import Any
 
-from .base import LLMClient, LLMResponse, LLMToolResponse, ToolCall, BaseLLMClient
+from .base import BaseLLMClient, LLMClient, LLMResponse, LLMToolResponse, ToolCall
 from .exceptions import (
-    LLMClientError,
+    CircuitBreakerOpenError,
     LLMAuthenticationError,
-    LLMRateLimitError,
-    LLMQuotaExceededError,
-    LLMModelNotFoundError,
+    LLMClientError,
+    LLMConnectionError,
+    LLMContentFilterError,
     LLMContextLengthError,
     LLMInvalidRequestError,
-    LLMTimeoutError,
-    LLMConnectionError,
-    LLMServerError,
+    LLMModelNotFoundError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
     LLMResponseParseError,
+    LLMServerError,
     LLMStreamError,
-    LLMContentFilterError,
-    CircuitBreakerOpenError,
+    LLMTimeoutError,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ _PROVIDER_REGISTRY: dict[str, tuple[str, str]] = {
 }
 
 # Cache for loaded client classes
-_CLIENT_CACHE: dict[str, Type[BaseLLMClient]] = {}
+_CLIENT_CACHE: dict[str, type[BaseLLMClient]] = {}
 
 
 def register_provider(name: str, module_path: str, class_name: str, override: bool = False) -> None:
@@ -73,7 +73,7 @@ def list_providers() -> list[str]:
     return list(_PROVIDER_REGISTRY.keys())
 
 
-def get_provider_class(provider: str) -> Type[BaseLLMClient]:
+def get_provider_class(provider: str) -> type[BaseLLMClient]:
     """
     Get the client class for a provider (with lazy loading).
 

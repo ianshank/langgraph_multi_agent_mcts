@@ -5,14 +5,12 @@ Provides functions for normalizing, encoding, and converting features
 into formats suitable for different neural network architectures.
 """
 
-from typing import List
-
 import torch
 
 from src.agents.meta_controller.base import MetaControllerFeatures
 
 
-def normalize_features(features: MetaControllerFeatures) -> List[float]:
+def normalize_features(features: MetaControllerFeatures) -> list[float]:
     """
     Normalize meta-controller features to a 10-dimensional vector in range [0, 1].
 
@@ -85,7 +83,7 @@ def normalize_features(features: MetaControllerFeatures) -> List[float]:
     ]
 
 
-def one_hot_encode_agent(agent: str) -> List[float]:
+def one_hot_encode_agent(agent: str) -> list[float]:
     """
     One-hot encode an agent name into a 3-dimensional vector.
 
@@ -113,7 +111,7 @@ def one_hot_encode_agent(agent: str) -> List[float]:
     """
     agent_lower = agent.lower()
 
-    if agent_lower == "hrm":
+    if agent_lower == "hrm":  # noqa: SIM116
         return [1.0, 0.0, 0.0]
     elif agent_lower == "trm":
         return [0.0, 1.0, 0.0]

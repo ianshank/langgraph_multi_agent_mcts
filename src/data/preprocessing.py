@@ -10,7 +10,7 @@ Provides utilities for:
 import logging
 import re
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -21,9 +21,9 @@ class PreprocessedText:
 
     original: str
     cleaned: str
-    tokens: List[str]
-    token_ids: Optional[List[int]] = None
-    features: Optional[Dict[str, Any]] = None
+    tokens: list[str]
+    token_ids: list[int] | None = None
+    features: dict[str, Any] | None = None
 
 
 class TextPreprocessor:
@@ -107,7 +107,7 @@ class TextPreprocessor:
 
         return result
 
-    def extract_domain_features(self, text: str) -> Dict[str, Any]:
+    def extract_domain_features(self, text: str) -> dict[str, Any]:
         """
         Extract domain-specific features from text.
 
@@ -162,7 +162,7 @@ class TextPreprocessor:
             features=features,
         )
 
-    def batch_preprocess(self, texts: List[str]) -> List[PreprocessedText]:
+    def batch_preprocess(self, texts: list[str]) -> list[PreprocessedText]:
         """
         Preprocess multiple texts.
 
@@ -188,7 +188,7 @@ class TokenizerWrapper:
     def __init__(
         self,
         backend: str = "simple",
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         max_length: int = 512,
     ):
         """
@@ -221,7 +221,7 @@ class TokenizerWrapper:
             logger.error("transformers library not installed. Run: pip install transformers")
             raise
 
-    def tokenize(self, text: str) -> Tuple[List[str], Optional[List[int]]]:
+    def tokenize(self, text: str) -> tuple[list[str], list[int] | None]:
         """
         Tokenize text.
 
@@ -249,7 +249,7 @@ class TokenizerWrapper:
         else:
             raise ValueError(f"Unsupported backend: {self.backend}")
 
-    def batch_tokenize(self, texts: List[str]) -> List[Tuple[List[str], Optional[List[int]]]]:
+    def batch_tokenize(self, texts: list[str]) -> list[tuple[list[str], list[int] | None]]:
         """
         Tokenize multiple texts.
 
@@ -261,7 +261,7 @@ class TokenizerWrapper:
         """
         return [self.tokenize(text) for text in texts]
 
-    def encode_for_training(self, texts: List[str]) -> Dict[str, Any]:
+    def encode_for_training(self, texts: list[str]) -> dict[str, Any]:
         """
         Encode texts for model training.
 
@@ -297,7 +297,7 @@ class MetaControllerFeatureExtractor:
         """Initialize feature extractor."""
         self.preprocessor = TextPreprocessor()
 
-    def extract_query_features(self, query: str) -> Dict[str, float]:
+    def extract_query_features(self, query: str) -> dict[str, float]:
         """
         Extract numerical features from query text.
 
@@ -377,7 +377,7 @@ class MetaControllerFeatureExtractor:
         mcts_iterations: int = 0,
         consensus_score: float = 0.0,
         rag_retrieved: int = 0,
-    ) -> List[float]:
+    ) -> list[float]:
         """
         Extract features from current agent state.
 

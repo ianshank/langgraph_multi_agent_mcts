@@ -12,19 +12,18 @@ Provides:
 
 import asyncio
 import time
-from datetime import datetime
-from typing import Any, Dict, List, Optional
 from contextlib import asynccontextmanager
+from datetime import datetime
+from typing import Any
 
-from fastapi import FastAPI, HTTPException, Depends, Header, Request, Response
+from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 
 # Import framework components
 try:
-    from src.adapters.llm import create_client
-    from src.models.validation import QueryInput, MCTSConfig
+    from src.adapters.llm import create_client  # noqa: F401
     from src.api.auth import (
         APIKeyAuthenticator,
         ClientInfo,
@@ -33,12 +32,13 @@ try:
         set_authenticator,
     )
     from src.api.exceptions import (
-        FrameworkError,
-        ValidationError,
         AuthenticationError,
-        AuthorizationError,
+        AuthorizationError,  # noqa: F401
+        FrameworkError,
         RateLimitError,
+        ValidationError,  # noqa: F401
     )
+    from src.models.validation import MCTSConfig, QueryInput  # noqa: F401
 
     IMPORTS_AVAILABLE = True
 except ImportError as e:
@@ -47,7 +47,7 @@ except ImportError as e:
 
 # Prometheus metrics (optional)
 try:
-    from prometheus_client import Counter, Histogram, Gauge, generate_latest, CONTENT_TYPE_LATEST
+    from prometheus_client import CONTENT_TYPE_LATEST, Counter, Gauge, Histogram, generate_latest
 
     PROMETHEUS_AVAILABLE = True
 
@@ -73,8 +73,8 @@ class QueryRequest(BaseModel):
     )
     use_mcts: bool = Field(default=True, description="Enable MCTS tactical simulation")
     use_rag: bool = Field(default=True, description="Enable RAG context retrieval")
-    mcts_iterations: Optional[int] = Field(default=None, ge=1, le=10000, description="Override default MCTS iterations")
-    thread_id: Optional[str] = Field(
+    mcts_iterations: int | None = Field(default=None, ge=1, le=10000, description="Override default MCTS iterations")
+    thread_id: str | None = Field(
         default=None,
         max_length=100,
         pattern=r"^[a-zA-Z0-9_-]+$",
@@ -98,10 +98,10 @@ class QueryResponse(BaseModel):
 
     response: str = Field(..., description="Final synthesized response")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Overall confidence score")
-    agents_used: List[str] = Field(..., description="List of agents that contributed")
-    mcts_stats: Optional[Dict[str, Any]] = Field(default=None, description="MCTS simulation statistics")
+    agents_used: list[str] = Field(..., description="List of agents that contributed")
+    mcts_stats: dict[str, Any] | None = Field(default=None, description="MCTS simulation statistics")
     processing_time_ms: float = Field(..., description="Total processing time in milliseconds")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
+    metadata: dict[str, Any] = Field(default_factory=dict, description="Additional metadata")
 
 
 class HealthResponse(BaseModel):
@@ -117,7 +117,7 @@ class ReadinessResponse(BaseModel):
     """Readiness check response."""
 
     ready: bool = Field(..., description="Whether service is ready")
-    checks: Dict[str, bool] = Field(..., description="Individual check results")
+    checks: dict[str, bool] = Field(..., description="Individual check results")
 
 
 class ErrorResponse(BaseModel):
@@ -222,7 +222,7 @@ async def metrics_middleware(request: Request, call_next):
     try:
         response = await call_next(request)
         status = response.status_code
-    except Exception as e:
+    except Exception:
         status = 500
         raise
     finally:
@@ -364,7 +364,7 @@ async def process_query(request: QueryRequest, client_info: ClientInfo = Depends
     # Validate input using validation models
     if IMPORTS_AVAILABLE:
         try:
-            validated_input = QueryInput(
+            QueryInput(
                 query=request.query,
                 use_rag=request.use_rag,
                 use_mcts=request.use_mcts,

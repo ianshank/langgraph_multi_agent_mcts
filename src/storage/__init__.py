@@ -9,13 +9,13 @@ Includes:
 - Pinecone vector storage for agent selection history
 """
 
-from .s3_client import S3StorageClient, S3Config
+from .s3_client import S3Config, S3StorageClient
 
 # Pinecone integration (optional)
 try:
-    from .pinecone_store import (
-        PineconeVectorStore,
+    from .pinecone_store import (  # noqa: F401
         PINECONE_AVAILABLE,
+        PineconeVectorStore,
     )
 
     _pinecone_exports = [

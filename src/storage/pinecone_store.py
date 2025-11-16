@@ -7,7 +7,7 @@ Provides semantic search and retrieval of agent selection history using vector e
 import os
 import uuid
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Check if pinecone is available
 try:
@@ -37,8 +37,8 @@ class PineconeVectorStore:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        host: Optional[str] = None,
+        api_key: str | None = None,
+        host: str | None = None,
         namespace: str = "meta_controller",
         auto_init: bool = True,
     ):
@@ -57,7 +57,7 @@ class PineconeVectorStore:
         self._client: Any = None
         self._index: Any = None
         self._is_initialized = False
-        self._operation_buffer: List[Dict[str, Any]] = []
+        self._operation_buffer: list[dict[str, Any]] = []
 
         if not PINECONE_AVAILABLE:
             print("Warning: pinecone package not installed. " "Install with: pip install pinecone")
@@ -89,8 +89,8 @@ class PineconeVectorStore:
         self,
         features: MetaControllerFeatures,
         prediction: MetaControllerPrediction,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Optional[str]:
+        metadata: dict[str, Any] | None = None,
+    ) -> str | None:
         """
         Store a prediction along with its input features.
 
@@ -162,7 +162,7 @@ class PineconeVectorStore:
         features: MetaControllerFeatures,
         top_k: int = 5,
         include_metadata: bool = True,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """
         Find similar past routing decisions based on current features.
 
@@ -210,7 +210,7 @@ class PineconeVectorStore:
         self,
         features: MetaControllerFeatures,
         top_k: int = 10,
-    ) -> Dict[str, float]:
+    ) -> dict[str, float]:
         """
         Get the distribution of agent selections for similar past decisions.
 
@@ -247,9 +247,9 @@ class PineconeVectorStore:
 
     def store_batch(
         self,
-        features_list: List[MetaControllerFeatures],
-        predictions_list: List[MetaControllerPrediction],
-        batch_metadata: Optional[Dict[str, Any]] = None,
+        features_list: list[MetaControllerFeatures],
+        predictions_list: list[MetaControllerPrediction],
+        batch_metadata: dict[str, Any] | None = None,
     ) -> int:
         """
         Store multiple predictions in a batch.
@@ -280,7 +280,7 @@ class PineconeVectorStore:
 
         try:
             vectors = []
-            for features, prediction in zip(features_list, predictions_list):
+            for features, prediction in zip(features_list, predictions_list, strict=False):
                 vector_id = str(uuid.uuid4())
                 vector_values = normalize_features(features)
 
@@ -336,7 +336,7 @@ class PineconeVectorStore:
             print(f"Warning: Failed to delete namespace: {e}")
             return False
 
-    def get_stats(self) -> Dict[str, Any]:
+    def get_stats(self) -> dict[str, Any]:
         """
         Get statistics about the vector store.
 
@@ -365,7 +365,7 @@ class PineconeVectorStore:
                 "buffered_operations": len(self._operation_buffer),
             }
 
-    def get_buffered_operations(self) -> List[Dict[str, Any]]:
+    def get_buffered_operations(self) -> list[dict[str, Any]]:
         """
         Get all buffered operations (useful when Pinecone is not available).
 

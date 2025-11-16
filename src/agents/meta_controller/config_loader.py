@@ -6,10 +6,11 @@ supporting both RNN and BERT-based neural network controllers with comprehensive
 validation and serialization capabilities.
 """
 
-import yaml
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from dataclasses import dataclass, field, asdict
-from typing import Optional, Dict, Any
+from typing import Any
+
+import yaml
 
 
 @dataclass
@@ -27,7 +28,7 @@ class RNNConfig:
     hidden_dim: int = 64
     num_layers: int = 1
     dropout: float = 0.1
-    model_path: Optional[str] = None
+    model_path: str | None = None
 
 
 @dataclass
@@ -53,7 +54,7 @@ class BERTConfig:
     lora_r: int = 4
     lora_alpha: int = 16
     lora_dropout: float = 0.1
-    model_path: Optional[str] = None
+    model_path: str | None = None
 
 
 @dataclass
@@ -67,7 +68,7 @@ class InferenceConfig:
         seed: Random seed for reproducibility. Default is 42.
     """
 
-    device: Optional[str] = None
+    device: str | None = None
     seed: int = 42
 
 
@@ -140,7 +141,7 @@ class MetaControllerConfigLoader:
         if not yaml_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {path}")
 
-        with open(yaml_path, "r") as f:
+        with open(yaml_path) as f:
             raw_config = yaml.safe_load(f)
 
         if "meta_controller" not in raw_config:
@@ -149,7 +150,7 @@ class MetaControllerConfigLoader:
         return MetaControllerConfigLoader.load_from_dict(raw_config["meta_controller"])
 
     @staticmethod
-    def load_from_dict(config_dict: Dict[str, Any]) -> MetaControllerConfig:
+    def load_from_dict(config_dict: dict[str, Any]) -> MetaControllerConfig:
         """
         Load Meta-Controller configuration from a dictionary.
 
@@ -186,7 +187,7 @@ class MetaControllerConfigLoader:
         )
 
     @staticmethod
-    def to_dict(config: MetaControllerConfig) -> Dict[str, Any]:
+    def to_dict(config: MetaControllerConfig) -> dict[str, Any]:
         """
         Convert a MetaControllerConfig object to a dictionary.
 

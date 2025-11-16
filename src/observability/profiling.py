@@ -10,13 +10,12 @@ Provides:
 
 import asyncio
 import functools
-import json
 import time
 from collections import defaultdict
 from contextlib import asynccontextmanager, contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import psutil
 
@@ -35,8 +34,8 @@ class TimingResult:
     memory_end_mb: float
     memory_delta_mb: float
     success: bool = True
-    error: Optional[str] = None
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    error: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass
@@ -45,10 +44,10 @@ class ProfilingSession:
 
     session_id: str
     start_time: datetime = field(default_factory=datetime.utcnow)
-    timings: List[TimingResult] = field(default_factory=list)
-    memory_samples: List[Dict[str, float]] = field(default_factory=list)
-    cpu_samples: List[float] = field(default_factory=list)
-    markers: List[Dict[str, Any]] = field(default_factory=list)
+    timings: list[TimingResult] = field(default_factory=list)
+    memory_samples: list[dict[str, float]] = field(default_factory=list)
+    cpu_samples: list[float] = field(default_factory=list)
+    markers: list[dict[str, Any]] = field(default_factory=list)
 
 
 class AsyncProfiler:
@@ -66,10 +65,10 @@ class AsyncProfiler:
 
     def __init__(self):
         self.logger = get_logger("observability.profiling")
-        self._sessions: Dict[str, ProfilingSession] = {}
-        self._current_session: Optional[str] = None
+        self._sessions: dict[str, ProfilingSession] = {}
+        self._current_session: str | None = None
         self._process = psutil.Process()
-        self._aggregate_timings: Dict[str, List[float]] = defaultdict(list)
+        self._aggregate_timings: dict[str, list[float]] = defaultdict(list)
 
     @classmethod
     def get_instance(cls) -> "AsyncProfiler":
@@ -78,7 +77,7 @@ class AsyncProfiler:
             cls._instance = cls()
         return cls._instance
 
-    def start_session(self, session_id: Optional[str] = None) -> str:
+    def start_session(self, session_id: str | None = None) -> str:
         """Start a new profiling session."""
         if session_id is None:
             session_id = f"session_{datetime.utcnow().strftime('%Y%m%d_%H%M%S_%f')}"
@@ -88,7 +87,7 @@ class AsyncProfiler:
         self.logger.info(f"Started profiling session: {session_id}")
         return session_id
 
-    def end_session(self, session_id: Optional[str] = None) -> ProfilingSession:
+    def end_session(self, session_id: str | None = None) -> ProfilingSession:
         """End a profiling session and return results."""
         if session_id is None:
             session_id = self._current_session
@@ -104,7 +103,7 @@ class AsyncProfiler:
 
         return session
 
-    def get_current_session(self) -> Optional[ProfilingSession]:
+    def get_current_session(self) -> ProfilingSession | None:
         """Get current profiling session."""
         if self._current_session and self._current_session in self._sessions:
             return self._sessions[self._current_session]
@@ -114,8 +113,8 @@ class AsyncProfiler:
     def time_block(
         self,
         name: str,
-        session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Context manager for timing synchronous code blocks.
@@ -184,8 +183,8 @@ class AsyncProfiler:
     async def async_time_block(
         self,
         name: str,
-        session_id: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        session_id: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Async context manager for timing asynchronous code blocks.
@@ -248,7 +247,7 @@ class AsyncProfiler:
                 },
             )
 
-    def sample_memory(self, session_id: Optional[str] = None) -> Dict[str, float]:
+    def sample_memory(self, session_id: str | None = None) -> dict[str, float]:
         """Sample current memory usage."""
         memory_info = self._process.memory_info()
 
@@ -267,7 +266,7 @@ class AsyncProfiler:
 
         return sample
 
-    def sample_cpu(self, session_id: Optional[str] = None) -> float:
+    def sample_cpu(self, session_id: str | None = None) -> float:
         """Sample current CPU usage."""
         cpu_percent = self._process.cpu_percent()
 
@@ -282,8 +281,8 @@ class AsyncProfiler:
     def add_marker(
         self,
         name: str,
-        data: Optional[Dict[str, Any]] = None,
-        session_id: Optional[str] = None,
+        data: dict[str, Any] | None = None,
+        session_id: str | None = None,
     ) -> None:
         """Add a custom marker/event to the profiling session."""
         marker = {
@@ -300,7 +299,7 @@ class AsyncProfiler:
 
         self.logger.debug(f"Added profiling marker: {name}")
 
-    def get_timing_summary(self, name: Optional[str] = None) -> Dict[str, Any]:
+    def get_timing_summary(self, name: str | None = None) -> dict[str, Any]:
         """
         Get summary statistics for timed operations.
 
@@ -318,7 +317,7 @@ class AsyncProfiler:
         else:
             return {op_name: self._compute_stats(op_name, times) for op_name, times in self._aggregate_timings.items()}
 
-    def _compute_stats(self, name: str, timings: List[float]) -> Dict[str, Any]:
+    def _compute_stats(self, name: str, timings: list[float]) -> dict[str, Any]:
         """Compute statistics for a list of timings."""
         if not timings:
             return {}
@@ -355,9 +354,9 @@ class MemoryProfiler:
     def __init__(self):
         self.logger = get_logger("observability.profiling.memory")
         self._process = psutil.Process()
-        self._baseline: Optional[float] = None
+        self._baseline: float | None = None
         self._peak: float = 0.0
-        self._samples: List[Dict[str, Any]] = []
+        self._samples: list[dict[str, Any]] = []
 
     def set_baseline(self) -> float:
         """Set current memory as baseline."""
@@ -378,7 +377,7 @@ class MemoryProfiler:
         current = self.get_current()
         return current - self._baseline
 
-    def sample(self, label: str = "") -> Dict[str, Any]:
+    def sample(self, label: str = "") -> dict[str, Any]:
         """Take a memory sample with optional label."""
         memory_info = self._process.memory_info()
         current_mb = memory_info.rss / (1024 * 1024)
@@ -400,7 +399,7 @@ class MemoryProfiler:
         self.logger.debug(f"Memory sample [{label}]: {current_mb:.2f} MB")
         return sample
 
-    def check_leak(self, threshold_mb: float = 10.0) -> Dict[str, Any]:
+    def check_leak(self, threshold_mb: float = 10.0) -> dict[str, Any]:
         """
         Check for potential memory leak.
 
@@ -434,7 +433,7 @@ class MemoryProfiler:
             "threshold_mb": threshold_mb,
         }
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Get memory profiling summary."""
         if not self._samples:
             return {"message": "No samples collected"}
@@ -455,7 +454,7 @@ class MemoryProfiler:
 @contextmanager
 def profile_block(
     name: str,
-    metadata: Optional[Dict[str, Any]] = None,
+    metadata: dict[str, Any] | None = None,
 ):
     """
     Convenience context manager for profiling a code block.
@@ -471,7 +470,7 @@ def profile_block(
         yield
 
 
-def generate_performance_report(session_id: Optional[str] = None) -> Dict[str, Any]:
+def generate_performance_report(session_id: str | None = None) -> dict[str, Any]:
     """
     Generate a comprehensive performance report.
 
@@ -489,10 +488,7 @@ def generate_performance_report(session_id: Optional[str] = None) -> Dict[str, A
     }
 
     # Add session-specific data if available
-    if session_id:
-        session = profiler._sessions.get(session_id)
-    else:
-        session = profiler.get_current_session()
+    session = profiler._sessions.get(session_id) if session_id else profiler.get_current_session()
 
     if session:
         report["session"] = {
@@ -544,7 +540,7 @@ def generate_performance_report(session_id: Optional[str] = None) -> Dict[str, A
     return report
 
 
-def profile_function(name: Optional[str] = None, metadata: Optional[Dict[str, Any]] = None):
+def profile_function(name: str | None = None, metadata: dict[str, Any] | None = None):
     """
     Decorator for profiling function execution.
 

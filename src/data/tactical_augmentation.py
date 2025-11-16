@@ -13,7 +13,6 @@ model robustness for tactical analysis tasks.
 import logging
 import random
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
 
 from .dataset_loader import DatasetSample
 
@@ -25,8 +24,8 @@ class AugmentationResult:
     """Result of data augmentation."""
 
     original: DatasetSample
-    augmented: List[DatasetSample]
-    augmentation_types: List[str]
+    augmented: list[DatasetSample]
+    augmentation_types: list[str]
 
 
 class TacticalAugmenter:
@@ -107,7 +106,7 @@ class TacticalAugmenter:
         self,
         sample: DatasetSample,
         num_augmentations: int = 3,
-        techniques: Optional[List[str]] = None,
+        techniques: list[str] | None = None,
     ) -> AugmentationResult:
         """
         Augment a single sample.
@@ -134,7 +133,7 @@ class TacticalAugmenter:
         augmented_samples = []
         used_techniques = []
 
-        for i in range(num_augmentations):
+        for _i in range(num_augmentations):
             technique = self.rng.choice(available_techniques)
             used_techniques.append(technique)
 
@@ -163,7 +162,7 @@ class TacticalAugmenter:
             augmentation_types=used_techniques,
         )
 
-    def _apply_technique(self, text: str, domain: Optional[str], technique: str) -> str:
+    def _apply_technique(self, text: str, domain: str | None, technique: str) -> str:
         """Apply specific augmentation technique."""
         if technique == "urgency_variation":
             return self._augment_urgency(text)
@@ -191,7 +190,7 @@ class TacticalAugmenter:
         else:
             return f"({modifier}) {text}"
 
-    def _augment_parameters(self, text: str, domain: Optional[str]) -> str:
+    def _augment_parameters(self, text: str, domain: str | None) -> str:
         """Substitute domain-specific parameters."""
         if domain == "cybersecurity" or "cyber" in text.lower():
             # Substitute threat actors
@@ -218,7 +217,7 @@ class TacticalAugmenter:
 
         return text
 
-    def _augment_constraints(self, text: str, domain: Optional[str]) -> str:
+    def _augment_constraints(self, text: str, domain: str | None) -> str:
         """Add additional constraints to the scenario."""
         constraints = []
 
@@ -266,7 +265,7 @@ class TacticalAugmenter:
         context = self.rng.choice(temporal_contexts)
         return f"{context}{text.lower()}" if text else text
 
-    def _augment_perspective(self, text: str, domain: Optional[str]) -> str:
+    def _augment_perspective(self, text: str, domain: str | None) -> str:
         """Change analytical perspective."""
         perspectives = {
             "cybersecurity": [
@@ -296,9 +295,9 @@ class TacticalAugmenter:
 
     def augment_batch(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         augmentations_per_sample: int = 2,
-    ) -> List[DatasetSample]:
+    ) -> list[DatasetSample]:
         """
         Augment a batch of samples.
 
@@ -321,7 +320,7 @@ class TacticalAugmenter:
 
         return all_samples
 
-    def create_tactical_scenarios(self, base_samples: List[DatasetSample]) -> List[DatasetSample]:
+    def create_tactical_scenarios(self, base_samples: list[DatasetSample]) -> list[DatasetSample]:
         """
         Create tactical scenario variations from base samples.
 

@@ -10,13 +10,12 @@ Provides:
 """
 
 from enum import Enum
-from typing import Optional
+
 from pydantic import (
     Field,
     SecretStr,
     field_validator,
     model_validator,
-    HttpUrl,
 )
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -61,34 +60,32 @@ class Settings(BaseSettings):
     )
 
     # API Keys (Secrets)
-    OPENAI_API_KEY: Optional[SecretStr] = Field(
+    OPENAI_API_KEY: SecretStr | None = Field(
         default=None, description="OpenAI API key (required if using OpenAI provider)"
     )
 
-    ANTHROPIC_API_KEY: Optional[SecretStr] = Field(
+    ANTHROPIC_API_KEY: SecretStr | None = Field(
         default=None, description="Anthropic API key (required if using Anthropic provider)"
     )
 
-    BRAINTRUST_API_KEY: Optional[SecretStr] = Field(
+    BRAINTRUST_API_KEY: SecretStr | None = Field(
         default=None, description="Braintrust API key for experiment tracking (optional)"
     )
 
-    PINECONE_API_KEY: Optional[SecretStr] = Field(
+    PINECONE_API_KEY: SecretStr | None = Field(
         default=None, description="Pinecone API key for vector storage (optional)"
     )
 
-    PINECONE_HOST: Optional[str] = Field(
+    PINECONE_HOST: str | None = Field(
         default=None, description="Pinecone host URL (e.g., https://index.svc.environment.pinecone.io)"
     )
 
     # Local LLM Configuration
-    LMSTUDIO_BASE_URL: Optional[str] = Field(
+    LMSTUDIO_BASE_URL: str | None = Field(
         default="http://localhost:1234/v1", description="LM Studio API base URL for local inference"
     )
 
-    LMSTUDIO_MODEL: Optional[str] = Field(
-        default=None, description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)"
-    )
+    LMSTUDIO_MODEL: str | None = Field(default=None, description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)")
 
     # MCTS Configuration with bounds validation
     MCTS_ITERATIONS: int = Field(default=100, ge=1, le=10000, description="Number of MCTS iterations (1-10000)")
@@ -98,18 +95,18 @@ class Settings(BaseSettings):
     )
 
     # Random seed for reproducibility
-    SEED: Optional[int] = Field(default=None, ge=0, description="Random seed for reproducibility (optional)")
+    SEED: int | None = Field(default=None, ge=0, description="Random seed for reproducibility (optional)")
 
     # Logging Configuration
     LOG_LEVEL: LogLevel = Field(default=LogLevel.INFO, description="Application log level")
 
     # OpenTelemetry Configuration
-    OTEL_EXPORTER_OTLP_ENDPOINT: Optional[str] = Field(
+    OTEL_EXPORTER_OTLP_ENDPOINT: str | None = Field(
         default=None, description="OpenTelemetry OTLP exporter endpoint URL"
     )
 
     # S3 Storage Configuration
-    S3_BUCKET: Optional[str] = Field(default=None, description="S3 bucket name for artifact storage")
+    S3_BUCKET: str | None = Field(default=None, description="S3 bucket name for artifact storage")
 
     S3_PREFIX: str = Field(default="mcts-artifacts", description="S3 key prefix for stored artifacts")
 
@@ -131,7 +128,7 @@ class Settings(BaseSettings):
 
     @field_validator("OPENAI_API_KEY")
     @classmethod
-    def validate_openai_key_format(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+    def validate_openai_key_format(cls, v: SecretStr | None) -> SecretStr | None:
         """Validate OpenAI API key format without exposing the value."""
         if v is not None:
             secret_value = v.get_secret_value()
@@ -146,7 +143,7 @@ class Settings(BaseSettings):
 
     @field_validator("ANTHROPIC_API_KEY")
     @classmethod
-    def validate_anthropic_key_format(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+    def validate_anthropic_key_format(cls, v: SecretStr | None) -> SecretStr | None:
         """Validate Anthropic API key format without exposing the value."""
         if v is not None:
             secret_value = v.get_secret_value()
@@ -159,7 +156,7 @@ class Settings(BaseSettings):
 
     @field_validator("BRAINTRUST_API_KEY")
     @classmethod
-    def validate_braintrust_key_format(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+    def validate_braintrust_key_format(cls, v: SecretStr | None) -> SecretStr | None:
         """Validate Braintrust API key format without exposing the value."""
         if v is not None:
             secret_value = v.get_secret_value()
@@ -172,7 +169,7 @@ class Settings(BaseSettings):
 
     @field_validator("PINECONE_API_KEY")
     @classmethod
-    def validate_pinecone_key_format(cls, v: Optional[SecretStr]) -> Optional[SecretStr]:
+    def validate_pinecone_key_format(cls, v: SecretStr | None) -> SecretStr | None:
         """Validate Pinecone API key format without exposing the value."""
         if v is not None:
             secret_value = v.get_secret_value()
@@ -185,7 +182,7 @@ class Settings(BaseSettings):
 
     @field_validator("PINECONE_HOST")
     @classmethod
-    def validate_pinecone_host(cls, v: Optional[str]) -> Optional[str]:
+    def validate_pinecone_host(cls, v: str | None) -> str | None:
         """Validate Pinecone host URL format."""
         if v is not None and v != "":
             if not v.startswith("https://"):
@@ -196,7 +193,7 @@ class Settings(BaseSettings):
 
     @field_validator("LMSTUDIO_BASE_URL")
     @classmethod
-    def validate_lmstudio_url(cls, v: Optional[str]) -> Optional[str]:
+    def validate_lmstudio_url(cls, v: str | None) -> str | None:
         """Validate LM Studio base URL format."""
         if v is not None:
             if not v.startswith(("http://", "https://")):
@@ -208,21 +205,21 @@ class Settings(BaseSettings):
                 warnings.warn(
                     "LM Studio URL points to non-localhost address. " "Ensure this is intentional and secure.",
                     UserWarning,
+                    stacklevel=2,
                 )
         return v
 
     @field_validator("OTEL_EXPORTER_OTLP_ENDPOINT")
     @classmethod
-    def validate_otel_endpoint(cls, v: Optional[str]) -> Optional[str]:
+    def validate_otel_endpoint(cls, v: str | None) -> str | None:
         """Validate OpenTelemetry endpoint URL."""
-        if v is not None and v != "":
-            if not v.startswith(("http://", "https://", "grpc://")):
-                raise ValueError("OpenTelemetry endpoint must start with http://, https://, or grpc://")
+        if v is not None and v != "" and not v.startswith(("http://", "https://", "grpc://")):
+            raise ValueError("OpenTelemetry endpoint must start with http://, https://, or grpc://")
         return v
 
     @field_validator("S3_BUCKET")
     @classmethod
-    def validate_s3_bucket_name(cls, v: Optional[str]) -> Optional[str]:
+    def validate_s3_bucket_name(cls, v: str | None) -> str | None:
         """Validate S3 bucket name format."""
         if v is not None:
             # S3 bucket naming rules
@@ -249,12 +246,11 @@ class Settings(BaseSettings):
                     "ANTHROPIC_API_KEY is required when using Anthropic provider. "
                     "Set the ANTHROPIC_API_KEY environment variable."
                 )
-        elif self.LLM_PROVIDER == LLMProvider.LMSTUDIO:
-            if self.LMSTUDIO_BASE_URL is None:
-                raise ValueError("LMSTUDIO_BASE_URL is required when using LM Studio provider.")
+        elif self.LLM_PROVIDER == LLMProvider.LMSTUDIO and self.LMSTUDIO_BASE_URL is None:
+            raise ValueError("LMSTUDIO_BASE_URL is required when using LM Studio provider.")
         return self
 
-    def get_api_key(self) -> Optional[str]:
+    def get_api_key(self) -> str | None:
         """
         Get the API key for the current provider.
 
@@ -284,7 +280,7 @@ class Settings(BaseSettings):
             data["PINECONE_API_KEY"] = "***MASKED***"
         return data
 
-    def get_braintrust_api_key(self) -> Optional[str]:
+    def get_braintrust_api_key(self) -> str | None:
         """
         Get the Braintrust API key if configured.
 
@@ -294,7 +290,7 @@ class Settings(BaseSettings):
             return self.BRAINTRUST_API_KEY.get_secret_value()
         return None
 
-    def get_pinecone_api_key(self) -> Optional[str]:
+    def get_pinecone_api_key(self) -> str | None:
         """
         Get the Pinecone API key if configured.
 
@@ -310,7 +306,7 @@ class Settings(BaseSettings):
 
 
 # Global settings instance (lazily loaded)
-_settings: Optional[Settings] = None
+_settings: Settings | None = None
 
 
 def get_settings() -> Settings:

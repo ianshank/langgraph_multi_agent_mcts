@@ -10,7 +10,7 @@ import argparse
 import json
 import logging
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn as nn
@@ -18,14 +18,13 @@ import torch.optim as optim
 from torch.utils.data import DataLoader, TensorDataset
 
 from src.agents.meta_controller.rnn_controller import (
-    RNNMetaController,
     RNNMetaControllerModel,
 )
 from src.training.data_generator import MetaControllerDataGenerator
 
 # Braintrust integration (optional)
 try:
-    from src.observability.braintrust_tracker import create_training_tracker, BraintrustTracker
+    from src.observability.braintrust_tracker import BraintrustTracker, create_training_tracker
 
     BRAINTRUST_AVAILABLE = True
 except ImportError:
@@ -81,8 +80,8 @@ class RNNTrainer:
         epochs: int = 10,
         early_stopping_patience: int = 3,
         seed: int = 42,
-        device: Optional[str] = None,
-        braintrust_tracker: Optional[Any] = None,
+        device: str | None = None,
+        braintrust_tracker: Any | None = None,
     ) -> None:
         """
         Initialize the RNN trainer.
@@ -195,7 +194,7 @@ class RNNTrainer:
         self,
         X: torch.Tensor,
         y: torch.Tensor,
-        batch_size: Optional[int] = None,
+        batch_size: int | None = None,
         shuffle: bool = True,
     ) -> DataLoader:
         """
@@ -288,7 +287,7 @@ class RNNTrainer:
         average_loss = total_loss / num_batches if num_batches > 0 else 0.0
         return average_loss
 
-    def validate(self, val_loader: DataLoader) -> Tuple[float, float]:
+    def validate(self, val_loader: DataLoader) -> tuple[float, float]:
         """
         Evaluate the model on the validation set.
 
@@ -340,10 +339,10 @@ class RNNTrainer:
 
     def train(
         self,
-        train_data: Tuple[torch.Tensor, torch.Tensor],
-        val_data: Tuple[torch.Tensor, torch.Tensor],
-        save_path: Optional[str] = None,
-    ) -> Dict[str, Any]:
+        train_data: tuple[torch.Tensor, torch.Tensor],
+        val_data: tuple[torch.Tensor, torch.Tensor],
+        save_path: str | None = None,
+    ) -> dict[str, Any]:
         """
         Main training loop with early stopping and model checkpointing.
 
@@ -498,7 +497,7 @@ class RNNTrainer:
 
         return history
 
-    def evaluate(self, test_loader: DataLoader) -> Dict[str, Any]:
+    def evaluate(self, test_loader: DataLoader) -> dict[str, Any]:
         """
         Comprehensive evaluation on the test set.
 
@@ -558,18 +557,18 @@ class RNNTrainer:
         num_batches = len(test_loader)
         average_loss = total_loss / num_batches if num_batches > 0 else 0.0
 
-        correct = sum(p == l for p, l in zip(all_predictions, all_labels))
+        correct = sum(p == label for p, label in zip(all_predictions, all_labels, strict=False))
         total = len(all_labels)
         accuracy = correct / total if total > 0 else 0.0
 
         # Calculate confusion matrix
         num_classes = len(self.AGENT_NAMES)
         confusion_matrix = [[0] * num_classes for _ in range(num_classes)]
-        for pred, label in zip(all_predictions, all_labels):
+        for pred, label in zip(all_predictions, all_labels, strict=False):
             confusion_matrix[label][pred] += 1
 
         # Calculate per-class metrics
-        per_class_metrics: Dict[str, Dict[str, float]] = {}
+        per_class_metrics: dict[str, dict[str, float]] = {}
 
         for class_idx, agent_name in enumerate(self.AGENT_NAMES):
             # True positives: predicted as this class and actually this class

@@ -9,10 +9,13 @@ Provides:
 """
 
 from __future__ import annotations
+
 import math
-from enum import Enum
-from typing import Any, List, Callable, Awaitable, Optional, TYPE_CHECKING
 from abc import ABC, abstractmethod
+from collections.abc import Awaitable, Callable
+from enum import Enum
+from typing import TYPE_CHECKING
+
 import numpy as np
 
 if TYPE_CHECKING:
@@ -110,7 +113,7 @@ class RolloutPolicy(ABC):
     @abstractmethod
     async def evaluate(
         self,
-        state: "MCTSState",
+        state: MCTSState,
         rng: np.random.Generator,
         max_depth: int = 10,
     ) -> float:
@@ -144,9 +147,9 @@ class RandomRolloutPolicy(RolloutPolicy):
 
     async def evaluate(
         self,
-        state: "MCTSState",
+        _state: MCTSState,
         rng: np.random.Generator,
-        max_depth: int = 10,
+        _max_depth: int = 10,
     ) -> float:
         """Generate random evaluation with noise."""
         noise = rng.uniform(-self.noise_scale, self.noise_scale)
@@ -159,7 +162,7 @@ class GreedyRolloutPolicy(RolloutPolicy):
 
     def __init__(
         self,
-        heuristic_fn: Callable[["MCTSState"], float],
+        heuristic_fn: Callable[[MCTSState], float],
         noise_scale: float = 0.05,
     ):
         """
@@ -174,9 +177,9 @@ class GreedyRolloutPolicy(RolloutPolicy):
 
     async def evaluate(
         self,
-        state: "MCTSState",
+        state: MCTSState,
         rng: np.random.Generator,
-        max_depth: int = 10,
+        _max_depth: int = 10,
     ) -> float:
         """Evaluate using heuristic with small noise."""
         base_value = self.heuristic_fn(state)
@@ -190,7 +193,7 @@ class HybridRolloutPolicy(RolloutPolicy):
 
     def __init__(
         self,
-        heuristic_fn: Optional[Callable[["MCTSState"], float]] = None,
+        heuristic_fn: Callable[[MCTSState], float] | None = None,
         heuristic_weight: float = 0.7,
         random_weight: float = 0.3,
         base_random_value: float = 0.5,
@@ -220,9 +223,9 @@ class HybridRolloutPolicy(RolloutPolicy):
 
     async def evaluate(
         self,
-        state: "MCTSState",
+        state: MCTSState,
         rng: np.random.Generator,
-        max_depth: int = 10,
+        _max_depth: int = 10,
     ) -> float:
         """Combine heuristic and random evaluation."""
         # Random component
@@ -230,10 +233,7 @@ class HybridRolloutPolicy(RolloutPolicy):
         random_value = self.base_random_value + random_noise
 
         # Heuristic component
-        if self.heuristic_fn is not None:
-            heuristic_value = self.heuristic_fn(state)
-        else:
-            heuristic_value = self.base_random_value
+        heuristic_value = self.heuristic_fn(state) if self.heuristic_fn is not None else self.base_random_value
 
         # Combine
         value = self.heuristic_weight * heuristic_value + self.random_weight * random_value
@@ -246,7 +246,7 @@ class LLMRolloutPolicy(RolloutPolicy):
 
     def __init__(
         self,
-        evaluate_fn: Callable[["MCTSState"], Awaitable[float]],
+        evaluate_fn: Callable[[MCTSState], Awaitable[float]],
         cache_results: bool = True,
     ):
         """
@@ -262,9 +262,9 @@ class LLMRolloutPolicy(RolloutPolicy):
 
     async def evaluate(
         self,
-        state: "MCTSState",
-        rng: np.random.Generator,
-        max_depth: int = 10,
+        state: MCTSState,
+        _rng: np.random.Generator,
+        _max_depth: int = 10,
     ) -> float:
         """Evaluate state using LLM."""
         state_key = state.to_hash_key()
@@ -345,9 +345,9 @@ class ProgressiveWideningConfig:
 
 
 def compute_action_probabilities(
-    children_stats: List[dict],
+    children_stats: list[dict],
     temperature: float = 1.0,
-) -> List[float]:
+) -> list[float]:
     """
     Compute action probabilities from visit counts using softmax.
 
@@ -376,7 +376,7 @@ def compute_action_probabilities(
 
 
 def select_action_stochastic(
-    children_stats: List[dict],
+    children_stats: list[dict],
     rng: np.random.Generator,
     temperature: float = 1.0,
 ) -> int:

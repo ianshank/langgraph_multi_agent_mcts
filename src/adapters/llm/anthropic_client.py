@@ -7,32 +7,34 @@ Supports Claude 3 models with proper content block handling.
 
 import json
 import logging
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
+
 import httpx
 from tenacity import (
+    before_sleep_log,
     retry,
+    retry_if_exception_type,
     stop_after_attempt,
     wait_exponential,
-    retry_if_exception_type,
-    before_sleep_log,
 )
 
 from .base import BaseLLMClient, LLMResponse, LLMToolResponse, ToolCall
 from .exceptions import (
-    LLMClientError,
+    CircuitBreakerOpenError,
     LLMAuthenticationError,
-    LLMRateLimitError,
-    LLMQuotaExceededError,
-    LLMModelNotFoundError,
+    LLMClientError,
+    LLMConnectionError,
+    LLMContentFilterError,
     LLMContextLengthError,
     LLMInvalidRequestError,
-    LLMTimeoutError,
-    LLMConnectionError,
-    LLMServerError,
+    LLMModelNotFoundError,
+    LLMQuotaExceededError,
+    LLMRateLimitError,
     LLMResponseParseError,
+    LLMServerError,
     LLMStreamError,
-    LLMContentFilterError,
-    CircuitBreakerOpenError,
+    LLMTimeoutError,
 )
 from .openai_client import CircuitBreaker
 
@@ -360,7 +362,7 @@ class AnthropicClient(BaseLLMClient):
         try:
             response = await _request()
             self.circuit_breaker.record_success()
-        except Exception as e:
+        except Exception:
             self.circuit_breaker.record_failure()
             raise
 

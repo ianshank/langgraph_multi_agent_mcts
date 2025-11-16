@@ -6,7 +6,7 @@ Provides experiment logging, metric tracking, and model versioning capabilities.
 
 import os
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 # Check if braintrust is available
 try:
@@ -33,7 +33,7 @@ class BraintrustTracker:
     def __init__(
         self,
         project_name: str = "neural-meta-controller",
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         auto_init: bool = True,
     ):
         """
@@ -49,7 +49,7 @@ class BraintrustTracker:
         self._experiment: Any = None
         self._current_span: Any = None
         self._is_initialized = False
-        self._metrics_buffer: List[Dict[str, Any]] = []
+        self._metrics_buffer: list[dict[str, Any]] = []
 
         if not BRAINTRUST_AVAILABLE:
             print("Warning: braintrust package not installed. " "Install with: pip install braintrust")
@@ -74,9 +74,9 @@ class BraintrustTracker:
 
     def start_experiment(
         self,
-        experiment_name: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-    ) -> Optional[Any]:
+        experiment_name: str | None = None,
+        metadata: dict[str, Any] | None = None,
+    ) -> Any | None:
         """
         Start a new experiment run.
 
@@ -105,7 +105,7 @@ class BraintrustTracker:
             print(f"Warning: Failed to start Braintrust experiment: {e}")
             return None
 
-    def log_hyperparameters(self, params: Dict[str, Any]) -> None:
+    def log_hyperparameters(self, params: dict[str, Any]) -> None:
         """
         Log hyperparameters for the current experiment.
 
@@ -126,7 +126,7 @@ class BraintrustTracker:
         epoch: int,
         step: int,
         loss: float,
-        metrics: Optional[Dict[str, float]] = None,
+        metrics: dict[str, float] | None = None,
     ) -> None:
         """
         Log a single training step.
@@ -163,10 +163,10 @@ class BraintrustTracker:
         self,
         epoch: int,
         train_loss: float,
-        val_loss: Optional[float] = None,
-        train_accuracy: Optional[float] = None,
-        val_accuracy: Optional[float] = None,
-        additional_metrics: Optional[Dict[str, float]] = None,
+        val_loss: float | None = None,
+        train_accuracy: float | None = None,
+        val_accuracy: float | None = None,
+        additional_metrics: dict[str, float] | None = None,
     ) -> None:
         """
         Log summary metrics for a completed epoch.
@@ -217,9 +217,9 @@ class BraintrustTracker:
     def log_evaluation(
         self,
         eval_type: str,
-        predictions: List[str],
-        ground_truth: List[str],
-        metrics: Dict[str, float],
+        predictions: list[str],
+        ground_truth: list[str],
+        metrics: dict[str, float],
     ) -> None:
         """
         Log model evaluation results.
@@ -258,10 +258,10 @@ class BraintrustTracker:
 
     def log_model_prediction(
         self,
-        input_features: Dict[str, Any],
+        input_features: dict[str, Any],
         prediction: str,
         confidence: float,
-        ground_truth: Optional[str] = None,
+        ground_truth: str | None = None,
     ) -> None:
         """
         Log a single model prediction for analysis.
@@ -302,8 +302,8 @@ class BraintrustTracker:
         self,
         model_path: str,
         model_type: str,
-        metrics: Dict[str, float],
-        metadata: Optional[Dict[str, Any]] = None,
+        metrics: dict[str, float],
+        metadata: dict[str, Any] | None = None,
     ) -> None:
         """
         Log a trained model artifact.
@@ -339,7 +339,7 @@ class BraintrustTracker:
         except Exception as e:
             print(f"Warning: Failed to log model artifact: {e}")
 
-    def end_experiment(self) -> Optional[str]:
+    def end_experiment(self) -> str | None:
         """
         End the current experiment and return summary URL.
 
@@ -357,7 +357,7 @@ class BraintrustTracker:
             print(f"Warning: Failed to end experiment: {e}")
             return None
 
-    def get_buffered_metrics(self) -> List[Dict[str, Any]]:
+    def get_buffered_metrics(self) -> list[dict[str, Any]]:
         """
         Get all buffered metrics (useful when Braintrust is not available).
 
@@ -387,9 +387,9 @@ class BraintrustContextManager:
     def __init__(
         self,
         project_name: str = "neural-meta-controller",
-        experiment_name: Optional[str] = None,
-        api_key: Optional[str] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        experiment_name: str | None = None,
+        api_key: str | None = None,
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Initialize context manager.
@@ -404,8 +404,8 @@ class BraintrustContextManager:
         self.experiment_name = experiment_name
         self.api_key = api_key
         self.metadata = metadata
-        self.tracker: Optional[BraintrustTracker] = None
-        self.experiment_url: Optional[str] = None
+        self.tracker: BraintrustTracker | None = None
+        self.experiment_url: str | None = None
 
     def __enter__(self) -> BraintrustTracker:
         """Start experiment tracking."""
@@ -428,7 +428,7 @@ class BraintrustContextManager:
 
 def create_training_tracker(
     model_type: str = "rnn",
-    config: Optional[Dict[str, Any]] = None,
+    config: dict[str, Any] | None = None,
 ) -> BraintrustTracker:
     """
     Create a pre-configured tracker for meta-controller training.

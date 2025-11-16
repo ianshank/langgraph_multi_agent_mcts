@@ -8,8 +8,8 @@ Provides:
 """
 
 import re
-from typing import Any, Dict, Optional
 from datetime import datetime
+from typing import Any
 
 
 class FrameworkError(Exception):
@@ -23,9 +23,9 @@ class FrameworkError(Exception):
     def __init__(
         self,
         user_message: str,
-        internal_details: Optional[str] = None,
-        error_code: Optional[str] = None,
-        context: Optional[Dict[str, Any]] = None,
+        internal_details: str | None = None,
+        error_code: str | None = None,
+        context: dict[str, Any] | None = None,
     ):
         """
         Initialize framework error.
@@ -77,7 +77,7 @@ class FrameworkError(Exception):
 
         return sanitized
 
-    def to_log_dict(self) -> Dict[str, Any]:
+    def to_log_dict(self) -> dict[str, Any]:
         """
         Convert exception to dictionary for structured logging.
 
@@ -92,7 +92,7 @@ class FrameworkError(Exception):
             "context": {k: str(v) for k, v in self.context.items()},
         }
 
-    def to_user_response(self) -> Dict[str, Any]:
+    def to_user_response(self) -> dict[str, Any]:
         """
         Convert exception to safe user-facing response.
         """
@@ -110,8 +110,8 @@ class ValidationError(FrameworkError):
     def __init__(
         self,
         user_message: str = "Invalid input provided",
-        internal_details: Optional[str] = None,
-        field_name: Optional[str] = None,
+        internal_details: str | None = None,
+        field_name: str | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})
@@ -130,7 +130,7 @@ class ValidationError(FrameworkError):
 class AuthenticationError(FrameworkError):
     """Raised when authentication fails."""
 
-    def __init__(self, user_message: str = "Authentication failed", internal_details: Optional[str] = None, **kwargs):
+    def __init__(self, user_message: str = "Authentication failed", internal_details: str | None = None, **kwargs):
         super().__init__(
             user_message=user_message, internal_details=internal_details, error_code="AUTH_ERROR", **kwargs
         )
@@ -142,8 +142,8 @@ class AuthorizationError(FrameworkError):
     def __init__(
         self,
         user_message: str = "Access denied",
-        internal_details: Optional[str] = None,
-        required_permission: Optional[str] = None,
+        internal_details: str | None = None,
+        required_permission: str | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})
@@ -164,8 +164,8 @@ class RateLimitError(FrameworkError):
     def __init__(
         self,
         user_message: str = "Rate limit exceeded. Please try again later.",
-        internal_details: Optional[str] = None,
-        retry_after_seconds: Optional[int] = None,
+        internal_details: str | None = None,
+        retry_after_seconds: int | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})
@@ -187,8 +187,8 @@ class LLMError(FrameworkError):
     def __init__(
         self,
         user_message: str = "Language model service temporarily unavailable",
-        internal_details: Optional[str] = None,
-        provider: Optional[str] = None,
+        internal_details: str | None = None,
+        provider: str | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})
@@ -209,8 +209,8 @@ class MCTSError(FrameworkError):
     def __init__(
         self,
         user_message: str = "Tactical simulation failed",
-        internal_details: Optional[str] = None,
-        iteration: Optional[int] = None,
+        internal_details: str | None = None,
+        iteration: int | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})
@@ -228,9 +228,7 @@ class MCTSError(FrameworkError):
 class RAGError(FrameworkError):
     """Raised when RAG retrieval fails."""
 
-    def __init__(
-        self, user_message: str = "Context retrieval failed", internal_details: Optional[str] = None, **kwargs
-    ):
+    def __init__(self, user_message: str = "Context retrieval failed", internal_details: str | None = None, **kwargs):
         super().__init__(user_message=user_message, internal_details=internal_details, error_code="RAG_ERROR", **kwargs)
 
 
@@ -240,9 +238,9 @@ class TimeoutError(FrameworkError):
     def __init__(
         self,
         user_message: str = "Operation timed out",
-        internal_details: Optional[str] = None,
-        operation: Optional[str] = None,
-        timeout_seconds: Optional[float] = None,
+        internal_details: str | None = None,
+        operation: str | None = None,
+        timeout_seconds: float | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})
@@ -265,8 +263,8 @@ class ConfigurationError(FrameworkError):
     def __init__(
         self,
         user_message: str = "System configuration error",
-        internal_details: Optional[str] = None,
-        config_key: Optional[str] = None,
+        internal_details: str | None = None,
+        config_key: str | None = None,
         **kwargs,
     ):
         context = kwargs.pop("context", {})

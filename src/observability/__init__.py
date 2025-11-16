@@ -10,19 +10,19 @@ Includes:
 - Performance profiling tools
 """
 
-from .logging import setup_logging, get_logger, CorrelationIdFilter
-from .tracing import TracingManager, trace_operation, get_tracer
-from .metrics import MetricsCollector, mcts_metrics, agent_metrics
 from .debug import MCTSDebugger, export_tree_to_dot, visualize_mcts_tree
-from .profiling import profile_block, AsyncProfiler, MemoryProfiler, generate_performance_report
+from .logging import CorrelationIdFilter, get_logger, setup_logging
+from .metrics import MetricsCollector, agent_metrics, mcts_metrics
+from .profiling import AsyncProfiler, MemoryProfiler, generate_performance_report, profile_block
+from .tracing import TracingManager, get_tracer, trace_operation
 
 # Braintrust integration (optional)
 try:
-    from .braintrust_tracker import (
-        BraintrustTracker,
-        BraintrustContextManager,
-        create_training_tracker,
+    from .braintrust_tracker import (  # noqa: F401
         BRAINTRUST_AVAILABLE,
+        BraintrustContextManager,
+        BraintrustTracker,
+        create_training_tracker,
     )
 
     _braintrust_exports = [

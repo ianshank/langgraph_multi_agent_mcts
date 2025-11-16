@@ -7,17 +7,19 @@ Designed for running local models with configurable endpoint.
 
 import json
 import logging
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from typing import Any
+
 import httpx
 
 from .base import BaseLLMClient, LLMResponse
 from .exceptions import (
     LLMClientError,
     LLMConnectionError,
-    LLMTimeoutError,
     LLMResponseParseError,
-    LLMStreamError,
     LLMServerError,
+    LLMStreamError,
+    LLMTimeoutError,
 )
 
 logger = logging.getLogger(__name__)
@@ -259,10 +261,10 @@ class LMStudioClient(BaseLLMClient):
                 except (KeyError, json.JSONDecodeError) as e:
                     raise LLMResponseParseError(self.PROVIDER_NAME, response.text) from e
 
-            except httpx.TimeoutException as e:
+            except httpx.TimeoutException:
                 last_error = LLMTimeoutError(self.PROVIDER_NAME, self.timeout)
                 logger.warning(f"Attempt {attempt + 1} timed out, retrying...")
-            except httpx.ConnectError as e:
+            except httpx.ConnectError:
                 last_error = LLMConnectionError(self.PROVIDER_NAME, self.base_url)
                 logger.warning(f"Attempt {attempt + 1} connection failed, retrying...")
             except LLMClientError:
@@ -280,7 +282,7 @@ class LMStudioClient(BaseLLMClient):
         prompt: str | None = None,
         temperature: float = 0.7,
         max_tokens: int | None = None,
-        tools: list[dict] | None = None,
+        tools: list[dict] | None = None,  # noqa: ARG002
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:

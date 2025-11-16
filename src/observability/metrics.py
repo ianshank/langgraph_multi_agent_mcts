@@ -10,24 +10,22 @@ Provides:
 - Export to Prometheus format (optional)
 """
 
-import asyncio
-import os
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 import psutil
 
 try:
     from prometheus_client import (
+        REGISTRY,
         Counter,
         Gauge,
         Histogram,
         Summary,
         generate_latest,
-        REGISTRY,
         start_http_server,
     )
 
@@ -44,11 +42,11 @@ class MCTSMetrics:
     total_simulations: int = 0
     tree_depth: int = 0
     total_nodes: int = 0
-    ucb_scores: List[float] = field(default_factory=list)
-    selection_times_ms: List[float] = field(default_factory=list)
-    expansion_times_ms: List[float] = field(default_factory=list)
-    simulation_times_ms: List[float] = field(default_factory=list)
-    backprop_times_ms: List[float] = field(default_factory=list)
+    ucb_scores: list[float] = field(default_factory=list)
+    selection_times_ms: list[float] = field(default_factory=list)
+    expansion_times_ms: list[float] = field(default_factory=list)
+    simulation_times_ms: list[float] = field(default_factory=list)
+    backprop_times_ms: list[float] = field(default_factory=list)
     best_action_visits: int = 0
     best_action_value: float = 0.0
 
@@ -61,10 +59,10 @@ class AgentMetrics:
     executions: int = 0
     total_time_ms: float = 0.0
     avg_confidence: float = 0.0
-    confidence_scores: List[float] = field(default_factory=list)
+    confidence_scores: list[float] = field(default_factory=list)
     success_count: int = 0
     error_count: int = 0
-    memory_usage_mb: List[float] = field(default_factory=list)
+    memory_usage_mb: list[float] = field(default_factory=list)
 
 
 class MetricsCollector:
@@ -84,11 +82,11 @@ class MetricsCollector:
     _instance: Optional["MetricsCollector"] = None
 
     def __init__(self):
-        self._mcts_metrics: Dict[str, MCTSMetrics] = defaultdict(MCTSMetrics)
-        self._agent_metrics: Dict[str, AgentMetrics] = {}
-        self._node_timings: Dict[str, List[float]] = defaultdict(list)
-        self._request_latencies: List[float] = []
-        self._memory_samples: List[Dict[str, float]] = []
+        self._mcts_metrics: dict[str, MCTSMetrics] = defaultdict(MCTSMetrics)
+        self._agent_metrics: dict[str, AgentMetrics] = {}
+        self._node_timings: dict[str, list[float]] = defaultdict(list)
+        self._request_latencies: list[float] = []
+        self._memory_samples: list[dict[str, float]] = []
         self._start_time = datetime.utcnow()
         self._process = psutil.Process()
 
@@ -278,7 +276,7 @@ class MetricsCollector:
         if self._prometheus_initialized:
             self._prom_request_latency.observe(latency_ms)
 
-    def sample_system_metrics(self) -> Dict[str, float]:
+    def sample_system_metrics(self) -> dict[str, float]:
         """Sample current system metrics."""
         memory_info = self._process.memory_info()
         cpu_percent = self._process.cpu_percent()
@@ -300,16 +298,16 @@ class MetricsCollector:
 
         return sample
 
-    def get_mcts_summary(self, session_id: str) -> Dict[str, Any]:
+    def get_mcts_summary(self, session_id: str) -> dict[str, Any]:
         """Get summary statistics for MCTS session."""
         metrics = self._mcts_metrics.get(session_id)
         if not metrics:
             return {}
 
-        def safe_avg(lst: List[float]) -> float:
+        def safe_avg(lst: list[float]) -> float:
             return sum(lst) / len(lst) if lst else 0.0
 
-        def safe_percentile(lst: List[float], p: float) -> float:
+        def safe_percentile(lst: list[float], p: float) -> float:
             if not lst:
                 return 0.0
             sorted_lst = sorted(lst)
@@ -340,13 +338,13 @@ class MetricsCollector:
             },
         }
 
-    def get_agent_summary(self, agent_name: str) -> Dict[str, Any]:
+    def get_agent_summary(self, agent_name: str) -> dict[str, Any]:
         """Get summary statistics for an agent."""
         metrics = self._agent_metrics.get(agent_name)
         if not metrics:
             return {}
 
-        def safe_avg(lst: List[float]) -> float:
+        def safe_avg(lst: list[float]) -> float:
             return sum(lst) / len(lst) if lst else 0.0
 
         return {
@@ -365,7 +363,7 @@ class MetricsCollector:
             "avg_memory_mb": round(safe_avg(metrics.memory_usage_mb), 2),
         }
 
-    def get_node_timing_summary(self) -> Dict[str, Dict[str, float]]:
+    def get_node_timing_summary(self) -> dict[str, dict[str, float]]:
         """Get timing summary for all graph nodes."""
         summary = {}
         for node_name, timings in self._node_timings.items():
@@ -379,7 +377,7 @@ class MetricsCollector:
                 }
         return summary
 
-    def get_full_report(self) -> Dict[str, Any]:
+    def get_full_report(self) -> dict[str, Any]:
         """Generate a comprehensive metrics report."""
         # Sample current system state
         current_system = self.sample_system_metrics()
@@ -388,10 +386,8 @@ class MetricsCollector:
             "report_time": datetime.utcnow().isoformat(),
             "uptime_seconds": (datetime.utcnow() - self._start_time).total_seconds(),
             "system_metrics": current_system,
-            "mcts_sessions": {
-                session_id: self.get_mcts_summary(session_id) for session_id in self._mcts_metrics.keys()
-            },
-            "agents": {agent_name: self.get_agent_summary(agent_name) for agent_name in self._agent_metrics.keys()},
+            "mcts_sessions": {session_id: self.get_mcts_summary(session_id) for session_id in self._mcts_metrics},
+            "agents": {agent_name: self.get_agent_summary(agent_name) for agent_name in self._agent_metrics},
             "node_timings": self.get_node_timing_summary(),
             "request_latencies": {
                 "count": len(self._request_latencies),
@@ -436,10 +432,10 @@ class MetricsTimer:
 
     def __init__(
         self,
-        collector: Optional[MetricsCollector] = None,
-        node_name: Optional[str] = None,
-        mcts_session_id: Optional[str] = None,
-        agent_name: Optional[str] = None,
+        collector: MetricsCollector | None = None,
+        node_name: str | None = None,
+        mcts_session_id: str | None = None,
+        agent_name: str | None = None,
     ):
         self.collector = collector or MetricsCollector.get_instance()
         self.node_name = node_name

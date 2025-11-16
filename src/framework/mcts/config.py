@@ -9,10 +9,11 @@ Provides:
 """
 
 from __future__ import annotations
+
 import json
-from dataclasses import dataclass, field, asdict
-from typing import Any, Dict, Optional
+from dataclasses import asdict, dataclass
 from enum import Enum
+from typing import Any
 
 from .policies import SelectionPolicy
 
@@ -137,7 +138,7 @@ class MCTSConfig:
         if self.max_rollout_depth < 1:
             errors.append("max_rollout_depth must be >= 1")
         if self.rollout_policy not in ["random", "greedy", "hybrid", "llm"]:
-            errors.append(f"rollout_policy must be one of: random, greedy, hybrid, llm")
+            errors.append("rollout_policy must be one of: random, greedy, hybrid, llm")
 
         # Parallelization
         if self.max_parallel_rollouts < 1:
@@ -168,9 +169,9 @@ class MCTSConfig:
             errors.append("min_value must be < max_value")
 
         if errors:
-            raise ValueError(f"Invalid MCTS configuration:\n" + "\n".join(f"  - {e}" for e in errors))
+            raise ValueError("Invalid MCTS configuration:\n" + "\n".join(f"  - {e}" for e in errors))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Convert configuration to dictionary for serialization.
 
@@ -195,7 +196,7 @@ class MCTSConfig:
         return json.dumps(self.to_dict(), indent=indent)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> MCTSConfig:
+    def from_dict(cls, data: dict[str, Any]) -> MCTSConfig:
         """
         Create configuration from dictionary.
 

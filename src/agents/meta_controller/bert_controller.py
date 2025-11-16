@@ -7,7 +7,7 @@ text and uses a sequence classification model to predict the optimal agent.
 """
 
 import warnings
-from typing import Any, Dict, Optional
+from typing import Any
 
 import torch
 
@@ -97,11 +97,11 @@ class BERTMetaController(AbstractMetaController):
         self,
         name: str = "BERTMetaController",
         seed: int = 42,
-        model_name: Optional[str] = None,
+        model_name: str | None = None,
         lora_r: int = 4,
         lora_alpha: int = 16,
         lora_dropout: float = 0.1,
-        device: Optional[str] = None,
+        device: str | None = None,
         use_lora: bool = True,
     ) -> None:
         """
@@ -189,7 +189,7 @@ class BERTMetaController(AbstractMetaController):
         self.model.eval()
 
         # Initialize tokenization cache for performance optimization
-        self._tokenization_cache: Dict[str, Any] = {}
+        self._tokenization_cache: dict[str, Any] = {}
 
     def predict(self, features: MetaControllerFeatures) -> MetaControllerPrediction:
         """
@@ -262,7 +262,7 @@ class BERTMetaController(AbstractMetaController):
             confidence = probabilities[0, predicted_idx].item()
 
             # Create probability dictionary
-            prob_dict: Dict[str, float] = {}
+            prob_dict: dict[str, float] = {}
             for i, agent_name in enumerate(self.AGENT_NAMES):
                 prob_dict[agent_name] = probabilities[0, i].item()
 
@@ -362,7 +362,7 @@ class BERTMetaController(AbstractMetaController):
         """
         self._tokenization_cache.clear()
 
-    def get_cache_info(self) -> Dict[str, Any]:
+    def get_cache_info(self) -> dict[str, Any]:
         """
         Get information about the current tokenization cache.
 
@@ -391,14 +391,14 @@ class BERTMetaController(AbstractMetaController):
             True
         """
         # Truncate keys for display (first 50 chars)
-        truncated_keys = [key[:50] + "..." if len(key) > 50 else key for key in self._tokenization_cache.keys()]
+        truncated_keys = [key[:50] + "..." if len(key) > 50 else key for key in self._tokenization_cache]
 
         return {
             "cache_size": len(self._tokenization_cache),
             "cache_keys": truncated_keys,
         }
 
-    def get_trainable_parameters(self) -> Dict[str, int]:
+    def get_trainable_parameters(self) -> dict[str, int]:
         """
         Get the number of trainable and total parameters in the model.
 

@@ -13,24 +13,24 @@ Provides:
 import functools
 import os
 from contextlib import asynccontextmanager, contextmanager
-from typing import Any, Dict, Optional
+from typing import Any, Optional
 
 from opentelemetry import trace
 from opentelemetry.context import Context
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
 from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
 from opentelemetry.propagate import extract, inject
-from opentelemetry.sdk.resources import Resource, SERVICE_NAME
+from opentelemetry.sdk.resources import SERVICE_NAME, Resource
 from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import (
     BatchSpanProcessor,
     ConsoleSpanExporter,
     SimpleSpanProcessor,
 )
-from opentelemetry.trace import Status, StatusCode, Span, SpanKind
+from opentelemetry.trace import Span, SpanKind, Status, StatusCode
 from opentelemetry.trace.propagation.tracecontext import TraceContextTextMapPropagator
 
-from .logging import get_correlation_id, set_correlation_id
+from .logging import get_correlation_id
 
 
 class TracingManager:
@@ -45,7 +45,7 @@ class TracingManager:
     """
 
     _instance: Optional["TracingManager"] = None
-    _provider: Optional[TracerProvider] = None
+    _provider: TracerProvider | None = None
 
     def __init__(self):
         self._initialized = False
@@ -60,10 +60,10 @@ class TracingManager:
 
     def initialize(
         self,
-        service_name: Optional[str] = None,
-        otlp_endpoint: Optional[str] = None,
-        exporter_type: Optional[str] = None,
-        additional_resources: Optional[Dict[str, str]] = None,
+        service_name: str | None = None,
+        otlp_endpoint: str | None = None,
+        exporter_type: str | None = None,
+        additional_resources: dict[str, str] | None = None,
     ) -> None:
         """
         Initialize OpenTelemetry tracing.
@@ -179,7 +179,7 @@ def add_mcts_attributes(span: Span, **attributes: Any) -> None:
 def trace_span(
     name: str,
     kind: SpanKind = SpanKind.INTERNAL,
-    attributes: Optional[Dict[str, Any]] = None,
+    attributes: dict[str, Any] | None = None,
     record_exception: bool = True,
     set_status_on_exception: bool = True,
 ):
@@ -215,7 +215,7 @@ def trace_span(
 async def async_trace_span(
     name: str,
     kind: SpanKind = SpanKind.INTERNAL,
-    attributes: Optional[Dict[str, Any]] = None,
+    attributes: dict[str, Any] | None = None,
     record_exception: bool = True,
     set_status_on_exception: bool = True,
 ):
@@ -238,9 +238,9 @@ async def async_trace_span(
 
 
 def trace_operation(
-    name: Optional[str] = None,
+    name: str | None = None,
     kind: SpanKind = SpanKind.INTERNAL,
-    attributes: Optional[Dict[str, Any]] = None,
+    attributes: dict[str, Any] | None = None,
 ):
     """
     Decorator for tracing function execution.
@@ -311,15 +311,15 @@ class SpanContextPropagator:
     def __init__(self):
         self._propagator = TraceContextTextMapPropagator()
 
-    def inject(self, carrier: Dict[str, str], context: Optional[Context] = None) -> None:
+    def inject(self, carrier: dict[str, str], context: Context | None = None) -> None:
         """Inject trace context into a carrier (e.g., HTTP headers)."""
         inject(carrier, context=context)
 
-    def extract(self, carrier: Dict[str, str]) -> Context:
+    def extract(self, carrier: dict[str, str]) -> Context:
         """Extract trace context from a carrier."""
         return extract(carrier)
 
-    def get_trace_parent(self) -> Optional[str]:
+    def get_trace_parent(self) -> str | None:
         """Get the traceparent header value for the current span."""
         carrier = {}
         self.inject(carrier)
@@ -359,7 +359,7 @@ def record_agent_execution(
     confidence: float,
     execution_time_ms: float,
     success: bool,
-    error: Optional[str] = None,
+    error: str | None = None,
 ) -> None:
     """
     Record agent execution as a span event.
@@ -381,4 +381,4 @@ def record_agent_execution(
 
 
 # Import asyncio for decorator
-import asyncio
+import asyncio  # noqa: E402

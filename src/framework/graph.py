@@ -9,16 +9,16 @@ Provides:
 """
 
 from __future__ import annotations
+
 import asyncio
-import time
-from typing import TypedDict, Annotated, List, Dict, Optional, Any
-from typing_extensions import NotRequired
 import operator
+import time
+from typing import Annotated, Any, NotRequired, TypedDict
 
 # LangGraph imports (these would be installed dependencies)
 try:
-    from langgraph.graph import StateGraph, END
     from langgraph.checkpoint.memory import MemorySaver
+    from langgraph.graph import END, StateGraph
 except ImportError:
     # Stubs for development without LangGraph installed
     StateGraph = None
@@ -26,15 +26,12 @@ except ImportError:
     MemorySaver = None
 
 # Import new MCTS modules
+from .mcts.config import ConfigPreset, MCTSConfig, create_preset_config
 from .mcts.core import MCTSEngine, MCTSNode, MCTSState
-from .mcts.config import MCTSConfig, create_preset_config, ConfigPreset
-from .mcts.policies import (
-    SelectionPolicy,
-    HybridRolloutPolicy,
-    RandomRolloutPolicy,
-    GreedyRolloutPolicy,
-)
 from .mcts.experiments import ExperimentTracker
+from .mcts.policies import (
+    HybridRolloutPolicy,
+)
 
 # Neural Meta-Controller imports (optional)
 try:
@@ -42,12 +39,12 @@ try:
         AbstractMetaController,
         MetaControllerFeatures,
     )
-    from src.agents.meta_controller.rnn_controller import RNNMetaController
     from src.agents.meta_controller.bert_controller import BERTMetaController
     from src.agents.meta_controller.config_loader import (
         MetaControllerConfig,
         MetaControllerConfigLoader,
     )
+    from src.agents.meta_controller.rnn_controller import RNNMetaController
 
     _META_CONTROLLER_AVAILABLE = True
 except ImportError:
@@ -70,22 +67,22 @@ class AgentState(TypedDict):
 
     # RAG context
     rag_context: NotRequired[str]
-    retrieved_docs: NotRequired[List[Dict]]
+    retrieved_docs: NotRequired[list[dict]]
 
     # Agent results
-    hrm_results: NotRequired[Dict]
-    trm_results: NotRequired[Dict]
-    agent_outputs: Annotated[List[Dict], operator.add]
+    hrm_results: NotRequired[dict]
+    trm_results: NotRequired[dict]
+    agent_outputs: Annotated[list[dict], operator.add]
 
     # MCTS simulation (updated for new core)
     mcts_root: NotRequired[Any]  # MCTSNode
     mcts_iterations: NotRequired[int]
     mcts_best_action: NotRequired[str]
-    mcts_stats: NotRequired[Dict]
-    mcts_config: NotRequired[Dict]
+    mcts_stats: NotRequired[dict]
+    mcts_config: NotRequired[dict]
 
     # Evaluation
-    confidence_scores: NotRequired[Dict[str, float]]
+    confidence_scores: NotRequired[dict[str, float]]
     consensus_reached: NotRequired[bool]
     consensus_score: NotRequired[float]
 
@@ -94,13 +91,13 @@ class AgentState(TypedDict):
     max_iterations: int
 
     # Neural Meta-Controller (optional)
-    routing_history: NotRequired[List[Dict]]
-    meta_controller_predictions: NotRequired[List[Dict]]
+    routing_history: NotRequired[list[dict]]
+    meta_controller_predictions: NotRequired[list[dict]]
     last_routed_agent: NotRequired[str]
 
     # Output
     final_response: NotRequired[str]
-    metadata: NotRequired[Dict]
+    metadata: NotRequired[dict]
 
 
 class GraphBuilder:
@@ -117,12 +114,12 @@ class GraphBuilder:
         model_adapter,
         logger,
         vector_store=None,
-        mcts_config: Optional[MCTSConfig] = None,
+        mcts_config: MCTSConfig | None = None,
         top_k_retrieval: int = 5,
         max_iterations: int = 3,
         consensus_threshold: float = 0.75,
         enable_parallel_agents: bool = True,
-        meta_controller_config: Optional[Any] = None,
+        meta_controller_config: Any | None = None,
     ):
         """
         Initialize graph builder.
@@ -167,7 +164,7 @@ class GraphBuilder:
         self.experiment_tracker = ExperimentTracker(name="langgraph_mcts")
 
         # Neural Meta-Controller (optional)
-        self.meta_controller: Optional[Any] = None
+        self.meta_controller: Any | None = None
         self.meta_controller_config = meta_controller_config
         self.use_neural_routing = False
 
@@ -242,7 +239,7 @@ class GraphBuilder:
 
         return workflow
 
-    def _entry_node(self, state: AgentState) -> Dict:
+    def _entry_node(self, state: AgentState) -> dict:
         """Initialize state and parse query."""
         self.logger.info(f"Entry node: {state['query'][:100]}")
         return {
@@ -251,7 +248,7 @@ class GraphBuilder:
             "mcts_config": self.mcts_config.to_dict(),
         }
 
-    def _retrieve_context_node(self, state: AgentState) -> Dict:
+    def _retrieve_context_node(self, state: AgentState) -> dict:
         """Retrieve context from vector store using RAG."""
         if not state.get("use_rag", True) or not self.vector_store:
             return {"rag_context": ""}
@@ -271,7 +268,7 @@ class GraphBuilder:
             "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
         }
 
-    def _route_decision_node(self, state: AgentState) -> Dict:
+    def _route_decision_node(self, _state: AgentState) -> dict:
         """Prepare routing decision."""
         return {}
 
@@ -288,10 +285,7 @@ class GraphBuilder:
 
         try:
             # Handle both config object and dict
-            if isinstance(config, dict):
-                mc_config = MetaControllerConfigLoader.load_from_dict(config)
-            else:
-                mc_config = config
+            mc_config = MetaControllerConfigLoader.load_from_dict(config) if isinstance(config, dict) else config
 
             if not mc_config.enabled:
                 self.logger.info("Neural meta-controller disabled in config")
@@ -422,7 +416,7 @@ class GraphBuilder:
             agent = prediction.agent
 
             # Handle routing based on predicted agent
-            iteration = state.get("iteration", 0)
+            state.get("iteration", 0)
 
             if agent == "hrm":
                 if "hrm_results" not in state:
@@ -430,9 +424,8 @@ class GraphBuilder:
             elif agent == "trm":
                 if "trm_results" not in state:
                     return "trm"
-            elif agent == "mcts":
-                if state.get("use_mcts", False) and "mcts_stats" not in state:
-                    return "mcts"
+            elif agent == "mcts" and state.get("use_mcts", False) and "mcts_stats" not in state:
+                return "mcts"
 
             # If predicted agent already ran or not applicable, use rule-based
             return self._rule_based_route_decision(state)
@@ -480,7 +473,7 @@ class GraphBuilder:
         # Fall back to rule-based routing
         return self._rule_based_route_decision(state)
 
-    async def _parallel_agents_node(self, state: AgentState) -> Dict:
+    async def _parallel_agents_node(self, state: AgentState) -> dict:
         """Execute HRM and TRM agents in parallel."""
         self.logger.info("Executing HRM and TRM agents in parallel")
 
@@ -526,7 +519,7 @@ class GraphBuilder:
             ],
         }
 
-    async def _hrm_agent_node(self, state: AgentState) -> Dict:
+    async def _hrm_agent_node(self, state: AgentState) -> dict:
         """Execute HRM agent."""
         self.logger.info("Executing HRM agent")
 
@@ -549,7 +542,7 @@ class GraphBuilder:
             ],
         }
 
-    async def _trm_agent_node(self, state: AgentState) -> Dict:
+    async def _trm_agent_node(self, state: AgentState) -> dict:
         """Execute TRM agent."""
         self.logger.info("Executing TRM agent")
 
@@ -572,7 +565,7 @@ class GraphBuilder:
             ],
         }
 
-    async def _mcts_simulator_node(self, state: AgentState) -> Dict:
+    async def _mcts_simulator_node(self, state: AgentState) -> dict:
         """Execute MCTS simulation using new deterministic engine."""
         self.logger.info("Executing MCTS simulation with deterministic engine")
 
@@ -597,7 +590,7 @@ class GraphBuilder:
         )
 
         # Define action generator based on domain
-        def action_generator(mcts_state: MCTSState) -> List[str]:
+        def action_generator(mcts_state: MCTSState) -> list[str]:
             """Generate available actions for state."""
             depth = len(mcts_state.state_id.split("_")) - 1
 
@@ -701,7 +694,7 @@ class GraphBuilder:
             ],
         }
 
-    def _aggregate_results_node(self, state: AgentState) -> Dict:
+    def _aggregate_results_node(self, state: AgentState) -> dict:
         """Aggregate results from all agents."""
         self.logger.info("Aggregating agent results")
 
@@ -711,7 +704,7 @@ class GraphBuilder:
 
         return {"confidence_scores": confidence_scores}
 
-    def _evaluate_consensus_node(self, state: AgentState) -> Dict:
+    def _evaluate_consensus_node(self, state: AgentState) -> dict:
         """Evaluate consensus among agents."""
         agent_outputs = state.get("agent_outputs", [])
 
@@ -742,7 +735,7 @@ class GraphBuilder:
 
         return "iterate"
 
-    async def _synthesize_node(self, state: AgentState) -> Dict:
+    async def _synthesize_node(self, state: AgentState) -> dict:
         """Synthesize final response from agent outputs."""
         self.logger.info("Synthesizing final response")
 
@@ -806,10 +799,10 @@ class IntegratedFramework:
         model_adapter,
         logger,
         vector_store=None,
-        embedding_model=None,
-        hrm_config: Optional[Dict] = None,
-        trm_config: Optional[Dict] = None,
-        mcts_config: Optional[MCTSConfig] = None,
+        _embedding_model=None,
+        hrm_config: dict | None = None,
+        trm_config: dict | None = None,
+        mcts_config: MCTSConfig | None = None,
         top_k_retrieval: int = 5,
         max_iterations: int = 3,
         consensus_threshold: float = 0.75,
@@ -874,8 +867,8 @@ class IntegratedFramework:
         query: str,
         use_rag: bool = True,
         use_mcts: bool = False,
-        config: Optional[Dict] = None,
-    ) -> Dict:
+        config: dict | None = None,
+    ) -> dict:
         """
         Process query through LangGraph.
 

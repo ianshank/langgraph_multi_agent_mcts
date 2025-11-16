@@ -13,9 +13,10 @@ License Attribution:
 
 import logging
 from abc import ABC, abstractmethod
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, Iterator, List, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -26,11 +27,11 @@ class DatasetSample:
 
     id: str
     text: str
-    metadata: Dict[str, Any] = field(default_factory=dict)
-    labels: Optional[List[str]] = None
-    difficulty: Optional[str] = None
-    domain: Optional[str] = None
-    reasoning_steps: Optional[List[str]] = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    labels: list[str] | None = None
+    difficulty: str | None = None
+    domain: str | None = None
+    reasoning_steps: list[str] | None = None
 
 
 @dataclass
@@ -38,16 +39,16 @@ class DatasetStatistics:
     """Statistics about a loaded dataset."""
 
     total_samples: int
-    domains: Dict[str, int]
+    domains: dict[str, int]
     avg_text_length: float
-    difficulty_distribution: Dict[str, int]
+    difficulty_distribution: dict[str, int]
     total_tokens: int = 0
 
 
 class DatasetLoader(ABC):
     """Abstract base class for dataset loaders."""
 
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: str | None = None):
         """
         Initialize dataset loader.
 
@@ -59,7 +60,7 @@ class DatasetLoader(ABC):
         self._statistics = None
 
     @abstractmethod
-    def load(self, split: str = "train") -> List[DatasetSample]:
+    def load(self, split: str = "train") -> list[DatasetSample]:
         """Load dataset split."""
         pass
 
@@ -69,7 +70,7 @@ class DatasetLoader(ABC):
         pass
 
     @abstractmethod
-    def iterate_samples(self, batch_size: int = 32) -> Iterator[List[DatasetSample]]:
+    def iterate_samples(self, batch_size: int = 32) -> Iterator[list[DatasetSample]]:
         """Iterate over samples in batches."""
         pass
 
@@ -88,12 +89,12 @@ class DABStepLoader(DatasetLoader):
     DATASET_NAME = "adyen/DABstep"
     DIFFICULTIES = ["easy", "medium", "hard"]
 
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: str | None = None):
         """Initialize DABStep loader."""
         super().__init__(cache_dir)
-        self._loaded_samples: List[DatasetSample] = []
+        self._loaded_samples: list[DatasetSample] = []
 
-    def load(self, split: str = "train", difficulty: Optional[str] = None) -> List[DatasetSample]:
+    def load(self, split: str = "train", difficulty: str | None = None) -> list[DatasetSample]:
         """
         Load DABStep dataset.
 
@@ -171,7 +172,7 @@ class DABStepLoader(DatasetLoader):
             difficulty_distribution=difficulty_dist,
         )
 
-    def iterate_samples(self, batch_size: int = 32) -> Iterator[List[DatasetSample]]:
+    def iterate_samples(self, batch_size: int = 32) -> Iterator[list[DatasetSample]]:
         """Iterate over samples in batches."""
         if not self._loaded_samples:
             raise ValueError("No samples loaded. Call load() first.")
@@ -179,7 +180,7 @@ class DABStepLoader(DatasetLoader):
         for i in range(0, len(self._loaded_samples), batch_size):
             yield self._loaded_samples[i : i + batch_size]
 
-    def get_reasoning_tasks(self) -> List[DatasetSample]:
+    def get_reasoning_tasks(self) -> list[DatasetSample]:
         """Get only samples with explicit reasoning steps."""
         return [s for s in self._loaded_samples if s.reasoning_steps]
 
@@ -208,20 +209,20 @@ class PRIMUSLoader(DatasetLoader):
         "vulnerability_db",
     ]
 
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: str | None = None):
         """Initialize PRIMUS loader."""
         super().__init__(cache_dir)
-        self._seed_samples: List[DatasetSample] = []
-        self._instruct_samples: List[DatasetSample] = []
+        self._seed_samples: list[DatasetSample] = []
+        self._instruct_samples: list[DatasetSample] = []
 
     def load(
         self,
         split: str = "train",
         dataset_type: str = "seed",
-        domains: Optional[List[str]] = None,
-        max_samples: Optional[int] = None,
+        domains: list[str] | None = None,
+        max_samples: int | None = None,
         streaming: bool = True,
-    ) -> List[DatasetSample]:
+    ) -> list[DatasetSample]:
         """
         Load PRIMUS dataset.
 
@@ -254,10 +255,7 @@ class PRIMUSLoader(DatasetLoader):
                     cache_dir=self.cache_dir,
                 )
                 # For streaming, iterate the first available split
-                if "train" in dataset:
-                    data_iter = iter(dataset["train"])
-                else:
-                    data_iter = iter(dataset[list(dataset.keys())[0]])
+                data_iter = iter(dataset["train"]) if "train" in dataset else iter(dataset[list(dataset.keys())[0]])
             else:
                 dataset = load_dataset(
                     dataset_name,
@@ -328,11 +326,11 @@ class PRIMUSLoader(DatasetLoader):
                 logger.error(f"Failed to load PRIMUS: {e}")
             raise
 
-    def load_seed(self, max_samples: Optional[int] = None) -> List[DatasetSample]:
+    def load_seed(self, max_samples: int | None = None) -> list[DatasetSample]:
         """Load PRIMUS-Seed knowledge base."""
         return self.load(dataset_type="seed", max_samples=max_samples)
 
-    def load_instruct(self) -> List[DatasetSample]:
+    def load_instruct(self) -> list[DatasetSample]:
         """Load PRIMUS-Instruct fine-tuning data."""
         return self.load(dataset_type="instruct", streaming=False)
 
@@ -358,7 +356,7 @@ class PRIMUSLoader(DatasetLoader):
             difficulty_distribution={"cybersecurity": len(all_samples)},
         )
 
-    def iterate_samples(self, batch_size: int = 32) -> Iterator[List[DatasetSample]]:
+    def iterate_samples(self, batch_size: int = 32) -> Iterator[list[DatasetSample]]:
         """Iterate over all loaded samples in batches."""
         all_samples = self._seed_samples + self._instruct_samples
 
@@ -368,11 +366,11 @@ class PRIMUSLoader(DatasetLoader):
         for i in range(0, len(all_samples), batch_size):
             yield all_samples[i : i + batch_size]
 
-    def get_mitre_attack_samples(self) -> List[DatasetSample]:
+    def get_mitre_attack_samples(self) -> list[DatasetSample]:
         """Get samples specifically from MITRE ATT&CK."""
         return [s for s in self._seed_samples if "mitre" in (s.domain or "").lower()]
 
-    def get_threat_intelligence_samples(self) -> List[DatasetSample]:
+    def get_threat_intelligence_samples(self) -> list[DatasetSample]:
         """Get threat intelligence related samples."""
         return [
             s
@@ -391,19 +389,19 @@ class CombinedDatasetLoader:
     - Custom tactical datasets
     """
 
-    def __init__(self, cache_dir: Optional[str] = None):
+    def __init__(self, cache_dir: str | None = None):
         """Initialize combined loader."""
         self.cache_dir = cache_dir
         self.dabstep_loader = DABStepLoader(cache_dir)
         self.primus_loader = PRIMUSLoader(cache_dir)
-        self._all_samples: List[DatasetSample] = []
+        self._all_samples: list[DatasetSample] = []
 
     def load_all(
         self,
         dabstep_split: str = "train",
-        primus_max_samples: Optional[int] = 10000,
+        primus_max_samples: int | None = 10000,
         include_instruct: bool = True,
-    ) -> List[DatasetSample]:
+    ) -> list[DatasetSample]:
         """
         Load all datasets.
 
@@ -436,7 +434,7 @@ class CombinedDatasetLoader:
 
         return self._all_samples
 
-    def get_domain_distribution(self) -> Dict[str, int]:
+    def get_domain_distribution(self) -> dict[str, int]:
         """Get distribution of samples across domains."""
         dist = {}
         for sample in self._all_samples:
@@ -444,11 +442,11 @@ class CombinedDatasetLoader:
             dist[domain] = dist.get(domain, 0) + 1
         return dist
 
-    def filter_by_domain(self, domain: str) -> List[DatasetSample]:
+    def filter_by_domain(self, domain: str) -> list[DatasetSample]:
         """Filter samples by domain."""
         return [s for s in self._all_samples if s.domain == domain]
 
-    def get_multi_step_reasoning_samples(self) -> List[DatasetSample]:
+    def get_multi_step_reasoning_samples(self) -> list[DatasetSample]:
         """Get samples suitable for multi-step reasoning training."""
         return [
             s
@@ -494,7 +492,7 @@ class CombinedDatasetLoader:
 def load_dataset(
     dataset_name: str,
     split: str = "train",
-    cache_dir: Optional[str] = None,
+    cache_dir: str | None = None,
     **kwargs,
 ) -> Any:
     """

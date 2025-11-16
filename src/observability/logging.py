@@ -15,20 +15,18 @@ import logging
 import logging.config
 import os
 import re
-import sys
 import time
 import traceback
 import uuid
 from contextvars import ContextVar
 from datetime import datetime
 from functools import wraps
-from typing import Any, Optional
 
 import psutil
 
 # Context variable for correlation ID tracking across async calls
-_correlation_id: ContextVar[Optional[str]] = ContextVar("correlation_id", default=None)
-_request_metadata: ContextVar[dict] = ContextVar("request_metadata", default={})
+_correlation_id: ContextVar[str | None] = ContextVar("correlation_id", default=None)
+_request_metadata: ContextVar[dict | None] = ContextVar("request_metadata", default=None)
 
 
 def get_correlation_id() -> str:
@@ -52,7 +50,8 @@ def set_request_metadata(metadata: dict) -> None:
 
 def get_request_metadata() -> dict:
     """Get request metadata for current context."""
-    return _request_metadata.get()
+    metadata = _request_metadata.get()
+    return metadata if metadata is not None else {}
 
 
 # Patterns for sensitive data sanitization
@@ -232,8 +231,8 @@ class JSONFormatter(logging.Formatter):
 
 
 def setup_logging(
-    log_level: Optional[str] = None,
-    log_file: Optional[str] = None,
+    log_level: str | None = None,
+    log_file: str | None = None,
     include_performance_metrics: bool = True,
     json_output: bool = True,
     include_hostname: bool = True,
@@ -396,7 +395,7 @@ class LogContext:
         return False
 
 
-def log_execution_time(logger: Optional[logging.Logger] = None, level: int = logging.INFO):
+def log_execution_time(logger: logging.Logger | None = None, level: int = logging.INFO):
     """
     Decorator to log function execution time.
 
@@ -493,4 +492,4 @@ def log_execution_time(logger: Optional[logging.Logger] = None, level: int = log
 
 
 # Import asyncio for decorator
-import asyncio
+import asyncio  # noqa: E402

@@ -11,10 +11,10 @@ Provides unified interface for:
 import logging
 import os
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ class ExperimentConfig:
 
     project_name: str
     experiment_name: str
-    tags: List[str] = field(default_factory=list)
+    tags: list[str] = field(default_factory=list)
     description: str = ""
     save_artifacts: bool = True
     log_frequency: int = 1  # Log every N steps
@@ -38,11 +38,11 @@ class TrainingMetrics:
     epoch: int
     step: int
     train_loss: float
-    val_loss: Optional[float] = None
-    accuracy: Optional[float] = None
-    learning_rate: Optional[float] = None
+    val_loss: float | None = None
+    accuracy: float | None = None
+    learning_rate: float | None = None
     timestamp: float = field(default_factory=time.time)
-    custom_metrics: Dict[str, float] = field(default_factory=dict)
+    custom_metrics: dict[str, float] = field(default_factory=dict)
 
 
 class BraintrustTracker:
@@ -57,7 +57,7 @@ class BraintrustTracker:
     - Artifact versioning
     """
 
-    def __init__(self, api_key: Optional[str] = None, project_name: str = "mcts-neural-meta-controller"):
+    def __init__(self, api_key: str | None = None, project_name: str = "mcts-neural-meta-controller"):
         """
         Initialize Braintrust tracker.
 
@@ -69,7 +69,7 @@ class BraintrustTracker:
         self.project_name = project_name
         self._experiment = None
         self._experiment_id = None
-        self._metrics_buffer: List[Dict[str, Any]] = []
+        self._metrics_buffer: list[dict[str, Any]] = []
         self._initialized = False
 
         if not self.api_key:
@@ -99,8 +99,8 @@ class BraintrustTracker:
         self,
         name: str,
         description: str = "",
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
+        tags: list[str] | None = None,
+        metadata: dict[str, Any] | None = None,
     ) -> str:
         """
         Initialize a new experiment.
@@ -139,7 +139,7 @@ class BraintrustTracker:
             logger.error(f"Failed to create experiment: {e}")
             return self.init_experiment(name, description, tags, metadata)  # Fallback to offline
 
-    def log_hyperparameters(self, params: Dict[str, Any]):
+    def log_hyperparameters(self, params: dict[str, Any]):
         """
         Log hyperparameters for the experiment.
 
@@ -167,8 +167,8 @@ class BraintrustTracker:
         self,
         name: str,
         value: float,
-        step: Optional[int] = None,
-        timestamp: Optional[float] = None,
+        step: int | None = None,
+        timestamp: float | None = None,
     ):
         """
         Log a single metric.
@@ -229,8 +229,8 @@ class BraintrustTracker:
         input_data: Any,
         output: Any,
         expected: Any,
-        scores: Dict[str, float],
-        metadata: Optional[Dict[str, Any]] = None,
+        scores: dict[str, float],
+        metadata: dict[str, Any] | None = None,
     ):
         """
         Log an evaluation result.
@@ -258,7 +258,7 @@ class BraintrustTracker:
         except Exception as e:
             logger.error(f"Failed to log evaluation: {e}")
 
-    def log_artifact(self, path: Union[str, Path], name: Optional[str] = None):
+    def log_artifact(self, path: str | Path, name: str | None = None):
         """
         Log a model artifact.
 
@@ -291,7 +291,7 @@ class BraintrustTracker:
         except Exception as e:
             logger.error(f"Failed to log artifact: {e}")
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """
         Get experiment summary.
 
@@ -348,9 +348,9 @@ class WandBTracker:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
+        api_key: str | None = None,
         project_name: str = "mcts-neural-meta-controller",
-        entity: Optional[str] = None,
+        entity: str | None = None,
     ):
         """
         Initialize W&B tracker.
@@ -395,8 +395,8 @@ class WandBTracker:
     def init_run(
         self,
         name: str,
-        config: Optional[Dict[str, Any]] = None,
-        tags: Optional[List[str]] = None,
+        config: dict[str, Any] | None = None,
+        tags: list[str] | None = None,
         notes: str = "",
     ):
         """
@@ -432,7 +432,7 @@ class WandBTracker:
             self._offline_mode = True
             return None
 
-    def log(self, metrics: Dict[str, Any], step: Optional[int] = None):
+    def log(self, metrics: dict[str, Any], step: int | None = None):
         """
         Log metrics to W&B.
 
@@ -475,7 +475,7 @@ class WandBTracker:
 
         self.log(log_data, step=metrics.step)
 
-    def update_config(self, config: Dict[str, Any]):
+    def update_config(self, config: dict[str, Any]):
         """
         Update run configuration.
 
@@ -509,7 +509,7 @@ class WandBTracker:
         except Exception as e:
             logger.error(f"Failed to watch model: {e}")
 
-    def log_artifact(self, path: Union[str, Path], name: str, artifact_type: str = "model"):
+    def log_artifact(self, path: str | Path, name: str, artifact_type: str = "model"):
         """
         Log artifact to W&B.
 
@@ -557,8 +557,8 @@ class UnifiedExperimentTracker:
 
     def __init__(
         self,
-        braintrust_api_key: Optional[str] = None,
-        wandb_api_key: Optional[str] = None,
+        braintrust_api_key: str | None = None,
+        wandb_api_key: str | None = None,
         project_name: str = "mcts-neural-meta-controller",
     ):
         """
@@ -576,9 +576,9 @@ class UnifiedExperimentTracker:
     def init_experiment(
         self,
         name: str,
-        config: Optional[Dict[str, Any]] = None,
+        config: dict[str, Any] | None = None,
         description: str = "",
-        tags: Optional[List[str]] = None,
+        tags: list[str] | None = None,
     ):
         """
         Initialize experiment on both platforms.
@@ -612,7 +612,7 @@ class UnifiedExperimentTracker:
         input_data: Any,
         output: Any,
         expected: Any,
-        scores: Dict[str, float],
+        scores: dict[str, float],
     ):
         """
         Log evaluation to Braintrust.
@@ -626,7 +626,7 @@ class UnifiedExperimentTracker:
         self.bt.log_evaluation(input_data, output, expected, scores)
         self.wandb.log(scores)
 
-    def log_artifact(self, path: Union[str, Path], name: str):
+    def log_artifact(self, path: str | Path, name: str):
         """
         Log artifact to both platforms.
 

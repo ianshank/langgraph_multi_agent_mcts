@@ -6,8 +6,6 @@ that learns to select the optimal agent (HRM, TRM, or MCTS) based on
 sequential patterns in the agent state features.
 """
 
-from typing import Dict, Optional
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -112,10 +110,7 @@ class RNNMetaControllerModel(nn.Module):
 
         # Take the final hidden state from the last layer
         # Shape: (batch_size, hidden_dim)
-        if self.num_layers > 1:
-            final_hidden = hidden[-1]
-        else:
-            final_hidden = hidden.squeeze(0)
+        final_hidden = hidden[-1] if self.num_layers > 1 else hidden.squeeze(0)
 
         # Apply dropout
         dropped = self.dropout(final_hidden)
@@ -168,7 +163,7 @@ class RNNMetaController(AbstractMetaController):
         hidden_dim: int = 64,
         num_layers: int = 1,
         dropout: float = 0.1,
-        device: Optional[str] = None,
+        device: str | None = None,
     ) -> None:
         """
         Initialize the RNN meta-controller.
@@ -219,7 +214,7 @@ class RNNMetaController(AbstractMetaController):
         self.model.eval()
 
         # Initialize hidden state for sequence tracking
-        self.hidden_state: Optional[torch.Tensor] = None
+        self.hidden_state: torch.Tensor | None = None
 
     def predict(self, features: MetaControllerFeatures) -> MetaControllerPrediction:
         """
@@ -279,7 +274,7 @@ class RNNMetaController(AbstractMetaController):
             confidence = probabilities[0, predicted_idx].item()
 
             # Create probability dictionary
-            prob_dict: Dict[str, float] = {}
+            prob_dict: dict[str, float] = {}
             for i, agent_name in enumerate(self.AGENT_NAMES):
                 prob_dict[agent_name] = probabilities[0, i].item()
 

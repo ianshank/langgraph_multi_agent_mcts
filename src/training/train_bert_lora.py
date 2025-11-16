@@ -12,7 +12,7 @@ import json
 import logging
 import warnings
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 import torch
 import torch.nn.functional as F
@@ -24,9 +24,9 @@ _DATASETS_AVAILABLE = False
 try:
     from transformers import (
         AutoTokenizer,
+        EvalPrediction,
         Trainer,
         TrainingArguments,
-        EvalPrediction,
     )
 
     _TRANSFORMERS_AVAILABLE = True
@@ -53,8 +53,8 @@ except ImportError:
     )
     Dataset = None  # type: ignore
 
-from src.agents.meta_controller.bert_controller import BERTMetaController
-from src.training.data_generator import MetaControllerDataGenerator
+from src.agents.meta_controller.bert_controller import BERTMetaController  # noqa: E402
+from src.training.data_generator import MetaControllerDataGenerator  # noqa: E402
 
 
 def setup_logging(log_level: int = logging.INFO) -> logging.Logger:
@@ -120,7 +120,7 @@ class BERTLoRATrainer:
         epochs: int = 10,
         warmup_steps: int = 100,
         seed: int = 42,
-        device: Optional[str] = None,
+        device: str | None = None,
     ) -> None:
         """
         Initialize the BERT LoRA trainer.
@@ -196,12 +196,12 @@ class BERTLoRATrainer:
         )
 
         # Store trainer instance (will be created during training)
-        self._trainer: Optional[Trainer] = None
+        self._trainer: Trainer | None = None
 
     def prepare_dataset(
         self,
-        texts: List[str],
-        labels: List[int],
+        texts: list[str],
+        labels: list[int],
     ) -> Dataset:
         """
         Prepare a HuggingFace Dataset from texts and labels.
@@ -236,7 +236,7 @@ class BERTLoRATrainer:
         dataset = Dataset.from_dict({"text": texts, "labels": labels})
 
         # Tokenize function
-        def tokenize_function(examples: Dict[str, Any]) -> Dict[str, Any]:
+        def tokenize_function(examples: dict[str, Any]) -> dict[str, Any]:
             return self.tokenizer(
                 examples["text"],
                 padding="max_length",
@@ -261,7 +261,7 @@ class BERTLoRATrainer:
         self.logger.info(f"Dataset prepared with {len(tokenized_dataset)} samples")
         return tokenized_dataset
 
-    def compute_metrics(self, eval_pred: EvalPrediction) -> Dict[str, float]:
+    def compute_metrics(self, eval_pred: EvalPrediction) -> dict[str, float]:
         """
         Compute evaluation metrics from predictions.
 
@@ -293,12 +293,12 @@ class BERTLoRATrainer:
 
     def train(
         self,
-        train_texts: List[str],
-        train_labels: List[int],
-        val_texts: List[str],
-        val_labels: List[int],
+        train_texts: list[str],
+        train_labels: list[int],
+        val_texts: list[str],
+        val_labels: list[int],
         output_dir: str,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Train the BERT LoRA model.
 
@@ -376,7 +376,7 @@ class BERTLoRATrainer:
         train_result = self._trainer.train()
 
         # Log training results
-        self.logger.info(f"Training completed")
+        self.logger.info("Training completed")
         self.logger.info(f"Final training loss: {train_result.training_loss:.4f}")
 
         # Get training history
@@ -401,9 +401,9 @@ class BERTLoRATrainer:
 
     def evaluate(
         self,
-        test_texts: List[str],
-        test_labels: List[int],
-    ) -> Dict[str, Any]:
+        test_texts: list[str],
+        test_labels: list[int],
+    ) -> dict[str, Any]:
         """
         Evaluate the model on a test set.
 
@@ -428,14 +428,14 @@ class BERTLoRATrainer:
         self.logger.info(f"Evaluating on {len(test_texts)} test samples")
 
         # Prepare test dataset
-        test_dataset = self.prepare_dataset(test_texts, test_labels)
+        self.prepare_dataset(test_texts, test_labels)
 
         # Set model to evaluation mode
         self.controller.model.eval()
 
         # Collect predictions
-        all_predictions: List[int] = []
-        all_probabilities: List[List[float]] = []
+        all_predictions: list[int] = []
+        all_probabilities: list[list[float]] = []
         total_loss = 0.0
 
         with torch.no_grad():
@@ -470,7 +470,7 @@ class BERTLoRATrainer:
 
         # Calculate metrics
         avg_loss = total_loss / len(test_texts)
-        correct = sum(1 for pred, label in zip(all_predictions, test_labels) if pred == label)
+        correct = sum(1 for pred, label in zip(all_predictions, test_labels, strict=False) if pred == label)
         accuracy = correct / len(test_labels)
 
         self.logger.info(f"Test Loss: {avg_loss:.4f}")
@@ -642,7 +642,7 @@ def main() -> None:
     class_counts = {0: 0, 1: 0, 2: 0}
     for label in label_indices:
         class_counts[label] += 1
-    logger.info(f"Class distribution:")
+    logger.info("Class distribution:")
     logger.info(f"  HRM (0): {class_counts[0]} samples")
     logger.info(f"  TRM (1): {class_counts[1]} samples")
     logger.info(f"  MCTS (2): {class_counts[2]} samples")

@@ -7,7 +7,7 @@ that learn to select the optimal agent (HRM, TRM, or MCTS) based on system state
 
 import json
 from dataclasses import asdict
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 import torch
@@ -52,7 +52,7 @@ class MetaControllerDataGenerator:
         self.seed = seed
         self.rng = np.random.default_rng(seed)
 
-    def generate_single_sample(self) -> Tuple[MetaControllerFeatures, str]:
+    def generate_single_sample(self) -> tuple[MetaControllerFeatures, str]:
         """
         Generate a single training sample with features and optimal agent label.
 
@@ -136,7 +136,7 @@ class MetaControllerDataGenerator:
         scores = {"hrm": hrm_conf, "trm": trm_conf, "mcts": mcts_val}
         return max(scores, key=lambda k: scores[k])
 
-    def generate_dataset(self, num_samples: int = 1000) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    def generate_dataset(self, num_samples: int = 1000) -> tuple[list[MetaControllerFeatures], list[str]]:
         """
         Generate a dataset with the specified number of samples.
 
@@ -165,8 +165,8 @@ class MetaControllerDataGenerator:
         if num_samples <= 0:
             raise ValueError(f"num_samples must be positive, got {num_samples}")
 
-        features_list: List[MetaControllerFeatures] = []
-        labels_list: List[str] = []
+        features_list: list[MetaControllerFeatures] = []
+        labels_list: list[str] = []
 
         for _ in range(num_samples):
             features, label = self.generate_single_sample()
@@ -177,7 +177,7 @@ class MetaControllerDataGenerator:
 
     def generate_balanced_dataset(
         self, num_samples_per_class: int = 500
-    ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    ) -> tuple[list[MetaControllerFeatures], list[str]]:
         """
         Generate a balanced dataset with equal samples per agent class.
 
@@ -208,8 +208,8 @@ class MetaControllerDataGenerator:
         if num_samples_per_class <= 0:
             raise ValueError(f"num_samples_per_class must be positive, got {num_samples_per_class}")
 
-        features_list: List[MetaControllerFeatures] = []
-        labels_list: List[str] = []
+        features_list: list[MetaControllerFeatures] = []
+        labels_list: list[str] = []
 
         # Generate samples for each class
         for target_agent in self.AGENT_NAMES:
@@ -274,10 +274,7 @@ class MetaControllerDataGenerator:
         last_agent = str(self.rng.choice(["none", "hrm", "trm", "mcts"]))
 
         # For MCTS, bias iteration to be > 3
-        if target_agent == "mcts":
-            iteration = int(self.rng.integers(4, 11))
-        else:
-            iteration = int(self.rng.integers(0, 11))
+        iteration = int(self.rng.integers(4, 11)) if target_agent == "mcts" else int(self.rng.integers(0, 11))
 
         query_length = int(self.rng.integers(10, 5001))
         has_rag_context = bool(self.rng.choice([True, False]))
@@ -335,8 +332,8 @@ class MetaControllerDataGenerator:
         )
 
     def to_tensor_dataset(
-        self, features_list: List[MetaControllerFeatures], labels_list: List[str]
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self, features_list: list[MetaControllerFeatures], labels_list: list[str]
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Convert features and labels to PyTorch tensors.
 
@@ -392,8 +389,8 @@ class MetaControllerDataGenerator:
         return X, y
 
     def to_text_dataset(
-        self, features_list: List[MetaControllerFeatures], labels_list: List[str]
-    ) -> Tuple[List[str], List[int]]:
+        self, features_list: list[MetaControllerFeatures], labels_list: list[str]
+    ) -> tuple[list[str], list[int]]:
         """
         Convert features to text format and labels to indices.
 
@@ -447,7 +444,7 @@ class MetaControllerDataGenerator:
         y: Any,
         train_ratio: float = 0.7,
         val_ratio: float = 0.15,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Split dataset into train, validation, and test sets.
 
@@ -491,19 +488,9 @@ class MetaControllerDataGenerator:
             raise ValueError(f"train_ratio + val_ratio must be < 1, got {train_ratio + val_ratio}")
 
         # Get dataset size
-        if isinstance(X, torch.Tensor):
-            n_samples = X.shape[0]
-        elif isinstance(X, np.ndarray):
-            n_samples = X.shape[0]
-        else:
-            n_samples = len(X)
+        n_samples = X.shape[0] if isinstance(X, (torch.Tensor, np.ndarray)) else len(X)
 
-        if isinstance(y, torch.Tensor):
-            n_labels = y.shape[0]
-        elif isinstance(y, np.ndarray):
-            n_labels = y.shape[0]
-        else:
-            n_labels = len(y)
+        n_labels = y.shape[0] if isinstance(y, (torch.Tensor, np.ndarray)) else len(y)
 
         if n_samples != n_labels:
             raise ValueError(f"X and y must have same number of samples, " f"got {n_samples} and {n_labels}")
@@ -523,14 +510,7 @@ class MetaControllerDataGenerator:
         test_indices = indices[val_end:]
 
         # Split data based on type
-        if isinstance(X, torch.Tensor):
-            X_train = X[train_indices]
-            X_val = X[val_indices]
-            X_test = X[test_indices]
-            y_train = y[train_indices]
-            y_val = y[val_indices]
-            y_test = y[test_indices]
-        elif isinstance(X, np.ndarray):
+        if isinstance(X, (torch.Tensor, np.ndarray)):
             X_train = X[train_indices]
             X_val = X[val_indices]
             X_test = X[test_indices]
@@ -557,8 +537,8 @@ class MetaControllerDataGenerator:
 
     def save_dataset(
         self,
-        features_list: List[MetaControllerFeatures],
-        labels_list: List[str],
+        features_list: list[MetaControllerFeatures],
+        labels_list: list[str],
         path: str,
     ) -> None:
         """
@@ -590,13 +570,15 @@ class MetaControllerDataGenerator:
         data = {
             "seed": self.seed,
             "num_samples": len(features_list),
-            "samples": [{"features": asdict(f), "label": label} for f, label in zip(features_list, labels_list)],
+            "samples": [
+                {"features": asdict(f), "label": label} for f, label in zip(features_list, labels_list, strict=False)
+            ],
         }
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
-    def load_dataset(self, path: str) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    def load_dataset(self, path: str) -> tuple[list[MetaControllerFeatures], list[str]]:
         """
         Load dataset from a JSON file.
 
@@ -619,11 +601,11 @@ class MetaControllerDataGenerator:
             >>> isinstance(features[0], MetaControllerFeatures)
             True
         """
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
-        features_list: List[MetaControllerFeatures] = []
-        labels_list: List[str] = []
+        features_list: list[MetaControllerFeatures] = []
+        labels_list: list[str] = []
 
         for sample in data["samples"]:
             features_dict = sample["features"]

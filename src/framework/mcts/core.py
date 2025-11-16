@@ -10,14 +10,17 @@ Features:
 """
 
 from __future__ import annotations
+
 import asyncio
 import hashlib
 from collections import OrderedDict
-from typing import Optional, List, Dict, Any, Callable, Awaitable, Tuple
+from collections.abc import Callable
 from dataclasses import dataclass, field
+from typing import Any
+
 import numpy as np
 
-from .policies import ucb1, SelectionPolicy, RolloutPolicy
+from .policies import RolloutPolicy, SelectionPolicy, ucb1
 
 
 @dataclass
@@ -25,7 +28,7 @@ class MCTSState:
     """Hashable state representation for caching."""
 
     state_id: str
-    features: Dict[str, Any] = field(default_factory=dict)
+    features: dict[str, Any] = field(default_factory=dict)
 
     def to_hash_key(self) -> str:
         """Generate a hashable key for this state."""
@@ -52,19 +55,19 @@ class MCTSNode:
     def __init__(
         self,
         state: MCTSState,
-        parent: Optional[MCTSNode] = None,
-        action: Optional[str] = None,
-        rng: Optional[np.random.Generator] = None,
+        parent: MCTSNode | None = None,
+        action: str | None = None,
+        rng: np.random.Generator | None = None,
     ):
         self.state = state
         self.parent = parent
         self.action = action
-        self.children: List[MCTSNode] = []
+        self.children: list[MCTSNode] = []
         self.visits: int = 0
         self.value_sum: float = 0.0
         self.terminal: bool = False
         self.expanded_actions: set = set()
-        self.available_actions: List[str] = []
+        self.available_actions: list[str] = []
 
         # Track depth for O(1) tree statistics
         self.depth: int = 0 if parent is None else parent.depth + 1
@@ -134,7 +137,7 @@ class MCTSNode:
         self.expanded_actions.add(action)
         return child
 
-    def get_unexpanded_action(self) -> Optional[str]:
+    def get_unexpanded_action(self) -> str | None:
         """Get a random unexpanded action."""
         unexpanded = [a for a in self.available_actions if a not in self.expanded_actions]
         if not unexpanded:
@@ -188,11 +191,11 @@ class MCTSEngine:
 
         # Parallel rollout control
         self.max_parallel_rollouts = max_parallel_rollouts
-        self._semaphore: Optional[asyncio.Semaphore] = None
+        self._semaphore: asyncio.Semaphore | None = None
 
         # Simulation cache: state_hash -> (value, visit_count)
         # Using OrderedDict for LRU eviction
-        self._simulation_cache: OrderedDict[str, Tuple[float, int]] = OrderedDict()
+        self._simulation_cache: OrderedDict[str, tuple[float, int]] = OrderedDict()
         self.cache_size_limit = cache_size_limit
 
         # Statistics
@@ -250,7 +253,7 @@ class MCTSEngine:
     def expand(
         self,
         node: MCTSNode,
-        action_generator: Callable[[MCTSState], List[str]],
+        action_generator: Callable[[MCTSState], list[str]],
         state_transition: Callable[[MCTSState, str], MCTSState],
     ) -> MCTSNode:
         """
@@ -380,7 +383,7 @@ class MCTSEngine:
     async def run_iteration(
         self,
         root: MCTSNode,
-        action_generator: Callable[[MCTSState], List[str]],
+        action_generator: Callable[[MCTSState], list[str]],
         state_transition: Callable[[MCTSState, str], MCTSState],
         rollout_policy: RolloutPolicy,
         max_rollout_depth: int = 10,
@@ -412,12 +415,12 @@ class MCTSEngine:
         self,
         root: MCTSNode,
         num_iterations: int,
-        action_generator: Callable[[MCTSState], List[str]],
+        action_generator: Callable[[MCTSState], list[str]],
         state_transition: Callable[[MCTSState, str], MCTSState],
         rollout_policy: RolloutPolicy,
         max_rollout_depth: int = 10,
         selection_policy: SelectionPolicy = SelectionPolicy.MAX_VISITS,
-    ) -> Tuple[Optional[str], Dict[str, Any]]:
+    ) -> tuple[str | None, dict[str, Any]]:
         """
         Run MCTS search for specified number of iterations.
 
@@ -442,7 +445,7 @@ class MCTSEngine:
             root.available_actions = action_generator(root.state)
 
         # Run iterations
-        for i in range(num_iterations):
+        for _i in range(num_iterations):
             await self.run_iteration(
                 root=root,
                 action_generator=action_generator,
@@ -463,7 +466,7 @@ class MCTSEngine:
         self,
         root: MCTSNode,
         policy: SelectionPolicy,
-    ) -> Optional[str]:
+    ) -> str | None:
         """
         Select the best action from root based on selection policy.
 
@@ -505,7 +508,7 @@ class MCTSEngine:
         self,
         root: MCTSNode,
         num_iterations: int,
-    ) -> Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         Compute comprehensive MCTS statistics.
 

@@ -1,11 +1,11 @@
 # Agents module for async agent implementations
 from .base import (
-    AsyncAgentBase,
     AgentContext,
     AgentResult,
+    AsyncAgentBase,
+    CompositeAgent,
     MetricsCollector,
     NoOpMetricsCollector,
-    CompositeAgent,
     ParallelAgent,
     SequentialAgent,
 )

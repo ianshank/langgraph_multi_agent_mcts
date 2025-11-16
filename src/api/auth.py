@@ -12,9 +12,8 @@ import hashlib
 import secrets
 import time
 from collections import defaultdict
-from datetime import datetime, timedelta
-from typing import Dict, List, Optional, Set
 from dataclasses import dataclass, field
+from datetime import datetime, timedelta
 
 from src.api.exceptions import (
     AuthenticationError,
@@ -28,7 +27,7 @@ class ClientInfo:
     """Information about an authenticated client."""
 
     client_id: str
-    roles: Set[str] = field(default_factory=lambda: {"user"})
+    roles: set[str] = field(default_factory=lambda: {"user"})
     created_at: datetime = field(default_factory=datetime.utcnow)
     last_access: datetime = field(default_factory=datetime.utcnow)
     request_count: int = 0
@@ -53,8 +52,8 @@ class APIKeyAuthenticator:
 
     def __init__(
         self,
-        valid_keys: Optional[List[str]] = None,
-        rate_limit_config: Optional[RateLimitConfig] = None,
+        valid_keys: list[str] | None = None,
+        rate_limit_config: RateLimitConfig | None = None,
     ):
         """
         Initialize authenticator.
@@ -63,8 +62,8 @@ class APIKeyAuthenticator:
             valid_keys: List of valid API keys (will be hashed)
             rate_limit_config: Rate limiting configuration
         """
-        self._key_to_client: Dict[str, ClientInfo] = {}
-        self._rate_limits: Dict[str, List[float]] = defaultdict(list)
+        self._key_to_client: dict[str, ClientInfo] = {}
+        self._rate_limits: dict[str, list[float]] = defaultdict(list)
         self.rate_limit_config = rate_limit_config or RateLimitConfig()
 
         # Hash and store initial keys
@@ -81,7 +80,7 @@ class APIKeyAuthenticator:
         """
         return hashlib.sha256(api_key.encode("utf-8")).hexdigest()
 
-    def _add_key(self, api_key: str, client_id: str, roles: Optional[Set[str]] = None) -> None:
+    def _add_key(self, api_key: str, client_id: str, roles: set[str] | None = None) -> None:
         """
         Add a new API key.
 
@@ -96,7 +95,7 @@ class APIKeyAuthenticator:
             roles=roles or {"user"},
         )
 
-    def authenticate(self, api_key: Optional[str]) -> ClientInfo:
+    def authenticate(self, api_key: str | None) -> ClientInfo:
         """
         Authenticate an API key.
 
@@ -193,7 +192,7 @@ class APIKeyAuthenticator:
         # Record this request
         request_times.append(now)
 
-    def require_auth(self, api_key: Optional[str]) -> ClientInfo:
+    def require_auth(self, api_key: str | None) -> ClientInfo:
         """
         Require authentication for a request.
 
@@ -256,7 +255,7 @@ class APIKeyAuthenticator:
     def add_client(
         self,
         client_id: str,
-        roles: Optional[Set[str]] = None,
+        roles: set[str] | None = None,
     ) -> str:
         """
         Add a new client and generate their API key.
@@ -272,7 +271,7 @@ class APIKeyAuthenticator:
         self._add_key(api_key, client_id, roles)
         return api_key
 
-    def get_client_stats(self, client_id: str) -> Dict:
+    def get_client_stats(self, client_id: str) -> dict:
         """
         Get statistics for a client.
 
@@ -310,12 +309,12 @@ class JWTAuthenticator:
         """
         self.secret_key = secret_key
         self.algorithm = algorithm
-        self._token_blacklist: Set[str] = set()
+        self._token_blacklist: set[str] = set()
 
     def create_token(
         self,
         client_id: str,
-        roles: Set[str],
+        roles: set[str],
         expires_in_hours: int = 24,
     ) -> str:
         """
@@ -402,7 +401,7 @@ class JWTAuthenticator:
 
 
 # Default authenticator instance
-_default_authenticator: Optional[APIKeyAuthenticator] = None
+_default_authenticator: APIKeyAuthenticator | None = None
 
 
 def get_authenticator() -> APIKeyAuthenticator:

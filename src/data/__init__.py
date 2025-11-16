@@ -10,7 +10,7 @@ Supported Datasets:
 - PRIMUS-Instruct: Instruction fine-tuning data (ODC-BY)
 """
 
-from .dataset_loader import DatasetLoader, DABStepLoader, PRIMUSLoader
+from .dataset_loader import DABStepLoader, DatasetLoader, PRIMUSLoader
 from .preprocessing import TextPreprocessor, TokenizerWrapper
 from .tactical_augmentation import TacticalAugmenter
 from .train_test_split import DataSplitter, StratifiedSplitter

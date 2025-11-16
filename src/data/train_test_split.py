@@ -11,7 +11,7 @@ Provides utilities for:
 import logging
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 from .dataset_loader import DatasetSample
 
@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 class DataSplit:
     """Result of dataset splitting."""
 
-    train: List[DatasetSample]
-    validation: List[DatasetSample]
-    test: List[DatasetSample]
-    split_info: Dict[str, Any]
+    train: list[DatasetSample]
+    validation: list[DatasetSample]
+    test: list[DatasetSample]
+    split_info: dict[str, Any]
 
 
 @dataclass
@@ -33,8 +33,8 @@ class CrossValidationFold:
     """Single fold for cross-validation."""
 
     fold_id: int
-    train: List[DatasetSample]
-    validation: List[DatasetSample]
+    train: list[DatasetSample]
+    validation: list[DatasetSample]
 
 
 class DataSplitter:
@@ -59,7 +59,7 @@ class DataSplitter:
 
     def split(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         train_ratio: float = 0.7,
         val_ratio: float = 0.15,
         test_ratio: float = 0.15,
@@ -122,10 +122,10 @@ class DataSplitter:
 
     def create_k_folds(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         k: int = 5,
         shuffle: bool = True,
-    ) -> List[CrossValidationFold]:
+    ) -> list[CrossValidationFold]:
         """
         Create k-fold cross-validation splits.
 
@@ -155,11 +155,7 @@ class DataSplitter:
         for fold_id in range(k):
             # Validation is the current fold
             val_start = fold_id * fold_size
-            if fold_id == k - 1:
-                # Last fold takes remaining samples
-                val_end = len(all_samples)
-            else:
-                val_end = val_start + fold_size
+            val_end = len(all_samples) if fold_id == k - 1 else val_start + fold_size  # noqa: SIM108
 
             val_samples = all_samples[val_start:val_end]
             train_samples = all_samples[:val_start] + all_samples[val_end:]
@@ -197,7 +193,7 @@ class StratifiedSplitter(DataSplitter):
 
     def split(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         train_ratio: float = 0.7,
         val_ratio: float = 0.15,
         test_ratio: float = 0.15,
@@ -233,7 +229,7 @@ class StratifiedSplitter(DataSplitter):
         val_samples = []
         test_samples = []
 
-        for key, group_samples in groups.items():
+        for _key, group_samples in groups.items():
             if shuffle:
                 self.rng.shuffle(group_samples)
 
@@ -294,10 +290,10 @@ class StratifiedSplitter(DataSplitter):
 
     def _verify_stratification(
         self,
-        train: List[DatasetSample],
-        val: List[DatasetSample],
-        test: List[DatasetSample],
-    ) -> Dict[str, Dict[str, float]]:
+        train: list[DatasetSample],
+        val: list[DatasetSample],
+        test: list[DatasetSample],
+    ) -> dict[str, dict[str, float]]:
         """
         Verify that stratification was successful.
 
@@ -305,7 +301,7 @@ class StratifiedSplitter(DataSplitter):
         across train/val/test splits.
         """
 
-        def get_distribution(samples: List[DatasetSample]) -> Dict[str, float]:
+        def get_distribution(samples: list[DatasetSample]) -> dict[str, float]:
             if not samples:
                 return {}
             counts = defaultdict(int)
@@ -323,10 +319,10 @@ class StratifiedSplitter(DataSplitter):
 
     def create_stratified_k_folds(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         k: int = 5,
         shuffle: bool = True,
-    ) -> List[CrossValidationFold]:
+    ) -> list[CrossValidationFold]:
         """
         Create stratified k-fold cross-validation splits.
 
@@ -351,7 +347,7 @@ class StratifiedSplitter(DataSplitter):
         folds_data = [{"train": [], "val": []} for _ in range(k)]
 
         # Distribute each group across folds
-        for key, group_samples in groups.items():
+        for _key, group_samples in groups.items():
             if shuffle:
                 self.rng.shuffle(group_samples)
 
@@ -359,10 +355,7 @@ class StratifiedSplitter(DataSplitter):
             fold_size = len(group_samples) // k
             for fold_id in range(k):
                 val_start = fold_id * fold_size
-                if fold_id == k - 1:
-                    val_end = len(group_samples)
-                else:
-                    val_end = val_start + fold_size
+                val_end = len(group_samples) if fold_id == k - 1 else val_start + fold_size
 
                 for i, sample in enumerate(group_samples):
                     if val_start <= i < val_end:
@@ -403,10 +396,10 @@ class BalancedSampler:
 
     def oversample_minority(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         target_key: str = "domain",
         target_ratio: float = 1.0,
-    ) -> List[DatasetSample]:
+    ) -> list[DatasetSample]:
         """
         Oversample minority classes to balance dataset.
 
@@ -430,7 +423,7 @@ class BalancedSampler:
 
         # Oversample minority classes
         balanced = []
-        for key, group in groups.items():
+        for _key, group in groups.items():
             balanced.extend(group)
 
             # Oversample if needed
@@ -455,10 +448,10 @@ class BalancedSampler:
 
     def undersample_majority(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         target_key: str = "domain",
         target_ratio: float = 1.0,
-    ) -> List[DatasetSample]:
+    ) -> list[DatasetSample]:
         """
         Undersample majority classes to balance dataset.
 
@@ -482,7 +475,7 @@ class BalancedSampler:
 
         # Undersample majority classes
         balanced = []
-        for key, group in groups.items():
+        for _key, group in groups.items():
             if len(group) > target_count:
                 # Randomly select target_count samples
                 balanced.extend(self.rng.sample(group, target_count))
@@ -494,9 +487,9 @@ class BalancedSampler:
 
     def get_class_distribution(
         self,
-        samples: List[DatasetSample],
+        samples: list[DatasetSample],
         target_key: str = "domain",
-    ) -> Dict[str, int]:
+    ) -> dict[str, int]:
         """
         Get distribution of classes.
 

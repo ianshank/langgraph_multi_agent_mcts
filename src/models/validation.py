@@ -10,17 +10,16 @@ Provides:
 """
 
 import re
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any
 
 from pydantic import (
     BaseModel,
+    ConfigDict,
     Field,
     field_validator,
     model_validator,
-    ConfigDict,
 )
-
 
 # Constants for validation
 MAX_QUERY_LENGTH = 10000
@@ -54,7 +53,7 @@ class QueryInput(BaseModel):
 
     use_mcts: bool = Field(default=False, description="Enable MCTS simulation for tactical planning")
 
-    thread_id: Optional[str] = Field(
+    thread_id: str | None = Field(
         default=None,
         max_length=100,
         pattern=r"^[a-zA-Z0-9_-]+$",
@@ -99,9 +98,9 @@ class QueryInput(BaseModel):
 
     @field_validator("thread_id")
     @classmethod
-    def validate_thread_id(cls, v: Optional[str]) -> Optional[str]:
+    def validate_thread_id(cls, v: str | None) -> str | None:
         """Validate thread ID format for safe storage keys."""
-        if v is not None:
+        if v is not None:  # noqa: SIM102
             # Additional safety check beyond pattern
             if ".." in v or "/" in v or "\\" in v:
                 raise ValueError("Thread ID contains invalid path characters")
@@ -153,6 +152,7 @@ class MCTSConfig(BaseModel):
                 f"Exploration weight {v} is outside typical range (0.5-3.0). "
                 "This may lead to suboptimal search behavior.",
                 UserWarning,
+                stacklevel=2,
             )
         return v
 
@@ -232,7 +232,7 @@ class MCPToolInput(BaseModel):
         description="Name of the MCP tool to invoke",
     )
 
-    parameters: Dict[str, Any] = Field(default_factory=dict, description="Tool parameters as key-value pairs")
+    parameters: dict[str, Any] = Field(default_factory=dict, description="Tool parameters as key-value pairs")
 
     timeout_seconds: float = Field(default=30.0, ge=1.0, le=300.0, description="Timeout for tool execution")
 
@@ -252,7 +252,7 @@ class MCPToolInput(BaseModel):
 
     @field_validator("parameters")
     @classmethod
-    def validate_parameters(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+    def validate_parameters(cls, v: dict[str, Any]) -> dict[str, Any]:
         """Validate tool parameters for security."""
         # Check for reasonable size
         if len(str(v)) > 100000:
@@ -263,7 +263,7 @@ class MCPToolInput(BaseModel):
             raise ValueError("Too many parameters (maximum 50)")
 
         # Validate parameter keys
-        for key in v.keys():
+        for key in v:
             if not isinstance(key, str):
                 raise ValueError("Parameter keys must be strings")
             if len(key) > 100:
@@ -300,7 +300,9 @@ class FileReadInput(MCPToolInput):
         if v.startswith("/"):
             import warnings
 
-            warnings.warn("Absolute file path provided. Ensure this is within allowed directories.", UserWarning)
+            warnings.warn(
+                "Absolute file path provided. Ensure this is within allowed directories.", UserWarning, stacklevel=2
+            )
 
         # Check for suspicious patterns
         suspicious = [
@@ -361,7 +363,7 @@ class BatchQueryInput(BaseModel):
         extra="forbid",
     )
 
-    queries: List[QueryInput] = Field(
+    queries: list[QueryInput] = Field(
         ..., min_length=1, max_length=MAX_BATCH_SIZE, description="List of queries to process in batch"
     )
 
@@ -369,7 +371,7 @@ class BatchQueryInput(BaseModel):
 
     @field_validator("queries")
     @classmethod
-    def validate_batch_size(cls, v: List[QueryInput]) -> List[QueryInput]:
+    def validate_batch_size(cls, v: list[QueryInput]) -> list[QueryInput]:
         """Validate batch doesn't exceed limits."""
         if len(v) > MAX_BATCH_SIZE:
             raise ValueError(f"Batch size exceeds maximum of {MAX_BATCH_SIZE}")
@@ -395,15 +397,15 @@ class APIRequestMetadata(BaseModel):
 
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (UTC)")
 
-    client_id: Optional[str] = Field(
+    client_id: str | None = Field(
         default=None, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$", description="Client identifier for rate limiting"
     )
 
-    source_ip: Optional[str] = Field(default=None, description="Source IP address (for audit logging)")
+    source_ip: str | None = Field(default=None, description="Source IP address (for audit logging)")
 
     @field_validator("source_ip")
     @classmethod
-    def validate_ip_address(cls, v: Optional[str]) -> Optional[str]:
+    def validate_ip_address(cls, v: str | None) -> str | None:
         """Validate IP address format."""
         if v is not None:
             # Basic IPv4/IPv6 validation
@@ -452,7 +454,7 @@ def validate_mcts_config(**kwargs) -> MCTSConfig:
     return MCTSConfig(**kwargs)
 
 
-def validate_tool_input(tool_name: str, parameters: Dict[str, Any], **kwargs) -> MCPToolInput:
+def validate_tool_input(tool_name: str, parameters: dict[str, Any], **kwargs) -> MCPToolInput:
     """
     Validate MCP tool input parameters.
 

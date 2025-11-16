@@ -7,7 +7,7 @@ dynamically select which agent (HRM, TRM, or MCTS) should handle a query.
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Dict
+from typing import Any
 
 
 @dataclass
@@ -58,7 +58,7 @@ class MetaControllerPrediction:
     confidence: float
     """Confidence score for the prediction (0.0 to 1.0)."""
 
-    probabilities: Dict[str, float] = field(default_factory=dict)
+    probabilities: dict[str, float] = field(default_factory=dict)
     """Probability distribution over all possible agents."""
 
 
@@ -122,7 +122,7 @@ class AbstractMetaController(ABC):
         """
         pass
 
-    def extract_features(self, state: Dict[str, Any]) -> MetaControllerFeatures:
+    def extract_features(self, state: dict[str, Any]) -> MetaControllerFeatures:
         """
         Extract meta-controller features from an AgentState dictionary.
 

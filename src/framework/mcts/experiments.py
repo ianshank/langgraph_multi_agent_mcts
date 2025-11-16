@@ -9,14 +9,14 @@ Provides:
 """
 
 from __future__ import annotations
-import json
+
 import csv
+import json
 import statistics
+from dataclasses import asdict, dataclass, field
 from datetime import datetime
 from pathlib import Path
-from dataclasses import dataclass, asdict, field
-from typing import Any, Dict, List, Optional, Tuple
-import numpy as np
+from typing import Any
 
 from .config import MCTSConfig
 
@@ -30,11 +30,11 @@ class ExperimentResult:
     timestamp: str = field(default_factory=lambda: datetime.now().isoformat())
 
     # Configuration
-    config: Optional[Dict[str, Any]] = None
+    config: dict[str, Any] | None = None
     seed: int = 42
 
     # Core results
-    best_action: Optional[str] = None
+    best_action: str | None = None
     best_action_value: float = 0.0
     best_action_visits: int = 0
     root_visits: int = 0
@@ -55,12 +55,12 @@ class ExperimentResult:
     branching_factor: float = 0.0
 
     # Action distribution
-    action_stats: Dict[str, Dict[str, Any]] = field(default_factory=dict)
+    action_stats: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     # Optional metadata
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return asdict(self)
 
@@ -69,7 +69,7 @@ class ExperimentResult:
         return json.dumps(self.to_dict(), indent=indent)
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> ExperimentResult:
+    def from_dict(cls, data: dict[str, Any]) -> ExperimentResult:
         """Create from dictionary."""
         return cls(**data)
 
@@ -98,7 +98,7 @@ class ExperimentTracker:
             name: Name of this experiment series
         """
         self.name = name
-        self.results: List[ExperimentResult] = []
+        self.results: list[ExperimentResult] = []
         self.created_at = datetime.now().isoformat()
 
     def add_result(self, result: ExperimentResult) -> None:
@@ -114,11 +114,11 @@ class ExperimentTracker:
         self,
         experiment_id: str,
         config: MCTSConfig,
-        mcts_stats: Dict[str, Any],
+        mcts_stats: dict[str, Any],
         execution_time_ms: float = 0.0,
         tree_depth: int = 0,
         tree_node_count: int = 0,
-        metadata: Optional[Dict[str, Any]] = None,
+        metadata: dict[str, Any] | None = None,
     ) -> ExperimentResult:
         """
         Create and add an experiment result from MCTS statistics.
@@ -164,7 +164,7 @@ class ExperimentTracker:
         self.add_result(result)
         return result
 
-    def get_summary_statistics(self) -> Dict[str, Any]:
+    def get_summary_statistics(self) -> dict[str, Any]:
         """
         Compute summary statistics across all experiments.
 
@@ -182,7 +182,7 @@ class ExperimentTracker:
         tree_depths = [r.tree_depth for r in self.results]
         node_counts = [r.tree_node_count for r in self.results]
 
-        def compute_stats(values: List[float]) -> Dict[str, float]:
+        def compute_stats(values: list[float]) -> dict[str, float]:
             """Compute basic statistics."""
             if not values:
                 return {}
@@ -219,8 +219,8 @@ class ExperimentTracker:
 
     def compare_configs(
         self,
-        config_names: Optional[List[str]] = None,
-    ) -> Dict[str, Dict[str, Any]]:
+        config_names: list[str] | None = None,
+    ) -> dict[str, dict[str, Any]]:
         """
         Compare performance across different configurations.
 
@@ -231,7 +231,7 @@ class ExperimentTracker:
             Dictionary mapping config names to their statistics
         """
         # Group results by configuration name
-        grouped: Dict[str, List[ExperimentResult]] = {}
+        grouped: dict[str, list[ExperimentResult]] = {}
 
         for result in self.results:
             if result.config is None:
@@ -266,7 +266,7 @@ class ExperimentTracker:
 
         return comparison
 
-    def analyze_seed_consistency(self, seed: int) -> Dict[str, Any]:
+    def analyze_seed_consistency(self, seed: int) -> dict[str, Any]:
         """
         Analyze consistency of results for a specific seed.
 
@@ -387,7 +387,7 @@ class ExperimentTracker:
         Returns:
             Loaded ExperimentTracker
         """
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             data = json.load(f)
 
         tracker = cls(name=data.get("name", "loaded_experiments"))
@@ -413,7 +413,7 @@ def run_determinism_test(
     engine_factory,
     config: MCTSConfig,
     num_runs: int = 3,
-) -> Tuple[bool, Dict[str, Any]]:
+) -> tuple[bool, dict[str, Any]]:
     """
     Test that MCTS produces deterministic results with same seed.
 
@@ -425,7 +425,7 @@ def run_determinism_test(
     Returns:
         Tuple of (is_deterministic, analysis_dict)
     """
-    tracker = ExperimentTracker(name="determinism_test")
+    ExperimentTracker(name="determinism_test")
 
     # This is a stub - actual implementation would run the engine
     # Results would be compared to verify determinism

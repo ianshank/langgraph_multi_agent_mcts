@@ -5,14 +5,14 @@ Provides common patterns for all agents with hook points for metrics,
 logging, and extensibility.
 """
 
+import asyncio
+import logging
 import time
 import uuid
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any, Protocol
-import logging
-import asyncio
 
 from src.adapters.llm.base import LLMClient, LLMResponse
 
@@ -193,7 +193,7 @@ class AsyncAgentBase(ABC):
         """
         return context
 
-    async def post_process(self, context: AgentContext, result: AgentResult) -> AgentResult:
+    async def post_process(self, _context: AgentContext, result: AgentResult) -> AgentResult:
         """
         Hook called after processing.
 
@@ -208,7 +208,7 @@ class AsyncAgentBase(ABC):
         """
         return result
 
-    async def on_error(self, context: AgentContext, error: Exception) -> AgentResult:
+    async def on_error(self, _context: AgentContext, error: Exception) -> AgentResult:
         """
         Hook called when processing fails.
 
