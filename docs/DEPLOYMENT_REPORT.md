@@ -9,7 +9,7 @@
 
 ## Executive Summary
 
-Successfully prepared Docker deployment for LangGraph Multi-Agent MCTS Framework. All smoke tests passed, and the containerized application is production-ready with proper health checks, authentication, and API documentation.
+Docker build and smoke validation completed for the LangGraph Multi-Agent MCTS Framework. Core container health checks, authentication, and documentation endpoints are functioning, but the release **is not yet ready for staging** because a sizeable portion of the broader unit/integration suite still fails and key platform configurations (LLM provider + secrets management) remain unset. Until those gaps are closed, the deployment should be treated as a dry run only.
 
 ---
 
@@ -36,6 +36,8 @@ Successfully prepared Docker deployment for LangGraph Multi-Agent MCTS Framework
 | Metrics Endpoint | PASS |
 
 **Result: 8/8 tests passed (100%)**
+
+**Readiness Note**: Despite smoke-test success, staging deployment remains blocked until the 30 failing + 14 errored tests are resolved or formally waived and missing platform configs are supplied.
 
 ---
 
@@ -89,7 +91,7 @@ Successfully prepared Docker deployment for LangGraph Multi-Agent MCTS Framework
 
 3. **HRMAgent Export** (14 errors)
    - Missing from main module exports
-   - Location: `langgraph_multi_agent_mcts.py`
+   - Location: `examples/langgraph_multi_agent_mcts.py`
 
 ### Recommendation
 These failures are in non-critical test paths and do not affect the production REST API server functionality. The core API endpoints are fully operational as demonstrated by smoke tests.
@@ -193,8 +195,8 @@ The demo is now live at:
 - [x] Authentication enforced
 - [x] Input validation working
 - [x] HuggingFace Space deployed and running
-- [ ] All unit tests pass (771/872 - non-blocking)
+- [ ] All unit tests pass (771/872 - blocking for staging)
 - [ ] Production LLM provider configured
 - [ ] Secrets management configured
 
-**Status: READY FOR STAGING DEPLOYMENT**
+**Status: BLOCKED – pending full test pass + production config**
