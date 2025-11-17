@@ -1,0 +1,34 @@
+flowchart LR
+    user[User/Developer] -->|CLI/Demos| framework[Framework]
+    user -->|REST API| api[FastAPI Server]
+    user -->|MCP| mcp[MCP Server]
+
+    api --> framework
+    mcp --> framework
+
+    framework -->|LangGraph| graph[StateGraph]
+    graph --> route[Route Decision]
+
+    route -->|parallel| parallel[Parallel Agents\nHRM + TRM]
+    route -->|mcts| mcts[MCTS Simulation]
+    route -->|aggregate| agg[Aggregate Results]
+
+    parallel --> agg
+    mcts --> agg
+
+    agg --> eval[Evaluate Consensus]
+    eval -->|consensus| synth[Synthesize Response]
+    eval -->|iterate| route
+
+    synth --> output[Final Response]
+    output --> obs[Observability\n(OTel, Prometheus)]
+    output --> storage[S3 Artifacts]
+
+    classDef svc fill:#e1d5e7,stroke:#333
+    classDef core fill:#d5e8d4,stroke:#333
+    classDef flow fill:#fff2cc,stroke:#333
+
+    class api,mcp svc
+    class framework core
+    class graph,route,parallel,mcts,agg,eval,synth,output flow
+

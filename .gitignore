@@ -193,6 +193,7 @@ google_credentials.json
 *.onnx
 rnn_meta_controller.pt
 rnn_meta_controller.history.json
+artifacts/
 
 # Docker volumes
 docker/volumes/

@@ -1,0 +1,20 @@
+flowchart LR
+    D[Dataset\n(data/, generated_dataset.json)] --> FE[Feature Extraction\nnormalize_features/ features_to_text]
+
+    FE --> RNN[RNN Training\nPyTorch GRU]
+    FE --> BERT[BERT LoRA Fine-tune\nTransformers]
+
+    RNN --> E1[Eval/Validation]
+    BERT --> E2[Eval/Validation]
+
+    E1 --> TRK[Experiment Tracking\nW&B / Braintrust]
+    E2 --> TRK
+
+    RNN --> CK1[S3 Checkpoint]
+    BERT --> CK2[S3 Checkpoint]
+
+    E1 --> PC[(Pinecone 10D Vectors)]
+    E2 --> PC
+
+    TRK --> RPT[Reports & Dashboards]
+
