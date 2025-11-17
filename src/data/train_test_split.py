@@ -109,9 +109,7 @@ class DataSplitter:
             "shuffled": shuffle,
         }
 
-        logger.info(
-            f"Split {n} samples: train={len(train_samples)}, " f"val={len(val_samples)}, test={len(test_samples)}"
-        )
+        logger.info(f"Split {n} samples: train={len(train_samples)}, val={len(val_samples)}, test={len(test_samples)}")
 
         return DataSplit(
             train=train_samples,

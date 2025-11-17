@@ -368,8 +368,7 @@ class MetaControllerDataGenerator:
         """
         if len(features_list) != len(labels_list):
             raise ValueError(
-                f"features_list and labels_list must have same length, "
-                f"got {len(features_list)} and {len(labels_list)}"
+                f"features_list and labels_list must have same length, got {len(features_list)} and {len(labels_list)}"
             )
 
         if len(features_list) == 0:
@@ -423,8 +422,7 @@ class MetaControllerDataGenerator:
         """
         if len(features_list) != len(labels_list):
             raise ValueError(
-                f"features_list and labels_list must have same length, "
-                f"got {len(features_list)} and {len(labels_list)}"
+                f"features_list and labels_list must have same length, got {len(features_list)} and {len(labels_list)}"
             )
 
         # Convert features to text
@@ -493,7 +491,7 @@ class MetaControllerDataGenerator:
         n_labels = y.shape[0] if isinstance(y, (torch.Tensor, np.ndarray)) else len(y)
 
         if n_samples != n_labels:
-            raise ValueError(f"X and y must have same number of samples, " f"got {n_samples} and {n_labels}")
+            raise ValueError(f"X and y must have same number of samples, got {n_samples} and {n_labels}")
 
         if n_samples == 0:
             raise ValueError("Cannot split empty dataset")
@@ -562,8 +560,7 @@ class MetaControllerDataGenerator:
         """
         if len(features_list) != len(labels_list):
             raise ValueError(
-                f"features_list and labels_list must have same length, "
-                f"got {len(features_list)} and {len(labels_list)}"
+                f"features_list and labels_list must have same length, got {len(features_list)} and {len(labels_list)}"
             )
 
         # Convert to serializable format

@@ -28,7 +28,7 @@ try:
     _TRANSFORMERS_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "transformers library not installed. " "Install it with: pip install transformers",
+        "transformers library not installed. Install it with: pip install transformers",
         ImportWarning,
         stacklevel=2,
     )
@@ -41,7 +41,7 @@ try:
     _PEFT_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "peft library not installed. " "Install it with: pip install peft",
+        "peft library not installed. Install it with: pip install peft",
         ImportWarning,
         stacklevel=2,
     )
@@ -136,11 +136,11 @@ class BERTMetaController(AbstractMetaController):
         # Check for required dependencies
         if not _TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "transformers library is required for BERTMetaController. " "Install it with: pip install transformers"
+                "transformers library is required for BERTMetaController. Install it with: pip install transformers"
             )
 
         if use_lora and not _PEFT_AVAILABLE:
-            raise ImportError("peft library is required for LoRA support. " "Install it with: pip install peft")
+            raise ImportError("peft library is required for LoRA support. Install it with: pip install peft")
 
         # Set random seed for reproducibility
         torch.manual_seed(seed)

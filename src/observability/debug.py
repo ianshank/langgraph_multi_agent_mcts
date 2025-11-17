@@ -90,7 +90,7 @@ class MCTSDebugger:
 
         self._selection_history.append(selection_data)
 
-        log_msg = f"Selection: node={node_id} UCB={ucb_score:.4f} " f"visits={visits} value={value:.4f} depth={depth}"
+        log_msg = f"Selection: node={node_id} UCB={ucb_score:.4f} visits={visits} value={value:.4f} depth={depth}"
 
         if is_selected:
             log_msg += " [SELECTED]"

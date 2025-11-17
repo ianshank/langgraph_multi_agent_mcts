@@ -139,7 +139,7 @@ class RNNTrainer:
             dropout=dropout,
         )
         self.model = self.model.to(self.device)
-        self.logger.info(f"Model initialized: hidden_dim={hidden_dim}, " f"num_layers={num_layers}, dropout={dropout}")
+        self.logger.info(f"Model initialized: hidden_dim={hidden_dim}, num_layers={num_layers}, dropout={dropout}")
 
         # Setup optimizer
         self.optimizer = optim.Adam(self.model.parameters(), lr=lr)
@@ -448,7 +448,7 @@ class RNNTrainer:
 
                 # Check for early stopping
                 if patience_counter >= self.early_stopping_patience:
-                    self.logger.info(f"Early stopping triggered at epoch {epoch}. " f"Best epoch was {best_epoch}.")
+                    self.logger.info(f"Early stopping triggered at epoch {epoch}. Best epoch was {best_epoch}.")
                     stopped_early = True
                     break
 

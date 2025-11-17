@@ -1100,7 +1100,7 @@ class TestMCTSIntegration:
         def state_trans(state, action):
             depth = state.features.get("depth", 0)
             return MCTSState(
-                state_id=f"depth_{depth+1}_{action}",
+                state_id=f"depth_{depth + 1}_{action}",
                 features={"depth": depth + 1},
             )
 

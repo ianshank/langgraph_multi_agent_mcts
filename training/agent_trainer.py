@@ -158,7 +158,7 @@ class BaseAgentTrainer(ABC):
             # Logging
             if batch_idx % 100 == 0:
                 logger.info(
-                    f"Epoch {self.current_epoch}, Batch {batch_idx}, " f"Loss: {loss.item() * accumulation_steps:.4f}"
+                    f"Epoch {self.current_epoch}, Batch {batch_idx}, Loss: {loss.item() * accumulation_steps:.4f}"
                 )
 
         return total_loss / num_batches if num_batches > 0 else 0.0

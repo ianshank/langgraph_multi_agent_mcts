@@ -262,9 +262,7 @@ class MetaControllerConfigLoader:
             # Check if device starts with a valid prefix (e.g., "cuda:0", "cuda:1")
             device_base = config.inference.device.split(":")[0]
             if device_base not in valid_devices:
-                raise ValueError(
-                    f"Invalid device '{config.inference.device}'. " f"Must start with one of: {valid_devices}"
-                )
+                raise ValueError(f"Invalid device '{config.inference.device}'. Must start with one of: {valid_devices}")
 
         if not isinstance(config.inference.seed, int) or config.inference.seed < 0:
             raise ValueError(f"Inference seed must be a non-negative integer, got {config.inference.seed}")

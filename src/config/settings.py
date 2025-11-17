@@ -203,7 +203,7 @@ class Settings(BaseSettings):
                 import warnings
 
                 warnings.warn(
-                    "LM Studio URL points to non-localhost address. " "Ensure this is intentional and secure.",
+                    "LM Studio URL points to non-localhost address. Ensure this is intentional and secure.",
                     UserWarning,
                     stacklevel=2,
                 )

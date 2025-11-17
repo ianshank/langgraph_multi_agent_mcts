@@ -315,7 +315,7 @@ class TacticalAugmenter:
             all_samples.extend(result.augmented)
 
         logger.info(
-            f"Augmented {len(samples)} samples to {len(all_samples)} " f"(+{len(all_samples) - len(samples)} augmented)"
+            f"Augmented {len(samples)} samples to {len(all_samples)} (+{len(all_samples) - len(samples)} augmented)"
         )
 
         return all_samples
@@ -419,7 +419,7 @@ class CyberSecurityAugmenter(TacticalAugmenter):
         tactic = self.rng.choice(self.MITRE_TACTICS)
         severity = self.rng.choice(self.SEVERITY_LEVELS)
 
-        augmented_text = f"[MITRE ATT&CK: {tactic}] [Severity: {severity}] " f"{sample.text}"
+        augmented_text = f"[MITRE ATT&CK: {tactic}] [Severity: {severity}] {sample.text}"
 
         return DatasetSample(
             id=f"{sample.id}_mitre_{self._augmentation_count}",
@@ -467,7 +467,7 @@ class MilitaryTacticalAugmenter(TacticalAugmenter):
         force = self.rng.choice(self.FORCE_COMPOSITIONS)
         condition = self.rng.choice(self.ENVIRONMENTAL_CONDITIONS)
 
-        augmented_text = f"[Force: {force}] [Conditions: {condition}] " f"{sample.text}"
+        augmented_text = f"[Force: {force}] [Conditions: {condition}] {sample.text}"
 
         return DatasetSample(
             id=f"{sample.id}_tactical_{self._augmentation_count}",

@@ -79,9 +79,7 @@ class ChunkingStrategy:
         self.chunk_overlap = config.get("chunk_overlap", 50)
         self.strategy = config.get("chunk_strategy", "semantic")
 
-        logger.info(
-            f"ChunkingStrategy: size={self.chunk_size}, " f"overlap={self.chunk_overlap}, strategy={self.strategy}"
-        )
+        logger.info(f"ChunkingStrategy: size={self.chunk_size}, overlap={self.chunk_overlap}, strategy={self.strategy}")
 
     def chunk_document(self, text: str, doc_id: str = "") -> list[DocumentChunk]:
         """

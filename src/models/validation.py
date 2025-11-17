@@ -142,7 +142,7 @@ class MCTSConfig(BaseModel):
         """Validate exploration weight is within reasonable bounds."""
         if not (MIN_EXPLORATION_WEIGHT <= v <= MAX_EXPLORATION_WEIGHT):
             raise ValueError(
-                f"Exploration weight must be between {MIN_EXPLORATION_WEIGHT} " f"and {MAX_EXPLORATION_WEIGHT}"
+                f"Exploration weight must be between {MIN_EXPLORATION_WEIGHT} and {MAX_EXPLORATION_WEIGHT}"
             )
         # Warn for unusual values
         if v < 0.5 or v > 3.0:
