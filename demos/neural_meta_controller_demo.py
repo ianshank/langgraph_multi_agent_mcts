@@ -73,9 +73,18 @@ def demo_feature_extraction() -> None:
 
     print_subheader("Normalized 10-D Vector")
     normalized = normalize_features(features)
-    labels = ["hrm_conf", "trm_conf", "mcts_val", "consensus",
-              "last_hrm", "last_trm", "last_mcts", "iter_norm",
-              "query_norm", "has_rag"]
+    labels = [
+        "hrm_conf",
+        "trm_conf",
+        "mcts_val",
+        "consensus",
+        "last_hrm",
+        "last_trm",
+        "last_mcts",
+        "iter_norm",
+        "query_norm",
+        "has_rag",
+    ]
     for i, (label, value) in enumerate(zip(labels, normalized)):
         print(f"  [{i}] {label}: {value:.4f}")
 
@@ -111,9 +120,11 @@ def demo_rnn_controller() -> None:
         print(f"\n  {name}:")
         print(f"    Selected Agent: {prediction.agent.upper()}")
         print(f"    Confidence: {prediction.confidence:.4f}")
-        print(f"    Probabilities: HRM={prediction.probabilities['hrm']:.3f}, "
-              f"TRM={prediction.probabilities['trm']:.3f}, "
-              f"MCTS={prediction.probabilities['mcts']:.3f}")
+        print(
+            f"    Probabilities: HRM={prediction.probabilities['hrm']:.3f}, "
+            f"TRM={prediction.probabilities['trm']:.3f}, "
+            f"MCTS={prediction.probabilities['mcts']:.3f}"
+        )
 
 
 def demo_bert_controller() -> None:
@@ -154,7 +165,7 @@ def demo_bert_controller() -> None:
 
     print(f"  First prediction time: {first_time:.4f}s")
     print(f"  Cached prediction time: {second_time:.4f}s")
-    print(f"  Speedup: {first_time/second_time:.2f}x")
+    print(f"  Speedup: {first_time / second_time:.2f}x")
 
     cache_info = controller.get_cache_info()
     print(f"  Cache size: {cache_info['cache_size']} entries")
@@ -387,6 +398,7 @@ def main():
         except Exception as e:
             print(f"\n[ERROR] Error in {name} demo: {e}")
             import traceback
+
             traceback.print_exc()
 
     print("\n" + "=" * 70)

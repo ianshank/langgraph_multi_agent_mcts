@@ -255,6 +255,7 @@ def trace_operation(
         async def select_best_child(node):
             ...
     """
+
     def decorator(func):
         span_name = name or f"{func.__module__}.{func.__name__}"
 

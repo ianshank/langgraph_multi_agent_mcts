@@ -260,9 +260,7 @@ class ExperimentTracker:
                 "avg_time_ms": statistics.mean(times) if times else 0.0,
                 "avg_visits": statistics.mean(visits) if visits else 0.0,
                 "value_per_ms": (
-                    statistics.mean(values) / statistics.mean(times)
-                    if times and statistics.mean(times) > 0
-                    else 0.0
+                    statistics.mean(values) / statistics.mean(times) if times and statistics.mean(times) > 0 else 0.0
                 ),
             }
 
@@ -288,11 +286,7 @@ class ExperimentTracker:
         best_values = [r.best_action_value for r in seed_results]
         best_visits = [r.best_action_visits for r in seed_results]
 
-        is_deterministic = (
-            len(set(best_actions)) == 1
-            and len(set(best_values)) == 1
-            and len(set(best_visits)) == 1
-        )
+        is_deterministic = len(set(best_actions)) == 1 and len(set(best_values)) == 1 and len(set(best_visits)) == 1
 
         return {
             "seed": seed,
@@ -366,21 +360,9 @@ class ExperimentTracker:
                     "experiment_id": result.experiment_id,
                     "timestamp": result.timestamp,
                     "seed": result.seed,
-                    "config_name": (
-                        result.config.get("name", "unnamed")
-                        if result.config
-                        else "unknown"
-                    ),
-                    "num_iterations": (
-                        result.config.get("num_iterations", 0)
-                        if result.config
-                        else 0
-                    ),
-                    "exploration_weight": (
-                        result.config.get("exploration_weight", 0)
-                        if result.config
-                        else 0
-                    ),
+                    "config_name": (result.config.get("name", "unnamed") if result.config else "unknown"),
+                    "num_iterations": (result.config.get("num_iterations", 0) if result.config else 0),
+                    "exploration_weight": (result.config.get("exploration_weight", 0) if result.config else 0),
                     "best_action": result.best_action,
                     "best_action_value": result.best_action_value,
                     "best_action_visits": result.best_action_visits,

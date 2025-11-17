@@ -8,6 +8,7 @@ from typing import Any
 
 try:
     import wandb
+
     WANDB_AVAILABLE = True
 except ImportError:
     WANDB_AVAILABLE = False
@@ -17,12 +18,7 @@ except ImportError:
 class WandBTracker:
     """Weights & Biases experiment tracker for multi-agent MCTS demo."""
 
-    def __init__(
-        self,
-        project_name: str = "langgraph-mcts-demo",
-        entity: str | None = None,
-        enabled: bool = True
-    ):
+    def __init__(self, project_name: str = "langgraph-mcts-demo", entity: str | None = None, enabled: bool = True):
         """Initialize W&B tracker.
 
         Args:
@@ -41,10 +37,7 @@ class WandBTracker:
         return WANDB_AVAILABLE
 
     def init_run(
-        self,
-        run_name: str | None = None,
-        config: dict[str, Any] | None = None,
-        tags: list[str] | None = None
+        self, run_name: str | None = None, config: dict[str, Any] | None = None, tags: list[str] | None = None
     ) -> bool:
         """Initialize a new W&B run.
 
@@ -76,7 +69,7 @@ class WandBTracker:
                 name=run_name,
                 config=config or {},
                 tags=tags,
-                reinit=True
+                reinit=True,
             )
 
             self.run_id = self.run.id
@@ -107,7 +100,7 @@ class WandBTracker:
         response: str,
         confidence: float,
         execution_time_ms: float,
-        reasoning_steps: list[str] | None = None
+        reasoning_steps: list[str] | None = None,
     ):
         """Log individual agent results.
 
@@ -134,9 +127,7 @@ class WandBTracker:
             wandb.log(metrics)
 
             # Log response as text
-            wandb.log({
-                f"{agent_name}/response": wandb.Html(f"<pre>{response}</pre>")
-            })
+            wandb.log({f"{agent_name}/response": wandb.Html(f"<pre>{response}</pre>")})
 
         except Exception as e:
             print(f"W&B agent result log error: {e}")
@@ -167,37 +158,27 @@ class WandBTracker:
             if "top_actions" in mcts_result:
                 top_actions_data = []
                 for action in mcts_result["top_actions"]:
-                    top_actions_data.append([
-                        action.get("action", ""),
-                        action.get("visits", 0),
-                        action.get("value", 0),
-                        action.get("ucb1", 0)
-                    ])
+                    top_actions_data.append(
+                        [
+                            action.get("action", ""),
+                            action.get("visits", 0),
+                            action.get("value", 0),
+                            action.get("ucb1", 0),
+                        ]
+                    )
 
                 if top_actions_data:
-                    table = wandb.Table(
-                        data=top_actions_data,
-                        columns=["Action", "Visits", "Value", "UCB1"]
-                    )
+                    table = wandb.Table(data=top_actions_data, columns=["Action", "Visits", "Value", "UCB1"])
                     wandb.log({"mcts/top_actions_table": table})
 
             # Log tree visualization as text artifact
             if "tree_visualization" in mcts_result:
-                wandb.log({
-                    "mcts/tree_visualization": wandb.Html(
-                        f"<pre>{mcts_result['tree_visualization']}</pre>"
-                    )
-                })
+                wandb.log({"mcts/tree_visualization": wandb.Html(f"<pre>{mcts_result['tree_visualization']}</pre>")})
 
         except Exception as e:
             print(f"W&B MCTS result log error: {e}")
 
-    def log_consensus(
-        self,
-        consensus_score: float,
-        agents_used: list[str],
-        final_response: str
-    ):
+    def log_consensus(self, consensus_score: float, agents_used: list[str], final_response: str):
         """Log consensus metrics.
 
         Args:
@@ -209,12 +190,14 @@ class WandBTracker:
             return
 
         try:
-            wandb.log({
-                "consensus/score": consensus_score,
-                "consensus/num_agents": len(agents_used),
-                "consensus/agents": ", ".join(agents_used),
-                "consensus/final_response_length": len(final_response)
-            })
+            wandb.log(
+                {
+                    "consensus/score": consensus_score,
+                    "consensus/num_agents": len(agents_used),
+                    "consensus/agents": ", ".join(agents_used),
+                    "consensus/final_response_length": len(final_response),
+                }
+            )
 
             # Categorize consensus level
             if consensus_score > 0.7:
@@ -239,10 +222,7 @@ class WandBTracker:
             return
 
         try:
-            wandb.log({
-                "performance/total_time_ms": total_time_ms,
-                "performance/total_time_s": total_time_ms / 1000
-            })
+            wandb.log({"performance/total_time_ms": total_time_ms, "performance/total_time_s": total_time_ms / 1000})
         except Exception as e:
             print(f"W&B performance log error: {e}")
 
@@ -257,20 +237,13 @@ class WandBTracker:
 
         try:
             # Create artifact
-            artifact = wandb.Artifact(
-                name=f"query_result_{self.run_id}",
-                type="result"
-            )
+            artifact = wandb.Artifact(name=f"query_result_{self.run_id}", type="result")
 
             # Add result as JSON
             import json
             import tempfile
 
-            with tempfile.NamedTemporaryFile(
-                mode='w',
-                suffix='.json',
-                delete=False
-            ) as f:
+            with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
                 json.dump(result, f, indent=2, default=str)
                 temp_path = f.name
 
@@ -284,13 +257,7 @@ class WandBTracker:
             print(f"W&B full result log error: {e}")
 
     def log_query_summary(
-        self,
-        query: str,
-        use_hrm: bool,
-        use_trm: bool,
-        use_mcts: bool,
-        consensus_score: float,
-        total_time_ms: float
+        self, query: str, use_hrm: bool, use_trm: bool, use_mcts: bool, consensus_score: float, total_time_ms: float
     ):
         """Log a summary row for the query.
 
@@ -307,19 +274,18 @@ class WandBTracker:
 
         try:
             # Create summary table entry
-            summary_data = [[
-                query[:100] + "..." if len(query) > 100 else query,
-                "✓" if use_hrm else "✗",
-                "✓" if use_trm else "✗",
-                "✓" if use_mcts else "✗",
-                f"{consensus_score:.1%}",
-                f"{total_time_ms:.2f}"
-            ]]
+            summary_data = [
+                [
+                    query[:100] + "..." if len(query) > 100 else query,
+                    "✓" if use_hrm else "✗",
+                    "✓" if use_trm else "✗",
+                    "✓" if use_mcts else "✗",
+                    f"{consensus_score:.1%}",
+                    f"{total_time_ms:.2f}",
+                ]
+            ]
 
-            table = wandb.Table(
-                data=summary_data,
-                columns=["Query", "HRM", "TRM", "MCTS", "Consensus", "Time (ms)"]
-            )
+            table = wandb.Table(data=summary_data, columns=["Query", "HRM", "TRM", "MCTS", "Consensus", "Time (ms)"])
 
             wandb.log({"query_summary": table})
 
@@ -358,9 +324,7 @@ _global_tracker: WandBTracker | None = None
 
 
 def get_tracker(
-    project_name: str = "langgraph-mcts-demo",
-    entity: str | None = None,
-    enabled: bool = True
+    project_name: str = "langgraph-mcts-demo", entity: str | None = None, enabled: bool = True
 ) -> WandBTracker:
     """Get or create the global W&B tracker.
 
@@ -375,11 +339,7 @@ def get_tracker(
     global _global_tracker
 
     if _global_tracker is None:
-        _global_tracker = WandBTracker(
-            project_name=project_name,
-            entity=entity,
-            enabled=enabled
-        )
+        _global_tracker = WandBTracker(project_name=project_name, entity=entity, enabled=enabled)
 
     return _global_tracker
 

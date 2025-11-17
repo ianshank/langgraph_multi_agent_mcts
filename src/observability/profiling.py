@@ -177,7 +177,7 @@ class AsyncProfiler:
                         "memory_delta_mb": round(result.memory_delta_mb, 2),
                         "success": success,
                     }
-                }
+                },
             )
 
     @asynccontextmanager
@@ -245,7 +245,7 @@ class AsyncProfiler:
                         "memory_delta_mb": round(result.memory_delta_mb, 2),
                         "success": success,
                     }
-                }
+                },
             )
 
     def sample_memory(self, session_id: Optional[str] = None) -> Dict[str, float]:
@@ -316,10 +316,7 @@ class AsyncProfiler:
                 return {}
             return self._compute_stats(name, timings)
         else:
-            return {
-                op_name: self._compute_stats(op_name, times)
-                for op_name, times in self._aggregate_timings.items()
-            }
+            return {op_name: self._compute_stats(op_name, times) for op_name, times in self._aggregate_timings.items()}
 
     def _compute_stats(self, name: str, timings: List[float]) -> Dict[str, Any]:
         """Compute statistics for a list of timings."""
@@ -420,9 +417,7 @@ class MemoryProfiler:
         delta = current - self._baseline
 
         if delta > threshold_mb:
-            self.logger.warning(
-                f"Potential memory leak detected: {delta:.2f} MB increase"
-            )
+            self.logger.warning(f"Potential memory leak detected: {delta:.2f} MB increase")
             return {
                 "status": "potential_leak",
                 "baseline_mb": round(self._baseline, 2),
@@ -518,8 +513,7 @@ def generate_performance_report(session_id: Optional[str] = None) -> Dict[str, A
                 session_times[timing.name].append(timing.elapsed_ms)
 
             report["session"]["timing_breakdown"] = {
-                name: profiler._compute_stats(name, times)
-                for name, times in session_times.items()
+                name: profiler._compute_stats(name, times) for name, times in session_times.items()
             }
 
         if session.memory_samples:
@@ -567,6 +561,7 @@ def profile_function(name: Optional[str] = None, metadata: Optional[Dict[str, An
         async def async_operation():
             ...
     """
+
     def decorator(func):
         op_name = name or f"{func.__module__}.{func.__name__}"
 

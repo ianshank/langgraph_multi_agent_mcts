@@ -193,9 +193,7 @@ class AsyncAgentBase(ABC):
         """
         return context
 
-    async def post_process(
-        self, context: AgentContext, result: AgentResult
-    ) -> AgentResult:
+    async def post_process(self, context: AgentContext, result: AgentResult) -> AgentResult:
         """
         Hook called after processing.
 
@@ -305,17 +303,13 @@ class AsyncAgentBase(ABC):
             self._total_processing_time += elapsed_ms
             self.metrics.record_latency(self.name, elapsed_ms)
             if result.token_usage:
-                self.metrics.record_tokens(
-                    self.name, result.token_usage.get("total_tokens", 0)
-                )
+                self.metrics.record_tokens(self.name, result.token_usage.get("total_tokens", 0))
             self.metrics.record_success(self.name)
 
             # Post-processing hook
             result = await self.post_process(context, result)
 
-            self.logger.info(
-                f"Agent {self.name} processed query in {elapsed_ms:.2f}ms"
-            )
+            self.logger.info(f"Agent {self.name} processed query in {elapsed_ms:.2f}ms")
 
         except Exception as e:
             result = await self.on_error(context, e)
@@ -344,9 +338,7 @@ class AsyncAgentBase(ABC):
             "total_processing_time_ms": self._total_processing_time,
             "error_count": self._error_count,
             "average_processing_time_ms": (
-                self._total_processing_time / self._request_count
-                if self._request_count > 0
-                else 0.0
+                self._total_processing_time / self._request_count if self._request_count > 0 else 0.0
             ),
             "initialized": self._initialized,
         }
@@ -460,9 +452,7 @@ class ParallelAgent(CompositeAgent):
             )
 
         # Aggregate: highest confidence wins (simple strategy)
-        best_result = max(
-            successful_results, key=lambda r: r.get("metadata", {}).get("confidence", 0.0)
-        )
+        best_result = max(successful_results, key=lambda r: r.get("metadata", {}).get("confidence", 0.0))
 
         return AgentResult(
             response=best_result["response"],
@@ -496,10 +486,12 @@ class SequentialAgent(CompositeAgent):
         for agent in self.sub_agents:
             result = await agent.process(context=current_context)
 
-            intermediate_results.append({
-                "agent": agent.name,
-                "result": result,
-            })
+            intermediate_results.append(
+                {
+                    "agent": agent.name,
+                    "result": result,
+                }
+            )
 
             # Check for failure
             if not result.get("metadata", {}).get("success", True):

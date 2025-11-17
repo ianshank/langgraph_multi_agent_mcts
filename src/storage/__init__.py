@@ -17,6 +17,7 @@ try:
         PineconeVectorStore,
         PINECONE_AVAILABLE,
     )
+
     _pinecone_exports = [
         "PineconeVectorStore",
         "PINECONE_AVAILABLE",

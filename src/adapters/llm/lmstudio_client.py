@@ -60,9 +60,7 @@ class LMStudioClient(BaseLLMClient):
         import os
 
         # Allow overriding via environment variable
-        base_url = base_url or os.environ.get(
-            "LMSTUDIO_BASE_URL", self.DEFAULT_BASE_URL
-        )
+        base_url = base_url or os.environ.get("LMSTUDIO_BASE_URL", self.DEFAULT_BASE_URL)
 
         super().__init__(
             api_key=api_key or "not-required",  # Placeholder
@@ -135,9 +133,7 @@ class LMStudioClient(BaseLLMClient):
         if status_code >= 500:
             raise LLMServerError(self.PROVIDER_NAME, status_code, error_message)
         else:
-            raise LLMClientError(
-                error_message, self.PROVIDER_NAME, status_code=status_code
-            )
+            raise LLMClientError(error_message, self.PROVIDER_NAME, status_code=status_code)
 
     async def generate(
         self,
@@ -216,9 +212,7 @@ class LMStudioClient(BaseLLMClient):
 
         # Note: most local models don't support tools well
         if tools:
-            logger.warning(
-                "Tool calling may not be fully supported by local models"
-            )
+            logger.warning("Tool calling may not be fully supported by local models")
             payload["tools"] = tools
 
         # Add additional kwargs (e.g., top_p, repeat_penalty)

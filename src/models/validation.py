@@ -47,27 +47,18 @@ class QueryInput(BaseModel):
     )
 
     query: str = Field(
-        ...,
-        min_length=MIN_QUERY_LENGTH,
-        max_length=MAX_QUERY_LENGTH,
-        description="User query to process"
+        ..., min_length=MIN_QUERY_LENGTH, max_length=MAX_QUERY_LENGTH, description="User query to process"
     )
 
-    use_rag: bool = Field(
-        default=True,
-        description="Enable RAG context retrieval"
-    )
+    use_rag: bool = Field(default=True, description="Enable RAG context retrieval")
 
-    use_mcts: bool = Field(
-        default=False,
-        description="Enable MCTS simulation for tactical planning"
-    )
+    use_mcts: bool = Field(default=False, description="Enable MCTS simulation for tactical planning")
 
     thread_id: Optional[str] = Field(
         default=None,
         max_length=100,
-        pattern=r'^[a-zA-Z0-9_-]+$',
-        description="Conversation thread ID for state persistence"
+        pattern=r"^[a-zA-Z0-9_-]+$",
+        description="Conversation thread ID for state persistence",
     )
 
     @field_validator("query")
@@ -89,22 +80,20 @@ class QueryInput(BaseModel):
         v = v.replace("\x00", "")
 
         # Limit consecutive whitespace
-        v = re.sub(r'\s+', ' ', v)
+        v = re.sub(r"\s+", " ", v)
 
         # Check for suspicious patterns (basic injection prevention)
         suspicious_patterns = [
-            r'<script[^>]*>',  # Script tags
-            r'javascript:',     # JavaScript URLs
-            r'on\w+\s*=',      # Event handlers
-            r'\{\{.*\}\}',     # Template injection
-            r'\$\{.*\}',       # Template literals
+            r"<script[^>]*>",  # Script tags
+            r"javascript:",  # JavaScript URLs
+            r"on\w+\s*=",  # Event handlers
+            r"\{\{.*\}\}",  # Template injection
+            r"\$\{.*\}",  # Template literals
         ]
 
         for pattern in suspicious_patterns:
             if re.search(pattern, v, re.IGNORECASE):
-                raise ValueError(
-                    f"Query contains potentially unsafe content matching pattern: {pattern}"
-                )
+                raise ValueError(f"Query contains potentially unsafe content matching pattern: {pattern}")
 
         return v
 
@@ -132,31 +121,20 @@ class MCTSConfig(BaseModel):
     )
 
     iterations: int = Field(
-        default=100,
-        ge=MIN_ITERATIONS,
-        le=MAX_ITERATIONS,
-        description="Number of MCTS simulation iterations"
+        default=100, ge=MIN_ITERATIONS, le=MAX_ITERATIONS, description="Number of MCTS simulation iterations"
     )
 
     exploration_weight: float = Field(
         default=1.414,
         ge=MIN_EXPLORATION_WEIGHT,
         le=MAX_EXPLORATION_WEIGHT,
-        description="UCB1 exploration constant (c parameter)"
+        description="UCB1 exploration constant (c parameter)",
     )
 
-    max_depth: int = Field(
-        default=10,
-        ge=1,
-        le=50,
-        description="Maximum tree depth for MCTS expansion"
-    )
+    max_depth: int = Field(default=10, ge=1, le=50, description="Maximum tree depth for MCTS expansion")
 
     simulation_timeout_seconds: float = Field(
-        default=30.0,
-        ge=1.0,
-        le=300.0,
-        description="Timeout for MCTS simulation phase"
+        default=30.0, ge=1.0, le=300.0, description="Timeout for MCTS simulation phase"
     )
 
     @field_validator("exploration_weight")
@@ -165,16 +143,16 @@ class MCTSConfig(BaseModel):
         """Validate exploration weight is within reasonable bounds."""
         if not (MIN_EXPLORATION_WEIGHT <= v <= MAX_EXPLORATION_WEIGHT):
             raise ValueError(
-                f"Exploration weight must be between {MIN_EXPLORATION_WEIGHT} "
-                f"and {MAX_EXPLORATION_WEIGHT}"
+                f"Exploration weight must be between {MIN_EXPLORATION_WEIGHT} and {MAX_EXPLORATION_WEIGHT}"
             )
         # Warn for unusual values
         if v < 0.5 or v > 3.0:
             import warnings
+
             warnings.warn(
                 f"Exploration weight {v} is outside typical range (0.5-3.0). "
                 "This may lead to suboptimal search behavior.",
-                UserWarning
+                UserWarning,
             )
         return v
 
@@ -188,33 +166,15 @@ class AgentConfig(BaseModel):
         extra="forbid",
     )
 
-    max_iterations: int = Field(
-        default=3,
-        ge=1,
-        le=20,
-        description="Maximum iterations for agent refinement"
-    )
+    max_iterations: int = Field(default=3, ge=1, le=20, description="Maximum iterations for agent refinement")
 
     consensus_threshold: float = Field(
-        default=0.75,
-        ge=0.0,
-        le=1.0,
-        description="Consensus threshold for agent agreement"
+        default=0.75, ge=0.0, le=1.0, description="Consensus threshold for agent agreement"
     )
 
-    temperature: float = Field(
-        default=0.7,
-        ge=0.0,
-        le=2.0,
-        description="LLM temperature for response generation"
-    )
+    temperature: float = Field(default=0.7, ge=0.0, le=2.0, description="LLM temperature for response generation")
 
-    max_tokens: int = Field(
-        default=2048,
-        ge=1,
-        le=128000,
-        description="Maximum tokens in LLM response"
-    )
+    max_tokens: int = Field(default=2048, ge=1, le=128000, description="Maximum tokens in LLM response")
 
     @field_validator("temperature")
     @classmethod
@@ -234,33 +194,15 @@ class RAGConfig(BaseModel):
         extra="forbid",
     )
 
-    top_k: int = Field(
-        default=5,
-        ge=1,
-        le=50,
-        description="Number of documents to retrieve"
-    )
+    top_k: int = Field(default=5, ge=1, le=50, description="Number of documents to retrieve")
 
     similarity_threshold: float = Field(
-        default=0.5,
-        ge=0.0,
-        le=1.0,
-        description="Minimum similarity score for retrieved documents"
+        default=0.5, ge=0.0, le=1.0, description="Minimum similarity score for retrieved documents"
     )
 
-    chunk_size: int = Field(
-        default=1000,
-        ge=100,
-        le=10000,
-        description="Document chunk size for embedding"
-    )
+    chunk_size: int = Field(default=1000, ge=100, le=10000, description="Document chunk size for embedding")
 
-    chunk_overlap: int = Field(
-        default=200,
-        ge=0,
-        le=2000,
-        description="Overlap between document chunks"
-    )
+    chunk_overlap: int = Field(default=200, ge=0, le=2000, description="Overlap between document chunks")
 
     @model_validator(mode="after")
     def validate_chunk_overlap(self) -> "RAGConfig":
@@ -286,21 +228,13 @@ class MCPToolInput(BaseModel):
         ...,
         min_length=1,
         max_length=100,
-        pattern=r'^[a-zA-Z][a-zA-Z0-9_-]*$',
-        description="Name of the MCP tool to invoke"
+        pattern=r"^[a-zA-Z][a-zA-Z0-9_-]*$",
+        description="Name of the MCP tool to invoke",
     )
 
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Tool parameters as key-value pairs"
-    )
+    parameters: Dict[str, Any] = Field(default_factory=dict, description="Tool parameters as key-value pairs")
 
-    timeout_seconds: float = Field(
-        default=30.0,
-        ge=1.0,
-        le=300.0,
-        description="Timeout for tool execution"
-    )
+    timeout_seconds: float = Field(default=30.0, ge=1.0, le=300.0, description="Timeout for tool execution")
 
     @field_validator("tool_name")
     @classmethod
@@ -334,7 +268,7 @@ class MCPToolInput(BaseModel):
                 raise ValueError("Parameter keys must be strings")
             if len(key) > 100:
                 raise ValueError(f"Parameter key '{key[:20]}...' exceeds maximum length")
-            if not re.match(r'^[a-zA-Z_][a-zA-Z0-9_]*$', key):
+            if not re.match(r"^[a-zA-Z_][a-zA-Z0-9_]*$", key):
                 raise ValueError(f"Invalid parameter key format: {key}")
 
         return v
@@ -349,12 +283,7 @@ class FileReadInput(MCPToolInput):
 
     tool_name: str = Field(default="read_file", frozen=True)
 
-    file_path: str = Field(
-        ...,
-        min_length=1,
-        max_length=1000,
-        description="Path to file to read"
-    )
+    file_path: str = Field(..., min_length=1, max_length=1000, description="Path to file to read")
 
     @field_validator("file_path")
     @classmethod
@@ -370,10 +299,8 @@ class FileReadInput(MCPToolInput):
         # Check for absolute paths (may be allowed in some contexts)
         if v.startswith("/"):
             import warnings
-            warnings.warn(
-                "Absolute file path provided. Ensure this is within allowed directories.",
-                UserWarning
-            )
+
+            warnings.warn("Absolute file path provided. Ensure this is within allowed directories.", UserWarning)
 
         # Check for suspicious patterns
         suspicious = [
@@ -400,12 +327,7 @@ class WebFetchInput(MCPToolInput):
 
     tool_name: str = Field(default="web_fetch", frozen=True)
 
-    url: str = Field(
-        ...,
-        min_length=1,
-        max_length=2000,
-        description="URL to fetch"
-    )
+    url: str = Field(..., min_length=1, max_length=2000, description="URL to fetch")
 
     @field_validator("url")
     @classmethod
@@ -415,16 +337,14 @@ class WebFetchInput(MCPToolInput):
 
         # Must start with https:// for security (http:// only for local)
         if not v.startswith(("https://", "http://localhost", "http://127.0.0.1")):
-            raise ValueError(
-                "URL must use HTTPS protocol (except for localhost)"
-            )
+            raise ValueError("URL must use HTTPS protocol (except for localhost)")
 
         # Check for suspicious patterns
         if any(char in v for char in ["<", ">", "'", '"', ";"]):
             raise ValueError("URL contains invalid characters")
 
         # Validate basic URL structure
-        url_pattern = r'^https?://[^\s/$.?#].[^\s]*$'
+        url_pattern = r"^https?://[^\s/$.?#].[^\s]*$"
         if not re.match(url_pattern, v, re.IGNORECASE):
             raise ValueError("Invalid URL format")
 
@@ -442,16 +362,10 @@ class BatchQueryInput(BaseModel):
     )
 
     queries: List[QueryInput] = Field(
-        ...,
-        min_length=1,
-        max_length=MAX_BATCH_SIZE,
-        description="List of queries to process in batch"
+        ..., min_length=1, max_length=MAX_BATCH_SIZE, description="List of queries to process in batch"
     )
 
-    parallel: bool = Field(
-        default=False,
-        description="Process queries in parallel (if system supports)"
-    )
+    parallel: bool = Field(default=False, description="Process queries in parallel (if system supports)")
 
     @field_validator("queries")
     @classmethod
@@ -476,29 +390,16 @@ class APIRequestMetadata(BaseModel):
     )
 
     request_id: str = Field(
-        ...,
-        min_length=1,
-        max_length=100,
-        pattern=r'^[a-zA-Z0-9_-]+$',
-        description="Unique request identifier"
+        ..., min_length=1, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$", description="Unique request identifier"
     )
 
-    timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Request timestamp (UTC)"
-    )
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (UTC)")
 
     client_id: Optional[str] = Field(
-        default=None,
-        max_length=100,
-        pattern=r'^[a-zA-Z0-9_-]+$',
-        description="Client identifier for rate limiting"
+        default=None, max_length=100, pattern=r"^[a-zA-Z0-9_-]+$", description="Client identifier for rate limiting"
     )
 
-    source_ip: Optional[str] = Field(
-        default=None,
-        description="Source IP address (for audit logging)"
-    )
+    source_ip: Optional[str] = Field(default=None, description="Source IP address (for audit logging)")
 
     @field_validator("source_ip")
     @classmethod
@@ -507,6 +408,7 @@ class APIRequestMetadata(BaseModel):
         if v is not None:
             # Basic IPv4/IPv6 validation
             import ipaddress
+
             try:
                 ipaddress.ip_address(v)
             except ValueError:

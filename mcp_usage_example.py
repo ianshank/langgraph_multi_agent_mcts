@@ -13,24 +13,19 @@ from typing import Any, Dict, Optional
 
 class MCPClient:
     """Simple MCP client for demonstration purposes."""
-    
+
     def __init__(self):
         self.request_id = 0
-    
+
     def _next_id(self) -> int:
         """Get next request ID."""
         self.request_id += 1
         return self.request_id
-    
+
     def create_request(self, method: str, params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
         """Create an MCP request."""
-        return {
-            "jsonrpc": "2.0",
-            "id": self._next_id(),
-            "method": method,
-            "params": params or {}
-        }
-    
+        return {"jsonrpc": "2.0", "id": self._next_id(), "method": method, "params": params or {}}
+
     def format_response(self, response: Dict[str, Any]) -> str:
         """Format response for display."""
         if "error" in response:
@@ -44,75 +39,71 @@ class MCPClient:
 async def demo_mcp_tools():
     """Demonstrate MCP server tools."""
     client = MCPClient()
-    
+
     print("MCP Server Usage Examples")
     print("=" * 60)
-    
+
     # Example 1: List available tools
     print("\n1. Listing Available Tools:")
     request = client.create_request("tools/list")
     print(f"Request: {json.dumps(request, indent=2)}")
     print("Expected Response: List of available tools with their schemas")
-    
+
     # Example 2: Run MCTS Search
     print("\n2. Running MCTS Search:")
-    request = client.create_request("tools/call", {
-        "name": "run_mcts",
-        "arguments": {
-            "query": "How can I optimize a Python web application for better performance?",
-            "iterations": 50,
-            "exploration_weight": 1.414,
-            "seed": 42,
-            "use_rag": False
-        }
-    })
+    request = client.create_request(
+        "tools/call",
+        {
+            "name": "run_mcts",
+            "arguments": {
+                "query": "How can I optimize a Python web application for better performance?",
+                "iterations": 50,
+                "exploration_weight": 1.414,
+                "seed": 42,
+                "use_rag": False,
+            },
+        },
+    )
     print(f"Request: {json.dumps(request, indent=2)}")
     print("Expected Response: Best action and statistics from MCTS search")
-    
+
     # Example 3: Query an Agent
     print("\n3. Querying HRM Agent:")
-    request = client.create_request("tools/call", {
-        "name": "query_agent",
-        "arguments": {
-            "agent_type": "hrm",
-            "query": "Break down the problem of implementing a caching system",
-            "temperature": 0.7,
-            "max_tokens": 500
-        }
-    })
+    request = client.create_request(
+        "tools/call",
+        {
+            "name": "query_agent",
+            "arguments": {
+                "agent_type": "hrm",
+                "query": "Break down the problem of implementing a caching system",
+                "temperature": 0.7,
+                "max_tokens": 500,
+            },
+        },
+    )
     print(f"Request: {json.dumps(request, indent=2)}")
     print("Expected Response: HRM's hierarchical decomposition of the problem")
-    
+
     # Example 4: Health Check
     print("\n4. Performing Health Check:")
-    request = client.create_request("tools/call", {
-        "name": "health_check",
-        "arguments": {}
-    })
+    request = client.create_request("tools/call", {"name": "health_check", "arguments": {}})
     print(f"Request: {json.dumps(request, indent=2)}")
     print("Expected Response: Health status of framework and LLM provider")
-    
+
     # Example 5: Get Configuration
     print("\n5. Getting Current Configuration:")
-    request = client.create_request("tools/call", {
-        "name": "get_config",
-        "arguments": {}
-    })
+    request = client.create_request("tools/call", {"name": "get_config", "arguments": {}})
     print(f"Request: {json.dumps(request, indent=2)}")
     print("Expected Response: Current framework configuration settings")
-    
+
     # Example 6: List Artifacts
     print("\n6. Listing Stored Artifacts:")
-    request = client.create_request("tools/call", {
-        "name": "list_artifacts",
-        "arguments": {
-            "artifact_type": "mcts_stats",
-            "limit": 10
-        }
-    })
+    request = client.create_request(
+        "tools/call", {"name": "list_artifacts", "arguments": {"artifact_type": "mcts_stats", "limit": 10}}
+    )
     print(f"Request: {json.dumps(request, indent=2)}")
     print("Expected Response: List of stored MCTS run artifacts")
-    
+
     print("\n" + "=" * 60)
     print("Usage Notes:")
     print("- The MCP server communicates via JSON-RPC over stdio")
@@ -134,10 +125,10 @@ def main():
     print(f"- Base URL: http://localhost:1234/v1")
     print(f"- MCTS Iterations: 100")
     print(f"- Exploration Weight: 1.414")
-    
+
     # Run the demo
     asyncio.run(demo_mcp_tools())
-    
+
     print("\nFor a working implementation, see:")
     print("- Server: tools/mcp/server.py")
     print("- Config: mcp_config.json")

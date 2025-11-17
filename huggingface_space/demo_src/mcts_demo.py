@@ -11,6 +11,7 @@ from typing import Any
 @dataclass
 class MCTSNode:
     """A node in the MCTS tree."""
+
     state: str
     parent: "MCTSNode | None" = None
     children: list["MCTSNode"] = field(default_factory=list)
@@ -35,9 +36,7 @@ class MCTSNode:
             return self.value
 
         exploitation = self.value
-        exploration = exploration_weight * math.sqrt(
-            math.log(self.parent.visits) / self.visits
-        )
+        exploration = exploration_weight * math.sqrt(math.log(self.parent.visits) / self.visits)
         return exploitation + exploration
 
     def best_child(self, exploration_weight: float = 1.414) -> "MCTSNode":
@@ -49,12 +48,7 @@ class MCTSNode:
 
     def add_child(self, state: str, action: str) -> "MCTSNode":
         """Add a child node."""
-        child = MCTSNode(
-            state=state,
-            parent=self,
-            action=action,
-            depth=self.depth + 1
-        )
+        child = MCTSNode(state=state, parent=self, action=action, depth=self.depth + 1)
         self.children.append(child)
         return child
 
@@ -77,36 +71,36 @@ class MCTSDemo:
                 "Evaluate monolith for simplicity",
                 "Analyze team capabilities",
                 "Assess deployment requirements",
-                "Review data consistency needs"
+                "Review data consistency needs",
             ],
             "optimization": [
                 "Profile application hotspots",
                 "Implement caching layer",
                 "Use parallel processing",
                 "Optimize database queries",
-                "Reduce memory allocations"
+                "Reduce memory allocations",
             ],
             "database": [
                 "Analyze query patterns",
                 "Consider data relationships",
                 "Evaluate consistency requirements",
                 "Plan for horizontal scaling",
-                "Assess read/write ratios"
+                "Assess read/write ratios",
             ],
             "distributed": [
                 "Implement circuit breakers",
                 "Add retry mechanisms",
                 "Use message queues",
                 "Apply bulkhead pattern",
-                "Design for eventual consistency"
+                "Design for eventual consistency",
             ],
             "default": [
                 "Decompose the problem",
                 "Identify constraints",
                 "Evaluate trade-offs",
                 "Consider alternatives",
-                "Validate assumptions"
-            ]
+                "Validate assumptions",
+            ],
         }
 
     def _categorize_query(self, query: str) -> str:
@@ -216,11 +210,7 @@ class MCTSDemo:
         return "\n".join(lines)
 
     def search(
-        self,
-        query: str,
-        iterations: int = 25,
-        exploration_weight: float = 1.414,
-        seed: int | None = None
+        self, query: str, iterations: int = 25, exploration_weight: float = 1.414, seed: int | None = None
     ) -> dict[str, Any]:
         """Run MCTS search on the query.
 
@@ -300,11 +290,11 @@ class MCTSDemo:
                     "action": child.action,
                     "visits": child.visits,
                     "value": round(child.value, 4),
-                    "ucb1": round(child.ucb1_score(exploration_weight), 4)
+                    "ucb1": round(child.ucb1_score(exploration_weight), 4),
                 }
                 for child in sorted(root.children, key=lambda c: -c.visits)[:5]
             ],
-            "tree_visualization": self._generate_tree_visualization(root)
+            "tree_visualization": self._generate_tree_visualization(root),
         }
 
         # Reset random seed

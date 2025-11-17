@@ -23,6 +23,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class LLMProvider(str, Enum):
     """Supported LLM providers."""
+
     OPENAI = "openai"
     ANTHROPIC = "anthropic"
     LMSTUDIO = "lmstudio"
@@ -30,6 +31,7 @@ class LLMProvider(str, Enum):
 
 class LogLevel(str, Enum):
     """Supported log levels."""
+
     DEBUG = "DEBUG"
     INFO = "INFO"
     WARNING = "WARNING"
@@ -55,125 +57,76 @@ class Settings(BaseSettings):
 
     # LLM Provider Configuration
     LLM_PROVIDER: LLMProvider = Field(
-        default=LLMProvider.OPENAI,
-        description="LLM provider to use (openai, anthropic, lmstudio)"
+        default=LLMProvider.OPENAI, description="LLM provider to use (openai, anthropic, lmstudio)"
     )
 
     # API Keys (Secrets)
     OPENAI_API_KEY: Optional[SecretStr] = Field(
-        default=None,
-        description="OpenAI API key (required if using OpenAI provider)"
+        default=None, description="OpenAI API key (required if using OpenAI provider)"
     )
 
     ANTHROPIC_API_KEY: Optional[SecretStr] = Field(
-        default=None,
-        description="Anthropic API key (required if using Anthropic provider)"
+        default=None, description="Anthropic API key (required if using Anthropic provider)"
     )
 
     BRAINTRUST_API_KEY: Optional[SecretStr] = Field(
-        default=None,
-        description="Braintrust API key for experiment tracking (optional)"
+        default=None, description="Braintrust API key for experiment tracking (optional)"
     )
 
     PINECONE_API_KEY: Optional[SecretStr] = Field(
-        default=None,
-        description="Pinecone API key for vector storage (optional)"
+        default=None, description="Pinecone API key for vector storage (optional)"
     )
 
     PINECONE_HOST: Optional[str] = Field(
-        default=None,
-        description="Pinecone host URL (e.g., https://index.svc.environment.pinecone.io)"
+        default=None, description="Pinecone host URL (e.g., https://index.svc.environment.pinecone.io)"
     )
 
     # Local LLM Configuration
     LMSTUDIO_BASE_URL: Optional[str] = Field(
-        default="http://localhost:1234/v1",
-        description="LM Studio API base URL for local inference"
+        default="http://localhost:1234/v1", description="LM Studio API base URL for local inference"
     )
 
     LMSTUDIO_MODEL: Optional[str] = Field(
-        default=None,
-        description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)"
+        default=None, description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)"
     )
 
     # MCTS Configuration with bounds validation
-    MCTS_ITERATIONS: int = Field(
-        default=100,
-        ge=1,
-        le=10000,
-        description="Number of MCTS iterations (1-10000)"
-    )
+    MCTS_ITERATIONS: int = Field(default=100, ge=1, le=10000, description="Number of MCTS iterations (1-10000)")
 
     MCTS_C: float = Field(
-        default=1.414,
-        ge=0.0,
-        le=10.0,
-        description="MCTS exploration weight (UCB1 constant, 0.0-10.0)"
+        default=1.414, ge=0.0, le=10.0, description="MCTS exploration weight (UCB1 constant, 0.0-10.0)"
     )
 
     # Random seed for reproducibility
-    SEED: Optional[int] = Field(
-        default=None,
-        ge=0,
-        description="Random seed for reproducibility (optional)"
-    )
+    SEED: Optional[int] = Field(default=None, ge=0, description="Random seed for reproducibility (optional)")
 
     # Logging Configuration
-    LOG_LEVEL: LogLevel = Field(
-        default=LogLevel.INFO,
-        description="Application log level"
-    )
+    LOG_LEVEL: LogLevel = Field(default=LogLevel.INFO, description="Application log level")
 
     # OpenTelemetry Configuration
     OTEL_EXPORTER_OTLP_ENDPOINT: Optional[str] = Field(
-        default=None,
-        description="OpenTelemetry OTLP exporter endpoint URL"
+        default=None, description="OpenTelemetry OTLP exporter endpoint URL"
     )
 
     # S3 Storage Configuration
-    S3_BUCKET: Optional[str] = Field(
-        default=None,
-        description="S3 bucket name for artifact storage"
-    )
+    S3_BUCKET: Optional[str] = Field(default=None, description="S3 bucket name for artifact storage")
 
-    S3_PREFIX: str = Field(
-        default="mcts-artifacts",
-        description="S3 key prefix for stored artifacts"
-    )
+    S3_PREFIX: str = Field(default="mcts-artifacts", description="S3 key prefix for stored artifacts")
 
-    S3_REGION: str = Field(
-        default="us-east-1",
-        description="AWS region for S3 bucket"
-    )
+    S3_REGION: str = Field(default="us-east-1", description="AWS region for S3 bucket")
 
     # Network Configuration (security)
-    HTTP_TIMEOUT_SECONDS: int = Field(
-        default=30,
-        ge=1,
-        le=300,
-        description="HTTP request timeout in seconds"
-    )
+    HTTP_TIMEOUT_SECONDS: int = Field(default=30, ge=1, le=300, description="HTTP request timeout in seconds")
 
-    HTTP_MAX_RETRIES: int = Field(
-        default=3,
-        ge=0,
-        le=10,
-        description="Maximum HTTP request retries"
-    )
+    HTTP_MAX_RETRIES: int = Field(default=3, ge=0, le=10, description="Maximum HTTP request retries")
 
     # Security Settings
     MAX_QUERY_LENGTH: int = Field(
-        default=10000,
-        ge=1,
-        le=100000,
-        description="Maximum allowed query length in characters"
+        default=10000, ge=1, le=100000, description="Maximum allowed query length in characters"
     )
 
     RATE_LIMIT_REQUESTS_PER_MINUTE: int = Field(
-        default=60,
-        ge=1,
-        le=1000,
-        description="Rate limit for API requests per minute"
+        default=60, ge=1, le=1000, description="Rate limit for API requests per minute"
     )
 
     @field_validator("OPENAI_API_KEY")
@@ -251,10 +204,9 @@ class Settings(BaseSettings):
             # Warn if not localhost (potential security concern)
             if not any(host in v for host in ("localhost", "127.0.0.1", "::1")):
                 import warnings
+
                 warnings.warn(
-                    "LM Studio URL points to non-localhost address. "
-                    "Ensure this is intentional and secure.",
-                    UserWarning
+                    "LM Studio URL points to non-localhost address. Ensure this is intentional and secure.", UserWarning
                 )
         return v
 
@@ -264,9 +216,7 @@ class Settings(BaseSettings):
         """Validate OpenTelemetry endpoint URL."""
         if v is not None and v != "":
             if not v.startswith(("http://", "https://", "grpc://")):
-                raise ValueError(
-                    "OpenTelemetry endpoint must start with http://, https://, or grpc://"
-                )
+                raise ValueError("OpenTelemetry endpoint must start with http://, https://, or grpc://")
         return v
 
     @field_validator("S3_BUCKET")
@@ -278,9 +228,7 @@ class Settings(BaseSettings):
             if len(v) < 3 or len(v) > 63:
                 raise ValueError("S3 bucket name must be 3-63 characters long")
             if not v.replace("-", "").replace(".", "").isalnum():
-                raise ValueError(
-                    "S3 bucket name can only contain lowercase letters, numbers, hyphens, and periods"
-                )
+                raise ValueError("S3 bucket name can only contain lowercase letters, numbers, hyphens, and periods")
             if v.startswith("-") or v.endswith("-"):
                 raise ValueError("S3 bucket name cannot start or end with a hyphen")
         return v
@@ -302,9 +250,7 @@ class Settings(BaseSettings):
                 )
         elif self.LLM_PROVIDER == LLMProvider.LMSTUDIO:
             if self.LMSTUDIO_BASE_URL is None:
-                raise ValueError(
-                    "LMSTUDIO_BASE_URL is required when using LM Studio provider."
-                )
+                raise ValueError("LMSTUDIO_BASE_URL is required when using LM Studio provider.")
         return self
 
     def get_api_key(self) -> Optional[str]:

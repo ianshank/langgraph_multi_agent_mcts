@@ -23,6 +23,7 @@ from demo_src.wandb_tracker import WandBTracker, is_wandb_available
 @dataclass
 class AgentResult:
     """Result from a single agent."""
+
     agent_name: str
     response: str
     confidence: float
@@ -33,6 +34,7 @@ class AgentResult:
 @dataclass
 class FrameworkResult:
     """Combined result from all agents."""
+
     query: str
     hrm_result: AgentResult | None
     trm_result: AgentResult | None
@@ -74,7 +76,7 @@ class MultiAgentFrameworkDemo:
         use_mcts: bool = False,
         mcts_iterations: int = 25,
         exploration_weight: float = 1.414,
-        seed: int | None = None
+        seed: int | None = None,
     ) -> FrameworkResult:
         """Process a query through the multi-agent framework.
 
@@ -130,9 +132,7 @@ class MultiAgentFrameworkDemo:
         consensus_score = self._calculate_consensus(hrm_result, trm_result, mcts_result)
 
         # Generate final synthesized response
-        final_response = self._synthesize_response(
-            query, hrm_result, trm_result, mcts_result, consensus_score
-        )
+        final_response = self._synthesize_response(query, hrm_result, trm_result, mcts_result, consensus_score)
 
         total_time = (time.perf_counter() - start_time) * 1000
 
@@ -146,12 +146,12 @@ class MultiAgentFrameworkDemo:
             total_time_ms=round(total_time, 2),
             metadata={
                 "agents_used": agent_names,
-                "mcts_config": {
-                    "iterations": mcts_iterations,
-                    "exploration_weight": exploration_weight,
-                    "seed": seed
-                } if use_mcts else None
-            }
+                "mcts_config": (
+                    {"iterations": mcts_iterations, "exploration_weight": exploration_weight, "seed": seed}
+                    if use_mcts
+                    else None
+                ),
+            },
         )
 
     async def _run_hrm(self, query: str) -> AgentResult:
@@ -165,7 +165,7 @@ class MultiAgentFrameworkDemo:
             response=result["response"],
             confidence=result["confidence"],
             reasoning_steps=result["steps"],
-            execution_time_ms=round(elapsed, 2)
+            execution_time_ms=round(elapsed, 2),
         )
 
     async def _run_trm(self, query: str) -> AgentResult:
@@ -179,25 +179,14 @@ class MultiAgentFrameworkDemo:
             response=result["response"],
             confidence=result["confidence"],
             reasoning_steps=result["steps"],
-            execution_time_ms=round(elapsed, 2)
+            execution_time_ms=round(elapsed, 2),
         )
 
-    async def _run_mcts(
-        self,
-        query: str,
-        iterations: int,
-        exploration_weight: float,
-        seed: int | None
-    ) -> dict:
+    async def _run_mcts(self, query: str, iterations: int, exploration_weight: float, seed: int | None) -> dict:
         """Run Monte Carlo Tree Search."""
         start = time.perf_counter()
 
-        result = self.mcts.search(
-            query=query,
-            iterations=iterations,
-            exploration_weight=exploration_weight,
-            seed=seed
-        )
+        result = self.mcts.search(query=query, iterations=iterations, exploration_weight=exploration_weight, seed=seed)
 
         elapsed = (time.perf_counter() - start) * 1000
         result["execution_time_ms"] = round(elapsed, 2)
@@ -205,10 +194,7 @@ class MultiAgentFrameworkDemo:
         return result
 
     def _calculate_consensus(
-        self,
-        hrm_result: AgentResult | None,
-        trm_result: AgentResult | None,
-        mcts_result: dict | None
+        self, hrm_result: AgentResult | None, trm_result: AgentResult | None, mcts_result: dict | None
     ) -> float:
         """Calculate agreement score between agents."""
         confidences = []
@@ -242,7 +228,7 @@ class MultiAgentFrameworkDemo:
         hrm_result: AgentResult | None,
         trm_result: AgentResult | None,
         mcts_result: dict | None,
-        consensus_score: float
+        consensus_score: float,
     ) -> str:
         """Synthesize final response from all agent outputs."""
         parts = []
@@ -291,7 +277,7 @@ def process_query_sync(
     seed: int,
     enable_wandb: bool = False,
     wandb_project: str = "langgraph-mcts-demo",
-    wandb_run_name: str = ""
+    wandb_run_name: str = "",
 ):
     """Synchronous wrapper for async processing."""
     global framework, wandb_tracker
@@ -320,7 +306,7 @@ def process_query_sync(
             "use_mcts": use_mcts,
             "mcts_iterations": mcts_iterations,
             "exploration_weight": exploration_weight,
-            "seed": seed_value
+            "seed": seed_value,
         }
         wandb_tracker.init_run(run_name=run_name, config=config)
 
@@ -333,7 +319,7 @@ def process_query_sync(
             use_mcts=use_mcts,
             mcts_iterations=int(mcts_iterations),
             exploration_weight=exploration_weight,
-            seed=seed_value
+            seed=seed_value,
         )
     )
 
@@ -347,7 +333,7 @@ def process_query_sync(
             "response": result.hrm_result.response,
             "confidence": f"{result.hrm_result.confidence:.1%}",
             "reasoning_steps": result.hrm_result.reasoning_steps,
-            "time_ms": result.hrm_result.execution_time_ms
+            "time_ms": result.hrm_result.execution_time_ms,
         }
 
         # Log to W&B
@@ -357,7 +343,7 @@ def process_query_sync(
                 result.hrm_result.response,
                 result.hrm_result.confidence,
                 result.hrm_result.execution_time_ms,
-                result.hrm_result.reasoning_steps
+                result.hrm_result.reasoning_steps,
             )
 
     if result.trm_result:
@@ -365,7 +351,7 @@ def process_query_sync(
             "response": result.trm_result.response,
             "confidence": f"{result.trm_result.confidence:.1%}",
             "reasoning_steps": result.trm_result.reasoning_steps,
-            "time_ms": result.trm_result.execution_time_ms
+            "time_ms": result.trm_result.execution_time_ms,
         }
 
         # Log to W&B
@@ -375,7 +361,7 @@ def process_query_sync(
                 result.trm_result.response,
                 result.trm_result.confidence,
                 result.trm_result.execution_time_ms,
-                result.trm_result.reasoning_steps
+                result.trm_result.reasoning_steps,
             )
 
     if result.mcts_result:
@@ -387,20 +373,9 @@ def process_query_sync(
 
     # Log consensus and performance to W&B
     if enable_wandb and wandb_tracker:
-        wandb_tracker.log_consensus(
-            result.consensus_score,
-            result.metadata['agents_used'],
-            result.final_response
-        )
+        wandb_tracker.log_consensus(result.consensus_score, result.metadata["agents_used"], result.final_response)
         wandb_tracker.log_performance(result.total_time_ms)
-        wandb_tracker.log_query_summary(
-            query,
-            use_hrm,
-            use_trm,
-            use_mcts,
-            result.consensus_score,
-            result.total_time_ms
-        )
+        wandb_tracker.log_query_summary(query, use_hrm, use_trm, use_mcts, result.consensus_score, result.total_time_ms)
 
         # Get run URL
         wandb_url = wandb_tracker.get_run_url() or ""
@@ -412,7 +387,7 @@ def process_query_sync(
     metrics = f"""
 **Consensus Score:** {result.consensus_score:.1%}
 **Total Processing Time:** {result.total_time_ms:.2f} ms
-**Agents Used:** {', '.join(result.metadata['agents_used'])}
+**Agents Used:** {", ".join(result.metadata["agents_used"])}
 """
 
     if wandb_url:
@@ -426,7 +401,7 @@ def process_query_sync(
         "total_time_ms": result.total_time_ms,
         "metadata": result.metadata,
         "agent_details": agent_details,
-        "wandb_url": wandb_url
+        "wandb_url": wandb_url,
     }
 
     return final_response, agent_details, metrics, full_result, wandb_url
@@ -459,7 +434,7 @@ with gr.Blocks(
     .consensus-high { color: #28a745; font-weight: bold; }
     .consensus-medium { color: #ffc107; font-weight: bold; }
     .consensus-low { color: #dc3545; font-weight: bold; }
-    """
+    """,
 ) as demo:
     gr.Markdown(
         """
@@ -480,18 +455,11 @@ with gr.Blocks(
     with gr.Row():
         with gr.Column(scale=2):
             query_input = gr.Textbox(
-                label="Query",
-                placeholder="Enter your reasoning task or question...",
-                lines=3,
-                max_lines=10
+                label="Query", placeholder="Enter your reasoning task or question...", lines=3, max_lines=10
             )
 
             gr.Markdown("**Example Queries:**")
-            example_dropdown = gr.Dropdown(
-                choices=EXAMPLE_QUERIES,
-                label="Select an example",
-                interactive=True
-            )
+            example_dropdown = gr.Dropdown(choices=EXAMPLE_QUERIES, label="Select an example", interactive=True)
 
             def load_example(example):
                 return example
@@ -511,7 +479,7 @@ with gr.Blocks(
                 value=25,
                 step=5,
                 label="Iterations",
-                info="More iterations = better search, but slower"
+                info="More iterations = better search, but slower",
             )
             exploration_weight = gr.Slider(
                 minimum=0.1,
@@ -519,13 +487,9 @@ with gr.Blocks(
                 value=1.414,
                 step=0.1,
                 label="Exploration Weight (C)",
-                info="Higher = more exploration, Lower = more exploitation"
+                info="Higher = more exploration, Lower = more exploitation",
             )
-            seed_input = gr.Number(
-                label="Random Seed (0 for random)",
-                value=0,
-                precision=0
-            )
+            seed_input = gr.Number(label="Random Seed (0 for random)", value=0, precision=0)
 
     with gr.Accordion("Weights & Biases Tracking", open=False):
         gr.Markdown(
@@ -538,24 +502,14 @@ with gr.Blocks(
         )
         with gr.Row():
             enable_wandb = gr.Checkbox(
-                label="Enable W&B Tracking",
-                value=False,
-                info="Log metrics and results to Weights & Biases"
+                label="Enable W&B Tracking", value=False, info="Log metrics and results to Weights & Biases"
             )
             wandb_project = gr.Textbox(
-                label="Project Name",
-                value="langgraph-mcts-demo",
-                placeholder="Your W&B project name"
+                label="Project Name", value="langgraph-mcts-demo", placeholder="Your W&B project name"
             )
-            wandb_run_name = gr.Textbox(
-                label="Run Name (optional)",
-                value="",
-                placeholder="Auto-generated if empty"
-            )
+            wandb_run_name = gr.Textbox(label="Run Name (optional)", value="", placeholder="Auto-generated if empty")
 
-        wandb_status = gr.Markdown(
-            f"**W&B Status:** {'Available' if is_wandb_available() else 'Not installed'}"
-        )
+        wandb_status = gr.Markdown(f"**W&B Status:** {'Available' if is_wandb_available() else 'Not installed'}")
 
     process_btn = gr.Button("Process Query", variant="primary", size="lg")
 
@@ -564,11 +518,7 @@ with gr.Blocks(
     with gr.Row():
         with gr.Column():
             gr.Markdown("### Final Response")
-            final_response_output = gr.Textbox(
-                label="Synthesized Response",
-                lines=4,
-                interactive=False
-            )
+            final_response_output = gr.Textbox(label="Synthesized Response", lines=4, interactive=False)
 
             gr.Markdown("### Performance Metrics")
             metrics_output = gr.Markdown()
@@ -582,9 +532,7 @@ with gr.Blocks(
 
     with gr.Accordion("W&B Run Details", open=False, visible=True):
         wandb_url_output = gr.Textbox(
-            label="W&B Run URL",
-            interactive=False,
-            placeholder="Enable W&B tracking to see run URL here"
+            label="W&B Run URL", interactive=False, placeholder="Enable W&B tracking to see run URL here"
         )
 
     # Wire up the processing
@@ -600,15 +548,9 @@ with gr.Blocks(
             seed_input,
             enable_wandb,
             wandb_project,
-            wandb_run_name
+            wandb_run_name,
         ],
-        outputs=[
-            final_response_output,
-            agent_details_output,
-            metrics_output,
-            full_result_output,
-            wandb_url_output
-        ]
+        outputs=[final_response_output, agent_details_output, metrics_output, full_result_output, wandb_url_output],
     )
 
     gr.Markdown(
@@ -645,9 +587,4 @@ if __name__ == "__main__":
     framework = MultiAgentFrameworkDemo(use_hf_inference=False)
 
     # Launch the demo
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        share=False,
-        show_error=True
-    )
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=False, show_error=True)

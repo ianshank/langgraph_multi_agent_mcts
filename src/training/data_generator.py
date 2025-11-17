@@ -136,9 +136,7 @@ class MetaControllerDataGenerator:
         scores = {"hrm": hrm_conf, "trm": trm_conf, "mcts": mcts_val}
         return max(scores, key=lambda k: scores[k])
 
-    def generate_dataset(
-        self, num_samples: int = 1000
-    ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    def generate_dataset(self, num_samples: int = 1000) -> Tuple[List[MetaControllerFeatures], List[str]]:
         """
         Generate a dataset with the specified number of samples.
 
@@ -208,9 +206,7 @@ class MetaControllerDataGenerator:
             10
         """
         if num_samples_per_class <= 0:
-            raise ValueError(
-                f"num_samples_per_class must be positive, got {num_samples_per_class}"
-            )
+            raise ValueError(f"num_samples_per_class must be positive, got {num_samples_per_class}")
 
         features_list: List[MetaControllerFeatures] = []
         labels_list: List[str] = []
@@ -375,8 +371,7 @@ class MetaControllerDataGenerator:
         """
         if len(features_list) != len(labels_list):
             raise ValueError(
-                f"features_list and labels_list must have same length, "
-                f"got {len(features_list)} and {len(labels_list)}"
+                f"features_list and labels_list must have same length, got {len(features_list)} and {len(labels_list)}"
             )
 
         if len(features_list) == 0:
@@ -430,8 +425,7 @@ class MetaControllerDataGenerator:
         """
         if len(features_list) != len(labels_list):
             raise ValueError(
-                f"features_list and labels_list must have same length, "
-                f"got {len(features_list)} and {len(labels_list)}"
+                f"features_list and labels_list must have same length, got {len(features_list)} and {len(labels_list)}"
             )
 
         # Convert features to text
@@ -492,9 +486,7 @@ class MetaControllerDataGenerator:
         if not (0 < val_ratio < 1):
             raise ValueError(f"val_ratio must be in (0, 1), got {val_ratio}")
         if train_ratio + val_ratio >= 1:
-            raise ValueError(
-                f"train_ratio + val_ratio must be < 1, got {train_ratio + val_ratio}"
-            )
+            raise ValueError(f"train_ratio + val_ratio must be < 1, got {train_ratio + val_ratio}")
 
         # Get dataset size
         if isinstance(X, torch.Tensor):
@@ -512,10 +504,7 @@ class MetaControllerDataGenerator:
             n_labels = len(y)
 
         if n_samples != n_labels:
-            raise ValueError(
-                f"X and y must have same number of samples, "
-                f"got {n_samples} and {n_labels}"
-            )
+            raise ValueError(f"X and y must have same number of samples, got {n_samples} and {n_labels}")
 
         if n_samples == 0:
             raise ValueError("Cannot split empty dataset")
@@ -591,26 +580,20 @@ class MetaControllerDataGenerator:
         """
         if len(features_list) != len(labels_list):
             raise ValueError(
-                f"features_list and labels_list must have same length, "
-                f"got {len(features_list)} and {len(labels_list)}"
+                f"features_list and labels_list must have same length, got {len(features_list)} and {len(labels_list)}"
             )
 
         # Convert to serializable format
         data = {
             "seed": self.seed,
             "num_samples": len(features_list),
-            "samples": [
-                {"features": asdict(f), "label": label}
-                for f, label in zip(features_list, labels_list)
-            ],
+            "samples": [{"features": asdict(f), "label": label} for f, label in zip(features_list, labels_list)],
         }
 
         with open(path, "w", encoding="utf-8") as f:
             json.dump(data, f, indent=2)
 
-    def load_dataset(
-        self, path: str
-    ) -> Tuple[List[MetaControllerFeatures], List[str]]:
+    def load_dataset(self, path: str) -> Tuple[List[MetaControllerFeatures], List[str]]:
         """
         Load dataset from a JSON file.
 

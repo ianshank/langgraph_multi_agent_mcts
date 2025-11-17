@@ -30,6 +30,7 @@ try:
         REGISTRY,
         start_http_server,
     )
+
     PROMETHEUS_AVAILABLE = True
 except ImportError:
     PROMETHEUS_AVAILABLE = False
@@ -38,6 +39,7 @@ except ImportError:
 @dataclass
 class MCTSMetrics:
     """Container for MCTS-specific metrics."""
+
     iterations: int = 0
     total_simulations: int = 0
     tree_depth: int = 0
@@ -54,6 +56,7 @@ class MCTSMetrics:
 @dataclass
 class AgentMetrics:
     """Container for agent-specific metrics."""
+
     name: str
     executions: int = 0
     total_time_ms: float = 0.0
@@ -386,13 +389,9 @@ class MetricsCollector:
             "uptime_seconds": (datetime.utcnow() - self._start_time).total_seconds(),
             "system_metrics": current_system,
             "mcts_sessions": {
-                session_id: self.get_mcts_summary(session_id)
-                for session_id in self._mcts_metrics.keys()
+                session_id: self.get_mcts_summary(session_id) for session_id in self._mcts_metrics.keys()
             },
-            "agents": {
-                agent_name: self.get_agent_summary(agent_name)
-                for agent_name in self._agent_metrics.keys()
-            },
+            "agents": {agent_name: self.get_agent_summary(agent_name) for agent_name in self._agent_metrics.keys()},
             "node_timings": self.get_node_timing_summary(),
             "request_latencies": {
                 "count": len(self._request_latencies),

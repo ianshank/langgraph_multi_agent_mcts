@@ -35,8 +35,7 @@ class HRMAgent:
 
         # Step 3: Synthesize hierarchical response
         llm_result = await self.llm_client.generate(
-            prompt=f"Hierarchical analysis of: {query}",
-            context=f"Components: {', '.join(decomposition_steps)}"
+            prompt=f"Hierarchical analysis of: {query}", context=f"Components: {', '.join(decomposition_steps)}"
         )
 
         # Compile reasoning steps
@@ -44,7 +43,7 @@ class HRMAgent:
             f"1. Query decomposition: Identified {len(decomposition_steps)} key components",
             f"2. Component analysis: {analysis_results}",
             f"3. Hierarchical synthesis: Combined insights from all levels",
-            f"4. Confidence assessment: {llm_result['confidence']:.1%} based on component clarity"
+            f"4. Confidence assessment: {llm_result['confidence']:.1%} based on component clarity",
         ]
 
         return {
@@ -52,7 +51,7 @@ class HRMAgent:
             "confidence": llm_result["confidence"],
             "steps": reasoning_steps,
             "components": decomposition_steps,
-            "tokens_used": llm_result.get("tokens_used", 0)
+            "tokens_used": llm_result.get("tokens_used", 0),
         }
 
     async def _decompose_query(self, query: str) -> list[str]:
@@ -159,10 +158,7 @@ class TRMAgent:
             # Generate or refine response
             if iteration == 0:
                 # Initial response
-                result = await self.llm_client.generate(
-                    prompt=query,
-                    context=""
-                )
+                result = await self.llm_client.generate(prompt=query, context="")
                 current_response = result["response"]
                 current_confidence = result["confidence"]
                 reasoning_steps.append(
@@ -170,9 +166,7 @@ class TRMAgent:
                 )
             else:
                 # Refinement iteration
-                refinement_result = await self._refine_response(
-                    query, current_response, iteration
-                )
+                refinement_result = await self._refine_response(query, current_response, iteration)
                 current_response = refinement_result["response"]
 
                 # Confidence typically improves with refinement
@@ -186,30 +180,21 @@ class TRMAgent:
 
             # Check if confidence is high enough to stop
             if current_confidence > 0.85:
-                reasoning_steps.append(
-                    f"Early termination: High confidence ({current_confidence:.1%}) achieved"
-                )
+                reasoning_steps.append(f"Early termination: High confidence ({current_confidence:.1%}) achieved")
                 break
 
         # Final reasoning step
-        reasoning_steps.append(
-            f"Final: Response refined through {len(reasoning_steps)} iterations"
-        )
+        reasoning_steps.append(f"Final: Response refined through {len(reasoning_steps)} iterations")
 
         return {
             "response": current_response,
             "confidence": round(current_confidence, 3),
             "steps": reasoning_steps,
             "iterations_used": min(iteration + 1, self.max_iterations),
-            "refinement_history": reasoning_steps
+            "refinement_history": reasoning_steps,
         }
 
-    async def _refine_response(
-        self,
-        query: str,
-        current_response: str,
-        iteration: int
-    ) -> dict[str, Any]:
+    async def _refine_response(self, query: str, current_response: str, iteration: int) -> dict[str, Any]:
         """Refine the current response."""
         await asyncio.sleep(0.05)  # Simulate refinement processing
 
@@ -217,12 +202,10 @@ class TRMAgent:
         refinement_strategies = [
             ("Clarity enhancement", "improve clarity and precision"),
             ("Detail expansion", "add technical depth and specifics"),
-            ("Validation check", "verify accuracy and completeness")
+            ("Validation check", "verify accuracy and completeness"),
         ]
 
-        strategy_name, strategy_action = refinement_strategies[
-            iteration % len(refinement_strategies)
-        ]
+        strategy_name, strategy_action = refinement_strategies[iteration % len(refinement_strategies)]
 
         # Generate refined response
         refinement_prompt = f"""
@@ -232,8 +215,7 @@ class TRMAgent:
         """
 
         result = await self.llm_client.generate(
-            prompt=refinement_prompt,
-            context=f"Refinement iteration {iteration + 1}"
+            prompt=refinement_prompt, context=f"Refinement iteration {iteration + 1}"
         )
 
         # Enhance the response based on strategy
@@ -249,8 +231,4 @@ class TRMAgent:
         if len(enhanced_response) > 300:
             enhanced_response = enhanced_response[:297] + "..."
 
-        return {
-            "response": enhanced_response,
-            "refinement_type": strategy_name,
-            "strategy_action": strategy_action
-        }
+        return {"response": enhanced_response, "refinement_type": strategy_name, "strategy_action": strategy_action}

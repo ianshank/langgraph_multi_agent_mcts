@@ -26,6 +26,7 @@ async def test_connection():
     print("\n1. Loading configuration...")
     try:
         from src.config.settings import get_settings
+
         settings = get_settings()
         print(f"   Provider: {settings.LLM_PROVIDER}")
         print(f"   Base URL: {settings.LMSTUDIO_BASE_URL}")
@@ -39,6 +40,7 @@ async def test_connection():
     print("\n2. Testing HTTP connection...")
     try:
         import httpx
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             # Test models endpoint
             response = await client.get(f"{settings.LMSTUDIO_BASE_URL}/models")
@@ -66,6 +68,7 @@ async def test_connection():
     print("\n3. Creating LLM client...")
     try:
         from src.adapters.llm import create_client
+
         client = create_client(
             provider="lmstudio",
             base_url=settings.LMSTUDIO_BASE_URL,
@@ -99,6 +102,7 @@ async def test_connection():
     print("\n5. Testing MCP server...")
     try:
         from tools.mcp.server import MCPServer
+
         mcp_server = MCPServer()
         init_result = await mcp_server.initialize()
         print(f"   ✓ MCP server initialized")
@@ -135,10 +139,7 @@ async def test_connection():
             return []
 
         def state_transition(state, action):
-            return MCTSState(
-                state_id=f"{state.state_id}_{action}",
-                features=state.features.copy()
-            )
+            return MCTSState(state_id=f"{state.state_id}_{action}", features=state.features.copy())
 
         root = MCTSNode(
             state=MCTSState(state_id="root", features={"test": True}),
@@ -162,6 +163,7 @@ async def test_connection():
     except Exception as e:
         print(f"   ✗ MCTS engine error: {e}")
         import traceback
+
         traceback.print_exc()
         return False
 

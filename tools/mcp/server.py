@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field, field_validator
 
 class MCPRequest(BaseModel):
     """Base MCP request model."""
+
     jsonrpc: str = "2.0"
     id: int | str
     method: str
@@ -32,6 +33,7 @@ class MCPRequest(BaseModel):
 
 class MCPResponse(BaseModel):
     """Base MCP response model."""
+
     jsonrpc: str = "2.0"
     id: int | str
     result: Any = None
@@ -40,8 +42,10 @@ class MCPResponse(BaseModel):
 
 # Tool Input Models with Pydantic Validation
 
+
 class RunMCTSInput(BaseModel):
     """Input for running MCTS search."""
+
     query: str = Field(..., min_length=1, max_length=10000, description="The query to process")
     iterations: int = Field(default=100, ge=1, le=10000, description="Number of MCTS iterations")
     exploration_weight: float = Field(default=1.414, ge=0.0, le=10.0, description="UCB1 exploration constant")
@@ -57,6 +61,7 @@ class RunMCTSInput(BaseModel):
 
 class QueryAgentInput(BaseModel):
     """Input for querying a specific agent."""
+
     agent_type: str = Field(..., pattern="^(hrm|trm|mcts)$", description="Agent type: hrm, trm, or mcts")
     query: str = Field(..., min_length=1, max_length=10000)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
@@ -65,12 +70,14 @@ class QueryAgentInput(BaseModel):
 
 class GetArtifactInput(BaseModel):
     """Input for retrieving stored artifacts."""
+
     artifact_id: str = Field(..., min_length=1, max_length=256)
     artifact_type: str = Field(default="mcts_stats", pattern="^(mcts_stats|config|trace|log)$")
 
 
 class ListArtifactsInput(BaseModel):
     """Input for listing available artifacts."""
+
     artifact_type: str | None = Field(default=None, pattern="^(mcts_stats|config|trace|log)$")
     limit: int = Field(default=50, ge=1, le=1000)
 
@@ -197,8 +204,7 @@ class MCPServer:
             # Create root node
             root = MCTSNode(
                 state=MCTSState(
-                    state_id="root",
-                    features={"query": input_data.query[:100], "use_rag": input_data.use_rag}
+                    state_id="root", features={"query": input_data.query[:100], "use_rag": input_data.use_rag}
                 ),
                 rng=engine.rng,
             )
@@ -303,15 +309,17 @@ class MCPServer:
         artifacts = []
         for artifact_id, artifact in self.artifacts.items():
             if input_data.artifact_type is None or artifact.get("type") == input_data.artifact_type:
-                artifacts.append({
-                    "id": artifact_id,
-                    "type": artifact.get("type"),
-                    "timestamp": artifact.get("timestamp"),
-                })
+                artifacts.append(
+                    {
+                        "id": artifact_id,
+                        "type": artifact.get("type"),
+                        "timestamp": artifact.get("timestamp"),
+                    }
+                )
 
         # Sort by timestamp descending and limit
         artifacts.sort(key=lambda x: x.get("timestamp", ""), reverse=True)
-        artifacts = artifacts[:input_data.limit]
+        artifacts = artifacts[: input_data.limit]
 
         return {"success": True, "artifacts": artifacts, "total": len(artifacts)}
 
@@ -339,6 +347,7 @@ class MCPServer:
         # Check framework imports
         try:
             from src.config.settings import get_settings
+
             settings = get_settings()
             health["framework"] = "healthy"
             health["provider"] = settings.LLM_PROVIDER
@@ -350,7 +359,7 @@ class MCPServer:
         if self._llm_client:
             try:
                 # Try a simple health check if available
-                if hasattr(self._llm_client, 'health_check'):
+                if hasattr(self._llm_client, "health_check"):
                     is_healthy = await self._llm_client.health_check()
                     health["llm_provider"] = "healthy" if is_healthy else "unhealthy"
                 else:
@@ -377,25 +386,26 @@ class MCPServer:
                 result = await self.call_tool(tool_name, tool_args)
             else:
                 return MCPResponse(
-                    id=request.id,
-                    error={"code": -32601, "message": f"Method not found: {request.method}"}
+                    id=request.id, error={"code": -32601, "message": f"Method not found: {request.method}"}
                 ).model_dump()
 
             return MCPResponse(id=request.id, result=result).model_dump()
 
         except Exception as e:
-            return MCPResponse(
-                id=request_data.get("id", 0),
-                error={"code": -32603, "message": str(e)}
-            ).model_dump()
+            return MCPResponse(id=request_data.get("id", 0), error={"code": -32603, "message": str(e)}).model_dump()
 
     async def run_stdio(self):
         """Run MCP server over stdio (standard input/output)."""
-        print(json.dumps({
-            "jsonrpc": "2.0",
-            "method": "notifications/initialized",
-            "params": {"serverInfo": {"name": "mcts-framework", "version": "0.1.0"}}
-        }), flush=True)
+        print(
+            json.dumps(
+                {
+                    "jsonrpc": "2.0",
+                    "method": "notifications/initialized",
+                    "params": {"serverInfo": {"name": "mcts-framework", "version": "0.1.0"}},
+                }
+            ),
+            flush=True,
+        )
 
         loop = asyncio.get_running_loop()
         reader = asyncio.StreamReader()
@@ -416,7 +426,7 @@ class MCPServer:
                 error_response = {
                     "jsonrpc": "2.0",
                     "id": None,
-                    "error": {"code": -32700, "message": f"Parse error: {str(e)}"}
+                    "error": {"code": -32700, "message": f"Parse error: {str(e)}"},
                 }
                 print(json.dumps(error_response), flush=True)
             except KeyboardInterrupt:
@@ -425,7 +435,7 @@ class MCPServer:
                 error_response = {
                     "jsonrpc": "2.0",
                     "id": None,
-                    "error": {"code": -32603, "message": f"Internal error: {str(e)}"}
+                    "error": {"code": -32603, "message": f"Internal error: {str(e)}"},
                 }
                 print(json.dumps(error_response), flush=True)
 

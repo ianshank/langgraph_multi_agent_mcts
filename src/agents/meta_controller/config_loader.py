@@ -23,6 +23,7 @@ class RNNConfig:
         dropout: Dropout rate for regularization. Default is 0.1.
         model_path: Optional path to a pre-trained model file. None for untrained model.
     """
+
     hidden_dim: int = 64
     num_layers: int = 1
     dropout: float = 0.1
@@ -46,6 +47,7 @@ class BERTConfig:
         lora_dropout: Dropout rate for LoRA layers. Default is 0.1.
         model_path: Optional path to a trained LoRA adapter. None for base model only.
     """
+
     model_name: str = "prajjwal1/bert-mini"
     use_lora: bool = True
     lora_r: int = 4
@@ -64,6 +66,7 @@ class InferenceConfig:
                 None for auto-detection based on available hardware.
         seed: Random seed for reproducibility. Default is 42.
     """
+
     device: Optional[str] = None
     seed: int = 42
 
@@ -87,6 +90,7 @@ class MetaControllerConfig:
         bert: Configuration for BERT-based controller.
         inference: Configuration for inference settings.
     """
+
     enabled: bool = False
     type: str = "rnn"  # "rnn" or "bert"
     fallback_to_rule_based: bool = True
@@ -136,13 +140,13 @@ class MetaControllerConfigLoader:
         if not yaml_path.exists():
             raise FileNotFoundError(f"Configuration file not found: {path}")
 
-        with open(yaml_path, 'r') as f:
+        with open(yaml_path, "r") as f:
             raw_config = yaml.safe_load(f)
 
-        if 'meta_controller' not in raw_config:
+        if "meta_controller" not in raw_config:
             raise KeyError("Configuration file must contain 'meta_controller' key")
 
-        return MetaControllerConfigLoader.load_from_dict(raw_config['meta_controller'])
+        return MetaControllerConfigLoader.load_from_dict(raw_config["meta_controller"])
 
     @staticmethod
     def load_from_dict(config_dict: Dict[str, Any]) -> MetaControllerConfig:
@@ -167,18 +171,18 @@ class MetaControllerConfigLoader:
             'bert'
         """
         # Parse nested configurations
-        rnn_config = RNNConfig(**config_dict.get('rnn', {}))
-        bert_config = BERTConfig(**config_dict.get('bert', {}))
-        inference_config = InferenceConfig(**config_dict.get('inference', {}))
+        rnn_config = RNNConfig(**config_dict.get("rnn", {}))
+        bert_config = BERTConfig(**config_dict.get("bert", {}))
+        inference_config = InferenceConfig(**config_dict.get("inference", {}))
 
         # Create main config with nested configs
         return MetaControllerConfig(
-            enabled=config_dict.get('enabled', False),
-            type=config_dict.get('type', 'rnn'),
-            fallback_to_rule_based=config_dict.get('fallback_to_rule_based', True),
+            enabled=config_dict.get("enabled", False),
+            type=config_dict.get("type", "rnn"),
+            fallback_to_rule_based=config_dict.get("fallback_to_rule_based", True),
             rnn=rnn_config,
             bert=bert_config,
-            inference=inference_config
+            inference=inference_config,
         )
 
     @staticmethod
@@ -223,11 +227,9 @@ class MetaControllerConfigLoader:
             ValueError: Invalid controller type 'invalid'. Must be 'rnn' or 'bert'.
         """
         # Validate controller type
-        valid_types = ['rnn', 'bert']
+        valid_types = ["rnn", "bert"]
         if config.type not in valid_types:
-            raise ValueError(
-                f"Invalid controller type '{config.type}'. Must be one of: {valid_types}"
-            )
+            raise ValueError(f"Invalid controller type '{config.type}'. Must be one of: {valid_types}")
 
         # Validate RNN config
         if config.rnn.hidden_dim <= 0:
@@ -247,31 +249,22 @@ class MetaControllerConfigLoader:
         if config.bert.lora_alpha <= 0:
             raise ValueError(f"BERT lora_alpha must be positive, got {config.bert.lora_alpha}")
         if not 0.0 <= config.bert.lora_dropout <= 1.0:
-            raise ValueError(
-                f"BERT lora_dropout must be between 0 and 1, got {config.bert.lora_dropout}"
-            )
+            raise ValueError(f"BERT lora_dropout must be between 0 and 1, got {config.bert.lora_dropout}")
         if config.bert.model_path is not None:
             bert_path = Path(config.bert.model_path)
             if not bert_path.exists():
-                raise FileNotFoundError(
-                    f"BERT model path does not exist: {config.bert.model_path}"
-                )
+                raise FileNotFoundError(f"BERT model path does not exist: {config.bert.model_path}")
 
         # Validate inference config
         if config.inference.device is not None:
-            valid_devices = ['cpu', 'cuda', 'mps']
+            valid_devices = ["cpu", "cuda", "mps"]
             # Check if device starts with a valid prefix (e.g., "cuda:0", "cuda:1")
-            device_base = config.inference.device.split(':')[0]
+            device_base = config.inference.device.split(":")[0]
             if device_base not in valid_devices:
-                raise ValueError(
-                    f"Invalid device '{config.inference.device}'. "
-                    f"Must start with one of: {valid_devices}"
-                )
+                raise ValueError(f"Invalid device '{config.inference.device}'. Must start with one of: {valid_devices}")
 
         if not isinstance(config.inference.seed, int) or config.inference.seed < 0:
-            raise ValueError(
-                f"Inference seed must be a non-negative integer, got {config.inference.seed}"
-            )
+            raise ValueError(f"Inference seed must be a non-negative integer, got {config.inference.seed}")
 
     @staticmethod
     def save_to_yaml(config: MetaControllerConfig, path: str) -> None:
@@ -289,9 +282,9 @@ class MetaControllerConfigLoader:
         yaml_path = Path(path)
         yaml_path.parent.mkdir(parents=True, exist_ok=True)
 
-        config_dict = {'meta_controller': MetaControllerConfigLoader.to_dict(config)}
+        config_dict = {"meta_controller": MetaControllerConfigLoader.to_dict(config)}
 
-        with open(yaml_path, 'w') as f:
+        with open(yaml_path, "w") as f:
             yaml.dump(config_dict, f, default_flow_style=False, sort_keys=False)
 
     @staticmethod

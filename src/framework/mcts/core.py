@@ -132,10 +132,7 @@ class MCTSNode:
 
     def get_unexpanded_action(self) -> Optional[str]:
         """Get a random unexpanded action."""
-        unexpanded = [
-            a for a in self.available_actions
-            if a not in self.expanded_actions
-        ]
+        unexpanded = [a for a in self.available_actions if a not in self.expanded_actions]
         if not unexpanded:
             return None
         return self._rng.choice(unexpanded)
@@ -222,7 +219,7 @@ class MCTSEngine:
             return False
 
         num_children = len(node.children)
-        threshold = self.progressive_widening_k * (num_children ** self.progressive_widening_alpha)
+        threshold = self.progressive_widening_k * (num_children**self.progressive_widening_alpha)
 
         return node.visits > threshold
 

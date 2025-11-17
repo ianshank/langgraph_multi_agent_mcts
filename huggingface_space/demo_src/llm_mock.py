@@ -15,28 +15,28 @@ class MockLLMClient:
             "architecture": [
                 "Consider scalability requirements and team expertise",
                 "Evaluate coupling, deployment complexity, and operational overhead",
-                "Balance between development speed and long-term maintainability"
+                "Balance between development speed and long-term maintainability",
             ],
             "optimization": [
                 "Profile first to identify actual bottlenecks",
                 "Consider memory-mapped files and streaming processing",
-                "Implement parallel processing with appropriate chunk sizes"
+                "Implement parallel processing with appropriate chunk sizes",
             ],
             "database": [
                 "Consider data consistency requirements and query patterns",
                 "Evaluate write-heavy vs read-heavy workload characteristics",
-                "Plan for horizontal scaling and data distribution strategies"
+                "Plan for horizontal scaling and data distribution strategies",
             ],
             "distributed": [
                 "Implement proper failure detection and recovery mechanisms",
                 "Use circuit breakers and bulkhead patterns for resilience",
-                "Consider eventual consistency vs strong consistency trade-offs"
+                "Consider eventual consistency vs strong consistency trade-offs",
             ],
             "default": [
                 "Break down the problem into smaller components",
                 "Consider trade-offs between different approaches",
-                "Evaluate based on specific use case requirements"
-            ]
+                "Evaluate based on specific use case requirements",
+            ],
         }
 
     async def generate(self, prompt: str, context: str = "") -> dict[str, Any]:
@@ -71,7 +71,7 @@ class MockLLMClient:
         return {
             "response": response,
             "confidence": round(confidence, 3),
-            "tokens_used": len(prompt.split()) * 2 + len(response.split())
+            "tokens_used": len(prompt.split()) * 2 + len(response.split()),
         }
 
     async def generate_reasoning_steps(self, query: str, num_steps: int = 3) -> list[str]:
@@ -84,7 +84,7 @@ class MockLLMClient:
             "Evaluating potential approaches",
             "Considering trade-offs and implications",
             "Synthesizing recommendations based on analysis",
-            "Validating conclusions against requirements"
+            "Validating conclusions against requirements",
         ]
 
         return random.sample(base_steps, min(num_steps, len(base_steps)))
@@ -107,11 +107,10 @@ class HuggingFaceClient:
         if self._client is None:
             try:
                 from huggingface_hub import InferenceClient
+
                 self._client = InferenceClient(model=self.model_id)
             except ImportError:
-                raise ImportError(
-                    "huggingface_hub not installed. Install with: pip install huggingface_hub"
-                )
+                raise ImportError("huggingface_hub not installed. Install with: pip install huggingface_hub")
         return self._client
 
     async def generate(self, prompt: str, context: str = "") -> dict[str, Any]:
@@ -127,11 +126,7 @@ class HuggingFaceClient:
 
             # Call HF Inference API (sync call wrapped in async)
             response_text = await asyncio.to_thread(
-                client.text_generation,
-                full_prompt,
-                max_new_tokens=150,
-                temperature=0.7,
-                do_sample=True
+                client.text_generation, full_prompt, max_new_tokens=150, temperature=0.7, do_sample=True
             )
 
             # Estimate confidence based on response characteristics
@@ -140,7 +135,7 @@ class HuggingFaceClient:
             return {
                 "response": response_text.strip(),
                 "confidence": round(confidence, 3),
-                "tokens_used": len(full_prompt.split()) + len(response_text.split())
+                "tokens_used": len(full_prompt.split()) + len(response_text.split()),
             }
 
         except Exception as e:
@@ -160,12 +155,7 @@ Question: {query}
 Reasoning steps (one per line):
 1."""
 
-            response = await asyncio.to_thread(
-                client.text_generation,
-                prompt,
-                max_new_tokens=200,
-                temperature=0.5
-            )
+            response = await asyncio.to_thread(client.text_generation, prompt, max_new_tokens=200, temperature=0.5)
 
             # Parse steps from response
             lines = response.strip().split("\n")

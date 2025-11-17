@@ -144,9 +144,7 @@ class OpenAIClient(BaseLLMClient):
 
         api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not api_key:
-            raise LLMAuthenticationError(
-                self.PROVIDER_NAME, "API key not provided and OPENAI_API_KEY not set"
-            )
+            raise LLMAuthenticationError(self.PROVIDER_NAME, "API key not provided and OPENAI_API_KEY not set")
 
         super().__init__(
             api_key=api_key,
@@ -188,9 +186,7 @@ class OpenAIClient(BaseLLMClient):
 
         try:
             error_data = response.json()
-            error_message = error_data.get("error", {}).get(
-                "message", response.text
-            )
+            error_message = error_data.get("error", {}).get("message", response.text)
         except Exception:
             error_message = response.text
 
@@ -199,9 +195,7 @@ class OpenAIClient(BaseLLMClient):
         elif status_code == 429:
             retry_after = response.headers.get("Retry-After")
             retry_after_float = float(retry_after) if retry_after else None
-            raise LLMRateLimitError(
-                self.PROVIDER_NAME, retry_after=retry_after_float, message=error_message
-            )
+            raise LLMRateLimitError(self.PROVIDER_NAME, retry_after=retry_after_float, message=error_message)
         elif status_code == 402:
             raise LLMQuotaExceededError(self.PROVIDER_NAME, error_message)
         elif status_code == 404:
@@ -213,18 +207,14 @@ class OpenAIClient(BaseLLMClient):
         elif status_code >= 500:
             raise LLMServerError(self.PROVIDER_NAME, status_code, error_message)
         else:
-            raise LLMClientError(
-                error_message, self.PROVIDER_NAME, status_code=status_code
-            )
+            raise LLMClientError(error_message, self.PROVIDER_NAME, status_code=status_code)
 
     def _make_retry_decorator(self):
         """Create retry decorator with exponential backoff."""
         return retry(
             stop=stop_after_attempt(self.max_retries),
             wait=wait_exponential(multiplier=1, min=1, max=60),
-            retry=retry_if_exception_type(
-                (LLMRateLimitError, LLMServerError, LLMConnectionError)
-            ),
+            retry=retry_if_exception_type((LLMRateLimitError, LLMServerError, LLMConnectionError)),
             before_sleep=before_sleep_log(logger, logging.WARNING),
             reraise=True,
         )
@@ -380,9 +370,7 @@ class OpenAIClient(BaseLLMClient):
             return llm_response
 
         except (KeyError, json.JSONDecodeError) as e:
-            raise LLMResponseParseError(
-                self.PROVIDER_NAME, response.text
-            ) from e
+            raise LLMResponseParseError(self.PROVIDER_NAME, response.text) from e
 
     async def _generate_stream(
         self,
