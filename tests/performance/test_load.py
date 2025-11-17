@@ -408,9 +408,7 @@ class TestThroughputBenchmarks:
         mock_logger = Mock()
 
         with patch("langgraph_multi_agent_mcts.OpenAIEmbeddings"):
-            return LangGraphMultiAgentFramework(
-                model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10
-            )
+            return LangGraphMultiAgentFramework(model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10)
 
     @pytest.mark.asyncio
     @pytest.mark.slow

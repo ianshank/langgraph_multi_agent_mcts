@@ -829,9 +829,7 @@ class HRMModel(nn.Module):
         self.depth_predictor = nn.Linear(hidden_size, max_depth)
         self.max_depth = max_depth
 
-    def forward(
-        self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None
-    ) -> dict[str, torch.Tensor]:
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask)
 
         # Get sequence output

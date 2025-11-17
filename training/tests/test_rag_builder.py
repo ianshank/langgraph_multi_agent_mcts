@@ -319,9 +319,7 @@ class TestVectorIndexBuilder:
             mock_pc.return_value.Index.return_value = MagicMock()
 
             builder = VectorIndexBuilder(rag_config)
-            builder.chunk_store = [
-                {"id": "v1", "doc_id": "doc1", "chunk_id": 0, "text": "test text", "metadata": {}}
-            ]
+            builder.chunk_store = [{"id": "v1", "doc_id": "doc1", "chunk_id": 0, "text": "test text", "metadata": {}}]
 
             save_path = Path(tmp_dir) / "index"
             builder.save_index(save_path)

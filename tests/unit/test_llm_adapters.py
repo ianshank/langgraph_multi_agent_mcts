@@ -176,7 +176,6 @@ class TestRetryLogic:
         """Backoff should increase exponentially."""
         delays = []
 
-
         async def mock_sleep(seconds):
             delays.append(seconds)
             # Don't actually sleep in tests
