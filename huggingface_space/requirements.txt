@@ -10,8 +10,8 @@ numpy>=1.24.0,<2.0.0
 # Experiment Tracking
 wandb>=0.16.0
 
-# Optional: Hugging Face Inference API (uncomment to use real LLM)
-# huggingface_hub>=0.20.0
+# Required for Gradio OAuth
+huggingface_hub>=0.20.0,<0.30.0
 
 # Note: This demo uses mock LLM responses by default for:
 # - Fast loading times on free tier
