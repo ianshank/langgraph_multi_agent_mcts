@@ -24,7 +24,14 @@
       "Bash(black:*)",
       "Bash(pip install:*)",
       "Bash(xargs file:*)",
-      "Bash(git config:*)"
+      "Bash(git config:*)",
+      "Bash(git push:*)",
+      "Bash(docker build:*)",
+      "Bash(docker images:*)",
+      "Bash(docker run:*)",
+      "Bash(docker rm:*)",
+      "Bash(docker logs:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": []

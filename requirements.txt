@@ -18,6 +18,10 @@ faiss-cpu>=1.7.4
 # Data validation
 pydantic>=2.0.0
 
+# Web Framework (for REST API server)
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+
 # System monitoring (for observability)
 psutil>=5.9.0
 
