@@ -346,6 +346,7 @@ MIT License - see LICENSE file for details.
 
 ## Acknowledgments
 
+- Developed by Ian Cruickshank
 - Built on [LangGraph](https://github.com/langchain-ai/langgraph) for state machine architecture
 - Inspired by 2025 research in multi-agent systems and MCTS algorithms
 - Uses [OpenTelemetry](https://opentelemetry.io/) for observability
