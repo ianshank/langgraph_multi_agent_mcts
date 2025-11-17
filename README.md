@@ -261,11 +261,23 @@ Features:
 
 ## Development
 
+To ensure code quality and consistency, this project uses `pre-commit` hooks for automated linting and formatting.
+
 ### Setup Pre-commit Hooks
+
+First, install the `pre-commit` package:
+
+```bash
+pip install pre-commit
+```
+
+Then, install the git hooks:
 
 ```bash
 pre-commit install
 ```
+
+Now, `ruff` will automatically lint and format your code before each commit.
 
 ### Run Tests
 

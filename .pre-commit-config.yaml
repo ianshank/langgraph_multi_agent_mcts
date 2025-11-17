@@ -31,16 +31,14 @@ repos:
 
   # Ruff - Fast Python linter
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.1.9
+    # Ruff version.
+    rev: v0.5.5
     hooks:
+      # Run the linter.
       - id: ruff
-        name: Ruff linting
-        args: [--fix, --exit-non-zero-on-fix]
-        types: [python]
-
+        args: [ --fix ]
+      # Run the formatter.
       - id: ruff-format
-        name: Ruff formatting
-        types: [python]
 
   # Black - Python code formatter
   - repo: https://github.com/psf/black

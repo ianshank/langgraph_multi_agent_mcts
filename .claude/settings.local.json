@@ -19,7 +19,12 @@
       "Bash(git commit:*)",
       "Bash(git push)",
       "Bash(git rm:*)",
-      "Bash(.gitignore)"
+      "Bash(.gitignore)",
+      "Bash(ruff check:*)",
+      "Bash(black:*)",
+      "Bash(pip install:*)",
+      "Bash(xargs file:*)",
+      "Bash(git config:*)"
     ],
     "deny": [],
     "ask": []
