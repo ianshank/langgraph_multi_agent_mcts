@@ -166,15 +166,26 @@ class MCTSDemo:
 
     def _generate_tree_visualization(self, root: MCTSNode, max_nodes: int = 20) -> str:
         """Generate ASCII visualization of the tree."""
+        max_nodes = max(1, max_nodes)
         lines = []
         lines.append("MCTS Tree Visualization")
         lines.append("=" * 50)
 
+        nodes_rendered = 0
+
         def format_node(node: MCTSNode, prefix: str = "", is_last: bool = True) -> list[str]:
+            nonlocal nodes_rendered
             result = []
 
             # Node representation
             connector = "└── " if is_last else "├── "
+
+            if nodes_rendered >= max_nodes:
+                result.append(f"{prefix}{connector}... (truncated)")
+                return result
+
+            nodes_rendered += 1
+
             node_str = f"{node.state[:30]}..."
             if node.action:
                 node_str = f"{node.action[:25]}..."
@@ -199,6 +210,7 @@ class MCTSDemo:
 
         # Start with root
         lines.append(f"Root: {root.state[:40]}... [V:{root.visits}, Q:{root.value:.3f}]")
+        nodes_rendered += 1
 
         for i, child in enumerate(root.children[:5]):
             is_last = i == len(root.children[:5]) - 1
@@ -236,7 +248,7 @@ class MCTSDemo:
         max_depth_reached = 0
 
         # MCTS iterations
-        for iteration in range(iterations):
+        for _ in range(iterations):
             # Selection - traverse tree using UCB1
             node = root
             path = [node]

@@ -42,7 +42,7 @@ class HRMAgent:
         reasoning_steps = [
             f"1. Query decomposition: Identified {len(decomposition_steps)} key components",
             f"2. Component analysis: {analysis_results}",
-            f"3. Hierarchical synthesis: Combined insights from all levels",
+            "3. Hierarchical synthesis: Combined insights from all levels",
             f"4. Confidence assessment: {llm_result['confidence']:.1%} based on component clarity",
         ]
 

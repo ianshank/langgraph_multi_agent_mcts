@@ -5,18 +5,16 @@ A proof-of-concept demonstration of multi-agent reasoning with Monte Carlo Tree 
 """
 
 import asyncio
-import json
 import time
-from dataclasses import dataclass, asdict
-from typing import Any
+from dataclasses import dataclass
 
 import gradio as gr
 import numpy as np
 
 # Demo-specific simplified implementations
-from demo_src.mcts_demo import MCTSDemo
 from demo_src.agents_demo import HRMAgent, TRMAgent
-from demo_src.llm_mock import MockLLMClient, HuggingFaceClient
+from demo_src.llm_mock import HuggingFaceClient, MockLLMClient
+from demo_src.mcts_demo import MCTSDemo
 from demo_src.wandb_tracker import WandBTracker, is_wandb_available
 
 
@@ -118,7 +116,7 @@ class MultiAgentFrameworkDemo:
         if tasks:
             results = await asyncio.gather(*tasks, return_exceptions=True)
 
-            for name, result in zip(agent_names, results):
+            for name, result in zip(agent_names, results, strict=False):
                 if isinstance(result, Exception):
                     continue
                 if name == "hrm":
@@ -243,7 +241,8 @@ class MultiAgentFrameworkDemo:
             parts.append(f"[MCTS] Best path: {mcts_result.get('best_action', 'N/A')}")
 
         if not parts:
-            return "Insufficient confidence from agents to provide a response."
+            truncated_query = f"{query[:80]}..." if len(query) > 80 else query
+            return f"Insufficient confidence to answer query: '{truncated_query}'."
 
         synthesis = " | ".join(parts)
 

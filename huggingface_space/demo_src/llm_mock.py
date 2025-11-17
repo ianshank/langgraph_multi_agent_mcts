@@ -40,7 +40,7 @@ class MockLLMClient:
         }
 
     async def generate(self, prompt: str, context: str = "") -> dict[str, Any]:
-        """Generate a mock response based on the prompt."""
+        """Generate a mock response based on the prompt and optional context."""
         # Simulate processing time
         await asyncio.sleep(random.uniform(0.1, 0.3))
 
@@ -67,6 +67,12 @@ class MockLLMClient:
         if len(prompt) > 100:
             confidence = min(0.95, confidence + 0.1)
             response += f". Additionally, {random.choice(self.response_templates['default'])}"
+
+        # Lightly incorporate context to simulate conditioning
+        context_snippet = context.strip()
+        if context_snippet:
+            confidence = min(0.99, confidence + 0.05)
+            response += f" (context signal: {context_snippet[:60]}{'...' if len(context_snippet) > 60 else ''})"
 
         return {
             "response": response,
