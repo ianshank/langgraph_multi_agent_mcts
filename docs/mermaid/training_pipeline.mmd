@@ -2,7 +2,7 @@ flowchart LR
     D[Dataset\n(data/, generated_dataset.json)] --> FE[Feature Extraction\nnormalize_features/ features_to_text]
 
     FE --> RNN[RNN Training\nPyTorch GRU]
-    FE --> BERT[BERT LoRA Fine-tune\nTransformers]
+    FE --> BERT[BERT LoRA Fine-tune\nTransformers/Diffusers]
 
     RNN --> E1[Eval/Validation]
     BERT --> E2[Eval/Validation]
@@ -17,4 +17,3 @@ flowchart LR
     E2 --> PC
 
     TRK --> RPT[Reports & Dashboards]
-

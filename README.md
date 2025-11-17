@@ -173,7 +173,149 @@ python3 tools/mcp/server.py
 }
 ```
 
-## Architecture
+## Architecture Overview
+
+The LangGraph Multi-Agent MCTS Framework is built on a state machine architecture that orchestrates multiple specialized agents to solve complex reasoning tasks. The system combines hierarchical reasoning, iterative refinement, and Monte Carlo Tree Search to provide robust, statistically-validated decision support.
+
+### High-Level Architecture
+
+The framework follows a **LangGraph state machine pattern** where queries flow through a series of nodes, each responsible for a specific aspect of reasoning:
+
+1. **Entry & Context Retrieval**: Parse user query and retrieve relevant context from vector stores (RAG)
+2. **Intelligent Routing**: Determine which agents to invoke based on query complexity and current state
+3. **Parallel Agent Execution**: Run HRM (Hierarchical Reasoning) and TRM (Task Refinement) agents concurrently
+4. **MCTS Simulation**: Perform Monte Carlo Tree Search for tactical planning and decision validation
+5. **Result Aggregation**: Combine outputs from all agents with confidence scoring
+6. **Consensus Evaluation**: Check if agents agree or if additional iterations are needed
+7. **Synthesis**: Generate final response by synthesizing all agent outputs
+
+### Core Components
+
+#### 1. LangGraph State Machine (`src/framework/graph.py`)
+
+The heart of the framework is a **StateGraph** that manages workflow execution:
+
+- **Shared State (AgentState)**: TypedDict containing query, agent results, MCTS tree, confidence scores, and metadata
+- **Nodes**: Each node is an async function that processes state and returns updates
+- **Conditional Edges**: Routes queries to appropriate agents based on state analysis
+- **Memory/Checkpointing**: Built-in support for conversation history and state persistence
+
+**Workflow Flow:**
+```
+Entry → RAG Retrieval → Route Decision → [HRM | TRM | MCTS] → Aggregate → Evaluate → [Synthesize | Iterate]
+```
+
+#### 2. Multi-Agent System
+
+**HRM Agent (Hierarchical Reasoning Model)**:
+- Decomposes complex queries into sub-problems
+- Processes sub-problems in parallel
+- Provides structured, hierarchical analysis
+- Best for: Multi-faceted problems requiring decomposition
+
+**TRM Agent (Task Refinement Model)**:
+- Iteratively refines solutions through multiple passes
+- Applies quality scoring to each refinement
+- Focuses on improving solution quality over iterations
+- Best for: Tasks requiring iterative improvement
+
+**MCTS Simulator**:
+- Performs Monte Carlo Tree Search for tactical planning
+- Uses UCB1 algorithm for exploration vs exploitation balance
+- Simulates multiple scenarios to find optimal actions
+- Best for: Decision-making under uncertainty, adversarial scenarios
+
+#### 3. MCTS Engine (`src/framework/mcts/`)
+
+A production-ready MCTS implementation with:
+
+- **Deterministic Execution**: Seeded RNG ensures reproducible results
+- **Progressive Widening**: Controls tree branching with `k * n^alpha` formula
+- **Simulation Caching**: SHA-256 based caching for repeated states
+- **Parallel Rollouts**: Bounded concurrency with asyncio.Semaphore
+- **Multiple Selection Policies**: UCB1, max visits, max value, robust child
+
+**MCTS Phases:**
+1. **Selection**: Traverse tree using UCB1 to find leaf node
+2. **Expansion**: Generate new child states/actions
+3. **Simulation**: Evaluate state using rollout policy (can use HRM/TRM)
+4. **Backpropagation**: Update ancestor node values and visit counts
+
+#### 4. Neural Meta-Controllers (`src/agents/meta_controller/`)
+
+Intelligent routing decisions using neural networks:
+
+- **RNN Meta-Controller**: GRU-based model using 10D normalized feature vectors
+- **BERT Meta-Controller**: Transformer-based model using text descriptions of state
+- **Feature Extraction**: Converts agent state to normalized features or text
+- **Vector Storage**: Stores decisions in Pinecone (10D vectors) for future training
+
+#### 5. Provider-Agnostic LLM Adapters (`src/adapters/llm/`)
+
+Unified interface for multiple LLM providers:
+
+- **OpenAI Client**: GPT-4, GPT-3.5 with Chat Completions API
+- **Anthropic Client**: Claude models with Messages API
+- **LM Studio Client**: Local inference with OpenAI-compatible API
+- **Common Features**: Retry logic, circuit breakers, rate limiting, timeout handling
+
+#### 6. Observability Stack (`src/observability/`)
+
+Production-ready monitoring and debugging:
+
+- **JSON Structured Logging**: Correlation IDs, log levels, structured data
+- **OpenTelemetry Tracing**: Distributed tracing with spans and context propagation
+- **Prometheus Metrics**: Request counts, latencies, error rates
+- **MCTS Tree Visualization**: Text and DOT format tree dumps
+- **Performance Profiling**: Memory and CPU usage tracking
+
+#### 7. Storage & Persistence (`src/storage/`)
+
+- **S3 Client**: Async artifact storage with retry logic and exponential backoff
+- **Pinecone Vector Store**: 10D feature vectors for meta-controller training data
+- **Memory Checkpointing**: LangGraph's MemorySaver for conversation state
+
+### External Systems Integration
+
+The framework integrates with several external services:
+
+- **LLM Providers**: OpenAI, Anthropic, LM Studio (local)
+- **Vector Databases**: Pinecone (10D vectors), Chroma, FAISS
+- **Experiment Tracking**: Weights & Biases, Braintrust
+- **Observability**: OpenTelemetry Collector, Prometheus, Grafana
+- **Storage**: AWS S3 for artifacts and model checkpoints
+
+### User Journey
+
+1. **User submits query** via CLI, REST API, or MCP server
+2. **Framework initializes** state and loads conversation history (if available)
+3. **RAG retrieval** fetches relevant context from vector store
+4. **Routing decision** determines which agents to invoke (can use neural meta-controller)
+5. **Agents execute** in parallel (HRM + TRM) or sequentially (MCTS)
+6. **Results aggregated** with confidence scores and metadata
+7. **Consensus evaluated** - if threshold not met, iterate with additional agent passes
+8. **Final synthesis** combines all agent outputs into coherent response
+9. **Response returned** with full metadata, confidence scores, and MCTS statistics
+
+### Architecture Diagrams
+
+Comprehensive C4 architecture diagrams are available in `docs/`:
+
+- **C1 System Context**: High-level system and external dependencies
+- **C2 Containers**: Major application components and their relationships
+- **C3 Components**: Detailed component interactions within containers
+- **C4 Sequence**: Key workflows and data flows
+- **User Journey Flow**: End-to-end user interaction flow
+- **Agent Workflow**: Detailed agent execution and coordination
+- **Training Pipeline**: Neural meta-controller training process
+- **External Systems**: Integration points with external services
+
+Diagrams are available in multiple formats:
+- **Mermaid** (`.mmd` files in `docs/mermaid/`)
+- **Draw.io** (`.drawio` file in `docs/drawio/` - importable to Lucidchart)
+- **PNG Images** (generated via `python scripts/export_architecture_diagrams.py`)
+
+### Project Structure
 
 ```
 langgraph_multi_agent_mcts/
@@ -193,6 +335,11 @@ langgraph_multi_agent_mcts/
 │   │       ├── policies.py     # UCB1, rollout strategies
 │   │       ├── config.py       # Configuration presets
 │   │       └── experiments.py  # Experiment tracking
+│   ├── agents/
+│   │   └── meta_controller/    # Neural routing controllers
+│   │       ├── rnn.py          # GRU-based meta-controller
+│   │       ├── bert.py         # BERT-based meta-controller
+│   │       └── utils.py        # Feature extraction utilities
 │   ├── models/
 │   │   └── validation.py       # Pydantic input validation
 │   ├── observability/
@@ -202,16 +349,26 @@ langgraph_multi_agent_mcts/
 │   │   ├── debug.py            # MCTS tree visualization
 │   │   └── profiling.py        # Performance profiling
 │   └── storage/
-│       └── s3_client.py        # Async S3 with retries
+│       ├── s3_client.py        # Async S3 with retries
+│       └── pinecone_store.py   # Vector store integration
 ├── tools/
 │   ├── mcp/
 │   │   └── server.py           # MCP server with async tools
 │   └── cli/                    # CLI entrypoints
+├── training/                   # Neural meta-controller training
+│   ├── agent_trainer.py        # Training orchestration
+│   ├── data_pipeline.py        # Data preparation
+│   └── evaluation.py           # Model evaluation
 ├── tests/                      # Test suite
 │   ├── fixtures/               # Test fixtures
 │   └── test_e2e_providers.py   # E2E provider tests
 ├── examples/                   # Usage examples
 ├── docs/                       # Documentation
+│   ├── mermaid/                # Mermaid diagram sources
+│   ├── drawio/                 # Draw.io diagram files
+│   └── img/                    # Generated diagram images
+├── scripts/
+│   └── export_architecture_diagrams.py  # Diagram generation script
 ├── .github/workflows/ci.yml    # CI/CD pipeline
 ├── pyproject.toml              # Project configuration
 ├── mcp_config.example.json     # MCP server configuration template
