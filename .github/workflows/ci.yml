@@ -104,19 +104,10 @@ jobs:
       - name: Display high severity issues
         run: |
           if [ -f bandit-report.json ]; then
-            python -c "
-import json
-with open('bandit-report.json') as f:
-    data = json.load(f)
-    high_sev = [r for r in data.get('results', []) if r.get('issue_severity') == 'HIGH']
-    if high_sev:
-        print('HIGH SEVERITY ISSUES FOUND:')
-        for issue in high_sev:
-            print(f\"  - {issue['filename']}:{issue['line_number']}: {issue['issue_text']}\")
-        exit(1)
-    else:
-        print('No high severity issues found')
-"
+            python -c "import json,sys; d=json.load(open('bandit-report.json')); hs=[r for r in d.get('results',[]) if r.get('issue_severity')=='HIGH'];
+print('HIGH SEVERITY ISSUES FOUND:' if hs else 'No high severity issues found');
+[print('  - {}:{}: {}'.format(r.get('filename'), r.get('line_number'), r.get('issue_text'))) for r in hs];
+sys.exit(1 if hs else 0)"
           fi
 
   dependency-audit:
@@ -152,19 +143,10 @@ with open('bandit-report.json') as f:
       - name: Check for critical vulnerabilities
         run: |
           if [ -f pip-audit-report.json ]; then
-            python -c "
-import json
-with open('pip-audit-report.json') as f:
-    data = json.load(f)
-    critical = [d for d in data.get('dependencies', []) if any(v.get('severity', '') == 'CRITICAL' for v in d.get('vulns', []))]
-    if critical:
-        print('CRITICAL VULNERABILITIES FOUND:')
-        for dep in critical:
-            print(f\"  - {dep['name']}=={dep['version']}\")
-        exit(1)
-    else:
-        print('No critical vulnerabilities found')
-"
+            python -c "import json,sys; d=json.load(open('pip-audit-report.json')); crit=[dep for dep in d.get('dependencies',[]) if any(v.get('severity','')=='CRITICAL' for v in dep.get('vulns',[]))];
+print('CRITICAL VULNERABILITIES FOUND:' if crit else 'No critical vulnerabilities found');
+[print('  - {}=={}'.format(dep.get('name'), dep.get('version'))) for dep in crit];
+sys.exit(1 if crit else 0)"
           fi
 
   test:
