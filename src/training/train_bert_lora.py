@@ -32,7 +32,7 @@ try:
     _TRANSFORMERS_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "transformers library not installed. " "Install it with: pip install transformers",
+        "transformers library not installed. Install it with: pip install transformers",
         ImportWarning,
         stacklevel=2,
     )
@@ -47,7 +47,7 @@ try:
     _DATASETS_AVAILABLE = True
 except ImportError:
     warnings.warn(
-        "datasets library not installed. " "Install it with: pip install datasets",
+        "datasets library not installed. Install it with: pip install datasets",
         ImportWarning,
         stacklevel=2,
     )
@@ -142,13 +142,11 @@ class BERTLoRATrainer:
         """
         if not _TRANSFORMERS_AVAILABLE:
             raise ImportError(
-                "transformers library is required for BERTLoRATrainer. " "Install it with: pip install transformers"
+                "transformers library is required for BERTLoRATrainer. Install it with: pip install transformers"
             )
 
         if not _DATASETS_AVAILABLE:
-            raise ImportError(
-                "datasets library is required for BERTLoRATrainer. " "Install it with: pip install datasets"
-            )
+            raise ImportError("datasets library is required for BERTLoRATrainer. Install it with: pip install datasets")
 
         # Setup logging
         self.logger = setup_logging()
@@ -228,7 +226,7 @@ class BERTLoRATrainer:
             True
         """
         if len(texts) != len(labels):
-            raise ValueError(f"texts and labels must have same length, " f"got {len(texts)} and {len(labels)}")
+            raise ValueError(f"texts and labels must have same length, got {len(texts)} and {len(labels)}")
 
         self.logger.info(f"Preparing dataset with {len(texts)} samples")
 

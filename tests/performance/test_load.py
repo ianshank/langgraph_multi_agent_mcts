@@ -130,7 +130,7 @@ class TestConcurrentRequestHandling:
 
             print(f"\n--- Concurrent Requests Test (n={num_concurrent}) ---")
             print(f"Total time: {total_time:.2f}s")
-            print(f"Success rate: {successful}/{num_concurrent} ({100*successful/num_concurrent:.1f}%)")
+            print(f"Success rate: {successful}/{num_concurrent} ({100 * successful / num_concurrent:.1f}%)")
             print(f"Mean latency: {mean_latency:.2f}ms")
             print(f"P95 latency: {p95_latency:.2f}ms")
             print(f"Throughput: {throughput:.2f} req/s")
@@ -360,8 +360,8 @@ class TestMCTSScaling:
         elapsed = time.perf_counter() - start
 
         print(f"\n--- MCTS Scaling: {iterations} iterations ---")
-        print(f"Time: {elapsed:.4f}s ({elapsed*1000:.2f}ms)")
-        print(f"Rate: {iterations/elapsed:.2f} iterations/s")
+        print(f"Time: {elapsed:.4f}s ({elapsed * 1000:.2f}ms)")
+        print(f"Rate: {iterations / elapsed:.2f} iterations/s")
         print(f"Best action: {result['mcts_best_action']}")
         print(f"Root visits: {result['mcts_stats']['root_visits']}")
 
@@ -396,7 +396,7 @@ class TestMCTSScaling:
             elapsed = time.perf_counter() - start
 
             results[size] = elapsed
-            print(f"Tree size {size}: {elapsed*1000:.2f}ms for 100 selections")
+            print(f"Tree size {size}: {elapsed * 1000:.2f}ms for 100 selections")
 
         # Scaling should be roughly linear (O(n) for max operation)
         # Allow for some overhead, but 100x tree shouldn't be 100x slower
@@ -425,9 +425,7 @@ class TestThroughputBenchmarks:
             mock_hrm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
             mock_trm.return_value.process = AsyncMock(return_value={"response": "R", "metadata": {}})
 
-            return LangGraphMultiAgentFramework(
-                model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10
-            )
+            return LangGraphMultiAgentFramework(model_adapter=mock_adapter, logger=mock_logger, mcts_iterations=10)
 
     @pytest.mark.asyncio
     @pytest.mark.slow

@@ -171,7 +171,7 @@ def demo_bert_controller() -> None:
 
     print(f"  First prediction time: {first_time:.4f}s")
     print(f"  Cached prediction time: {second_time:.4f}s")
-    print(f"  Speedup: {first_time/second_time:.2f}x")
+    print(f"  Speedup: {first_time / second_time:.2f}x")
 
     cache_info = controller.get_cache_info()
     print(f"  Cache size: {cache_info['cache_size']} entries")

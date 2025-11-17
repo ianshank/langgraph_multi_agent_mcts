@@ -5,6 +5,7 @@ Export architecture diagrams:
 - Neural network diagrams (RNN and BERT) via Matplotlib (PNG)
 Outputs to: docs/img/
 """
+
 import os
 import sys
 

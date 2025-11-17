@@ -138,9 +138,7 @@ async def demonstrate_deterministic_mcts():
 
     # Verify determinism
     print("\n3. Determinism Verification:")
-    is_deterministic = (
-        len({r["best_action"] for r in results}) == 1 and len({r["best_visits"] for r in results}) == 1
-    )
+    is_deterministic = len({r["best_action"] for r in results}) == 1 and len({r["best_visits"] for r in results}) == 1
     print(f"   All runs identical: {is_deterministic}")
 
     if is_deterministic:

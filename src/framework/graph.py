@@ -280,7 +280,7 @@ class GraphBuilder:
             config: MetaControllerConfig or dict with configuration
         """
         if not _META_CONTROLLER_AVAILABLE:
-            self.logger.warning("Meta-controller modules not available. " "Falling back to rule-based routing.")
+            self.logger.warning("Meta-controller modules not available. Falling back to rule-based routing.")
             return
 
         try:
@@ -741,15 +741,15 @@ class GraphBuilder:
 
         agent_outputs = state.get("agent_outputs", [])
 
-        synthesis_prompt = f"""Query: {state['query']}
+        synthesis_prompt = f"""Query: {state["query"]}
 
 Agent Outputs:
 """
 
         for output in agent_outputs:
             synthesis_prompt += f"""
-{output['agent'].upper()} (confidence={output['confidence']:.2f}):
-{output['response']}
+{output["agent"].upper()} (confidence={output["confidence"]:.2f}):
+{output["response"]}
 
 """
 

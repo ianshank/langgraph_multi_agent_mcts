@@ -13,7 +13,6 @@ Expected outcomes:
 - Model versions tracked
 """
 
-
 import pytest
 
 from tests.mocks.mock_external_services import (

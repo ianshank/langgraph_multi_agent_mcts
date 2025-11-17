@@ -60,7 +60,7 @@ class PineconeVectorStore:
         self._operation_buffer: list[dict[str, Any]] = []
 
         if not PINECONE_AVAILABLE:
-            print("Warning: pinecone package not installed. " "Install with: pip install pinecone")
+            print("Warning: pinecone package not installed. Install with: pip install pinecone")
             return
 
         if auto_init and self._api_key and self._host:

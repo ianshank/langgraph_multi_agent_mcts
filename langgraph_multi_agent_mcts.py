@@ -501,15 +501,15 @@ class LangGraphMultiAgentFramework:
         agent_outputs = state.get("agent_outputs", [])
 
         # Weighted synthesis based on confidence
-        synthesis_prompt = f"""Query: {state['query']}
+        synthesis_prompt = f"""Query: {state["query"]}
 
 Agent Outputs:
 """
 
         for output in agent_outputs:
             synthesis_prompt += f"""
-{output['agent'].upper()} (confidence={output['confidence']:.2f}):
-{output['response']}
+{output["agent"].upper()} (confidence={output["confidence"]:.2f}):
+{output["response"]}
 
 """
 

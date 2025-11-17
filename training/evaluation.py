@@ -407,7 +407,9 @@ class MultiAgentEvaluator:
 
         # Accuracy per agent
         for agent_name, outputs in agent_outputs.items():
-            correct = sum(1 for pred, truth in zip(outputs, ground_truths, strict=True) if self._outputs_match(pred, truth))
+            correct = sum(
+                1 for pred, truth in zip(outputs, ground_truths, strict=True) if self._outputs_match(pred, truth)
+            )
             metrics[f"{agent_name}_accuracy"] = correct / len(ground_truths)
 
         # Ensemble accuracy (majority voting)

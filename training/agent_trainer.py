@@ -158,7 +158,7 @@ class BaseAgentTrainer(ABC):
             # Logging
             if batch_idx % 100 == 0:
                 logger.info(
-                    f"Epoch {self.current_epoch}, Batch {batch_idx}, " f"Loss: {loss.item() * accumulation_steps:.4f}"
+                    f"Epoch {self.current_epoch}, Batch {batch_idx}, Loss: {loss.item() * accumulation_steps:.4f}"
                 )
 
         return total_loss / num_batches if num_batches > 0 else 0.0
@@ -829,9 +829,7 @@ class HRMModel(nn.Module):
         self.depth_predictor = nn.Linear(hidden_size, max_depth)
         self.max_depth = max_depth
 
-    def forward(
-        self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None
-    ) -> dict[str, torch.Tensor]:
+    def forward(self, input_ids: torch.Tensor, attention_mask: torch.Tensor | None = None) -> dict[str, torch.Tensor]:
         outputs = self.base_model(input_ids=input_ids, attention_mask=attention_mask)
 
         # Get sequence output

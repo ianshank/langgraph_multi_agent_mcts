@@ -91,8 +91,7 @@ class TrainingMonitor:
 
         if log_format == "json":
             formatter = logging.Formatter(
-                '{"timestamp": "%(asctime)s", "level": "%(levelname)s", '
-                '"module": "%(name)s", "message": "%(message)s"}'
+                '{"timestamp": "%(asctime)s", "level": "%(levelname)s", "module": "%(name)s", "message": "%(message)s"}'
             )
         else:
             formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
@@ -416,7 +415,7 @@ class MetricsDashboard:
 </head>
 <body>
     <h1>Multi-Agent MCTS Training Dashboard</h1>
-    <p>Generated: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
+    <p>Generated: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}</p>
 
     <h2>Metric Summaries</h2>
     <div class="metrics-container">
@@ -428,10 +427,10 @@ class MetricsDashboard:
                 html += f"""
         <div class="metric-card">
             <h3>{name}</h3>
-            <div class="metric-value">{summary['latest']:.4f}</div>
-            <p>Min: {summary['min']:.4f} | Max: {summary['max']:.4f}</p>
-            <p>Mean: {summary['mean']:.4f} | Std: {summary['std']:.4f}</p>
-            <p>Samples: {summary['num_samples']}</p>
+            <div class="metric-value">{summary["latest"]:.4f}</div>
+            <p>Min: {summary["min"]:.4f} | Max: {summary["max"]:.4f}</p>
+            <p>Mean: {summary["mean"]:.4f} | Std: {summary["std"]:.4f}</p>
+            <p>Samples: {summary["num_samples"]}</p>
         </div>
 """
 
