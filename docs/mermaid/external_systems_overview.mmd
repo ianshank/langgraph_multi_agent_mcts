@@ -1,0 +1,42 @@
+graph TB
+    subgraph Framework
+      FW[LangGraph Multi-Agent MCTS]
+    end
+
+    subgraph LLM Providers
+      OAI[OpenAI API]
+      ANT[Anthropic API]
+      LMS[LM Studio]
+    end
+
+    subgraph Storage & Vectors
+      S3[(AWS S3)]
+      PINE[(Pinecone 10D)]
+    end
+
+    subgraph Observability
+      OTel[OpenTelemetry]
+      PROM[Prometheus]
+      WAND[Weights & Biases]
+      BT[Braintrust]
+    end
+
+    FW --> OAI
+    FW --> ANT
+    FW --> LMS
+
+    FW --> S3
+    FW --> PINE
+
+    FW --> OTel
+    FW --> PROM
+    FW --> WAND
+    FW --> BT
+
+    classDef fw fill:#d5e8d4,stroke:#333
+    classDef ext fill:#e7f7ff,stroke:#333
+    classDef obs fill:#fff1cc,stroke:#333
+
+    class FW fw
+    class OAI,ANT,LMS,S3,PINE ext
+    class OTel,PROM,WAND,BT obs

@@ -135,6 +135,128 @@ def get_mermaid_texts() -> dict[str, str]:
         "c2_containers": c2,
         "c3_components": c3,
         "c4_sequence": c4,
+        "user_journey_flow": """flowchart LR
+    user[User/Developer] -->|CLI/Demos| framework[Framework]
+    user -->|REST API| api[FastAPI Server]
+    user -->|MCP| mcp[MCP Server]
+
+    api --> framework
+    mcp --> framework
+
+    framework -->|LangGraph| graph[StateGraph]
+    graph --> route[Route Decision]
+
+    route -->|parallel| parallel[Parallel Agents\\nHRM + TRM]
+    route -->|mcts| mcts[MCTS Simulation]
+    route -->|aggregate| agg[Aggregate Results]
+
+    parallel --> agg
+    mcts --> agg
+
+    agg --> eval[Evaluate Consensus]
+    eval -->|consensus| synth[Synthesize Response]
+    eval -->|iterate| route
+
+    synth --> output[Final Response]
+    output --> obs[Observability\\n(OTel, Prometheus)]
+    output --> storage[S3 Artifacts]
+
+    classDef svc fill:#e1d5e7,stroke:#333
+    classDef core fill:#d5e8d4,stroke:#333
+    classDef flow fill:#fff2cc,stroke:#333
+
+    class api,mcp svc
+    class framework core
+    class graph,route,parallel,mcts,agg,eval,synth,output flow
+""",
+        "agent_workflow": """flowchart TB
+    A[Entry] --> B[Retrieve Context]
+    B --> C{Route Decision}
+
+    C -->|HRM| HRM[HRM Agent Node]
+    C -->|TRM| TRM[TRM Agent Node]
+    C -->|MCTS| MCTS[MCTS Simulator Node]
+    C -->|Parallel HRM+TRM| PAR[Parallel Agents]
+
+    PAR --> AGG[Aggregate Results]
+    HRM --> AGG
+    TRM --> AGG
+    MCTS --> AGG
+
+    AGG --> EVAL[Evaluate Consensus]
+
+    EVAL -->|Consensus| SYN[Synthesize]
+    EVAL -->|Iterate| C
+
+    SYN --> END[(END)]
+
+    click HRM "#hrm" "HRM decomposition and scoring"
+    click TRM "#trm" "TRM iterative refinement"
+    click MCTS "#mcts" "Deterministic MCTS search"
+""",
+        "training_pipeline": """flowchart LR
+    D[Dataset\\n(data/, generated_dataset.json)] --> FE[Feature Extraction\\nnormalize_features/ features_to_text]
+
+    FE --> RNN[RNN Training\\nPyTorch GRU]
+    FE --> BERT[BERT LoRA Fine-tune\\nTransformers/Diffusers]
+
+    RNN --> E1[Eval/Validation]
+    BERT --> E2[Eval/Validation]
+
+    E1 --> TRK[Experiment Tracking\\nW&B / Braintrust]
+    E2 --> TRK
+
+    RNN --> CK1[S3 Checkpoint]
+    BERT --> CK2[S3 Checkpoint]
+
+    E1 --> PC[(Pinecone 10D Vectors)]
+    E2 --> PC
+
+    TRK --> RPT[Reports & Dashboards]
+""",
+        "external_systems_overview": """graph TB
+    subgraph Framework
+      FW[LangGraph Multi-Agent MCTS]
+    end
+
+    subgraph LLM Providers
+      OAI[OpenAI API]
+      ANT[Anthropic API]
+      LMS[LM Studio]
+    end
+
+    subgraph Storage & Vectors
+      S3[(AWS S3)]
+      PINE[(Pinecone 10D)]
+    end
+
+    subgraph Observability
+      OTel[OpenTelemetry]
+      PROM[Prometheus]
+      WAND[Weights & Biases]
+      BT[Braintrust]
+    end
+
+    FW --> OAI
+    FW --> ANT
+    FW --> LMS
+
+    FW --> S3
+    FW --> PINE
+
+    FW --> OTel
+    FW --> PROM
+    FW --> WAND
+    FW --> BT
+
+    classDef fw fill:#d5e8d4,stroke:#333
+    classDef ext fill:#e7f7ff,stroke:#333
+    classDef obs fill:#fff1cc,stroke:#333
+
+    class FW fw
+    class OAI,ANT,LMS,S3,PINE ext
+    class OTel,PROM,WAND,BT obs
+""",
     }
 
 

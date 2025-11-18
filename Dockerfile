@@ -62,10 +62,10 @@ RUN groupadd -r appuser && \
 # Copy application code
 COPY --chown=appuser:appuser src/ ./src/
 COPY --chown=appuser:appuser tools/ ./tools/
-COPY --chown=appuser:appuser langgraph_multi_agent_mcts.py ./
+COPY --chown=appuser:appuser examples/ ./examples/
+COPY --chown=appuser:appuser config/ ./config/
 COPY --chown=appuser:appuser pyproject.toml ./
-# Note: improved_hrm_agent.py and improved_trm_agent.py are optional
-# Copy them if they exist by adding them to the build context
+# Note: Examples are included for reference and demos
 
 # Switch to non-root user
 USER appuser

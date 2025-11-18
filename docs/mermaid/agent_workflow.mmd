@@ -1,0 +1,24 @@
+flowchart TB
+    A[Entry] --> B[Retrieve Context]
+    B --> C{Route Decision}
+
+    C -->|HRM| HRM[HRM Agent Node]
+    C -->|TRM| TRM[TRM Agent Node]
+    C -->|MCTS| MCTS[MCTS Simulator Node]
+    C -->|Parallel HRM+TRM| PAR[Parallel Agents]
+
+    PAR --> AGG[Aggregate Results]
+    HRM --> AGG
+    TRM --> AGG
+    MCTS --> AGG
+
+    AGG --> EVAL[Evaluate Consensus]
+
+    EVAL -->|Consensus| SYN[Synthesize]
+    EVAL -->|Iterate| C
+
+    SYN --> END[(END)]
+
+    click HRM "#hrm" "HRM decomposition and scoring"
+    click TRM "#trm" "TRM iterative refinement"
+    click MCTS "#mcts" "Deterministic MCTS search"

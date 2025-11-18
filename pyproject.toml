@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "langgraph-multi-agent-mcts"
 version = "0.1.0"
 description = "Multi-Agent Framework with MCTS Integration and LangGraph"
-readme = "langgraph_mcts_architecture.md"
+readme = "docs/langgraph_mcts_architecture.md"
 authors = [
     {name = "MCTS Framework Team", email = "team@example.com"}
 ]
