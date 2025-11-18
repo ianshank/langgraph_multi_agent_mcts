@@ -1,33 +1,51 @@
 # Multi-Agent MCTS Framework Dependencies
+# DeepMind-Style Learning Implementation
 
-# Core async HTTP client
-httpx>=0.25.0
+# ============================================================================
+# Core Deep Learning (PyTorch Stack)
+# ============================================================================
+torch>=2.1.0
+torchvision>=0.16.0
+numpy>=1.24.0
+scipy>=1.11.0
 
-# Retry logic
-tenacity>=8.2.0
-
-# LangGraph and LangChain (existing dependencies)
+# ============================================================================
+# LangGraph and LangChain (Multi-Agent Orchestration)
+# ============================================================================
 langgraph>=0.0.20
 langchain>=0.1.0
 langchain-openai>=0.0.2
 
+# ============================================================================
+# Web Framework and API (Inference Server)
+# ============================================================================
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# ============================================================================
+# Data Processing and Storage
+# ============================================================================
 # Vector stores
 chromadb>=0.4.0
 faiss-cpu>=1.7.4
 
-# Data validation
-pydantic>=2.0.0
-
-# Web Framework (for REST API server)
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-
-# System monitoring (for observability)
-psutil>=5.9.0
-
-# Async AWS S3 client (for storage)
+# Async HTTP and AWS
+httpx>=0.25.0
 aioboto3>=12.0.0
 botocore>=1.31.0
+
+# ============================================================================
+# Experiment Tracking and Monitoring
+# ============================================================================
+# Weights & Biases for experiment tracking
+wandb>=0.16.0
+
+# Performance monitoring
+psutil>=5.9.0
+
+# Retry logic
+tenacity>=8.2.0
 
 # OpenTelemetry - Tracing
 opentelemetry-api>=1.20.0
@@ -35,16 +53,40 @@ opentelemetry-sdk>=1.20.0
 opentelemetry-exporter-otlp-proto-grpc>=1.20.0
 opentelemetry-instrumentation-httpx>=0.42b0
 
-# Optional: Prometheus metrics
-# prometheus-client>=0.18.0
+# ============================================================================
+# Testing and Development
+# ============================================================================
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+pytest-cov>=4.1.0
+pytest-mock>=3.11.0
+pytest-timeout>=2.2.0
 
-# Type checking (optional, for development)
-# mypy>=1.0.0
-# types-requests>=2.31.0
-# types-psutil>=5.9.0
+# Type checking
+mypy>=1.0.0
+types-requests>=2.31.0
+types-psutil>=5.9.0
 
-# Testing (optional)
-# pytest>=7.4.0
-# pytest-asyncio>=0.21.0
-# pytest-cov>=4.1.0
-# pytest-mock>=3.11.0
+# Code quality
+black>=23.0.0
+ruff>=0.1.0
+pre-commit>=3.5.0
+
+# ============================================================================
+# Optional Performance Enhancements
+# ============================================================================
+# Accelerated training (optional)
+# ninja>=1.11.0  # For faster PyTorch compilation
+
+# Distributed training (optional)
+# torch.distributed  # Included in PyTorch
+
+# Mixed precision training (optional, included in PyTorch 2.0+)
+# No additional dependencies needed
+
+# ============================================================================
+# Documentation (optional)
+# ============================================================================
+# mkdocs>=1.5.0
+# mkdocs-material>=9.4.0
+# mkdocstrings[python]>=0.24.0
