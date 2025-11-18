@@ -1,0 +1,50 @@
+﻿=== E2E Test Suite Execution Summary ===
+Timestamp: 20251117-191213
+Branch: test/e2e-full-journey-20251117-191213
+
+PHASE 1: Core Framework E2E Tests
+- Status: PASSED
+- Tests: 41 passed
+- Location: tests/e2e/
+- Files: test_complete_query_flow.py, test_mcts_simulation_flow.py
+
+PHASE 2: Multi-Provider LLM Integration Tests
+- Status: PARTIAL
+- Provider Tests: 3/3 passed (lmstudio, openai, anthropic)
+- MCTS Tests: 0/3 failed (API compatibility issue with RandomRolloutPolicy)
+- MCP Server: Partial (3 tools working)
+- Location: tests/test_e2e_providers.py
+
+PHASE 3: Full Integration Tests
+- Status: SKIPPED
+- Reason: Missing dependency (torch)
+- Location: tests/test_integration_e2e.py
+- Note: Requires PyTorch for neural meta-controller tests
+
+PHASE 4: API Server Tests
+- Status: PASSED
+- Tests: 30 passed
+- Location: tests/api/test_rest_endpoints.py
+- Coverage: Health, Query, Auth, Rate Limiting, Error Handling, Metrics, CORS
+
+PHASE 5: Smoke Tests
+- Status: PARTIAL
+- Tests Run: 1/8 (Health Check passed)
+- Location: scripts/smoke_test.sh
+- Note: Some tests may require additional server configuration
+
+OVERALL RESULTS:
+- Total Tests Passed: 71+
+- Total Tests Failed: 3 (MCTS provider tests)
+- Total Tests Skipped: 1 phase (integration tests)
+- Success Rate: ~96% (excluding skipped phase)
+
+ISSUES IDENTIFIED:
+1. RandomRolloutPolicy API mismatch in MCTS provider tests
+2. Missing torch dependency for integration tests
+3. Smoke tests incomplete (may need server configuration)
+
+RECOMMENDATIONS:
+1. Fix RandomRolloutPolicy.evaluate() signature compatibility
+2. Install torch for full integration test coverage
+3. Review smoke test script for Windows compatibility
