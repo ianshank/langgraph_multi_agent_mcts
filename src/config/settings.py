@@ -38,6 +38,13 @@ class LogLevel(str, Enum):
     CRITICAL = "CRITICAL"
 
 
+class MCTSImplementation(str, Enum):
+    """MCTS implementation variants."""
+
+    BASELINE = "baseline"  # Original MCTS core
+    NEURAL = "neural"  # Neural-guided AlphaZero-style MCTS
+
+
 class Settings(BaseSettings):
     """
     Application settings with security-first configuration.
@@ -88,6 +95,12 @@ class Settings(BaseSettings):
     LMSTUDIO_MODEL: str | None = Field(default=None, description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)")
 
     # MCTS Configuration with bounds validation
+    MCTS_ENABLED: bool = Field(default=True, description="Enable MCTS for agent decision-making")
+
+    MCTS_IMPL: MCTSImplementation = Field(
+        default=MCTSImplementation.BASELINE, description="MCTS implementation variant to use"
+    )
+
     MCTS_ITERATIONS: int = Field(default=100, ge=1, le=10000, description="Number of MCTS iterations (1-10000)")
 
     MCTS_C: float = Field(
@@ -96,6 +109,28 @@ class Settings(BaseSettings):
 
     # Random seed for reproducibility
     SEED: int | None = Field(default=None, ge=0, description="Random seed for reproducibility (optional)")
+
+    # LangSmith Configuration for tracing and evaluation
+    LANGSMITH_API_KEY: SecretStr | None = Field(
+        default=None, description="LangSmith API key for tracing and evaluation (optional)"
+    )
+
+    LANGSMITH_PROJECT: str = Field(default="langgraph-mcts", description="LangSmith project name")
+
+    LANGCHAIN_TRACING_V2: bool = Field(default=False, description="Enable LangChain tracing v2")
+
+    LANGCHAIN_ENDPOINT: str = Field(default="https://api.smith.langchain.com", description="LangChain API endpoint")
+
+    # Weights & Biases Configuration for experiment tracking
+    WANDB_API_KEY: SecretStr | None = Field(
+        default=None, description="Weights & Biases API key for experiment tracking (optional)"
+    )
+
+    WANDB_PROJECT: str = Field(default="langgraph-mcts", description="W&B project name")
+
+    WANDB_ENTITY: str | None = Field(default=None, description="W&B entity (username or team name)")
+
+    WANDB_MODE: str = Field(default="online", description="W&B mode: online, offline, or disabled")
 
     # Logging Configuration
     LOG_LEVEL: LogLevel = Field(default=LogLevel.INFO, description="Application log level")
@@ -178,6 +213,30 @@ class Settings(BaseSettings):
                 raise ValueError("Pinecone API key appears to be a placeholder value")
             if len(secret_value) < 20:
                 raise ValueError("Pinecone API key appears to be too short")
+        return v
+
+    @field_validator("LANGSMITH_API_KEY")
+    @classmethod
+    def validate_langsmith_key_format(cls, v: SecretStr | None) -> SecretStr | None:
+        """Validate LangSmith API key format without exposing the value."""
+        if v is not None:
+            secret_value = v.get_secret_value()
+            if secret_value in ("", "your-api-key-here", "REPLACE_ME"):
+                raise ValueError("LangSmith API key appears to be a placeholder value")
+            if len(secret_value) < 20:
+                raise ValueError("LangSmith API key appears to be too short")
+        return v
+
+    @field_validator("WANDB_API_KEY")
+    @classmethod
+    def validate_wandb_key_format(cls, v: SecretStr | None) -> SecretStr | None:
+        """Validate Weights & Biases API key format without exposing the value."""
+        if v is not None:
+            secret_value = v.get_secret_value()
+            if secret_value in ("", "your-api-key-here", "REPLACE_ME"):
+                raise ValueError("W&B API key appears to be a placeholder value")
+            if len(secret_value) < 20:
+                raise ValueError("W&B API key appears to be too short")
         return v
 
     @field_validator("PINECONE_HOST")
@@ -269,15 +328,18 @@ class Settings(BaseSettings):
         Safe for logging and display purposes.
         """
         data = self.model_dump()
-        # Mask sensitive fields
-        if "OPENAI_API_KEY" in data and data["OPENAI_API_KEY"]:
-            data["OPENAI_API_KEY"] = "***MASKED***"
-        if "ANTHROPIC_API_KEY" in data and data["ANTHROPIC_API_KEY"]:
-            data["ANTHROPIC_API_KEY"] = "***MASKED***"
-        if "BRAINTRUST_API_KEY" in data and data["BRAINTRUST_API_KEY"]:
-            data["BRAINTRUST_API_KEY"] = "***MASKED***"
-        if "PINECONE_API_KEY" in data and data["PINECONE_API_KEY"]:
-            data["PINECONE_API_KEY"] = "***MASKED***"
+        # Mask all sensitive fields
+        secret_fields = [
+            "OPENAI_API_KEY",
+            "ANTHROPIC_API_KEY",
+            "BRAINTRUST_API_KEY",
+            "PINECONE_API_KEY",
+            "LANGSMITH_API_KEY",
+            "WANDB_API_KEY",
+        ]
+        for field in secret_fields:
+            if field in data and data[field]:
+                data[field] = "***MASKED***"
         return data
 
     def get_braintrust_api_key(self) -> str | None:
@@ -300,9 +362,29 @@ class Settings(BaseSettings):
             return self.PINECONE_API_KEY.get_secret_value()
         return None
 
+    def get_langsmith_api_key(self) -> str | None:
+        """
+        Get the LangSmith API key if configured.
+
+        Returns the secret value - use with caution to avoid logging.
+        """
+        if self.LANGSMITH_API_KEY:
+            return self.LANGSMITH_API_KEY.get_secret_value()
+        return None
+
+    def get_wandb_api_key(self) -> str | None:
+        """
+        Get the Weights & Biases API key if configured.
+
+        Returns the secret value - use with caution to avoid logging.
+        """
+        if self.WANDB_API_KEY:
+            return self.WANDB_API_KEY.get_secret_value()
+        return None
+
     def __repr__(self) -> str:
         """Safe string representation that doesn't expose secrets."""
-        return f"Settings(LLM_PROVIDER={self.LLM_PROVIDER}, LOG_LEVEL={self.LOG_LEVEL})"
+        return f"Settings(LLM_PROVIDER={self.LLM_PROVIDER}, MCTS_ENABLED={self.MCTS_ENABLED}, MCTS_IMPL={self.MCTS_IMPL}, LOG_LEVEL={self.LOG_LEVEL})"
 
 
 # Global settings instance (lazily loaded)
@@ -343,6 +425,7 @@ __all__ = [
     "Settings",
     "LLMProvider",
     "LogLevel",
+    "MCTSImplementation",
     "get_settings",
     "reset_settings",
 ]

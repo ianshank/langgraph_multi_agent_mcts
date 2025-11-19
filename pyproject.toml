@@ -176,11 +176,13 @@ omit = [
     "*/__pycache__/*",
     "*/site-packages/*",
 ]
+branch = true
 
 [tool.coverage.report]
 show_missing = true
 skip_covered = false
 precision = 2
+fail_under = 50.0  # Set realistic initial coverage threshold (gradually increase as coverage improves)
 exclude_lines = [
     "pragma: no cover",
     "def __repr__",
@@ -188,7 +190,12 @@ exclude_lines = [
     "if TYPE_CHECKING:",
     "raise NotImplementedError",
     "pass",
+    "except ImportError:",
+    "@abstractmethod",
 ]
+
+[tool.coverage.paths]
+source = ["src/", "*/site-packages/"]
 
 [tool.bandit]
 exclude_dirs = ["tests", "venv", ".venv"]
