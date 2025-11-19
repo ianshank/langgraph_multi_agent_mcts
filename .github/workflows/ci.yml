@@ -249,10 +249,148 @@ jobs:
             echo "No pyproject.toml found, skipping build"
           fi
 
+  docker-build:
+    name: Docker Build and Test
+    runs-on: ubuntu-latest
+    needs: [lint, type-check]
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GitHub Container Registry
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for Docker
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: false
+          load: true
+          tags: langgraph-mcts:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Test Docker image - Structure
+        run: |
+          echo "Testing Docker image structure..."
+          docker run --rm langgraph-mcts:test ls -la /app/src
+          docker run --rm langgraph-mcts:test python -c "import sys; print(f'Python version: {sys.version}')"
+
+      - name: Test Docker image - Dependencies
+        run: |
+          echo "Testing installed dependencies..."
+          docker run --rm langgraph-mcts:test pip list | grep -E "(langgraph|langchain|pydantic|httpx)"
+
+      - name: Test Docker image - Health Check
+        run: |
+          echo "Starting container for health check..."
+          docker run -d --name mcts-test \
+            -p 8000:8000 \
+            -e LLM_PROVIDER=lmstudio \
+            -e LOG_LEVEL=INFO \
+            langgraph-mcts:test
+
+          # Wait for container to be healthy
+          timeout 60s bash -c 'until docker inspect --format="{{.State.Health.Status}}" mcts-test | grep -q "healthy"; do sleep 2; done' || \
+          (echo "Container failed to become healthy" && docker logs mcts-test && exit 1)
+
+          echo "Container is healthy!"
+          docker logs mcts-test
+          docker stop mcts-test
+          docker rm mcts-test
+
+      - name: Run basic API tests
+        run: |
+          echo "Starting container for API testing..."
+          docker run -d --name mcts-api-test \
+            -p 8000:8000 \
+            -e LLM_PROVIDER=lmstudio \
+            -e LOG_LEVEL=INFO \
+            langgraph-mcts:test
+
+          # Wait for service to be ready
+          sleep 10
+
+          # Test health endpoint
+          curl -f http://localhost:8000/health || (echo "Health check failed" && docker logs mcts-api-test && exit 1)
+
+          # Test metrics endpoint (if available)
+          curl -f http://localhost:8000/metrics || echo "Metrics endpoint not available"
+
+          # Cleanup
+          docker stop mcts-api-test
+          docker rm mcts-api-test
+
+      - name: Scan Docker image for vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: langgraph-mcts:test
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '0'  # Don't fail build on vulnerabilities, just report
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Build and push Docker image (main branch only)
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          target: production
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            BUILDKIT_INLINE_CACHE=1
+
+      - name: Generate image digest
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        run: |
+          echo "Docker image pushed successfully!"
+          echo "Tags: ${{ steps.meta.outputs.tags }}"
+          echo "Image can be pulled with:"
+          echo "docker pull ghcr.io/${{ github.repository }}:latest"
+
   summary:
     name: CI Summary
     runs-on: ubuntu-latest
-    needs: [lint, type-check, security-scan, dependency-audit, test]
+    needs: [lint, type-check, security-scan, dependency-audit, test, docker-build]
     if: always()
     steps:
       - name: Check all job results
@@ -263,10 +401,12 @@ jobs:
           echo "Security Scan: ${{ needs.security-scan.result }}"
           echo "Dependency Audit: ${{ needs.dependency-audit.result }}"
           echo "Tests: ${{ needs.test.result }}"
+          echo "Docker Build: ${{ needs.docker-build.result }}"
 
           # Fail if any critical job failed
           if [[ "${{ needs.lint.result }}" == "failure" ]] || \
-             [[ "${{ needs.test.result }}" == "failure" ]]; then
+             [[ "${{ needs.test.result }}" == "failure" ]] || \
+             [[ "${{ needs.docker-build.result }}" == "failure" ]]; then
             echo "Critical job failed!"
             exit 1
           fi
