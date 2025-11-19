@@ -15,11 +15,9 @@ Based on principles from:
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
 
 from ..training.system_config import TRMConfig
 
@@ -29,11 +27,11 @@ class TRMOutput:
     """Output from TRM recursive processing."""
 
     final_prediction: torch.Tensor  # Final refined output
-    intermediate_predictions: List[torch.Tensor]  # Predictions at each recursion
+    intermediate_predictions: list[torch.Tensor]  # Predictions at each recursion
     recursion_depth: int  # Actual depth used
     converged: bool  # Whether convergence was achieved
     convergence_step: int  # Step at which convergence occurred
-    residual_norms: List[float]  # L2 norms of residuals at each step
+    residual_norms: list[float]  # L2 norms of residuals at each step
 
 
 class RecursiveBlock(nn.Module):
@@ -60,13 +58,13 @@ class RecursiveBlock(nn.Module):
         # Residual scaling (learned)
         self.residual_scale = nn.Parameter(torch.ones(1))
 
-    def forward(self, x: torch.Tensor, iteration: int) -> torch.Tensor:
+    def forward(self, x: torch.Tensor, iteration: int = 0) -> torch.Tensor:  # noqa: ARG002
         """
         Apply recursive transformation.
 
         Args:
             x: Input tensor [batch, ..., latent_dim]
-            iteration: Current recursion iteration (for potential iteration-dependent behavior)
+            iteration: Current recursion iteration (reserved for future iteration-dependent behavior)
 
         Returns:
             Refined tensor [batch, ..., latent_dim]
@@ -107,7 +105,7 @@ class TRMAgent(nn.Module):
     - Residual connections for stable gradients
     """
 
-    def __init__(self, config: TRMConfig, output_dim: Optional[int] = None, device: str = "cpu"):
+    def __init__(self, config: TRMConfig, output_dim: int | None = None, device: str = "cpu"):
         super().__init__()
         self.config = config
         self.device = device
@@ -142,7 +140,7 @@ class TRMAgent(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        num_recursions: Optional[int] = None,
+        num_recursions: int | None = None,
         check_convergence: bool = True,
     ) -> TRMOutput:
         """
@@ -209,9 +207,9 @@ class TRMAgent(nn.Module):
     async def refine_solution(
         self,
         initial_prediction: torch.Tensor,
-        num_recursions: Optional[int] = None,
-        convergence_threshold: Optional[float] = None,
-    ) -> Tuple[torch.Tensor, dict]:
+        num_recursions: int | None = None,
+        convergence_threshold: float | None = None,
+    ) -> tuple[torch.Tensor, dict]:
         """
         Refine an initial prediction through recursive processing.
 
