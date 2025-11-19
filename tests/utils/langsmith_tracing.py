@@ -45,6 +45,67 @@ def get_test_metadata() -> dict[str, Any]:
     }
 
 
+def _build_trace_metadata(
+    test_name: str,
+    phase: str | None,
+    scenario_type: str | None,
+    provider: str | None,
+    use_mcts: bool,
+    mcts_iterations: int | None,
+    tags: list[str] | None,
+    metadata: dict[str, Any] | None,
+) -> tuple[dict[str, Any], list[str]]:
+    """
+    Build metadata and tags for tracing (DRY helper for decorators).
+
+    Args:
+        test_name: Name of the test
+        phase: Test phase
+        scenario_type: Scenario being tested
+        provider: LLM provider
+        use_mcts: Whether MCTS is enabled
+        mcts_iterations: Number of MCTS iterations
+        tags: Additional tags
+        metadata: Additional metadata
+
+    Returns:
+        Tuple of (run_metadata, run_tags)
+    """
+    run_metadata = get_test_metadata()
+
+    # Add test-specific metadata
+    run_metadata.update(
+        {
+            "test_suite": "e2e",
+            "test_name": test_name,
+            "phase": phase or "unknown",
+            "scenario_type": scenario_type,
+            "provider": provider,
+            "use_mcts": use_mcts,
+            "mcts_iterations": mcts_iterations,
+        }
+    )
+
+    # Merge custom metadata
+    if metadata:
+        run_metadata.update(metadata)
+
+    # Build tags list
+    run_tags = ["e2e", "test"]
+    if tags:
+        run_tags.extend(tags)
+    if phase:
+        run_tags.append(f"phase:{phase}")
+    if scenario_type:
+        run_tags.append(f"scenario:{scenario_type}")
+    if provider:
+        run_tags.append(f"provider:{provider}")
+    if use_mcts:
+        run_tags.append("mcts")
+
+    return run_metadata, run_tags
+
+
 def trace_e2e_test(
     test_name: str,
     *,
@@ -88,38 +149,16 @@ def trace_e2e_test(
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         async def async_wrapper(*args, **kwargs):
-            # Build comprehensive metadata
-            run_metadata = get_test_metadata()
-
-            # Add test-specific metadata
-            run_metadata.update(
-                {
-                    "test_suite": "e2e",
-                    "test_name": test_name,
-                    "phase": phase or "unknown",
-                    "scenario_type": scenario_type,
-                    "provider": provider,
-                    "use_mcts": use_mcts,
-                    "mcts_iterations": mcts_iterations,
-                }
+            run_metadata, run_tags = _build_trace_metadata(
+                test_name,
+                phase,
+                scenario_type,
+                provider,
+                use_mcts,
+                mcts_iterations,
+                tags,
+                metadata,
             )
-
-            # Merge custom metadata
-            if metadata:
-                run_metadata.update(metadata)
-
-            # Build tags list
-            run_tags = ["e2e", "test"]
-            if tags:
-                run_tags.extend(tags)
-            if phase:
-                run_tags.append(f"phase:{phase}")
-            if scenario_type:
-                run_tags.append(f"scenario:{scenario_type}")
-            if provider:
-                run_tags.append(f"provider:{provider}")
-            if use_mcts:
-                run_tags.append("mcts")
 
             # Use LangSmith's traceable decorator for the actual tracing
             traced_func = traceable(
@@ -133,38 +172,16 @@ def trace_e2e_test(
 
         @functools.wraps(func)
         def sync_wrapper(*args, **kwargs):
-            # Build comprehensive metadata
-            run_metadata = get_test_metadata()
-
-            # Add test-specific metadata
-            run_metadata.update(
-                {
-                    "test_suite": "e2e",
-                    "test_name": test_name,
-                    "phase": phase or "unknown",
-                    "scenario_type": scenario_type,
-                    "provider": provider,
-                    "use_mcts": use_mcts,
-                    "mcts_iterations": mcts_iterations,
-                }
+            run_metadata, run_tags = _build_trace_metadata(
+                test_name,
+                phase,
+                scenario_type,
+                provider,
+                use_mcts,
+                mcts_iterations,
+                tags,
+                metadata,
             )
-
-            # Merge custom metadata
-            if metadata:
-                run_metadata.update(metadata)
-
-            # Build tags list
-            run_tags = ["e2e", "test"]
-            if tags:
-                run_tags.extend(tags)
-            if phase:
-                run_tags.append(f"phase:{phase}")
-            if scenario_type:
-                run_tags.append(f"scenario:{scenario_type}")
-            if provider:
-                run_tags.append(f"provider:{provider}")
-            if use_mcts:
-                run_tags.append("mcts")
 
             # Use LangSmith's traceable decorator for the actual tracing
             traced_func = traceable(
