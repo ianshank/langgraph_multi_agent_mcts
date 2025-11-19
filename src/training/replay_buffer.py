@@ -368,7 +368,21 @@ def collate_experiences(experiences: List[Experience]) -> Tuple[torch.Tensor, to
         (states, policies, values) tuple of batched tensors
     """
     states = torch.stack([exp.state for exp in experiences])
-    policies = torch.from_numpy(np.stack([exp.policy for exp in experiences]))
+
+    # Handle variable-sized policies by padding to max size
+    max_policy_size = max(len(exp.policy) for exp in experiences)
+    padded_policies = []
+    for exp in experiences:
+        policy = exp.policy
+        if len(policy) < max_policy_size:
+            # Pad with zeros
+            padded = np.zeros(max_policy_size, dtype=policy.dtype)
+            padded[:len(policy)] = policy
+            padded_policies.append(padded)
+        else:
+            padded_policies.append(policy)
+
+    policies = torch.from_numpy(np.stack(padded_policies))
     values = torch.tensor([exp.value for exp in experiences], dtype=torch.float32)
 
     return states, policies, values
