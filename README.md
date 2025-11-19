@@ -40,9 +40,12 @@ cp .env.example .env
 Key configuration options:
 - `LLM_PROVIDER`: openai, anthropic, or lmstudio
 - `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`: API credentials
-- `MCTS_ITERATIONS`: Number of MCTS simulations (default: 200)
+- `MCTS_ENABLED`: Enable/disable MCTS (default: true)
+- `MCTS_IMPL`: MCTS implementation - baseline or neural (default: baseline)
+- `MCTS_ITERATIONS`: Number of MCTS simulations (default: 100)
 - `MCTS_C`: Exploration weight for UCB1 (default: 1.414)
-- `SEED`: Random seed for determinism (default: 42)
+- `LANGSMITH_API_KEY` / `WANDB_API_KEY`: Evaluation & tracking (optional)
+- `SEED`: Random seed for determinism (optional)
 - `LOG_LEVEL`: DEBUG, INFO, WARNING, ERROR
 
 ### Basic Usage
@@ -507,3 +510,63 @@ MIT License - see LICENSE file for details.
 - Built on [LangGraph](https://github.com/langchain-ai/langgraph) for state machine architecture
 - Inspired by 2025 research in multi-agent systems and MCTS algorithms
 - Uses [OpenTelemetry](https://opentelemetry.io/) for observability
+
+## RAG Evaluation & Experimentation
+
+This framework includes comprehensive RAG (Retrieval-Augmented Generation) evaluation capabilities with Weights & Biases and LangSmith integration.
+
+### Run E2E Journey
+
+Execute a full RAG journey with optional MCTS:
+
+```bash
+# Basic usage
+python scripts/run_e2e_journey.py --query "What is MCTS?"
+
+# With MCTS enabled
+python scripts/run_e2e_journey.py \
+  --query "Explain AlphaZero" \
+  --mcts-enabled true \
+  --mcts-iterations 200
+
+# Using neural MCTS
+python scripts/run_e2e_journey.py \
+  --query "How does UCB1 work?" \
+  --mcts-impl neural \
+  --wandb-mode online \
+  --langsmith true
+```
+
+### RAG Evaluation with Ragas
+
+Evaluate RAG performance using ragas metrics (faithfulness, answer relevance, context precision/recall):
+
+```bash
+# Evaluate baseline (no MCTS)
+python scripts/evaluate_rag.py \
+  --dataset my_dataset \
+  --limit 50 \
+  --mcts-enabled false
+
+# Evaluate with MCTS
+python scripts/evaluate_rag.py \
+  --dataset my_dataset \
+  --limit 50 \
+  --mcts-enabled true \
+  --output results/mcts_eval.csv
+```
+
+### Experiment Tracking
+
+**Weights & Biases:**
+- Automatic metric logging (latency, tokens, accuracy)
+- Comparison charts for MCTS vs baseline
+- Hyperparameter sweeps
+
+**LangSmith:**
+- Full trace capture for debugging
+- Dataset management for evaluations
+- Production monitoring
+
+Set `WANDB_API_KEY` and `LANGSMITH_API_KEY` in `.env` to enable.
+

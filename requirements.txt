@@ -1,26 +1,64 @@
 # Multi-Agent MCTS Framework Dependencies
 
+# ============================================================================
+# Core Dependencies
+# ============================================================================
+
 # Core async HTTP client
 httpx>=0.25.0
 
 # Retry logic
 tenacity>=8.2.0
 
-# LangGraph and LangChain (existing dependencies)
+# Data validation with pydantic-settings
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
+
+# Numpy for numerical operations
+numpy>=1.24.0
+
+# ============================================================================
+# LangGraph and LangChain (Multi-Agent Orchestration)
+# ============================================================================
 langgraph>=0.0.20
 langchain>=0.1.0
+langchain-core>=0.1.0
 langchain-openai>=0.0.2
+langsmith>=0.1.0  # For tracing and evaluation
 
-# Vector stores
+# ============================================================================
+# Vector Stores and RAG
+# ============================================================================
 chromadb>=0.4.0
 faiss-cpu>=1.7.4
 
-# Data validation
-pydantic>=2.0.0
+# ============================================================================
+# Machine Learning (for Neural MCTS and Agent Training)
+# ============================================================================
+# Neural MCTS and HRM/TRM training require PyTorch
+torch>=2.1.0
+torchvision>=0.16.0
+scipy>=1.11.0  # For scientific computing in training
 
+# ============================================================================
+# Experiment Tracking and Evaluation
+# ============================================================================
+
+# Weights & Biases for experiment tracking
+wandb>=0.16.0
+
+# RAG evaluation framework
+ragas>=0.1.0
+
+# ============================================================================
 # Web Framework (for REST API server)
+# ============================================================================
 fastapi>=0.104.0
 uvicorn[standard]>=0.24.0
+
+# ============================================================================
+# Infrastructure and Monitoring
+# ============================================================================
 
 # System monitoring (for observability)
 psutil>=5.9.0
@@ -34,17 +72,3 @@ opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0
 opentelemetry-exporter-otlp-proto-grpc>=1.20.0
 opentelemetry-instrumentation-httpx>=0.42b0
-
-# Optional: Prometheus metrics
-# prometheus-client>=0.18.0
-
-# Type checking (optional, for development)
-# mypy>=1.0.0
-# types-requests>=2.31.0
-# types-psutil>=5.9.0
-
-# Testing (optional)
-# pytest>=7.4.0
-# pytest-asyncio>=0.21.0
-# pytest-cov>=4.1.0
-# pytest-mock>=3.11.0
