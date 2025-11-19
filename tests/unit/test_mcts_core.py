@@ -11,14 +11,12 @@ Tests:
 import math
 import random
 
-# Import the MCTS classes from the main module
-import sys
+# Import the MCTS classes from the framework
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-sys.path.insert(0, ".")
-from langgraph_multi_agent_mcts import LangGraphMultiAgentFramework, MCTSNode
+from src.framework.mcts.core import MCTSNode
 
 
 class TestMCTSNode:
