@@ -4,19 +4,21 @@ Verify LangSmith setup for training program.
 Usage:
     python scripts/verify_langsmith_setup.py
 """
+
 import os
 import sys
+
 from langsmith import Client
 
 
-def verify_environment():
+def verify_environment() -> bool:
     """Verify environment variables."""
     print("🔍 Checking environment variables...")
 
     required_vars = {
         "LANGSMITH_API_KEY": "API key for authentication",
         "LANGSMITH_PROJECT": "Current training project",
-        "LANGSMITH_TRACING_ENABLED": "Enable tracing"
+        "LANGSMITH_TRACING_ENABLED": "Enable tracing",
     }
 
     all_set = True
@@ -33,14 +35,14 @@ def verify_environment():
     return all_set
 
 
-def verify_connection():
+def verify_connection() -> bool:
     """Verify connection to LangSmith API."""
     print("\n🔍 Checking LangSmith API connection...")
 
     try:
         client = Client()
         # Test API connection by listing projects (limit 1 for speed)
-        projects = list(client.list_projects(limit=1))
+        _ = list(client.list_projects(limit=1))
         print("  ✅ Connected to LangSmith API")
         return True
     except Exception as e:
@@ -52,7 +54,7 @@ def verify_connection():
         return False
 
 
-def verify_projects():
+def verify_projects() -> bool:
     """Verify training projects exist."""
     print("\n🔍 Checking training projects...")
 
@@ -69,7 +71,7 @@ def verify_projects():
             "training-2025-module-5",
             "training-2025-module-6",
             "training-2025-module-7",
-            "training-2025-capstone"
+            "training-2025-capstone",
         ]
 
         found = 0
@@ -95,7 +97,7 @@ def verify_projects():
         return False
 
 
-def verify_tracing():
+def verify_tracing() -> bool:
     """Verify tracing works with a test run."""
     print("\n🔍 Testing trace creation...")
 
@@ -107,7 +109,7 @@ def verify_tracing():
     try:
         from langchain.callbacks import tracing_v2_enabled
 
-        with tracing_v2_enabled() as cb:
+        with tracing_v2_enabled():
             # Simple test trace
             print("  Creating test trace...")
             # The context manager itself creates a trace
@@ -125,7 +127,7 @@ def verify_tracing():
         return False
 
 
-def main():
+def main() -> None:
     """Run all verification checks."""
     print("=" * 60)
     print("LangSmith Setup Verification")
@@ -136,7 +138,7 @@ def main():
         "Environment": verify_environment(),
         "Connection": verify_connection(),
         "Projects": verify_projects(),
-        "Tracing": verify_tracing()
+        "Tracing": verify_tracing(),
     }
 
     print("\n" + "=" * 60)
