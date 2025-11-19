@@ -348,7 +348,7 @@ def create_rag_eval_dataset() -> str:
                 "(like UCB1) is used during selection to navigate the explored portion of the tree, carefully "
                 "balancing exploration and exploitation. The rollout policy is used during simulation to quickly "
                 "play out games from newly expanded nodes to terminal states, often using random moves or simple "
-                    "heuristics for speed. Tree policy is more sophisticated but only applies to explored nodes, "
+                "heuristics for speed. Tree policy is more sophisticated but only applies to explored nodes, "
                 "while rollout policy must be fast since it's called many times per iteration.",
             },
         },

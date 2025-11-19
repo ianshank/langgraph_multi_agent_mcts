@@ -209,9 +209,7 @@ class TestTRMAgent:
         initial = torch.randn(1, trm_config.latent_dim).to(device)
 
         loop = asyncio.get_event_loop()
-        refined, info = loop.run_until_complete(
-            agent.refine_solution(initial, num_recursions=5)
-        )
+        refined, info = loop.run_until_complete(agent.refine_solution(initial, num_recursions=5))
 
         assert refined.shape == (1, 10)
         assert "converged" in info
@@ -325,9 +323,7 @@ class TestNeuralMCTS:
         initial_state = self.DummyGameState()
 
         loop = asyncio.get_event_loop()
-        action_probs, root = loop.run_until_complete(
-            mcts.search(initial_state, num_simulations=10, temperature=1.0)
-        )
+        action_probs, root = loop.run_until_complete(mcts.search(initial_state, num_simulations=10, temperature=1.0))
 
         assert isinstance(action_probs, dict)
         assert len(action_probs) > 0
@@ -371,9 +367,7 @@ class TestPolicyValueNetwork:
         value = torch.randn(batch_size, 1).to(device)
 
         # Create targets
-        target_policy = torch.softmax(torch.randn(batch_size, action_size), dim=1).to(
-            device
-        )
+        target_policy = torch.softmax(torch.randn(batch_size, action_size), dim=1).to(device)
         target_value = torch.randn(batch_size).to(device)
 
         loss, loss_dict = loss_fn(policy_logits, value, target_policy, target_value)
@@ -467,9 +461,7 @@ class TestIntegration:
         # Create all components
         hrm_agent = create_hrm_agent(small_config.hrm, device)
         trm_agent = create_trm_agent(small_config.trm, device=device)
-        policy_value_net = create_policy_value_network(
-            small_config.neural_net, board_size=3, device=device
-        )
+        policy_value_net = create_policy_value_network(small_config.neural_net, board_size=3, device=device)
 
         # Test forward passes
         x = torch.randn(1, 4, small_config.hrm.h_dim).to(device)
@@ -482,9 +474,7 @@ class TestIntegration:
             trm_output = trm_agent(trm_input)
             assert trm_output.final_prediction is not None
 
-            state_input = torch.randn(
-                1, small_config.neural_net.input_channels, 3, 3
-            ).to(device)
+            state_input = torch.randn(1, small_config.neural_net.input_channels, 3, 3).to(device)
             policy, value = policy_value_net(state_input)
             assert policy.shape[1] == small_config.neural_net.action_size
 

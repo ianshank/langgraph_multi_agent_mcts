@@ -159,10 +159,7 @@ class TestAdaptiveComputationTime:
         - Epsilon value is set correctly
         - Halt FC network has correct architecture
         """
-        act = AdaptiveComputationTime(
-            hidden_dim=default_config.h_dim,
-            epsilon=default_config.ponder_epsilon
-        )
+        act = AdaptiveComputationTime(hidden_dim=default_config.h_dim, epsilon=default_config.ponder_epsilon)
 
         assert act.epsilon == default_config.ponder_epsilon
         assert isinstance(act.halt_fc, nn.Sequential)

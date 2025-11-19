@@ -71,9 +71,7 @@ class PolicyHead(nn.Module):
     ):
         super().__init__()
 
-        self.conv = nn.Conv2d(
-            input_channels, policy_conv_channels, kernel_size=1, bias=False
-        )
+        self.conv = nn.Conv2d(input_channels, policy_conv_channels, kernel_size=1, bias=False)
         self.bn = nn.BatchNorm2d(policy_conv_channels)
 
         # Assuming square board
@@ -124,9 +122,7 @@ class ValueHead(nn.Module):
     ):
         super().__init__()
 
-        self.conv = nn.Conv2d(
-            input_channels, value_conv_channels, kernel_size=1, bias=False
-        )
+        self.conv = nn.Conv2d(input_channels, value_conv_channels, kernel_size=1, bias=False)
         self.bn = nn.BatchNorm2d(value_conv_channels)
 
         # Assuming square board
@@ -184,18 +180,11 @@ class PolicyValueNetwork(nn.Module):
             padding=1,
             bias=False,
         )
-        self.bn_input = (
-            nn.BatchNorm2d(config.num_channels)
-            if config.use_batch_norm
-            else nn.Identity()
-        )
+        self.bn_input = nn.BatchNorm2d(config.num_channels) if config.use_batch_norm else nn.Identity()
 
         # Residual blocks (shared feature extractor)
         self.res_blocks = nn.ModuleList(
-            [
-                ResidualBlock(config.num_channels, config.use_batch_norm)
-                for _ in range(config.num_res_blocks)
-            ]
+            [ResidualBlock(config.num_channels, config.use_batch_norm) for _ in range(config.num_res_blocks)]
         )
 
         # Policy head
@@ -241,9 +230,7 @@ class PolicyValueNetwork(nn.Module):
 
         return policy, value
 
-    def predict(
-        self, state: torch.Tensor
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def predict(self, state: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Inference mode prediction.
 

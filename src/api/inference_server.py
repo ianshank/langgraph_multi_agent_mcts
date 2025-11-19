@@ -112,9 +112,7 @@ class InferenceServer:
         self.device = self.config.device
 
         # Performance monitoring
-        self.monitor = PerformanceMonitor(
-            window_size=100, enable_gpu_monitoring=(self.device != "cpu")
-        )
+        self.monitor = PerformanceMonitor(window_size=100, enable_gpu_monitoring=(self.device != "cpu"))
 
         # Setup FastAPI app
         self.app = FastAPI(
@@ -156,9 +154,7 @@ class InferenceServer:
         # Policy-Value Network
         from ..models.policy_value_net import create_policy_value_network
 
-        models["policy_value_net"] = create_policy_value_network(
-            config.neural_net, board_size=19, device=device
-        )
+        models["policy_value_net"] = create_policy_value_network(config.neural_net, board_size=19, device=device)
         models["policy_value_net"].load_state_dict(checkpoint["policy_value_net"])
         models["policy_value_net"].eval()
 
@@ -172,9 +168,7 @@ class InferenceServer:
         # TRM Agent
         from ..agents.trm_agent import create_trm_agent
 
-        models["trm_agent"] = create_trm_agent(
-            config.trm, output_dim=config.neural_net.action_size, device=device
-        )
+        models["trm_agent"] = create_trm_agent(config.trm, output_dim=config.neural_net.action_size, device=device)
         models["trm_agent"].load_state_dict(checkpoint["trm_agent"])
         models["trm_agent"].eval()
 
@@ -231,9 +225,7 @@ class InferenceServer:
                 start_time = time.perf_counter()
 
                 # Convert state to tensor
-                state_tensor = torch.tensor(
-                    request.state, dtype=torch.float32
-                ).unsqueeze(0)
+                state_tensor = torch.tensor(request.state, dtype=torch.float32).unsqueeze(0)
                 state_tensor = state_tensor.to(self.device)
 
                 results = {}
@@ -290,9 +282,7 @@ class InferenceServer:
                 )
 
             except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=f"Inference failed: {str(e)}"
-                )
+                raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
 
         @self.app.post("/policy-value", response_model=PolicyValueResponse)
         async def policy_value(request: PolicyValueRequest):
@@ -305,16 +295,12 @@ class InferenceServer:
                 start_time = time.perf_counter()
 
                 # Convert state to tensor
-                state_tensor = torch.tensor(
-                    request.state, dtype=torch.float32
-                ).unsqueeze(0)
+                state_tensor = torch.tensor(request.state, dtype=torch.float32).unsqueeze(0)
                 state_tensor = state_tensor.to(self.device)
 
                 # Get predictions
                 with torch.no_grad():
-                    policy_log_probs, value = self.models["policy_value_net"](
-                        state_tensor
-                    )
+                    policy_log_probs, value = self.models["policy_value_net"](state_tensor)
                     policy_probs = torch.exp(policy_log_probs).squeeze(0)
 
                 elapsed_ms = (time.perf_counter() - start_time) * 1000
@@ -326,9 +312,7 @@ class InferenceServer:
                 )
 
             except Exception as e:
-                raise HTTPException(
-                    status_code=500, detail=f"Policy-value inference failed: {str(e)}"
-                )
+                raise HTTPException(status_code=500, detail=f"Policy-value inference failed: {str(e)}")
 
         @self.app.get("/stats")
         async def stats():
@@ -343,13 +327,13 @@ class InferenceServer:
 
     def run(self):
         """Start the inference server."""
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print("Starting LangGraph Multi-Agent MCTS Inference Server")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
         print(f"Host: {self.host}:{self.port}")
         print(f"Device: {self.device}")
         print(f"Checkpoint: {self.checkpoint_path}")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
         uvicorn.run(self.app, host=self.host, port=self.port)
 

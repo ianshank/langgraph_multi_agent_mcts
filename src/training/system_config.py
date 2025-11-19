@@ -241,8 +241,16 @@ class SystemConfig:
                 setattr(config.training, key, value)
 
         # Update system settings
-        for key in ["device", "seed", "use_mixed_precision", "gradient_checkpointing",
-                    "compile_model", "distributed", "log_interval", "use_wandb"]:
+        for key in [
+            "device",
+            "seed",
+            "use_mixed_precision",
+            "gradient_checkpointing",
+            "compile_model",
+            "distributed",
+            "log_interval",
+            "use_wandb",
+        ]:
             if key in config_dict:
                 setattr(config, key, config_dict[key])
 
@@ -251,6 +259,7 @@ class SystemConfig:
     def save(self, path: str):
         """Save configuration to file."""
         import json
+
         with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
@@ -258,6 +267,7 @@ class SystemConfig:
     def load(cls, path: str) -> "SystemConfig":
         """Load configuration from file."""
         import json
+
         with open(path) as f:
             config_dict = json.load(f)
         return cls.from_dict(config_dict)

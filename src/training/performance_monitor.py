@@ -192,9 +192,7 @@ class PerformanceMonitor:
             "total_inferences": self.total_inferences,
             "slow_inference_count": self.slow_inference_count,
             "slow_inference_rate": (
-                self.slow_inference_count / self.total_inferences
-                if self.total_inferences > 0
-                else 0.0
+                self.slow_inference_count / self.total_inferences if self.total_inferences > 0 else 0.0
             ),
         }
 
@@ -237,9 +235,7 @@ class PerformanceMonitor:
         if self.enable_gpu_monitoring:
             memory["gpu_allocated_gb"] = torch.cuda.memory_allocated() / (1024**3)
             memory["gpu_reserved_gb"] = torch.cuda.memory_reserved() / (1024**3)
-            memory["gpu_max_allocated_gb"] = (
-                torch.cuda.max_memory_allocated() / (1024**3)
-            )
+            memory["gpu_max_allocated_gb"] = torch.cuda.max_memory_allocated() / (1024**3)
 
         return memory
 
@@ -299,9 +295,7 @@ class PerformanceMonitor:
         sys_stats = stats.get("system", {})
         print(f"  Total Inferences:       {sys_stats.get('total_inferences', 0)}")
         print(f"  Slow Inferences:        {sys_stats.get('slow_inference_count', 0)}")
-        print(
-            f"  Slow Inference Rate:    {sys_stats.get('slow_inference_rate', 0):.2%}"
-        )
+        print(f"  Slow Inference Rate:    {sys_stats.get('slow_inference_rate', 0):.2%}")
 
         # Cache statistics
         if "cache_hit_rate" in stats:

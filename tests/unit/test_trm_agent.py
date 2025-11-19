@@ -374,7 +374,7 @@ class TestTRMAgent:
             assert isinstance(agent.supervision_heads, nn.ModuleList)
             assert len(agent.supervision_heads) == default_config.num_recursions
         else:
-            assert hasattr(agent, 'output_head')
+            assert hasattr(agent, "output_head")
 
     def test_trm_initialization_no_deep_supervision(self, minimal_config):
         """
@@ -387,7 +387,7 @@ class TestTRMAgent:
         agent = TRMAgent(minimal_config, device="cpu")
 
         assert not minimal_config.deep_supervision
-        assert hasattr(agent, 'output_head')
+        assert hasattr(agent, "output_head")
         assert isinstance(agent.output_head, DeepSupervisionHead)
 
     def test_trm_forward_basic(self, default_config, sample_input_batch):
@@ -818,9 +818,7 @@ class TestTRMLoss:
 
         # Create intermediate predictions
         num_preds = 4
-        intermediate_preds = [
-            torch.randn(1, 3, 64) for _ in range(num_preds)
-        ]
+        intermediate_preds = [torch.randn(1, 3, 64) for _ in range(num_preds)]
 
         trm_output = TRMOutput(
             final_prediction=intermediate_preds[-1],
@@ -883,9 +881,7 @@ class TestTRMLoss:
         set_deterministic_seed()
 
         # Create consistent predictions
-        intermediate_preds = [
-            torch.randn(1, 2, 32) for _ in range(3)
-        ]
+        intermediate_preds = [torch.randn(1, 2, 32) for _ in range(3)]
 
         trm_output = TRMOutput(
             final_prediction=intermediate_preds[-1],
@@ -1455,12 +1451,12 @@ class TestTRMOutput:
             residual_norms=[],
         )
 
-        assert hasattr(output, 'final_prediction')
-        assert hasattr(output, 'intermediate_predictions')
-        assert hasattr(output, 'recursion_depth')
-        assert hasattr(output, 'converged')
-        assert hasattr(output, 'convergence_step')
-        assert hasattr(output, 'residual_norms')
+        assert hasattr(output, "final_prediction")
+        assert hasattr(output, "intermediate_predictions")
+        assert hasattr(output, "recursion_depth")
+        assert hasattr(output, "converged")
+        assert hasattr(output, "convergence_step")
+        assert hasattr(output, "residual_norms")
 
 
 if __name__ == "__main__":

@@ -211,9 +211,7 @@ async def train_model():
         return TicTacToeState()
 
     # Initialize orchestrator
-    orchestrator = UnifiedTrainingOrchestrator(
-        config=config, initial_state_fn=initial_state_fn, board_size=3
-    )
+    orchestrator = UnifiedTrainingOrchestrator(config=config, initial_state_fn=initial_state_fn, board_size=3)
 
     # Run training
     num_iterations = 10  # Train for 10 iterations (increase for real training)
@@ -249,9 +247,7 @@ async def inference_example(checkpoint_path: str):
     # Create policy-value network
     from src.models.policy_value_net import create_policy_value_network
 
-    policy_value_net = create_policy_value_network(
-        config.neural_net, board_size=3, device=config.device
-    )
+    policy_value_net = create_policy_value_network(config.neural_net, board_size=3, device=config.device)
     policy_value_net.load_state_dict(checkpoint["policy_value_net"])
     policy_value_net.eval()
 
@@ -271,9 +267,7 @@ async def inference_example(checkpoint_path: str):
         print(f"Move {move_count + 1}:")
 
         # Run MCTS
-        action_probs, root = await mcts.search(
-            state, num_simulations=100, temperature=0.1, add_root_noise=False
-        )
+        action_probs, root = await mcts.search(state, num_simulations=100, temperature=0.1, add_root_noise=False)
 
         # Select best action
         best_action = max(action_probs.items(), key=lambda x: x[1])[0]
@@ -364,9 +358,7 @@ def main():
     """Main entry point with command-line interface."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="DeepMind-Style Training Example"
-    )
+    parser = argparse.ArgumentParser(description="DeepMind-Style Training Example")
     parser.add_argument(
         "--mode",
         type=str,

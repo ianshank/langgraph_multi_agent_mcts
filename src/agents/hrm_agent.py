@@ -188,9 +188,7 @@ class LModule(nn.Module):
         # Back-projection to H-module dimension
         self.l_to_h = nn.Linear(config.l_dim, config.h_dim)
 
-    def forward(
-        self, x: torch.Tensor, h_context: torch.Tensor | None = None
-    ) -> tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor, h_context: torch.Tensor | None = None) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Execute low-level processing.
 
@@ -233,9 +231,7 @@ class HRMAgent(nn.Module):
         self.input_proj = nn.Linear(config.h_dim, config.h_dim)
 
         # Core modules
-        self.h_module = nn.ModuleList(
-            [HModule(config) for _ in range(config.num_h_layers)]
-        )
+        self.h_module = nn.ModuleList([HModule(config) for _ in range(config.num_h_layers)])
 
         self.l_module = LModule(config)
 
@@ -325,9 +321,7 @@ class HRMAgent(nn.Module):
             convergence_path=convergence_path,
         )
 
-    async def decompose_problem(
-        self, query: str, state: torch.Tensor
-    ) -> list[SubProblem]:
+    async def decompose_problem(self, query: str, state: torch.Tensor) -> list[SubProblem]:
         """
         Decompose a problem into hierarchical subproblems.
 
@@ -415,9 +409,7 @@ class HRMLoss(nn.Module):
 
         # Combine losses
         total_loss = (
-            self.task_weight * task_loss
-            + self.ponder_weight * ponder_loss
-            + self.consistency_weight * consistency_loss
+            self.task_weight * task_loss + self.ponder_weight * ponder_loss + self.consistency_weight * consistency_loss
         )
 
         loss_dict = {

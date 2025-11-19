@@ -135,7 +135,7 @@ class PrioritizedReplayBuffer:
             priority = self.priorities.max() if self.size > 0 else 1.0
 
         self.buffer[self.position] = experience
-        self.priorities[self.position] = priority ** self.alpha
+        self.priorities[self.position] = priority**self.alpha
 
         self.position = (self.position + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
@@ -154,9 +154,7 @@ class PrioritizedReplayBuffer:
         for exp, priority in zip(experiences, priorities, strict=True):
             self.add(exp, priority)
 
-    def sample(
-        self, batch_size: int
-    ) -> tuple[list[Experience], np.ndarray, np.ndarray]:
+    def sample(self, batch_size: int) -> tuple[list[Experience], np.ndarray, np.ndarray]:
         """
         Sample batch with prioritized sampling.
 
@@ -297,7 +295,9 @@ class BoardGameAugmentation:
         return rotated_state, rotated_policy
 
     @staticmethod
-    def flip_horizontal(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> tuple[torch.Tensor, np.ndarray]:
+    def flip_horizontal(
+        state: torch.Tensor, policy: np.ndarray, board_size: int = 19
+    ) -> tuple[torch.Tensor, np.ndarray]:
         """Flip state and policy horizontally."""
         flipped_state = torch.flip(state, dims=[2])  # Flip width dimension
 
@@ -311,7 +311,9 @@ class BoardGameAugmentation:
         return flipped_state, flipped_policy
 
     @staticmethod
-    def random_symmetry(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> tuple[torch.Tensor, np.ndarray]:
+    def random_symmetry(
+        state: torch.Tensor, policy: np.ndarray, board_size: int = 19
+    ) -> tuple[torch.Tensor, np.ndarray]:
         """
         Apply random symmetry transformation.
 
@@ -376,7 +378,7 @@ def collate_experiences(experiences: list[Experience]) -> tuple[torch.Tensor, to
         if len(policy) < max_policy_size:
             # Pad with zeros
             padded = np.zeros(max_policy_size, dtype=policy.dtype)
-            padded[:len(policy)] = policy
+            padded[: len(policy)] = policy
             padded_policies.append(padded)
         else:
             padded_policies.append(policy)

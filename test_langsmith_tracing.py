@@ -25,9 +25,7 @@ try:
 
     llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
-    response = llm.invoke([
-        HumanMessage(content="What is the capital of France? Answer in one sentence.")
-    ])
+    response = llm.invoke([HumanMessage(content="What is the capital of France? Answer in one sentence.")])
 
     print(f"Response: {response.content}")
     print("[OK] LangChain LLM call completed - check LangSmith dashboard for trace")
@@ -54,9 +52,7 @@ try:
         system_prompt="You are a helpful assistant that provides weather information.",
     )
 
-    result = agent.invoke({
-        "messages": [{"role": "user", "content": "What's the weather in New York?"}]
-    })
+    result = agent.invoke({"messages": [{"role": "user", "content": "What's the weather in New York?"}]})
 
     # Extract the final response
     final_message = result["messages"][-1]
@@ -66,6 +62,7 @@ try:
 except Exception as e:
     print(f"Error: {e}")
     import traceback
+
     traceback.print_exc()
     print()
 
@@ -92,9 +89,7 @@ try:
 
     app = workflow.compile()
 
-    result = app.invoke({
-        "messages": [{"role": "user", "content": "Test message"}]
-    })
+    result = app.invoke({"messages": [{"role": "user", "content": "Test message"}]})
 
     print(f"Graph Result: {result['messages'][-1]['content']}")
     print("[OK] LangGraph execution completed - check LangSmith dashboard for trace")
@@ -102,6 +97,7 @@ try:
 except Exception as e:
     print(f"Error: {e}")
     import traceback
+
     traceback.print_exc()
     print()
 
@@ -112,4 +108,3 @@ print("Check your LangSmith dashboard for traces:")
 print(f"  Project: {os.getenv('LANGSMITH_PROJECT')}")
 print(f"  URL: https://smith.langchain.com/o/{os.getenv('LANGSMITH_ORG_ID', 'your-org')}/projects")
 print("=" * 70)
-

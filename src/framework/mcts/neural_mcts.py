@@ -150,12 +150,7 @@ class NeuralMCTSNode:
             q_value = child.value
 
             # U-value (exploration bonus)
-            u_value = (
-                c_puct
-                * child.prior
-                * sqrt_parent_visits
-                / (1 + child.visit_count + child.virtual_loss)
-            )
+            u_value = c_puct * child.prior * sqrt_parent_visits / (1 + child.visit_count + child.virtual_loss)
 
             # PUCT score
             puct_score = q_value + u_value
@@ -276,9 +271,7 @@ class NeuralMCTS:
         return (1 - epsilon) * policy_probs + epsilon * noise
 
     @torch.no_grad()
-    async def evaluate_state(
-        self, state: GameState, add_noise: bool = False
-    ) -> tuple[np.ndarray, float]:
+    async def evaluate_state(self, state: GameState, add_noise: bool = False) -> tuple[np.ndarray, float]:
         """
         Evaluate state using neural network.
 
@@ -521,15 +514,11 @@ class SelfPlayCollector:
         while not state.is_terminal():
             # Determine temperature
             temperature = (
-                self.config.temperature_init
-                if move_count < temperature_threshold
-                else self.config.temperature_final
+                self.config.temperature_init if move_count < temperature_threshold else self.config.temperature_final
             )
 
             # Run MCTS
-            action_probs, root = await self.mcts.search(
-                state, temperature=temperature, add_root_noise=True
-            )
+            action_probs, root = await self.mcts.search(state, temperature=temperature, add_root_noise=True)
 
             # Store training example
             # Convert action probs to array for all actions
@@ -562,9 +551,7 @@ class SelfPlayCollector:
 
         return examples
 
-    async def generate_batch(
-        self, num_games: int, initial_state_fn: Callable[[], GameState]
-    ) -> list[MCTSExample]:
+    async def generate_batch(self, num_games: int, initial_state_fn: Callable[[], GameState]) -> list[MCTSExample]:
         """
         Generate a batch of training examples from multiple games.
 

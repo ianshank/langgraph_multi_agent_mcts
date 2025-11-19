@@ -252,7 +252,7 @@ class TestTRMOnlyFlows:
         refinement_scores = []
 
         for iteration_num in range(iterations):
-            _response = await mock_llm_client.generate(f"TRM Iteration {iteration_num+1}: {query_input.query}")
+            _response = await mock_llm_client.generate(f"TRM Iteration {iteration_num + 1}: {query_input.query}")
             # Simulate improving scores over iterations
             score = 0.70 + (iteration_num * 0.05)
             refinement_scores.append(score)

@@ -100,10 +100,7 @@ class UnifiedTrainingOrchestrator:
             device=self.device,
         )
 
-        print(
-            f"  ✓ Policy-Value Network: "
-            f"{self.policy_value_net.get_parameter_count():,} parameters"
-        )
+        print(f"  ✓ Policy-Value Network: {self.policy_value_net.get_parameter_count():,} parameters")
 
         # HRM Agent
         self.hrm_agent = create_hrm_agent(self.config.hrm, self.device)
@@ -124,9 +121,7 @@ class UnifiedTrainingOrchestrator:
         print("  ✓ Neural MCTS initialized")
 
         # Self-play collector
-        self.self_play_collector = SelfPlayCollector(
-            mcts=self.mcts, config=self.config.mcts
-        )
+        self.self_play_collector = SelfPlayCollector(mcts=self.mcts, config=self.config.mcts)
 
         # Optimizers
         self._setup_optimizers()
@@ -161,20 +156,14 @@ class UnifiedTrainingOrchestrator:
         )
 
         # HRM optimizer
-        self.hrm_optimizer = torch.optim.Adam(
-            self.hrm_agent.parameters(), lr=1e-3
-        )
+        self.hrm_optimizer = torch.optim.Adam(self.hrm_agent.parameters(), lr=1e-3)
 
         # TRM optimizer
-        self.trm_optimizer = torch.optim.Adam(
-            self.trm_agent.parameters(), lr=1e-3
-        )
+        self.trm_optimizer = torch.optim.Adam(self.trm_agent.parameters(), lr=1e-3)
 
         # Learning rate scheduler for policy-value network
         if self.config.training.lr_schedule == "cosine":
-            self.pv_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-                self.pv_optimizer, T_max=100
-            )
+            self.pv_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(self.pv_optimizer, T_max=100)
         elif self.config.training.lr_schedule == "step":
             self.pv_scheduler = torch.optim.lr_scheduler.StepLR(
                 self.pv_optimizer,
@@ -221,9 +210,9 @@ class UnifiedTrainingOrchestrator:
         Returns:
             Dictionary of metrics
         """
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Training Iteration {iteration}")
-        print(f"{'='*80}")
+        print(f"{'=' * 80}")
 
         metrics = {}
 
@@ -290,9 +279,7 @@ class UnifiedTrainingOrchestrator:
 
             # Convert to Experience objects
             for ex in examples:
-                all_examples.append(
-                    Experience(state=ex.state, policy=ex.policy_target, value=ex.value_target)
-                )
+                all_examples.append(Experience(state=ex.state, policy=ex.policy_target, value=ex.value_target))
 
             if (game_idx + 1) % 5 == 0:
                 print(f"  Generated {game_idx + 1}/{num_games} games...")
@@ -316,9 +303,7 @@ class UnifiedTrainingOrchestrator:
 
         for _ in range(num_batches):
             # Sample batch
-            experiences, indices, weights = self.replay_buffer.sample(
-                self.config.training.batch_size
-            )
+            experiences, indices, weights = self.replay_buffer.sample(self.config.training.batch_size)
             states, policies, values = collate_experiences(experiences)
 
             states = states.to(self.device)
@@ -330,9 +315,7 @@ class UnifiedTrainingOrchestrator:
             if self.config.use_mixed_precision and self.scaler:
                 with autocast():
                     policy_logits, value_pred = self.policy_value_net(states)
-                    loss, loss_dict = self.pv_loss_fn(
-                        policy_logits, value_pred, policies, values
-                    )
+                    loss, loss_dict = self.pv_loss_fn(policy_logits, value_pred, policies, values)
                     # Apply importance sampling weights
                     loss = (loss * weights).mean()
 
@@ -343,9 +326,7 @@ class UnifiedTrainingOrchestrator:
                 self.scaler.update()
             else:
                 policy_logits, value_pred = self.policy_value_net(states)
-                loss, loss_dict = self.pv_loss_fn(
-                    policy_logits, value_pred, policies, values
-                )
+                loss, loss_dict = self.pv_loss_fn(policy_logits, value_pred, policies, values)
                 loss = (loss * weights).mean()
 
                 self.pv_optimizer.zero_grad()
@@ -361,9 +342,7 @@ class UnifiedTrainingOrchestrator:
             total_value_loss += loss_dict["value"]
 
             # Log losses
-            self.monitor.log_loss(
-                loss_dict["policy"], loss_dict["value"], loss_dict["total"]
-            )
+            self.monitor.log_loss(loss_dict["policy"], loss_dict["value"], loss_dict["total"])
 
         # Step learning rate scheduler
         if self.pv_scheduler:
@@ -372,9 +351,7 @@ class UnifiedTrainingOrchestrator:
         avg_policy_loss = total_policy_loss / num_batches
         avg_value_loss = total_value_loss / num_batches
 
-        print(
-            f"  Policy Loss: {avg_policy_loss:.4f}, Value Loss: {avg_value_loss:.4f}"
-        )
+        print(f"  Policy Loss: {avg_policy_loss:.4f}, Value Loss: {avg_value_loss:.4f}")
 
         return {"policy_loss": avg_policy_loss, "value_loss": avg_value_loss}
 
@@ -486,10 +463,10 @@ class UnifiedTrainingOrchestrator:
                 break
 
         elapsed = time.time() - start_time
-        print(f"\n{'='*80}")
+        print(f"\n{'=' * 80}")
         print(f"Training completed in {elapsed / 3600:.2f} hours")
         print(f"Best win rate: {self.best_win_rate:.2%}")
-        print(f"{'='*80}\n")
+        print(f"{'=' * 80}\n")
 
         # Print final performance summary
         self.monitor.print_summary()

@@ -126,10 +126,7 @@ class TRMAgent(nn.Module):
         # Deep supervision heads (one per recursion level)
         if config.deep_supervision:
             self.supervision_heads = nn.ModuleList(
-                [
-                    DeepSupervisionHead(config.latent_dim, self.output_dim)
-                    for _ in range(config.num_recursions)
-                ]
+                [DeepSupervisionHead(config.latent_dim, self.output_dim) for _ in range(config.num_recursions)]
             )
         else:
             # Single output head
@@ -279,9 +276,7 @@ class TRMLoss(nn.Module):
         self.supervision_weight_decay = supervision_weight_decay
         self.final_weight = final_weight
 
-    def forward(
-        self, trm_output: TRMOutput, targets: torch.Tensor
-    ) -> tuple[torch.Tensor, dict]:
+    def forward(self, trm_output: TRMOutput, targets: torch.Tensor) -> tuple[torch.Tensor, dict]:
         """
         Compute deep supervision loss.
 
@@ -311,11 +306,7 @@ class TRMLoss(nn.Module):
         loss_dict = {
             "total": total_loss.item(),
             "final": final_loss.item(),
-            "intermediate_mean": (
-                sum(intermediate_losses) / len(intermediate_losses)
-                if intermediate_losses
-                else 0.0
-            ),
+            "intermediate_mean": (sum(intermediate_losses) / len(intermediate_losses) if intermediate_losses else 0.0),
             "recursion_depth": trm_output.recursion_depth,
             "converged": trm_output.converged,
             "convergence_step": trm_output.convergence_step,
@@ -324,9 +315,7 @@ class TRMLoss(nn.Module):
         return total_loss, loss_dict
 
 
-def create_trm_agent(
-    config: TRMConfig, output_dim: int | None = None, device: str = "cpu"
-) -> TRMAgent:
+def create_trm_agent(config: TRMConfig, output_dim: int | None = None, device: str = "cpu") -> TRMAgent:
     """
     Factory function to create and initialize TRM agent.
 
@@ -387,9 +376,7 @@ class TRMRefinementWrapper:
         predictions = predictions.to(self.device)
 
         # Run TRM
-        output = self.trm_agent(
-            predictions, num_recursions=num_iterations, check_convergence=True
-        )
+        output = self.trm_agent(predictions, num_recursions=num_iterations, check_convergence=True)
 
         if return_path:
             return output.final_prediction, output.intermediate_predictions
@@ -403,8 +390,6 @@ class TRMRefinementWrapper:
         return {
             "converged": output.converged,
             "steps_to_convergence": output.convergence_step,
-            "final_residual": (
-                output.residual_norms[-1] if output.residual_norms else None
-            ),
+            "final_residual": (output.residual_norms[-1] if output.residual_norms else None),
             "total_refinement_iterations": output.recursion_depth,
         }

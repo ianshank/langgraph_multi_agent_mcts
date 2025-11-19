@@ -72,7 +72,7 @@ class TestTRMIterativeRefinement:
         quality_scores = []
 
         for i in range(cycles):
-            response = await mock_trm_llm.generate(f"TRM Cycle {i+1}: {query}")
+            response = await mock_trm_llm.generate(f"TRM Cycle {i + 1}: {query}")
 
             # Extract quality score from response
             if "0.74" in response.content:
@@ -213,7 +213,7 @@ class TestTRMPerformance:
 
         for cycle_num in range(3):
             start = time.time()
-            await mock_trm_llm.generate(f"TRM Cycle {cycle_num+1}: {query}")
+            await mock_trm_llm.generate(f"TRM Cycle {cycle_num + 1}: {query}")
             latency_ms = (time.time() - start) * 1000
             cycle_latencies.append(latency_ms)
 

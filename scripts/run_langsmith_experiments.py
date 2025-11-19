@@ -135,7 +135,7 @@ async def run_experiment_on_example(
         [
             f"""Analysis using {config.model}:
             Strategy: {config.agent_strategy}
-            MCTS: {'enabled' if config.use_mcts else 'disabled'}
+            MCTS: {"enabled" if config.use_mcts else "disabled"}
             Recommendation: Comprehensive tactical analysis complete.
             Confidence: 0.85"""
         ]
@@ -203,11 +203,11 @@ async def run_experiment(
     Returns:
         Experiment summary with aggregated results
     """
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print(f"Running Experiment: {config.name}")
     print(f"Description: {config.description}")
     print(f"Dataset: {dataset_name}")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
 
     # Load dataset
     try:
@@ -272,7 +272,7 @@ async def run_experiment(
             "avg_trm_confidence": round(avg_trm_conf, 3) if avg_trm_conf else None,
         }
 
-        print(f"\n{'='*70}")
+        print(f"\n{'=' * 70}")
         print("Experiment Summary:")
         print(f"  Total examples: {summary['total_examples']}")
         print(f"  Successful: {summary['successful']}")
@@ -282,7 +282,7 @@ async def run_experiment(
             print(f"  Avg HRM confidence: {summary['avg_hrm_confidence']:.3f}")
         if summary["avg_trm_confidence"]:
             print(f"  Avg TRM confidence: {summary['avg_trm_confidence']:.3f}")
-        print(f"{'='*70}")
+        print(f"{'=' * 70}")
 
         return summary
     else:
@@ -315,9 +315,9 @@ async def run_all_experiments(
     if experiments is None:
         experiments = list(EXPERIMENTS.keys())
 
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("LangSmith Experiments Runner")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"Experiments to run: {len(experiments)}")
     print(f"Datasets to use: {len(datasets)}")
     print()
@@ -336,9 +336,9 @@ async def run_all_experiments(
             all_results[f"{exp_name}_{dataset_name}"] = result
 
     # Print final summary
-    print(f"\n{'='*70}")
+    print(f"\n{'=' * 70}")
     print("All Experiments Complete!")
-    print(f"{'='*70}")
+    print(f"{'=' * 70}")
     print(f"\nTotal experiment runs: {len(all_results)}")
     print("\nView results in LangSmith UI:")
     print(f"  https://smith.langchain.com/o/{os.getenv('LANGSMITH_ORG_ID', 'your-org')}/projects")
