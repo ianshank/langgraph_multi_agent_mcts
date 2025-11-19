@@ -281,7 +281,7 @@ class TRMLoss(nn.Module):
 
     def forward(
         self, trm_output: TRMOutput, targets: torch.Tensor
-    ) -> Tuple[torch.Tensor, dict]:
+    ) -> tuple[torch.Tensor, dict]:
         """
         Compute deep supervision loss.
 
@@ -325,7 +325,7 @@ class TRMLoss(nn.Module):
 
 
 def create_trm_agent(
-    config: TRMConfig, output_dim: Optional[int] = None, device: str = "cpu"
+    config: TRMConfig, output_dim: int | None = None, device: str = "cpu"
 ) -> TRMAgent:
     """
     Factory function to create and initialize TRM agent.
@@ -371,7 +371,7 @@ class TRMRefinementWrapper:
         predictions: torch.Tensor,
         num_iterations: int = 10,
         return_path: bool = False,
-    ) -> torch.Tensor | Tuple[torch.Tensor, List[torch.Tensor]]:
+    ) -> torch.Tensor | tuple[torch.Tensor, list[torch.Tensor]]:
         """
         Refine predictions using TRM.
 

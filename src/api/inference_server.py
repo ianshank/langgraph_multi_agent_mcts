@@ -8,18 +8,15 @@ Provides REST API for:
 """
 
 import time
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import torch
+import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
-import uvicorn
 
-from ..agents.hrm_agent import HRMAgent
-from ..agents.trm_agent import TRMAgent
-from ..framework.mcts.neural_mcts import GameState, NeuralMCTS
-from ..models.policy_value_net import PolicyValueNetwork
+from ..framework.mcts.neural_mcts import NeuralMCTS
 from ..training.performance_monitor import PerformanceMonitor
 from ..training.system_config import SystemConfig
 
@@ -28,11 +25,11 @@ from ..training.system_config import SystemConfig
 class InferenceRequest(BaseModel):
     """Request for problem inference."""
 
-    state: List[List[float]]  # State representation
-    query: Optional[str] = "Solve this problem"
+    state: list[list[float]]  # State representation
+    query: str | None = "Solve this problem"
     max_thinking_time: float = Field(default=10.0, ge=0.1, le=60.0)
     use_mcts: bool = True
-    num_simulations: Optional[int] = None
+    num_simulations: int | None = None
     use_hrm_decomposition: bool = False
     use_trm_refinement: bool = False
     temperature: float = Field(default=0.1, ge=0.0, le=2.0)
@@ -41,26 +38,26 @@ class InferenceRequest(BaseModel):
 class PolicyValueRequest(BaseModel):
     """Request for policy-value evaluation."""
 
-    state: List[List[float]]  # State representation
+    state: list[list[float]]  # State representation
 
 
 class InferenceResponse(BaseModel):
     """Response with inference results."""
 
     success: bool
-    action_probabilities: Optional[Dict[str, float]] = None
-    best_action: Optional[str] = None
-    value_estimate: Optional[float] = None
-    subproblems: Optional[List[Dict[str, Any]]] = None
-    refinement_info: Optional[Dict[str, Any]] = None
-    performance_stats: Dict[str, float]
-    error: Optional[str] = None
+    action_probabilities: dict[str, float] | None = None
+    best_action: str | None = None
+    value_estimate: float | None = None
+    subproblems: list[dict[str, Any]] | None = None
+    refinement_info: dict[str, Any] | None = None
+    performance_stats: dict[str, float]
+    error: str | None = None
 
 
 class PolicyValueResponse(BaseModel):
     """Response with policy-value predictions."""
 
-    policy_probs: List[float]
+    policy_probs: list[float]
     value: float
     inference_time_ms: float
 
@@ -72,7 +69,7 @@ class HealthResponse(BaseModel):
     device: str
     model_loaded: bool
     gpu_available: bool
-    gpu_memory_gb: Optional[float] = None
+    gpu_memory_gb: float | None = None
     uptime_seconds: float
 
 
@@ -92,7 +89,7 @@ class InferenceServer:
     def __init__(
         self,
         checkpoint_path: str,
-        config: Optional[SystemConfig] = None,
+        config: SystemConfig | None = None,
         host: str = "0.0.0.0",
         port: int = 8000,
     ):
@@ -139,8 +136,8 @@ class InferenceServer:
         self._setup_routes()
 
     def _load_models(
-        self, checkpoint_path: str, config: Optional[SystemConfig]
-    ) -> tuple[SystemConfig, Dict[str, torch.nn.Module]]:
+        self, checkpoint_path: str, config: SystemConfig | None
+    ) -> tuple[SystemConfig, dict[str, torch.nn.Module]]:
         """Load models from checkpoint."""
         print(f"Loading models from {checkpoint_path}...")
 
@@ -195,7 +192,7 @@ class InferenceServer:
     def _setup_routes(self):
         """Setup API routes."""
 
-        @self.app.get("/", response_model=Dict[str, str])
+        @self.app.get("/", response_model=dict[str, str])
         async def root():
             """Root endpoint."""
             return {
