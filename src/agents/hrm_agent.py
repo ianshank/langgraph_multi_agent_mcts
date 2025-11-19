@@ -12,9 +12,7 @@ Based on: "Hierarchical Reasoning for Compositional Generalization"
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass
-from typing import Any, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -30,7 +28,7 @@ class SubProblem:
     level: int  # Hierarchy level (0 = root, higher = more abstract)
     description: str  # Natural language description
     state: torch.Tensor  # Latent state representation
-    parent_id: Optional[int] = None  # Parent subproblem ID
+    parent_id: int | None = None  # Parent subproblem ID
     confidence: float = 0.0  # Confidence in this decomposition
 
 
@@ -39,10 +37,10 @@ class HRMOutput:
     """Output from HRM processing."""
 
     final_state: torch.Tensor  # Final processed state
-    subproblems: List[SubProblem]  # Hierarchical decomposition
+    subproblems: list[SubProblem]  # Hierarchical decomposition
     halt_step: int  # Step at which halting occurred
     total_ponder_cost: float  # Total computation cost (for training)
-    convergence_path: List[float]  # Confidence at each step
+    convergence_path: list[float]  # Confidence at each step
 
 
 class AdaptiveComputationTime(nn.Module):
@@ -65,7 +63,7 @@ class AdaptiveComputationTime(nn.Module):
             nn.Sigmoid(),
         )
 
-    def forward(self, hidden_states: torch.Tensor) -> Tuple[torch.Tensor, float]:
+    def forward(self, hidden_states: torch.Tensor) -> tuple[torch.Tensor, float]:
         """
         Compute halting probabilities.
 
@@ -191,8 +189,8 @@ class LModule(nn.Module):
         self.l_to_h = nn.Linear(config.l_dim, config.h_dim)
 
     def forward(
-        self, x: torch.Tensor, h_context: Optional[torch.Tensor] = None
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        self, x: torch.Tensor, h_context: torch.Tensor | None = None
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Execute low-level processing.
 
@@ -256,7 +254,7 @@ class HRMAgent(nn.Module):
     def forward(
         self,
         x: torch.Tensor,
-        max_steps: Optional[int] = None,
+        max_steps: int | None = None,
         return_decomposition: bool = False,
     ) -> HRMOutput:
         """
@@ -329,7 +327,7 @@ class HRMAgent(nn.Module):
 
     async def decompose_problem(
         self, query: str, state: torch.Tensor
-    ) -> List[SubProblem]:
+    ) -> list[SubProblem]:
         """
         Decompose a problem into hierarchical subproblems.
 
@@ -386,7 +384,7 @@ class HRMLoss(nn.Module):
         predictions: torch.Tensor,
         targets: torch.Tensor,
         task_loss_fn: nn.Module,
-    ) -> Tuple[torch.Tensor, dict]:
+    ) -> tuple[torch.Tensor, dict]:
         """
         Compute combined loss.
 
@@ -426,7 +424,7 @@ class HRMLoss(nn.Module):
             "total": total_loss.item(),
             "task": task_loss.item(),
             "ponder": ponder_loss,
-            "consistency": consistency_loss.item() if isinstance(consistency_loss, torch.Tensor) else consistency_loss,
+            "consistency": consistency_loss.item(),
             "halt_step": hrm_output.halt_step,
         }
 

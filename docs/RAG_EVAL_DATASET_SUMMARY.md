@@ -301,13 +301,13 @@ This RAG evaluation dataset complements the existing datasets:
 
 ## Files Created
 
-1. **c:\Users\iansh\OneDrive\Documents\GitHub\langgraph_multi_agent_mcts\scripts\create_rag_eval_datasets.py**
+1. **scripts/create_rag_eval_datasets.py**
    - Main script to create the RAG evaluation dataset
    - 30 comprehensive Q&A examples
    - Proper error handling and validation
    - Clear console output and progress tracking
 
-2. **c:\Users\iansh\OneDrive\Documents\GitHub\langgraph_multi_agent_mcts\docs\RAG_EVAL_DATASET_SUMMARY.md**
+2. **docs/RAG_EVAL_DATASET_SUMMARY.md**
    - This documentation file
    - Comprehensive overview of the dataset
    - Usage instructions and examples

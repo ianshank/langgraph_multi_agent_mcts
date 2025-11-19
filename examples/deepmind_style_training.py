@@ -18,7 +18,7 @@ from pathlib import Path
 import torch
 
 from src.framework.mcts.neural_mcts import GameState
-from src.training.system_config import SystemConfig, get_small_config
+from src.training.system_config import get_small_config
 from src.training.unified_orchestrator import UnifiedTrainingOrchestrator
 
 

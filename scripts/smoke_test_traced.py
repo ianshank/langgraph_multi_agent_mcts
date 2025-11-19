@@ -23,7 +23,6 @@ from langsmith import traceable
 
 from tests.utils.langsmith_tracing import (
     get_test_metadata,
-    trace_api_endpoint,
     update_run_metadata,
 )
 

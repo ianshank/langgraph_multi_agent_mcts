@@ -10,13 +10,14 @@ Usage:
 
 import os
 import sys
+import traceback
 from pathlib import Path
 
-# Add project root to path
+# Add project root to path before local imports
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from tests.utils.langsmith_tracing import get_langsmith_client
+from tests.utils.langsmith_tracing import get_langsmith_client  # noqa: E402
 
 
 def verify_dataset():
@@ -85,7 +86,7 @@ def verify_dataset():
             "Training": ["training", "replay buffer", "Dirichlet noise", "temperature"],
         }
 
-        topic_counts = {topic: 0 for topic in topics}
+        topic_counts = dict.fromkeys(topics, 0)
 
         for example in examples:
             question = example.inputs.get("question", "").lower()
@@ -186,8 +187,6 @@ def verify_dataset():
 
     except Exception as e:
         print(f"[ERROR] Error verifying dataset: {e}")
-        import traceback
-
         traceback.print_exc()
         sys.exit(1)
 

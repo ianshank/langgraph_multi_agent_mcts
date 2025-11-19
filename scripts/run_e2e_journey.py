@@ -27,10 +27,10 @@ import time
 from pathlib import Path
 from typing import Any
 
+from src.config.settings import MCTSImplementation, get_settings
+
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.config.settings import MCTSImplementation, get_settings
 
 
 # Configure logging

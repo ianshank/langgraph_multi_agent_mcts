@@ -29,10 +29,15 @@ from typing import Any
 
 import pandas as pd
 
+from src.config.settings import get_settings
+
+try:
+    import wandb
+except ImportError:
+    wandb = None  # type: ignore[assignment]
+
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
-
-from src.config.settings import get_settings
 
 
 # Configure logging
@@ -225,7 +230,9 @@ def log_to_wandb(settings: Any, results: pd.DataFrame, run_config: dict[str, Any
         return
 
     try:
-        import wandb
+        if not wandb:
+            logger.warning("wandb not installed; install with: pip install wandb")
+            return
 
         if wandb_key:
             os.environ["WANDB_API_KEY"] = wandb_key
@@ -256,8 +263,6 @@ def log_to_wandb(settings: Any, results: pd.DataFrame, run_config: dict[str, Any
         logger.info(f"Results logged to W&B: {run.url}")
         wandb.finish()
 
-    except ImportError:
-        logger.warning("wandb not installed; install with: pip install wandb")
     except Exception as e:
         logger.error(f"Failed to log to W&B: {e}")
 

@@ -316,8 +316,9 @@ class NeuralMCTS:
         # Mask illegal actions and normalize
         policy_probs = np.exp(policy_logits)
 
-        # For simplicity, assume policy_probs aligns with legal_actions
-        # In practice, you'd need proper action masking
+        # TODO: Implement proper action masking that maps network outputs to specific actions.
+        # This slicing assumes perfect alignment between network output order and legal_actions order,
+        # which is brittle. Proper implementation should use an action mapping or mask tensor.
         policy_probs = policy_probs[: len(legal_actions)]
 
         # Normalize

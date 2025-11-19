@@ -14,13 +14,14 @@ Datasets created:
 
 import os
 import sys
+import traceback
 from pathlib import Path
+
+from tests.utils.langsmith_tracing import create_test_dataset
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
-
-from tests.utils.langsmith_tracing import create_test_dataset, get_langsmith_client
 
 
 def create_rag_eval_dataset() -> str:
@@ -688,8 +689,6 @@ def main():
 
     except Exception as e:
         print(f"[ERROR] Error creating dataset: {e}")
-        import traceback
-
         traceback.print_exc()
         sys.exit(1)
 

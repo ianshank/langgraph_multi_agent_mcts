@@ -284,7 +284,7 @@ class UnifiedTrainingOrchestrator:
         # For simplicity, we'll do sequential self-play
         all_examples = []
 
-        for game_idx in range(min(num_games, 10)):  # Limit for demo
+        for game_idx in range(num_games):
             examples = await self.self_play_collector.play_game(
                 initial_state=self.initial_state_fn(),
                 temperature_threshold=self.config.mcts.temperature_threshold,
