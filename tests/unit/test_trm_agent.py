@@ -15,7 +15,6 @@ All tests use deterministic seeding for reproducibility.
 """
 
 import math
-from typing import List
 
 import pytest
 import torch
@@ -31,7 +30,6 @@ from src.agents.trm_agent import (
     create_trm_agent,
 )
 from src.training.system_config import TRMConfig
-
 
 # ============================================================================
 # Fixtures
@@ -1334,7 +1332,7 @@ class TestTRMIntegration:
             losses.append(loss.item())
 
         assert len(losses) == 5
-        assert all(not math.isnan(l) and not math.isinf(l) for l in losses)
+        assert all(not math.isnan(loss) and not math.isinf(loss) for loss in losses)
 
     def test_trm_training_reduces_loss(self, default_config):
         """

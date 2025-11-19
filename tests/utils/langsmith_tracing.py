@@ -18,9 +18,10 @@ Usage:
 import functools
 import inspect
 import os
+from collections.abc import Callable
 from contextlib import contextmanager
 from datetime import datetime
-from typing import Any, Callable, Optional
+from typing import Any
 
 from langsmith import Client, traceable
 from langsmith.run_helpers import get_current_run_tree, tracing_context
@@ -47,13 +48,13 @@ def get_test_metadata() -> dict[str, Any]:
 def trace_e2e_test(
     test_name: str,
     *,
-    phase: Optional[str] = None,
-    scenario_type: Optional[str] = None,
-    provider: Optional[str] = None,
+    phase: str | None = None,
+    scenario_type: str | None = None,
+    provider: str | None = None,
     use_mcts: bool = False,
-    mcts_iterations: Optional[int] = None,
-    tags: Optional[list[str]] = None,
-    metadata: Optional[dict[str, Any]] = None,
+    mcts_iterations: int | None = None,
+    tags: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ):
     """
     Decorator for tracing E2E test functions with LangSmith.
@@ -188,8 +189,8 @@ def trace_e2e_test(
 def trace_e2e_workflow(
     workflow_name: str,
     *,
-    tags: Optional[list[str]] = None,
-    metadata: Optional[dict[str, Any]] = None,
+    tags: list[str] | None = None,
+    metadata: dict[str, Any] | None = None,
 ):
     """
     Context manager for tracing E2E workflows.
@@ -228,7 +229,7 @@ def trace_api_endpoint(
     *,
     use_mcts: bool = False,
     use_rag: bool = False,
-    tags: Optional[list[str]] = None,
+    tags: list[str] | None = None,
 ):
     """
     Decorator for tracing API endpoint tests.
@@ -276,9 +277,9 @@ def trace_mcts_simulation(
     iterations: int,
     *,
     scenario_type: str,
-    seed: Optional[int] = None,
-    max_depth: Optional[int] = None,
-    tags: Optional[list[str]] = None,
+    seed: int | None = None,
+    max_depth: int | None = None,
+    tags: list[str] | None = None,
 ):
     """
     Decorator for tracing MCTS simulation tests.
@@ -392,7 +393,7 @@ def get_langsmith_client() -> Client:
 def create_test_dataset(
     dataset_name: str,
     examples: list[dict[str, Any]],
-    description: Optional[str] = None,
+    description: str | None = None,
 ) -> str:
     """
     Create a dataset in LangSmith for evaluation.

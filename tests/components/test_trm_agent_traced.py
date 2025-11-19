@@ -117,7 +117,7 @@ class TestTRMIterativeRefinement:
     )
     async def test_convergence_detection(self, mock_trm_llm, trm_config):
         """Test TRM detects convergence and stops iterating."""
-        query = "Optimize resource allocation strategy"
+        _query = "Optimize resource allocation strategy"
 
         # Simulate refinement until convergence
         max_iterations = trm_config["max_iterations"]
@@ -211,9 +211,9 @@ class TestTRMPerformance:
         # Time multiple cycles
         cycle_latencies = []
 
-        for i in range(3):
+        for cycle_num in range(3):
             start = time.time()
-            await mock_trm_llm.generate(f"TRM Cycle {i+1}: {query}")
+            await mock_trm_llm.generate(f"TRM Cycle {cycle_num+1}: {query}")
             latency_ms = (time.time() - start) * 1000
             cycle_latencies.append(latency_ms)
 
@@ -228,8 +228,8 @@ class TestTRMPerformance:
                 "cycle_latencies_ms": cycle_latencies,
                 "average_latency_ms": avg_latency,
                 "sla_per_cycle_ms": 2000,
-                "within_sla": all(l < 2000 for l in cycle_latencies),
+                "within_sla": all(latency < 2000 for latency in cycle_latencies),
             }
         )
 
-        assert all(l < 2000 for l in cycle_latencies), "Each cycle should be under 2s"
+        assert all(latency < 2000 for latency in cycle_latencies), "Each cycle should be under 2s"

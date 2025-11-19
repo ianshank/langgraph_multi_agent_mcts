@@ -12,22 +12,20 @@ Coordinates:
 - Checkpointing
 """
 
-import asyncio
-import os
 import time
+from collections.abc import Callable
 from pathlib import Path
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any
 
 import torch
 import torch.nn as nn
 from torch.cuda.amp import GradScaler, autocast
 
-from ..agents.hrm_agent import HRMAgent, HRMLoss, create_hrm_agent
-from ..agents.trm_agent import TRMAgent, TRMLoss, create_trm_agent
+from ..agents.hrm_agent import HRMLoss, create_hrm_agent
+from ..agents.trm_agent import TRMLoss, create_trm_agent
 from ..framework.mcts.neural_mcts import GameState, NeuralMCTS, SelfPlayCollector
 from ..models.policy_value_net import (
     AlphaZeroLoss,
-    PolicyValueNetwork,
     create_policy_value_network,
 )
 from .performance_monitor import PerformanceMonitor, TimingContext
@@ -213,7 +211,7 @@ class UnifiedTrainingOrchestrator:
             print("  ⚠️  wandb not installed, skipping")
             self.config.use_wandb = False
 
-    async def train_iteration(self, iteration: int) -> Dict[str, Any]:
+    async def train_iteration(self, iteration: int) -> dict[str, Any]:
         """
         Execute single training iteration.
 
@@ -276,7 +274,7 @@ class UnifiedTrainingOrchestrator:
 
         return metrics
 
-    async def _generate_self_play_data(self) -> List[Experience]:
+    async def _generate_self_play_data(self) -> list[Experience]:
         """Generate training data from self-play games."""
         num_games = self.config.training.games_per_iteration
 
@@ -304,7 +302,7 @@ class UnifiedTrainingOrchestrator:
 
         return all_examples
 
-    async def _train_policy_value_network(self) -> Dict[str, float]:
+    async def _train_policy_value_network(self) -> dict[str, float]:
         """Train policy-value network on replay buffer data."""
         if not self.replay_buffer.is_ready(self.config.training.batch_size):
             print("  Replay buffer not ready, skipping...")
@@ -316,7 +314,7 @@ class UnifiedTrainingOrchestrator:
         total_value_loss = 0.0
         num_batches = 10  # Train for 10 batches per iteration
 
-        for batch_idx in range(num_batches):
+        for _ in range(num_batches):
             # Sample batch
             experiences, indices, weights = self.replay_buffer.sample(
                 self.config.training.batch_size
@@ -380,19 +378,19 @@ class UnifiedTrainingOrchestrator:
 
         return {"policy_loss": avg_policy_loss, "value_loss": avg_value_loss}
 
-    async def _train_hrm_agent(self) -> Dict[str, float]:
+    async def _train_hrm_agent(self) -> dict[str, float]:
         """Train HRM agent (placeholder for domain-specific implementation)."""
         # This would require domain-specific data and tasks
         # For now, return dummy metrics
         return {"hrm_halt_step": 5.0, "hrm_ponder_cost": 0.1}
 
-    async def _train_trm_agent(self) -> Dict[str, float]:
+    async def _train_trm_agent(self) -> dict[str, float]:
         """Train TRM agent (placeholder for domain-specific implementation)."""
         # This would require domain-specific data and tasks
         # For now, return dummy metrics
         return {"trm_convergence_step": 8.0, "trm_final_residual": 0.01}
 
-    async def _evaluate(self) -> Dict[str, float]:
+    async def _evaluate(self) -> dict[str, float]:
         """Evaluate current model against baseline."""
         # Simplified evaluation: play games against previous best
         # In production, this would be more sophisticated
@@ -403,7 +401,7 @@ class UnifiedTrainingOrchestrator:
             "eval_games": self.config.training.evaluation_games,
         }
 
-    def _save_checkpoint(self, iteration: int, metrics: Dict, is_best: bool = False):
+    def _save_checkpoint(self, iteration: int, metrics: dict, is_best: bool = False):
         """Save model checkpoint."""
         checkpoint = {
             "iteration": iteration,
@@ -430,7 +428,7 @@ class UnifiedTrainingOrchestrator:
             self.best_model_path = best_path
             print(f"  ✓ Best model saved: {best_path}")
 
-    def _log_metrics(self, iteration: int, metrics: Dict):
+    def _log_metrics(self, iteration: int, metrics: dict):
         """Log metrics to console and tracking systems."""
         print(f"\n[Metrics Summary - Iteration {iteration}]")
         for key, value in metrics.items():
@@ -470,7 +468,7 @@ class UnifiedTrainingOrchestrator:
             self.current_iteration = iteration
 
             try:
-                metrics = await self.train_iteration(iteration)
+                _ = await self.train_iteration(iteration)
 
                 # Check early stopping
                 if self._should_early_stop(iteration):
@@ -499,6 +497,7 @@ class UnifiedTrainingOrchestrator:
     def _should_early_stop(self, iteration: int) -> bool:
         """Check early stopping criteria."""
         # Placeholder: implement actual early stopping logic
+        _ = iteration  # noqa: F841
         return False
 
     def load_checkpoint(self, path: str):

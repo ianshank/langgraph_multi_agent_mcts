@@ -10,7 +10,7 @@ Based on:
 - Deep Residual Learning for Image Recognition (ResNet)
 """
 
-from typing import Tuple
+from __future__ import annotations
 
 import torch
 import torch.nn as nn
@@ -214,7 +214,7 @@ class PolicyValueNetwork(nn.Module):
             board_size=board_size,
         )
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass through the network.
 
@@ -243,7 +243,7 @@ class PolicyValueNetwork(nn.Module):
 
     def predict(
         self, state: torch.Tensor
-    ) -> Tuple[torch.Tensor, torch.Tensor]:
+    ) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Inference mode prediction.
 
@@ -287,7 +287,7 @@ class AlphaZeroLoss(nn.Module):
         value: torch.Tensor,
         target_policy: torch.Tensor,
         target_value: torch.Tensor,
-    ) -> Tuple[torch.Tensor, dict]:
+    ) -> tuple[torch.Tensor, dict]:
         """
         Compute AlphaZero loss.
 
@@ -367,13 +367,16 @@ class MLPPolicyValueNetwork(nn.Module):
         self,
         state_dim: int,
         action_size: int,
-        hidden_dims: list[int] = [512, 256],
+        hidden_dims: list[int] | None = None,
         use_batch_norm: bool = True,
         dropout: float = 0.1,
     ):
         super().__init__()
         self.state_dim = state_dim
         self.action_size = action_size
+
+        if hidden_dims is None:
+            hidden_dims = [512, 256]
 
         # Shared feature extractor
         layers = []
@@ -405,7 +408,7 @@ class MLPPolicyValueNetwork(nn.Module):
             nn.Tanh(),
         )
 
-    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
         """
         Forward pass.
 

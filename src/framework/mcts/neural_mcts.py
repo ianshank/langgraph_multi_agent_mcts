@@ -15,11 +15,10 @@ Based on:
 
 from __future__ import annotations
 
-import asyncio
 import math
-from collections import defaultdict
-from dataclasses import dataclass, field
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import torch
@@ -36,11 +35,11 @@ class GameState:
     Users should subclass this for their specific domain.
     """
 
-    def get_legal_actions(self) -> List[Any]:
+    def get_legal_actions(self) -> list[Any]:
         """Return list of legal actions from this state."""
         raise NotImplementedError
 
-    def apply_action(self, action: Any) -> "GameState":
+    def apply_action(self, action: Any) -> GameState:
         """Apply action and return new state."""
         raise NotImplementedError
 
@@ -56,7 +55,7 @@ class GameState:
         """Convert state to tensor for neural network input."""
         raise NotImplementedError
 
-    def get_canonical_form(self, player: int) -> "GameState":
+    def get_canonical_form(self, player: int) -> GameState:  # noqa: ARG002
         """Get state from perspective of given player."""
         return self
 
@@ -75,8 +74,8 @@ class NeuralMCTSNode:
     def __init__(
         self,
         state: GameState,
-        parent: Optional["NeuralMCTSNode"] = None,
-        action: Optional[Any] = None,
+        parent: NeuralMCTSNode | None = None,
+        action: Any | None = None,
         prior: float = 0.0,
     ):
         self.state = state
@@ -90,7 +89,7 @@ class NeuralMCTSNode:
         self.virtual_loss: float = 0.0
 
         # Children: action -> NeuralMCTSNode
-        self.children: Dict[Any, NeuralMCTSNode] = {}
+        self.children: dict[Any, NeuralMCTSNode] = {}
 
         # Caching
         self.is_expanded: bool = False
@@ -106,7 +105,7 @@ class NeuralMCTSNode:
     def expand(
         self,
         policy_probs: np.ndarray,
-        valid_actions: List[Any],
+        valid_actions: list[Any],
     ):
         """
         Expand node by creating children for all legal actions.
@@ -117,7 +116,7 @@ class NeuralMCTSNode:
         """
         self.is_expanded = True
 
-        for action, prior in zip(valid_actions, policy_probs):
+        for action, prior in zip(valid_actions, policy_probs, strict=True):
             if action not in self.children:
                 next_state = self.state.apply_action(action)
                 self.children[action] = NeuralMCTSNode(
@@ -127,7 +126,7 @@ class NeuralMCTSNode:
                     prior=prior,
                 )
 
-    def select_child(self, c_puct: float) -> Tuple[Any, "NeuralMCTSNode"]:
+    def select_child(self, c_puct: float) -> tuple[Any, NeuralMCTSNode]:
         """
         Select best child using PUCT algorithm.
 
@@ -181,7 +180,7 @@ class NeuralMCTSNode:
         self.visit_count += 1
         self.value_sum += value
 
-    def get_action_probs(self, temperature: float = 1.0) -> Dict[Any, float]:
+    def get_action_probs(self, temperature: float = 1.0) -> dict[Any, float]:
         """
         Get action selection probabilities based on visit counts.
 
@@ -205,7 +204,7 @@ class NeuralMCTSNode:
 
             # Uniform over best actions
             prob = 1.0 / len(best_actions)
-            return {a: (prob if a in best_actions else 0.0) for a in self.children.keys()}
+            return {a: (prob if a in best_actions else 0.0) for a in self.children}
 
         # Temperature-scaled visits
         visits = np.array([child.visit_count for child in self.children.values()])
@@ -217,7 +216,7 @@ class NeuralMCTSNode:
         # Normalize to probabilities
         probs = visits / visits.sum()
 
-        return dict(zip(actions, probs))
+        return dict(zip(actions, probs, strict=True))
 
 
 class NeuralMCTS:
@@ -247,15 +246,15 @@ class NeuralMCTS:
         self.device = device
 
         # Caching for network evaluations
-        self.cache: Dict[str, Tuple[np.ndarray, float]] = {}
+        self.cache: dict[str, tuple[np.ndarray, float]] = {}
         self.cache_hits = 0
         self.cache_misses = 0
 
     def add_dirichlet_noise(
         self,
         policy_probs: np.ndarray,
-        epsilon: Optional[float] = None,
-        alpha: Optional[float] = None,
+        epsilon: float | None = None,
+        alpha: float | None = None,
     ) -> np.ndarray:
         """
         Add Dirichlet noise to policy for exploration (at root only).
@@ -279,7 +278,7 @@ class NeuralMCTS:
     @torch.no_grad()
     async def evaluate_state(
         self, state: GameState, add_noise: bool = False
-    ) -> Tuple[np.ndarray, float]:
+    ) -> tuple[np.ndarray, float]:
         """
         Evaluate state using neural network.
 
@@ -340,10 +339,10 @@ class NeuralMCTS:
     async def search(
         self,
         root_state: GameState,
-        num_simulations: Optional[int] = None,
+        num_simulations: int | None = None,
         temperature: float = 1.0,
         add_root_noise: bool = True,
-    ) -> Tuple[Dict[Any, float], NeuralMCTSNode]:
+    ) -> tuple[dict[Any, float], NeuralMCTSNode]:
         """
         Run MCTS search from root state.
 
@@ -385,7 +384,7 @@ class NeuralMCTS:
         Returns:
             Value from this simulation
         """
-        path: List[NeuralMCTSNode] = []
+        path: list[NeuralMCTSNode] = []
 
         # Selection: traverse tree using PUCT
         current = node
@@ -425,7 +424,7 @@ class NeuralMCTS:
 
     def select_action(
         self,
-        action_probs: Dict[Any, float],
+        action_probs: dict[Any, float],
         temperature: float = 1.0,
         deterministic: bool = False,
     ) -> Any:
@@ -500,8 +499,8 @@ class SelfPlayCollector:
     async def play_game(
         self,
         initial_state: GameState,
-        temperature_threshold: Optional[int] = None,
-    ) -> List[MCTSExample]:
+        temperature_threshold: int | None = None,
+    ) -> list[MCTSExample]:
         """
         Play a single self-play game.
 
@@ -514,7 +513,7 @@ class SelfPlayCollector:
         """
         temperature_threshold = temperature_threshold or self.config.temperature_threshold
 
-        examples: List[MCTSExample] = []
+        examples: list[MCTSExample] = []
         state = initial_state
         player = 1  # Current player (1 or -1)
         move_count = 0
@@ -534,7 +533,6 @@ class SelfPlayCollector:
 
             # Store training example
             # Convert action probs to array for all actions
-            actions = list(action_probs.keys())
             probs = np.array(list(action_probs.values()))
 
             examples.append(
@@ -566,7 +564,7 @@ class SelfPlayCollector:
 
     async def generate_batch(
         self, num_games: int, initial_state_fn: Callable[[], GameState]
-    ) -> List[MCTSExample]:
+    ) -> list[MCTSExample]:
         """
         Generate a batch of training examples from multiple games.
 

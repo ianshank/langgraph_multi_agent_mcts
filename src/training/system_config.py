@@ -6,7 +6,7 @@ including HRM, TRM, Neural MCTS, and training infrastructure.
 """
 
 from dataclasses import dataclass, field
-from typing import Optional
+
 import torch
 
 
@@ -178,7 +178,7 @@ class SystemConfig:
     log_interval: int = 10  # Log every N iterations
     use_wandb: bool = False  # Weights & Biases integration
     wandb_project: str = "langgraph-mcts-deepmind"
-    wandb_entity: Optional[str] = None
+    wandb_entity: str | None = None
 
     # Paths
     checkpoint_dir: str = "./checkpoints"
@@ -251,14 +251,14 @@ class SystemConfig:
     def save(self, path: str):
         """Save configuration to file."""
         import json
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
     @classmethod
     def load(cls, path: str) -> "SystemConfig":
         """Load configuration from file."""
         import json
-        with open(path, 'r') as f:
+        with open(path) as f:
             config_dict = json.load(f)
         return cls.from_dict(config_dict)
 

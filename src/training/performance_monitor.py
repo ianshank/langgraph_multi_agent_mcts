@@ -12,11 +12,11 @@ Tracks and analyzes system performance including:
 import time
 from collections import deque
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import numpy as np
-import torch
 import psutil
+import torch
 
 
 @dataclass
@@ -86,7 +86,7 @@ class PerformanceMonitor:
         self.metrics_history: deque = deque(maxlen=window_size)
 
         # Individual metric queues for faster access
-        self._metric_queues: Dict[str, deque] = {
+        self._metric_queues: dict[str, deque] = {
             "hrm_decomposition_time": deque(maxlen=window_size),
             "mcts_exploration_time": deque(maxlen=window_size),
             "trm_refinement_time": deque(maxlen=window_size),
@@ -144,7 +144,7 @@ class PerformanceMonitor:
         self._metric_queues["value_loss"].append(value_loss)
         self._metric_queues["total_loss"].append(total_loss)
 
-    def log_mcts_stats(self, cache_hit_rate: float, simulations: int = 0):
+    def log_mcts_stats(self, cache_hit_rate: float, simulations: int = 0):  # noqa: ARG002
         """
         Log MCTS statistics.
 
@@ -168,7 +168,7 @@ class PerformanceMonitor:
         if total_time_ms > self.alert_threshold_ms:
             self.slow_inference_count += 1
 
-    def get_stats(self, metric_name: Optional[str] = None) -> Dict[str, Any]:
+    def get_stats(self, metric_name: str | None = None) -> dict[str, Any]:
         """
         Get performance statistics.
 
@@ -200,7 +200,7 @@ class PerformanceMonitor:
 
         return stats
 
-    def _compute_metric_stats(self, metric_name: str) -> Dict[str, float]:
+    def _compute_metric_stats(self, metric_name: str) -> dict[str, float]:
         """Compute statistics for a single metric."""
         if metric_name not in self._metric_queues:
             return {}
@@ -220,7 +220,7 @@ class PerformanceMonitor:
             "count": len(values),
         }
 
-    def get_current_memory(self) -> Dict[str, float]:
+    def get_current_memory(self) -> dict[str, float]:
         """Get current memory usage snapshot."""
         memory = {}
 
@@ -306,12 +306,12 @@ class PerformanceMonitor:
         # Cache statistics
         if "cache_hit_rate" in stats:
             s = stats["cache_hit_rate"]
-            print(f"\n[Cache Performance]")
+            print("\n[Cache Performance]")
             print(f"  Hit Rate:               {s['mean']:.2%}")
 
         print("=" * 80 + "\n")
 
-    def export_to_dict(self) -> Dict[str, Any]:
+    def export_to_dict(self) -> dict[str, Any]:
         """Export all statistics to dictionary."""
         return {
             "stats": self.get_stats(),
@@ -319,7 +319,7 @@ class PerformanceMonitor:
             "window_size": self.window_size,
         }
 
-    def export_to_wandb(self, step: int) -> Dict[str, float]:
+    def export_to_wandb(self, step: int) -> dict[str, float]:  # noqa: ARG002
         """
         Export metrics for Weights & Biases logging.
 

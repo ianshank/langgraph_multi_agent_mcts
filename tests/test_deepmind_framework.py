@@ -10,7 +10,6 @@ Tests all core components:
 """
 
 import asyncio
-from pathlib import Path
 
 import numpy as np
 import pytest
@@ -18,7 +17,7 @@ import torch
 import torch.nn as nn
 
 from src.agents.hrm_agent import HRMAgent, HRMLoss, create_hrm_agent
-from src.agents.trm_agent import TRMAgent, TRMLoss, create_trm_agent
+from src.agents.trm_agent import TRMAgent, create_trm_agent
 from src.framework.mcts.neural_mcts import (
     GameState,
     NeuralMCTS,
@@ -393,7 +392,7 @@ class TestTrainingInfrastructure:
         buffer = ReplayBuffer(capacity=100)
 
         # Add experiences
-        for i in range(50):
+        for _ in range(50):
             exp = Experience(
                 state=torch.randn(3, 3, 3),
                 policy=np.random.random(9),
@@ -412,13 +411,13 @@ class TestTrainingInfrastructure:
         buffer = PrioritizedReplayBuffer(capacity=100)
 
         # Add experiences
-        for i in range(50):
+        for idx in range(50):
             exp = Experience(
                 state=torch.randn(3, 3, 3),
                 policy=np.random.random(9),
                 value=np.random.random(),
             )
-            buffer.add(exp, priority=float(i))
+            buffer.add(exp, priority=float(idx))
 
         assert len(buffer) == 50
 
@@ -433,8 +432,8 @@ class TestTrainingInfrastructure:
         monitor = PerformanceMonitor(window_size=10)
 
         # Log some timings
-        for i in range(20):
-            monitor.log_timing("test_stage", float(i))
+        for idx in range(20):
+            monitor.log_timing("test_stage", float(idx))
 
         stats = monitor.get_stats("test_stage")
 

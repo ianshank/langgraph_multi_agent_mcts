@@ -17,8 +17,6 @@ Expected outcomes:
 - Uncertainty quantification (0-1 scale)
 """
 
-from datetime import datetime
-
 import pytest
 
 from tests.mocks.mock_external_services import create_mock_llm

@@ -103,7 +103,7 @@ class TestHRMTaskDecomposition:
     )
     async def test_objective_identification_quality(self, mock_hrm_llm):
         """Test HRM identifies clear, actionable objectives."""
-        query = "Respond to cybersecurity incident with credential compromise"
+        _query = "Respond to cybersecurity incident with credential compromise"
 
         # Mock HRM objective identification
         objectives = [

@@ -11,7 +11,6 @@ Implements:
 import random
 from collections import deque
 from dataclasses import dataclass
-from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -48,12 +47,12 @@ class ReplayBuffer:
         """Add an experience to the buffer."""
         self.buffer.append(experience)
 
-    def add_batch(self, experiences: List[Experience]):
+    def add_batch(self, experiences: list[Experience]):
         """Add multiple experiences."""
         for exp in experiences:
             self.add(exp)
 
-    def sample(self, batch_size: int) -> List[Experience]:
+    def sample(self, batch_size: int) -> list[Experience]:
         """
         Sample a batch of experiences uniformly.
 
@@ -114,7 +113,7 @@ class PrioritizedReplayBuffer:
         self.frame = 1
 
         # Storage
-        self.buffer: List[Optional[Experience]] = [None] * capacity
+        self.buffer: list[Experience | None] = [None] * capacity
         self.priorities: np.ndarray = np.zeros(capacity, dtype=np.float32)
         self.position = 0
         self.size = 0
@@ -123,7 +122,7 @@ class PrioritizedReplayBuffer:
         """Get current beta value (anneals from beta_start to 1.0)."""
         return min(1.0, self.beta_start + (1.0 - self.beta_start) * self.frame / self.beta_frames)
 
-    def add(self, experience: Experience, priority: Optional[float] = None):
+    def add(self, experience: Experience, priority: float | None = None):
         """
         Add experience with priority.
 
@@ -141,7 +140,7 @@ class PrioritizedReplayBuffer:
         self.position = (self.position + 1) % self.capacity
         self.size = min(self.size + 1, self.capacity)
 
-    def add_batch(self, experiences: List[Experience], priorities: Optional[List[float]] = None):
+    def add_batch(self, experiences: list[Experience], priorities: list[float] | None = None):
         """
         Add multiple experiences.
 
@@ -152,12 +151,12 @@ class PrioritizedReplayBuffer:
         if priorities is None:
             priorities = [None] * len(experiences)
 
-        for exp, priority in zip(experiences, priorities):
+        for exp, priority in zip(experiences, priorities, strict=True):
             self.add(exp, priority)
 
     def sample(
         self, batch_size: int
-    ) -> Tuple[List[Experience], np.ndarray, np.ndarray]:
+    ) -> tuple[list[Experience], np.ndarray, np.ndarray]:
         """
         Sample batch with prioritized sampling.
 
@@ -200,7 +199,7 @@ class PrioritizedReplayBuffer:
             indices: Buffer indices to update
             priorities: New priority values
         """
-        for idx, priority in zip(indices, priorities):
+        for idx, priority in zip(indices, priorities, strict=True):
             self.priorities[idx] = (priority + 1e-6) ** self.alpha  # Small epsilon for stability
 
     def __len__(self) -> int:
@@ -232,7 +231,7 @@ class AugmentedReplayBuffer(ReplayBuffer):
         super().__init__(capacity)
         self.augmentation_fn = augmentation_fn
 
-    def sample(self, batch_size: int, apply_augmentation: bool = True) -> List[Experience]:
+    def sample(self, batch_size: int, apply_augmentation: bool = True) -> list[Experience]:
         """
         Sample batch with optional augmentation.
 
@@ -271,7 +270,7 @@ class BoardGameAugmentation:
     """
 
     @staticmethod
-    def rotate_90(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> Tuple[torch.Tensor, np.ndarray]:
+    def rotate_90(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> tuple[torch.Tensor, np.ndarray]:
         """
         Rotate state and policy 90 degrees clockwise.
 
@@ -298,7 +297,7 @@ class BoardGameAugmentation:
         return rotated_state, rotated_policy
 
     @staticmethod
-    def flip_horizontal(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> Tuple[torch.Tensor, np.ndarray]:
+    def flip_horizontal(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> tuple[torch.Tensor, np.ndarray]:
         """Flip state and policy horizontally."""
         flipped_state = torch.flip(state, dims=[2])  # Flip width dimension
 
@@ -312,7 +311,7 @@ class BoardGameAugmentation:
         return flipped_state, flipped_policy
 
     @staticmethod
-    def random_symmetry(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> Tuple[torch.Tensor, np.ndarray]:
+    def random_symmetry(state: torch.Tensor, policy: np.ndarray, board_size: int = 19) -> tuple[torch.Tensor, np.ndarray]:
         """
         Apply random symmetry transformation.
 
@@ -357,7 +356,7 @@ class BoardGameAugmentation:
             return torch.flip(state.transpose(1, 2), dims=[1, 2]), policy  # Simplified
 
 
-def collate_experiences(experiences: List[Experience]) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+def collate_experiences(experiences: list[Experience]) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """
     Collate list of experiences into batched tensors.
 

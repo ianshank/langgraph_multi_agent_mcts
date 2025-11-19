@@ -108,15 +108,15 @@ class TestHRMOnlyFlows:
 
         # Step 2: Process through HRM only
         # In real implementation, framework would route to HRM
-        hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
+        _hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
 
         # Step 3: Extract HRM-specific metrics
-        assert hrm_response.content is not None
-        assert "Hierarchical" in hrm_response.content
+        assert _hrm_response.content is not None
+        assert "Hierarchical" in _hrm_response.content
 
         # Extract hierarchical structure
-        objectives_count = hrm_response.content.count("objective")
-        subtasks_count = hrm_response.content.count("Sub-task")
+        objectives_count = _hrm_response.content.count("objective")
+        subtasks_count = _hrm_response.content.count("Sub-task")
 
         # Update trace with HRM-specific metadata
         update_run_metadata(
@@ -155,9 +155,9 @@ class TestHRMOnlyFlows:
         )
 
         # Process through HRM
-        hrm_response = await mock_llm_client.generate(f"HRM Threat Analysis: {query.query}")
+        _hrm_response = await mock_llm_client.generate(f"HRM Threat Analysis: {query.query}")
 
-        assert hrm_response.content is not None
+        assert _hrm_response.content is not None
 
         # Simulate HRM hierarchical threat breakdown
         threat_hierarchy = {
@@ -209,14 +209,14 @@ class TestTRMOnlyFlows:
         query_input = QueryInput(**tactical_query)
 
         # Process through TRM only
-        trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
+        _trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
 
-        assert trm_response.content is not None
-        assert "refinement" in trm_response.content.lower()
+        assert _trm_response.content is not None
+        assert "refinement" in _trm_response.content.lower()
 
         # Extract TRM-specific metrics
-        refinement_cycles = trm_response.content.count("cycle")
-        positions_evaluated = trm_response.content.count("Position")
+        refinement_cycles = _trm_response.content.count("cycle")
+        positions_evaluated = _trm_response.content.count("Position")
 
         # Simulate TRM iterative refinement metadata
         update_run_metadata(
@@ -251,10 +251,10 @@ class TestTRMOnlyFlows:
         iterations = 3
         refinement_scores = []
 
-        for i in range(iterations):
-            response = await mock_llm_client.generate(f"TRM Iteration {i+1}: {query_input.query}")
+        for iteration_num in range(iterations):
+            _response = await mock_llm_client.generate(f"TRM Iteration {iteration_num+1}: {query_input.query}")
             # Simulate improving scores over iterations
-            score = 0.70 + (i * 0.05)
+            score = 0.70 + (iteration_num * 0.05)
             refinement_scores.append(score)
 
         final_score = refinement_scores[-1]
@@ -415,11 +415,11 @@ class TestFullStackFlows:
         query_input = QueryInput(**tactical_query)
 
         # Step 1: HRM - Hierarchical decomposition
-        hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
+        _hrm_response = await mock_llm_client.generate(f"HRM: {query_input.query}")
         hrm_confidence = 0.87
 
         # Step 2: TRM - Task refinement
-        trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
+        _trm_response = await mock_llm_client.generate(f"TRM: {query_input.query}")
         trm_confidence = 0.83
 
         # Step 3: MCTS - Decision simulation
@@ -484,14 +484,14 @@ class TestFullStackFlows:
         )
 
         # HRM: Threat hierarchy
-        hrm_response = await mock_llm_client.generate(f"HRM Threat: {query.query}")
+        _hrm_response = await mock_llm_client.generate(f"HRM Threat: {query.query}")
         hrm_threat_breakdown = {
             "primary": "APT28",
             "vectors": ["credential_harvesting", "lateral_movement"],
         }
 
         # TRM: Response refinement
-        trm_response = await mock_llm_client.generate(f"TRM Response: {query.query}")
+        _trm_response = await mock_llm_client.generate(f"TRM Response: {query.query}")
         trm_actions = ["isolate", "forensics", "patch"]
 
         # MCTS: Strategy simulation
