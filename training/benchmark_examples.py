@@ -307,7 +307,7 @@ def example_visualizations():
         run = suite.run_retrieval_benchmark(
             dataset_name="custom_mcts",
             retrieval_fn=retrieval_fn,
-            model_config={"version": f"v{i+1}", "iteration": i},
+            model_config={"version": f"v{i + 1}", "iteration": i},
         )
         runs.append(run)
 

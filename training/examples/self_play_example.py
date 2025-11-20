@@ -103,9 +103,7 @@ async def example_with_agents():
         episode = await generator.generate_episode(task, max_steps=8, timeout=20.0)
         episodes.append(episode)
         logger.info(
-            f"Episode {i+1}: {episode.outcome}, "
-            f"length={episode.episode_length}, "
-            f"reward={episode.total_reward:.2f}"
+            f"Episode {i + 1}: {episode.outcome}, length={episode.episode_length}, reward={episode.total_reward:.2f}"
         )
 
     success_count = sum(1 for ep in episodes if ep.outcome == "success")
@@ -191,7 +189,7 @@ async def example_multi_iteration():
     logger.info(f"Running {num_iterations} training iterations...\n")
 
     for i in range(num_iterations):
-        logger.info(f"Iteration {i+1}/{num_iterations}")
+        logger.info(f"Iteration {i + 1}/{num_iterations}")
         logger.info("-" * 40)
 
         metrics = await trainer.iteration(i)

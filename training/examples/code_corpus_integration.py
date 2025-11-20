@@ -62,13 +62,13 @@ def build_and_index_code_corpus(max_repos: int = 4):
     print(f"Avg complexity: {stats['avg_complexity']:.1f}")
     print("\nQuality metrics:")
     print(
-        f"  - Chunks with docstrings: {stats['chunks_with_docstrings']} ({100*stats['chunks_with_docstrings']/stats['total_chunks']:.1f}%)"
+        f"  - Chunks with docstrings: {stats['chunks_with_docstrings']} ({100 * stats['chunks_with_docstrings'] / stats['total_chunks']:.1f}%)"
     )
     print(
-        f"  - Chunks with examples: {stats['chunks_with_examples']} ({100*stats['chunks_with_examples']/stats['total_chunks']:.1f}%)"
+        f"  - Chunks with examples: {stats['chunks_with_examples']} ({100 * stats['chunks_with_examples'] / stats['total_chunks']:.1f}%)"
     )
     print(
-        f"  - Chunks with tests: {stats['chunks_with_tests']} ({100*stats['chunks_with_tests']/stats['total_chunks']:.1f}%)"
+        f"  - Chunks with tests: {stats['chunks_with_tests']} ({100 * stats['chunks_with_tests'] / stats['total_chunks']:.1f}%)"
     )
     print(f"  - Avg quality score: {stats['avg_quality_score']:.2f}")
     print("=" * 80)

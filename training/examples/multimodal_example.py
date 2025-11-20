@@ -62,7 +62,7 @@ async def example_1_extract_images_from_pdf():
     # Save first few images
     for i, image in enumerate(images[:3]):
         save_path = processor.save_image(image)
-        logger.info(f"Image {i+1}: {image.width}x{image.height} saved to {save_path}")
+        logger.info(f"Image {i + 1}: {image.width}x{image.height} saved to {save_path}")
         if image.caption:
             logger.info(f"  Caption: {image.caption}")
 
@@ -87,7 +87,7 @@ async def example_2_generate_image_descriptions(images: list[ExtractedImage]):
 
     # Describe first few images
     for i, image in enumerate(images[:3]):
-        logger.info(f"\nProcessing image {i+1}...")
+        logger.info(f"\nProcessing image {i + 1}...")
 
         # Add context about the paper
         context = "This image is from a research paper about Monte Carlo Tree Search and reinforcement learning."
@@ -160,7 +160,7 @@ async def example_3_extract_code_blocks():
     logger.info(f"Extracted {len(code_blocks)} code blocks")
 
     for i, code in enumerate(code_blocks):
-        logger.info(f"\nCode block {i+1}:")
+        logger.info(f"\nCode block {i + 1}:")
         logger.info(f"  Language: {code.language}")
         logger.info(f"  Lines: {code.code.count(chr(10)) + 1}")
         logger.info(f"  Context: {code.context[:100]}...")
@@ -234,7 +234,7 @@ async def example_5_multi_modal_search(images: list[ExtractedImage]):
         results = builder.search_by_text(query, k=3)
 
         for i, result in enumerate(results):
-            logger.info(f"  Result {i+1}: score={result.score:.4f}")
+            logger.info(f"  Result {i + 1}: score={result.score:.4f}")
             if hasattr(result.content, "description"):
                 logger.info(f"    Description: {result.content.description[:100]}...")
             logger.info(f"    Type: {result.metadata.get('image_type', 'unknown')}")
@@ -278,13 +278,13 @@ async def example_6_full_multimodal_rag():
     if "text" in results:
         logger.info(f"\nText results: {len(results['text'])}")
         for i, result in enumerate(results["text"][:2]):
-            logger.info(f"  {i+1}. (score={result.score:.4f}) {result.content[:150]}...")
+            logger.info(f"  {i + 1}. (score={result.score:.4f}) {result.content[:150]}...")
 
     # Display image results
     if "image" in results:
         logger.info(f"\nImage results: {len(results['image'])}")
         for i, result in enumerate(results["image"][:2]):
-            logger.info(f"  {i+1}. (score={result.score:.4f})")
+            logger.info(f"  {i + 1}. (score={result.score:.4f})")
             if hasattr(result.content, "description"):
                 logger.info(f"     {result.content.description[:150]}...")
 
@@ -292,7 +292,7 @@ async def example_6_full_multimodal_rag():
     if "code" in results:
         logger.info(f"\nCode results: {len(results['code'])}")
         for i, result in enumerate(results["code"][:2]):
-            logger.info(f"  {i+1}. (score={result.score:.4f}) {result.content[:150]}...")
+            logger.info(f"  {i + 1}. (score={result.score:.4f}) {result.content[:150]}...")
 
     # Generate response
     logger.info("\n=== Generating Response ===")

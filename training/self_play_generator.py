@@ -1162,7 +1162,7 @@ class SelfPlayTrainer:
         metrics["num_episodes"] = len(episodes)
         metrics["success_rate"] = sum(1 for ep in episodes if ep.outcome == "success") / len(episodes)
 
-        logger.info(f"Generated {len(episodes)} episodes, " f"success rate: {metrics['success_rate']:.2%}")
+        logger.info(f"Generated {len(episodes)} episodes, success rate: {metrics['success_rate']:.2%}")
 
         # 2. Extract training examples
         training_data = self.data_extractor.extract_examples(episodes)

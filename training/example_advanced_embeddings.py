@@ -289,10 +289,7 @@ def example_performance_comparison():
 
         result = embedder.embed_with_cache(test_texts)
         logger.info(
-            f"{name:<15} "
-            f"{result.dimension:<10} "
-            f"{result.latency_ms:<12.2f}ms "
-            f"{result.metadata['cache_hit_rate']:<12.2%}"
+            f"{name:<15} {result.dimension:<10} {result.latency_ms:<12.2f}ms {result.metadata['cache_hit_rate']:<12.2%}"
         )
 
 

@@ -804,7 +804,7 @@ class CodeQualityFilter:
                 filtered.append(chunk)
 
         logger.info(
-            f"Quality filter: {len(filtered)}/{len(chunks)} chunks passed " f"(threshold: {self.min_quality_score})"
+            f"Quality filter: {len(filtered)}/{len(chunks)} chunks passed (threshold: {self.min_quality_score})"
         )
 
         return filtered

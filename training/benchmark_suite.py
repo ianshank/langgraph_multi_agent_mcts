@@ -1644,7 +1644,7 @@ def main():
     logger.info("\nRetrieval Metrics:")
     for metric_name, metric in retrieval_run.metrics.items():
         ci_str = (
-            f"±{(metric.confidence_interval[1] - metric.confidence_interval[0])/2:.4f}"
+            f"±{(metric.confidence_interval[1] - metric.confidence_interval[0]) / 2:.4f}"
             if metric.confidence_interval
             else ""
         )
@@ -1662,7 +1662,7 @@ def main():
     logger.info("\nReasoning Metrics:")
     for metric_name, metric in reasoning_run.metrics.items():
         ci_str = (
-            f"±{(metric.confidence_interval[1] - metric.confidence_interval[0])/2:.4f}"
+            f"±{(metric.confidence_interval[1] - metric.confidence_interval[0]) / 2:.4f}"
             if metric.confidence_interval
             else ""
         )
