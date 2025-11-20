@@ -114,7 +114,7 @@ class TestVirtualLossNode:
         best_child.add_virtual_loss(3.0)
 
         # Should select different child now
-        new_best = root.select_child_with_vl()
+        _new_best = root.select_child_with_vl()
         # Virtual loss should make other nodes more attractive
 
 

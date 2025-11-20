@@ -31,22 +31,22 @@ except ImportError:
 
     # Define dummy classes for when Prometheus is not available
     class DummyMetric:
-        def __init__(self, *args, **kwargs):
+        def __init__(self, *_args, **_kwargs):
             pass
 
-        def labels(self, *args, **kwargs):
+        def labels(self, *_args, **_kwargs):
             return self
 
-        def inc(self, *args, **kwargs):
+        def inc(self, *_args, **_kwargs):
             pass
 
-        def dec(self, *args, **kwargs):
+        def dec(self, *_args, **_kwargs):
             pass
 
-        def set(self, *args, **kwargs):
+        def set(self, *_args, **_kwargs):
             pass
 
-        def observe(self, *args, **kwargs):
+        def observe(self, *_args, **_kwargs):
             pass
 
         def info(self, *args, **kwargs):

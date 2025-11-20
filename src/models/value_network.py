@@ -468,7 +468,7 @@ class EnsembleValueNetwork(nn.Module):
             result = (output.value.item(), output.uncertainty.item())
 
             # Restore training modes
-            for net, was_train in zip(self.networks, was_training):
+            for net, was_train in zip(self.networks, was_training, strict=True):
                 if was_train:
                     net.train()
 

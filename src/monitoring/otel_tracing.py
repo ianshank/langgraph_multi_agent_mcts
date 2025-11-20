@@ -36,7 +36,7 @@ except ImportError:
 
     # Define dummy classes
     class DummyTracer:
-        def start_as_current_span(self, *args, **kwargs):
+        def start_as_current_span(self, *_args, **_kwargs):
             @contextmanager
             def dummy_context():
                 yield None
@@ -44,7 +44,7 @@ except ImportError:
             return dummy_context()
 
     class DummyTracerProvider:
-        def get_tracer(self, *args, **kwargs):
+        def get_tracer(self, *_args, **_kwargs):
             return DummyTracer()
 
     trace = type("trace", (), {"get_tracer_provider": lambda: DummyTracerProvider()})()

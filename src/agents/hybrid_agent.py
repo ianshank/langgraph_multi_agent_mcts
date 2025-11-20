@@ -452,10 +452,11 @@ class HybridAgent:
         actual_cost = self.stats["total_neural_cost"] + self.stats["total_llm_cost"]
 
         # Estimate cost if all calls were LLM
-        if self.stats["llm_calls"] > 0:
-            avg_llm_cost = self.stats["total_llm_cost"] / self.stats["llm_calls"]
-        else:
-            avg_llm_cost = 0.05  # Default estimate
+        avg_llm_cost = (
+            self.stats["total_llm_cost"] / self.stats["llm_calls"]
+            if self.stats["llm_calls"] > 0
+            else 0.05  # Default estimate
+        )
 
         hypothetical_llm_cost = total_calls * avg_llm_cost
 

@@ -182,7 +182,7 @@ class TestNeuralMCTSNode:
 
         root.visit_count = 10
 
-        for action, prior in zip(actions, priors):
+        for action, prior in zip(actions, priors, strict=True):
             child_state = state.apply_action(action)
             child = NeuralMCTSNode(child_state, root, action, prior)
             root.children[action] = child

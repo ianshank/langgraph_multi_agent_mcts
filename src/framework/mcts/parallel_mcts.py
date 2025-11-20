@@ -572,10 +572,11 @@ class RootParallelMCTSEngine:
             action_stats[act]["value"] = action_stats[act]["value_sum"] / visits if visits > 0 else 0.0
 
         # Select best action (most total visits)
-        if action_stats:
-            best_action = max(action_stats.keys(), key=lambda a: action_stats[a]["visits"])
-        else:
-            best_action = None
+        best_action = (
+            max(action_stats.keys(), key=lambda a: action_stats[a]["visits"])
+            if action_stats
+            else None
+        )
 
         # Merge statistics
         total_simulations = sum(stats["iterations"] for _, stats in results)

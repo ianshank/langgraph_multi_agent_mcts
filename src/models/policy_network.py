@@ -187,10 +187,7 @@ class PolicyNetwork(nn.Module):
             log_probs = F.log_softmax(policy_logits, dim=-1)
 
             # Select action
-            if deterministic:
-                action = torch.argmax(probs, dim=-1).item()
-            else:
-                action = torch.multinomial(probs, 1).item()
+            action = torch.argmax(probs, dim=-1).item() if deterministic else torch.multinomial(probs, 1).item()
 
             # Get log probability and confidence
             log_prob = log_probs[0, action].item()
@@ -311,7 +308,6 @@ class PolicyLoss(nn.Module):
             total_loss: Combined loss
             loss_dict: Dictionary of individual loss components
         """
-        batch_size = policy_output.policy_logits.size(0)
         loss_dict = {}
 
         # Policy loss

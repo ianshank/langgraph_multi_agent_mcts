@@ -422,7 +422,8 @@ jobs:
   rag-eval:
     name: RAG Evaluation with Ragas
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.schedule
+    # Run on workflow_dispatch, scheduled runs, or PRs to main/develop
+    if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'pull_request' && contains(fromJson('["main", "develop"]'), github.base_ref))
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -438,7 +439,18 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
+      - name: Create results directory
+        run: mkdir -p results
+
+      - name: Setup RAG evaluation dataset
+        run: |
+          python scripts/create_rag_eval_datasets.py
+        env:
+          LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
+        continue-on-error: true
+
       - name: Run RAG evaluation (baseline)
+        id: baseline_eval
         run: |
           python scripts/evaluate_rag.py \
             --dataset rag-eval-dataset \
@@ -450,9 +462,14 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_TRACING_V2: true
           WANDB_MODE: online
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'lmstudio' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LOG_LEVEL: INFO
         continue-on-error: true
 
       - name: Run RAG evaluation (MCTS enabled)
+        id: mcts_eval
         run: |
           python scripts/evaluate_rag.py \
             --dataset rag-eval-dataset \
@@ -464,6 +481,24 @@ jobs:
           LANGSMITH_API_KEY: ${{ secrets.LANGSMITH_API_KEY }}
           LANGCHAIN_TRACING_V2: true
           WANDB_MODE: online
+          LLM_PROVIDER: ${{ secrets.LLM_PROVIDER || 'lmstudio' }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          LOG_LEVEL: INFO
+        continue-on-error: true
+
+      - name: Compare results
+        run: |
+          if [ -f results/baseline_eval.csv ] && [ -f results/mcts_eval.csv ]; then
+            echo "=== RAG Evaluation Comparison ==="
+            echo "Baseline results:"
+            python -c "import pandas as pd; df=pd.read_csv('results/baseline_eval.csv'); print(df.describe())"
+            echo ""
+            echo "MCTS results:"
+            python -c "import pandas as pd; df=pd.read_csv('results/mcts_eval.csv'); print(df.describe())"
+          else
+            echo "One or both evaluation files not found"
+          fi
         continue-on-error: true
 
       - name: Upload evaluation results
@@ -471,4 +506,11 @@ jobs:
         with:
           name: rag-eval-results
           path: results/*.csv
+        if: always()
+
+      - name: Upload to LangSmith
+        run: |
+          echo "RAG evaluation results uploaded to LangSmith and W&B"
+          echo "Check W&B dashboard: https://wandb.ai"
+          echo "Check LangSmith dashboard: https://smith.langchain.com"
         if: always()

@@ -542,11 +542,8 @@ async def run_all_demos():
 
     baseline_time = results["standard"][0]
 
-    for name, (duration, stats) in results.items():
-        if name == "neural":
-            sims_per_sec = 50 / duration  # Neural uses 50 sims
-        else:
-            sims_per_sec = 100 / duration
+    for name, (duration, _stats) in results.items():
+        sims_per_sec = 50 / duration if name == "neural" else 100 / duration
 
         speedup = baseline_time / duration
 

@@ -21,7 +21,7 @@ class MockLLMClient:
         self.latency_ms = latency_ms
         self.cost_per_call = cost_per_call
 
-    async def generate(self, prompt):
+    async def generate(self, _prompt):
         """Mock LLM generation."""
         # Simulate LLM latency
         await asyncio.sleep(self.latency_ms / 1000)

@@ -40,7 +40,7 @@ class TicTacToeSimulator:
         experiences = []
         player = 1  # X starts
 
-        for move in range(9):
+        for _move in range(9):
             # Available moves
             available = [i for i, cell in enumerate(board) if cell == 0]
             if not available:
@@ -85,12 +85,7 @@ class TicTacToeSimulator:
                 return True
 
         # Check diagonals
-        if all(board[i] == player for i in [0, 4, 8]):
-            return True
-        if all(board[i] == player for i in [2, 4, 6]):
-            return True
-
-        return False
+        return all(board[i] == player for i in [0, 4, 8]) or all(board[i] == player for i in [2, 4, 6])
 
 
 def generate_training_data(num_games=1000):
