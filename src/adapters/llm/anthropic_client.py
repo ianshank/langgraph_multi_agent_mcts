@@ -349,10 +349,10 @@ class AnthropicClient(BaseLLMClient):
 
             try:
                 response = await client.post("/v1/messages", json=payload)
-            except httpx.TimeoutException:
-                raise LLMTimeoutError(self.PROVIDER_NAME, self.timeout)
-            except httpx.ConnectError:
-                raise LLMConnectionError(self.PROVIDER_NAME, self.base_url)
+            except httpx.TimeoutException as e:
+                raise LLMTimeoutError(self.PROVIDER_NAME, self.timeout) from e
+            except httpx.ConnectError as e:
+                raise LLMConnectionError(self.PROVIDER_NAME, self.base_url) from e
 
             if response.status_code != 200:
                 self._handle_error_response(response)
@@ -500,12 +500,12 @@ class AnthropicClient(BaseLLMClient):
 
                 self.circuit_breaker.record_success()
 
-            except httpx.TimeoutException:
+            except httpx.TimeoutException as e:
                 self.circuit_breaker.record_failure()
-                raise LLMTimeoutError(self.PROVIDER_NAME, self.timeout)
-            except httpx.ConnectError:
+                raise LLMTimeoutError(self.PROVIDER_NAME, self.timeout) from e
+            except httpx.ConnectError as e:
                 self.circuit_breaker.record_failure()
-                raise LLMConnectionError(self.PROVIDER_NAME, self.base_url)
+                raise LLMConnectionError(self.PROVIDER_NAME, self.base_url) from e
             except Exception as e:
                 self.circuit_breaker.record_failure()
                 if isinstance(e, LLMClientError):

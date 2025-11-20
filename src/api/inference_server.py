@@ -282,7 +282,7 @@ class InferenceServer:
                 )
 
             except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}") from e
 
         @self.app.post("/policy-value", response_model=PolicyValueResponse)
         async def policy_value(request: PolicyValueRequest):
@@ -312,7 +312,7 @@ class InferenceServer:
                 )
 
             except Exception as e:
-                raise HTTPException(status_code=500, detail=f"Policy-value inference failed: {str(e)}")
+                raise HTTPException(status_code=500, detail=f"Policy-value inference failed: {str(e)}") from e
 
         @self.app.get("/stats")
         async def stats():

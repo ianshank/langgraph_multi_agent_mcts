@@ -330,8 +330,8 @@ class JWTAuthenticator:
         """
         try:
             import jwt
-        except ImportError:
-            raise ImportError("PyJWT library required for JWT authentication. Install with: pip install PyJWT")
+        except ImportError as e:
+            raise ImportError("PyJWT library required for JWT authentication. Install with: pip install PyJWT") from e
 
         now = datetime.utcnow()
         payload = {
@@ -359,8 +359,8 @@ class JWTAuthenticator:
         """
         try:
             import jwt
-        except ImportError:
-            raise ImportError("PyJWT library required for JWT authentication")
+        except ImportError as e:
+            raise ImportError("PyJWT library required for JWT authentication") from e
 
         if token in self._token_blacklist:
             raise AuthenticationError(
@@ -379,16 +379,16 @@ class JWTAuthenticator:
                 client_id=payload["sub"],
                 roles=set(payload.get("roles", ["user"])),
             )
-        except jwt.ExpiredSignatureError:
+        except jwt.ExpiredSignatureError as e:
             raise AuthenticationError(
                 user_message="Token has expired",
                 internal_details="JWT signature expired",
-            )
+            ) from e
         except jwt.InvalidTokenError as e:
             raise AuthenticationError(
                 user_message="Invalid token",
                 internal_details=f"JWT validation failed: {str(e)}",
-            )
+            ) from e
 
     def revoke_token(self, token: str) -> None:
         """

@@ -167,6 +167,9 @@ markers = [
     "performance: Performance and load tests",
     "security: Security validation tests",
     "chaos: Chaos engineering tests for system resilience",
+    "component: Component-level tests for specific modules",
+    "contract: Contract tests for API and interface compliance",
+    "property: Property-based tests using hypothesis",
 ]
 
 [tool.coverage.run]
