@@ -1,92 +1,27 @@
-# Multi-Agent MCTS Framework Dependencies
+# LangGraph Multi-Agent MCTS Demo - Dependencies
+# Optimized for Hugging Face Spaces deployment with trained models
 
-# ============================================================================
-# Core Dependencies
-# ============================================================================
+# Core UI Framework
+gradio>=4.0.0,<5.0.0
 
-# Core async HTTP client
-httpx>=0.25.0
+# Numerical computation
+numpy>=1.24.0,<2.0.0
 
-# Retry logic
-tenacity>=8.2.0
-
-# Data validation with pydantic-settings
-pydantic>=2.0.0
-pydantic-settings>=2.0.0
-
-# Numpy for numerical operations
-numpy>=1.24.0
-
-# Progress bars for CLI tools
-tqdm>=4.65.0
-
-# ============================================================================
-# LangGraph and LangChain (Multi-Agent Orchestration)
-# ============================================================================
-langgraph>=0.0.20
-langchain>=0.1.0
-langchain-core>=0.1.0
-langchain-openai>=0.0.2
-langsmith>=0.1.0  # For tracing and evaluation
-
-# ============================================================================
-# Vector Stores and RAG
-# ============================================================================
-chromadb>=0.4.0
-faiss-cpu>=1.7.4
-
-# Pinecone vector database
-pinecone-client>=3.0.0
-
-# Sentence transformers for embeddings
-sentence-transformers>=2.2.0
-
-# BM25 for hybrid search
-rank-bm25>=0.2.2
-
-# arXiv API for research corpus building
-arxiv>=2.1.0
-
-# HTTP requests library
-requests>=2.31.0
-
-# ============================================================================
-# Machine Learning (for Neural MCTS and Agent Training)
-# ============================================================================
-# Neural MCTS and HRM/TRM training require PyTorch
+# Machine Learning - Neural Models
 torch>=2.1.0
-torchvision>=0.16.0
-scipy>=1.11.0  # For scientific computing in training
+transformers>=4.35.0
+peft>=0.7.0
 
-# ============================================================================
-# Experiment Tracking and Evaluation
-# ============================================================================
+# Configuration
+pyyaml>=6.0
 
-# Weights & Biases for experiment tracking
+# Experiment Tracking
 wandb>=0.16.0
 
-# RAG evaluation framework
-ragas>=0.1.0
+# Required for Gradio OAuth and model loading
+huggingface_hub>=0.20.0,<0.30.0
 
-# ============================================================================
-# Web Framework (for REST API server)
-# ============================================================================
-fastapi>=0.104.0
-uvicorn[standard]>=0.24.0
-
-# ============================================================================
-# Infrastructure and Monitoring
-# ============================================================================
-
-# System monitoring (for observability)
-psutil>=5.9.0
-
-# Async AWS S3 client (for storage)
-aioboto3>=12.0.0
-botocore>=1.31.0
-
-# OpenTelemetry - Tracing
-opentelemetry-api>=1.20.0
-opentelemetry-sdk>=1.20.0
-opentelemetry-exporter-otlp-proto-grpc>=1.20.0
-opentelemetry-instrumentation-httpx>=0.42b0
+# Note: This demo now uses REAL trained models:
+# - RNN Meta-Controller (models/rnn_meta_controller.pt)
+# - BERT with LoRA adapters (models/bert_lora/final_model/)
+# - Actual HRM and TRM agent implementations
