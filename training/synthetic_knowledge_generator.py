@@ -725,9 +725,7 @@ Answer:"""
         # Default estimate
         return (response.total_tokens / 1000.0) * 0.002
 
-    async def generate_variations(
-        self, base_template: str, category: str, num_variations: int = 5
-    ) -> list[QAPair]:
+    async def generate_variations(self, base_template: str, category: str, num_variations: int = 5) -> list[QAPair]:
         """
         Generate multiple variations of a question template.
 

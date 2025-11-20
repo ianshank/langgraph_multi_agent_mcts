@@ -28,12 +28,14 @@ import yaml
 
 try:
     from openai import OpenAI
+
     HAS_OPENAI = True
 except ImportError:
     HAS_OPENAI = False
 
 try:
     from neo4j import GraphDatabase
+
     HAS_NEO4J = True
 except ImportError:
     HAS_NEO4J = False
@@ -46,35 +48,37 @@ logger = logging.getLogger(__name__)
 # 1. Schema Definitions
 # ============================================================================
 
+
 class RelationType(str, Enum):
     """Types of relationships between concepts."""
-    IS_A = "is_a"                          # AlphaZero IS_A MCTS variant
-    USES = "uses"                          # AlphaZero USES neural networks
-    IMPROVES = "improves"                  # PUCT IMPROVES UCB1
-    EXTENDS = "extends"                    # MuZero EXTENDS AlphaZero
-    IMPLEMENTED_IN = "implemented_in"      # UCB1 IMPLEMENTED_IN paper X
-    COMPARED_TO = "compared_to"            # Method A COMPARED_TO Method B
-    REQUIRES = "requires"                  # AlphaZero REQUIRES self-play
-    PART_OF = "part_of"                    # PUCT PART_OF AlphaZero
-    RELATED_TO = "related_to"              # Generic relationship
-    INFLUENCES = "influences"              # Concept A INFLUENCES Concept B
-    PRECEDES = "precedes"                  # Temporal/historical ordering
+
+    IS_A = "is_a"  # AlphaZero IS_A MCTS variant
+    USES = "uses"  # AlphaZero USES neural networks
+    IMPROVES = "improves"  # PUCT IMPROVES UCB1
+    EXTENDS = "extends"  # MuZero EXTENDS AlphaZero
+    IMPLEMENTED_IN = "implemented_in"  # UCB1 IMPLEMENTED_IN paper X
+    COMPARED_TO = "compared_to"  # Method A COMPARED_TO Method B
+    REQUIRES = "requires"  # AlphaZero REQUIRES self-play
+    PART_OF = "part_of"  # PUCT PART_OF AlphaZero
+    RELATED_TO = "related_to"  # Generic relationship
+    INFLUENCES = "influences"  # Concept A INFLUENCES Concept B
+    PRECEDES = "precedes"  # Temporal/historical ordering
 
 
 @dataclass
 class ConceptNode:
     """Represents an AI/ML concept in the knowledge graph."""
 
-    id: str                                # Unique identifier (normalized name)
-    name: str                              # Display name
-    type: str                              # algorithm, technique, architecture, metric, etc.
-    description: str                       # Brief description
+    id: str  # Unique identifier (normalized name)
+    name: str  # Display name
+    type: str  # algorithm, technique, architecture, metric, etc.
+    description: str  # Brief description
     aliases: list[str] = field(default_factory=list)  # Alternative names
     properties: dict[str, Any] = field(default_factory=dict)  # Additional metadata
     source_papers: list[str] = field(default_factory=list)  # arXiv IDs
     code_references: list[str] = field(default_factory=list)  # File paths
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
-    confidence: float = 1.0                # Confidence score (0-1)
+    confidence: float = 1.0  # Confidence score (0-1)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""
@@ -101,12 +105,12 @@ class ConceptNode:
 class Relationship:
     """Represents a relationship between two concepts."""
 
-    source: str                            # Source concept ID
-    target: str                            # Target concept ID
-    relation_type: RelationType            # Type of relationship
+    source: str  # Source concept ID
+    target: str  # Target concept ID
+    relation_type: RelationType  # Type of relationship
     properties: dict[str, Any] = field(default_factory=dict)  # Additional metadata
     evidence: list[str] = field(default_factory=list)  # Supporting evidence (paper IDs, etc.)
-    confidence: float = 1.0                # Confidence score (0-1)
+    confidence: float = 1.0  # Confidence score (0-1)
     created_at: str = field(default_factory=lambda: datetime.now().isoformat())
 
     def to_dict(self) -> dict[str, Any]:
@@ -132,6 +136,7 @@ class Relationship:
 # 2. Knowledge Extractor
 # ============================================================================
 
+
 class KnowledgeExtractor:
     """Extract entities and relationships from papers and code using LLM."""
 
@@ -156,11 +161,7 @@ class KnowledgeExtractor:
         logger.info(f"KnowledgeExtractor initialized with model: {self.llm_model}")
 
     async def extract_from_paper(
-        self,
-        paper_id: str,
-        title: str,
-        abstract: str,
-        full_text: str | None = None
+        self, paper_id: str, title: str, abstract: str, full_text: str | None = None
     ) -> tuple[list[ConceptNode], list[Relationship]]:
         """
         Extract concepts and relationships from a research paper.
@@ -190,8 +191,11 @@ class KnowledgeExtractor:
             response = self.client.chat.completions.create(
                 model=self.llm_model,
                 messages=[
-                    {"role": "system", "content": "You are an expert in AI/ML research who extracts structured knowledge from papers."},
-                    {"role": "user", "content": extraction_prompt}
+                    {
+                        "role": "system",
+                        "content": "You are an expert in AI/ML research who extracts structured knowledge from papers.",
+                    },
+                    {"role": "user", "content": extraction_prompt},
                 ],
                 temperature=0.3,
             )
@@ -244,11 +248,7 @@ Return your answer as a JSON object with this structure:
 Focus on technical concepts, not general terms. Extract only high-confidence relationships.
 """
 
-    def _parse_extraction_result(
-        self,
-        result_text: str,
-        paper_id: str
-    ) -> tuple[list[ConceptNode], list[Relationship]]:
+    def _parse_extraction_result(self, result_text: str, paper_id: str) -> tuple[list[ConceptNode], list[Relationship]]:
         """Parse LLM extraction result."""
         try:
             # Try to extract JSON from markdown code blocks
@@ -297,11 +297,7 @@ Focus on technical concepts, not general terms. Extract only high-confidence rel
             logger.error(f"Error parsing extraction result: {e}")
             return [], []
 
-    def extract_from_code(
-        self,
-        file_path: str,
-        code: str
-    ) -> tuple[list[ConceptNode], list[Relationship]]:
+    def extract_from_code(self, file_path: str, code: str) -> tuple[list[ConceptNode], list[Relationship]]:
         """
         Extract concepts and relationships from code implementation.
 
@@ -362,6 +358,7 @@ Focus on technical concepts, not general terms. Extract only high-confidence rel
 # ============================================================================
 # 3. Graph Builder (NetworkX Backend)
 # ============================================================================
+
 
 class KnowledgeGraphBuilder:
     """Build and manage knowledge graph using NetworkX."""
@@ -437,7 +434,7 @@ class KnowledgeGraphBuilder:
                 properties=concept.properties,
                 confidence=concept.confidence,
             )
-        elif self.backend == "neo4j" and hasattr(self, 'neo4j_driver') and self.neo4j_driver:
+        elif self.backend == "neo4j" and hasattr(self, "neo4j_driver") and self.neo4j_driver:
             self._add_concept_neo4j(concept)
 
     def _add_concept_neo4j(self, concept: ConceptNode):
@@ -464,7 +461,7 @@ class KnowledgeGraphBuilder:
         target: str,
         relation_type: RelationType,
         properties: dict[str, Any] | None = None,
-        confidence: float = 1.0
+        confidence: float = 1.0,
     ) -> None:
         """
         Add a relationship between concepts.
@@ -494,7 +491,7 @@ class KnowledgeGraphBuilder:
                 properties=properties or {},
                 confidence=confidence,
             )
-        elif self.backend == "neo4j" and hasattr(self, 'neo4j_driver') and self.neo4j_driver:
+        elif self.backend == "neo4j" and hasattr(self, "neo4j_driver") and self.neo4j_driver:
             self._add_relationship_neo4j(relationship)
 
     def _add_relationship_neo4j(self, relationship: Relationship):
@@ -512,11 +509,7 @@ class KnowledgeGraphBuilder:
                 confidence=relationship.confidence,
             )
 
-    def build_from_corpus(
-        self,
-        extractor: KnowledgeExtractor,
-        papers: list[dict[str, Any]]
-    ) -> dict[str, int]:
+    def build_from_corpus(self, extractor: KnowledgeExtractor, papers: list[dict[str, Any]]) -> dict[str, int]:
         """
         Build knowledge graph from corpus of papers.
 
@@ -538,9 +531,8 @@ class KnowledgeGraphBuilder:
             try:
                 # Extract concepts and relationships
                 import asyncio
-                concepts, relationships = asyncio.run(
-                    extractor.extract_from_paper(paper_id, title, abstract)
-                )
+
+                concepts, relationships = asyncio.run(extractor.extract_from_paper(paper_id, title, abstract))
 
                 # Add to graph
                 for concept in concepts:
@@ -619,12 +611,15 @@ class KnowledgeGraphBuilder:
         if self.backend == "networkx" and data["graph"]:
             self.graph = nx.node_link_graph(data["graph"], multigraph=True, directed=True)
 
-        logger.info(f"Loaded knowledge graph from {filepath}: {len(self.concepts)} concepts, {len(self.relationships)} relationships")
+        logger.info(
+            f"Loaded knowledge graph from {filepath}: {len(self.concepts)} concepts, {len(self.relationships)} relationships"
+        )
 
 
 # ============================================================================
 # 4. Graph Query Engine
 # ============================================================================
+
 
 class GraphQueryEngine:
     """Query the knowledge graph."""
@@ -666,10 +661,7 @@ class GraphQueryEngine:
         return None
 
     def get_relationships(
-        self,
-        concept: str,
-        relation_type: RelationType | None = None,
-        direction: str = "outgoing"
+        self, concept: str, relation_type: RelationType | None = None, direction: str = "outgoing"
     ) -> list[dict[str, Any]]:
         """
         Get all relationships for a concept.
@@ -693,34 +685,33 @@ class GraphQueryEngine:
             for target in self.graph.successors(concept_id):
                 for edge_data in self.graph[concept_id][target].values():
                     if relation_type is None or edge_data.get("relation") == relation_type.value:
-                        results.append({
-                            "source": concept_id,
-                            "target": target,
-                            "relation": edge_data.get("relation"),
-                            "properties": edge_data.get("properties", {}),
-                            "confidence": edge_data.get("confidence", 1.0),
-                        })
+                        results.append(
+                            {
+                                "source": concept_id,
+                                "target": target,
+                                "relation": edge_data.get("relation"),
+                                "properties": edge_data.get("properties", {}),
+                                "confidence": edge_data.get("confidence", 1.0),
+                            }
+                        )
 
         if direction in ["incoming", "both"] and concept_id in self.graph:
             for source in self.graph.predecessors(concept_id):
                 for edge_data in self.graph[source][concept_id].values():
                     if relation_type is None or edge_data.get("relation") == relation_type.value:
-                        results.append({
-                            "source": source,
-                            "target": concept_id,
-                            "relation": edge_data.get("relation"),
-                            "properties": edge_data.get("properties", {}),
-                            "confidence": edge_data.get("confidence", 1.0),
-                        })
+                        results.append(
+                            {
+                                "source": source,
+                                "target": concept_id,
+                                "relation": edge_data.get("relation"),
+                                "properties": edge_data.get("properties", {}),
+                                "confidence": edge_data.get("confidence", 1.0),
+                            }
+                        )
 
         return results
 
-    def find_path(
-        self,
-        source: str,
-        target: str,
-        max_depth: int = 5
-    ) -> list[list[str]] | None:
+    def find_path(self, source: str, target: str, max_depth: int = 5) -> list[list[str]] | None:
         """
         Find connection path between two concepts.
 
@@ -740,21 +731,15 @@ class GraphQueryEngine:
 
         try:
             # Find all simple paths up to max_depth
-            paths = list(nx.all_simple_paths(
-                self.graph.to_undirected(),
-                source_node.id,
-                target_node.id,
-                cutoff=max_depth
-            ))
+            paths = list(
+                nx.all_simple_paths(self.graph.to_undirected(), source_node.id, target_node.id, cutoff=max_depth)
+            )
             return paths[:10]  # Return up to 10 paths
         except nx.NetworkXNoPath:
             return None
 
     def get_related_concepts(
-        self,
-        concept: str,
-        depth: int = 2,
-        relation_filter: list[RelationType] | None = None
+        self, concept: str, depth: int = 2, relation_filter: list[RelationType] | None = None
     ) -> dict[str, Any]:
         """
         Get related concepts via BFS/DFS traversal.
@@ -798,11 +783,13 @@ class GraphQueryEngine:
                             queue.append((neighbor, current_depth + 1))
 
                             if neighbor in self.concepts:
-                                result["related"][current_depth + 1].append({
-                                    "concept": self.concepts[neighbor].to_dict(),
-                                    "relation": relation,
-                                    "confidence": edge_data.get("confidence", 1.0),
-                                })
+                                result["related"][current_depth + 1].append(
+                                    {
+                                        "concept": self.concepts[neighbor].to_dict(),
+                                        "relation": relation,
+                                        "confidence": edge_data.get("confidence", 1.0),
+                                    }
+                                )
 
         return result
 
@@ -837,6 +824,7 @@ class GraphQueryEngine:
 # 5. Hybrid Retrieval (Vector + Graph)
 # ============================================================================
 
+
 class HybridKnowledgeRetriever:
     """Combine vector search with graph traversal for enhanced retrieval."""
 
@@ -844,7 +832,7 @@ class HybridKnowledgeRetriever:
         self,
         query_engine: GraphQueryEngine,
         vector_index: Any,  # VectorIndexBuilder from rag_builder.py
-        config: dict[str, Any]
+        config: dict[str, Any],
     ):
         """
         Initialize hybrid retriever.
@@ -881,21 +869,13 @@ class HybridKnowledgeRetriever:
         # Step 3: Graph expansion to find related concepts
         expanded_concepts = set()
         for concept in mentioned_concepts:
-            related = self.query_engine.get_related_concepts(
-                concept,
-                depth=self.expansion_depth
-            )
+            related = self.query_engine.get_related_concepts(concept, depth=self.expansion_depth)
             for depth_concepts in related.get("related", {}).values():
                 for item in depth_concepts:
                     expanded_concepts.add(item["concept"]["id"])
 
         # Step 4: Combine and re-rank
-        combined_results = self._combine_and_rerank(
-            query,
-            vector_results,
-            expanded_concepts,
-            k
-        )
+        combined_results = self._combine_and_rerank(query, vector_results, expanded_concepts, k)
 
         # Step 5: Enrich with relationship context
         enriched_results = self.enrich_with_relationships(combined_results)
@@ -906,7 +886,7 @@ class HybridKnowledgeRetriever:
         """Extract concept names from search results."""
         concepts = set()
         for result in results:
-            text = result.text if hasattr(result, 'text') else result.get('text', '')
+            text = result.text if hasattr(result, "text") else result.get("text", "")
             # Simple extraction - look for capitalized terms
             words = text.split()
             for word in words:
@@ -917,18 +897,14 @@ class HybridKnowledgeRetriever:
         return concepts
 
     def _combine_and_rerank(
-        self,
-        query: str,
-        vector_results: list,
-        graph_concepts: set[str],
-        k: int
+        self, query: str, vector_results: list, graph_concepts: set[str], k: int
     ) -> list[dict[str, Any]]:
         """Combine vector and graph results with reranking."""
         combined = []
 
         for result in vector_results:
-            score = result.score if hasattr(result, 'score') else result.get('score', 0)
-            text = result.text if hasattr(result, 'text') else result.get('text', '')
+            score = result.score if hasattr(result, "score") else result.get("score", 0)
+            text = result.text if hasattr(result, "text") else result.get("text", "")
 
             # Boost score if result mentions graph-expanded concepts
             graph_boost = 0
@@ -936,15 +912,16 @@ class HybridKnowledgeRetriever:
                 if concept.lower() in text.lower():
                     graph_boost += 0.1
 
-            combined_score = (self.vector_weight * score +
-                            self.graph_weight * min(graph_boost, 1.0))
+            combined_score = self.vector_weight * score + self.graph_weight * min(graph_boost, 1.0)
 
-            combined.append({
-                "text": text,
-                "score": combined_score,
-                "doc_id": result.doc_id if hasattr(result, 'doc_id') else result.get('doc_id', ''),
-                "metadata": result.metadata if hasattr(result, 'metadata') else result.get('metadata', {}),
-            })
+            combined.append(
+                {
+                    "text": text,
+                    "score": combined_score,
+                    "doc_id": result.doc_id if hasattr(result, "doc_id") else result.get("doc_id", ""),
+                    "metadata": result.metadata if hasattr(result, "metadata") else result.get("metadata", {}),
+                }
+            )
 
         # Sort by combined score
         combined.sort(key=lambda x: x["score"], reverse=True)
@@ -972,14 +949,12 @@ class HybridKnowledgeRetriever:
 # 6. Graph-based Question Answering
 # ============================================================================
 
+
 class GraphQA:
     """Answer questions using graph reasoning."""
 
     def __init__(
-        self,
-        query_engine: GraphQueryEngine,
-        llm_client: Any | None = None,
-        config: dict[str, Any] | None = None
+        self, query_engine: GraphQueryEngine, llm_client: Any | None = None, config: dict[str, Any] | None = None
     ):
         """
         Initialize graph QA system.
@@ -1089,11 +1064,17 @@ class GraphQA:
             # Get relationship
             if source in self.query_engine.graph and target in self.query_engine.graph[source]:
                 edge_data = list(self.query_engine.graph[source][target].values())[0]
-                path_details.append({
-                    "from": self.query_engine.concepts[source].name if source in self.query_engine.concepts else source,
-                    "to": self.query_engine.concepts[target].name if target in self.query_engine.concepts else target,
-                    "relation": edge_data.get("relation", "related_to"),
-                })
+                path_details.append(
+                    {
+                        "from": (
+                            self.query_engine.concepts[source].name if source in self.query_engine.concepts else source
+                        ),
+                        "to": (
+                            self.query_engine.concepts[target].name if target in self.query_engine.concepts else target
+                        ),
+                        "relation": edge_data.get("relation", "related_to"),
+                    }
+                )
 
         return {
             "path_found": True,
@@ -1135,18 +1116,18 @@ class GraphQA:
                 result["concept2_relationships"] = self.query_engine.get_relationships(concept2.id, direction="both")
 
                 # Find common relationships
-                rels1 = {(r["relation"], r["target"]) for r in result["concept1_relationships"] if r["source"] == concept1.id}
-                rels2 = {(r["relation"], r["target"]) for r in result["concept2_relationships"] if r["source"] == concept2.id}
+                rels1 = {
+                    (r["relation"], r["target"]) for r in result["concept1_relationships"] if r["source"] == concept1.id
+                }
+                rels2 = {
+                    (r["relation"], r["target"]) for r in result["concept2_relationships"] if r["source"] == concept2.id
+                }
                 result["common_relationships"] = list(rels1 & rels2)
 
         return result
 
     def _generate_answer(
-        self,
-        question: str,
-        entities: list[str],
-        question_type: str,
-        graph_info: dict[str, Any]
+        self, question: str, entities: list[str], question_type: str, graph_info: dict[str, Any]
     ) -> str:
         """Generate natural language answer from graph information."""
         if question_type == "relationship":
@@ -1195,6 +1176,7 @@ class GraphQA:
 # ============================================================================
 # Main Interface
 # ============================================================================
+
 
 class KnowledgeGraphSystem:
     """Main interface for knowledge graph system."""

@@ -577,16 +577,12 @@ class SelfPlayEpisodeGenerator:
 
             while step < max_steps and time.time() - start_time < timeout:
                 # Run MCTS simulation to select action
-                mcts_trace, selected_action = await self._run_mcts_simulation(
-                    current_state, task, step
-                )
+                mcts_trace, selected_action = await self._run_mcts_simulation(current_state, task, step)
                 mcts_traces.append(mcts_trace)
                 actions.append(selected_action)
 
                 # Execute action and get next state
-                next_state, reward, done = await self._execute_action(
-                    current_state, selected_action, task, step
-                )
+                next_state, reward, done = await self._execute_action(current_state, selected_action, task, step)
 
                 states.append(next_state)
                 rewards.append(reward)
@@ -634,9 +630,7 @@ class SelfPlayEpisodeGenerator:
 
         return episode
 
-    async def _run_mcts_simulation(
-        self, state: State, task: dict, step: int
-    ) -> tuple[MCTSTrace, Action]:
+    async def _run_mcts_simulation(self, state: State, task: dict, step: int) -> tuple[MCTSTrace, Action]:
         """Run MCTS simulation from current state."""
         start_time = time.time()
         num_simulations = self.mcts_config.get("num_simulations", 100)
@@ -665,9 +659,7 @@ class SelfPlayEpisodeGenerator:
         # MCTS simulation loop
         for sim_idx in range(num_simulations):
             # Select action using PUCT
-            action_idx = self._select_action_puct(
-                actions, visit_counts, q_values, priors, sim_idx
-            )
+            action_idx = self._select_action_puct(actions, visit_counts, q_values, priors, sim_idx)
             action = actions[action_idx]
             action_id = action.action_id
 
@@ -793,9 +785,7 @@ class SelfPlayEpisodeGenerator:
 
         return actions
 
-    async def _execute_action(
-        self, state: State, action: Action, task: dict, step: int
-    ) -> tuple[State, float, bool]:
+    async def _execute_action(self, state: State, action: Action, task: dict, step: int) -> tuple[State, float, bool]:
         """Execute action and return next state, reward, and done flag."""
         # Simulate state transition
         next_state_repr = state.representation.clone()
@@ -816,17 +806,11 @@ class SelfPlayEpisodeGenerator:
         reward = self._compute_reward(state, action, next_state, task, step)
 
         # Check if done
-        done = (
-            reward > 0.9
-            or action.action_type in ["verify", "execute"]
-            and step > 3
-        )
+        done = reward > 0.9 or action.action_type in ["verify", "execute"] and step > 3
 
         return next_state, reward, done
 
-    def _compute_reward(
-        self, state: State, action: Action, next_state: State, task: dict, step: int
-    ) -> float:
+    def _compute_reward(self, state: State, action: Action, next_state: State, task: dict, step: int) -> float:
         """Compute reward for transition."""
         # Simplified reward computation
         base_reward = 0.0
@@ -905,9 +889,7 @@ class TrainingDataExtractor:
             with contextlib.suppress(Exception):
                 self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
 
-    def extract_examples(
-        self, episodes: list[SelfPlayEpisode]
-    ) -> dict[str, list[TrainingExample]]:
+    def extract_examples(self, episodes: list[SelfPlayEpisode]) -> dict[str, list[TrainingExample]]:
         """
         Extract training examples from episodes.
 
@@ -943,10 +925,7 @@ class TrainingDataExtractor:
                 continue
 
             # Normalize visit counts to create improved policy
-            policy_target = {
-                action_id: count / total_visits
-                for action_id, count in trace.visit_counts.items()
-            }
+            policy_target = {action_id: count / total_visits for action_id, count in trace.visit_counts.items()}
 
             example = TrainingExample(
                 example_id=f"{episode.task_id}_policy_{i}",
@@ -996,9 +975,7 @@ class TrainingDataExtractor:
 
         return examples
 
-    def _extract_reasoning_examples(
-        self, episode: SelfPlayEpisode
-    ) -> list[TrainingExample]:
+    def _extract_reasoning_examples(self, episode: SelfPlayEpisode) -> list[TrainingExample]:
         """Extract reasoning chain examples for LLM fine-tuning."""
         if not self.tokenizer:
             return []
@@ -1037,9 +1014,7 @@ class TrainingDataExtractor:
 
         return examples
 
-    def _extract_negative_examples(
-        self, episode: SelfPlayEpisode
-    ) -> list[TrainingExample]:
+    def _extract_negative_examples(self, episode: SelfPlayEpisode) -> list[TrainingExample]:
         """Extract negative examples from failed episodes."""
         examples = []
 
@@ -1187,10 +1162,7 @@ class SelfPlayTrainer:
         metrics["num_episodes"] = len(episodes)
         metrics["success_rate"] = sum(1 for ep in episodes if ep.outcome == "success") / len(episodes)
 
-        logger.info(
-            f"Generated {len(episodes)} episodes, "
-            f"success rate: {metrics['success_rate']:.2%}"
-        )
+        logger.info(f"Generated {len(episodes)} episodes, " f"success rate: {metrics['success_rate']:.2%}")
 
         # 2. Extract training examples
         training_data = self.data_extractor.extract_examples(episodes)
@@ -1216,15 +1188,11 @@ class SelfPlayTrainer:
         # 5. Update best model if improved
         current_metric = eval_metrics.get("eval_success_rate", 0.0)
         if current_metric > self.best_model_metric:
-            logger.info(
-                f"New best model! {current_metric:.2%} > {self.best_model_metric:.2%}"
-            )
+            logger.info(f"New best model! {current_metric:.2%} > {self.best_model_metric:.2%}")
             self.best_model_metric = current_metric
             self._save_checkpoint(iteration_num, best=True)
         else:
-            logger.info(
-                f"Model not improved: {current_metric:.2%} <= {self.best_model_metric:.2%}"
-            )
+            logger.info(f"Model not improved: {current_metric:.2%} <= {self.best_model_metric:.2%}")
 
         # Save regular checkpoint
         self._save_checkpoint(iteration_num, best=False)
@@ -1234,9 +1202,7 @@ class SelfPlayTrainer:
         metrics["best_model_metric"] = self.best_model_metric
         self.iteration_metrics.append(metrics)
 
-        logger.info(
-            f"Iteration {iteration_num} completed in {metrics['elapsed_time']:.2f}s"
-        )
+        logger.info(f"Iteration {iteration_num} completed in {metrics['elapsed_time']:.2f}s")
 
         return metrics
 
@@ -1261,9 +1227,7 @@ class SelfPlayTrainer:
             batch_tasks = tasks[i : i + batch_size]
 
             # Create async tasks
-            episode_futures = [
-                self.episode_generator.generate_episode(task) for task in batch_tasks
-            ]
+            episode_futures = [self.episode_generator.generate_episode(task) for task in batch_tasks]
 
             # Wait for batch to complete
             batch_episodes = await asyncio.gather(*episode_futures)
@@ -1297,9 +1261,7 @@ class SelfPlayTrainer:
 
         return tasks[:num_tasks]
 
-    async def train(
-        self, training_data: dict[str, list[TrainingExample]], iteration_num: int
-    ) -> dict[str, Any]:
+    async def train(self, training_data: dict[str, list[TrainingExample]], iteration_num: int) -> dict[str, Any]:
         """
         Train models on extracted examples.
 
@@ -1313,9 +1275,7 @@ class SelfPlayTrainer:
         metrics = {}
 
         # Create datasets
-        policy_dataset = SelfPlayDataset(
-            training_data["policy"] + training_data["negative"], "policy"
-        )
+        policy_dataset = SelfPlayDataset(training_data["policy"] + training_data["negative"], "policy")
         value_dataset = SelfPlayDataset(training_data["value"], "value")
 
         # Train if we have data
@@ -1463,9 +1423,7 @@ class SelfPlayTrainer:
             "avg_success_rate": float(np.mean(success_rates)),
             "success_rate_std": float(np.std(success_rates)),
             "success_rate_trend": float(
-                np.mean(success_rates[-5:]) - np.mean(success_rates[:5])
-                if len(success_rates) >= 10
-                else 0.0
+                np.mean(success_rates[-5:]) - np.mean(success_rates[:5]) if len(success_rates) >= 10 else 0.0
             ),
             "avg_episode_length": float(np.mean(avg_lengths)),
             "total_episodes_generated": sum(episode_counts),
@@ -1487,12 +1445,8 @@ class SelfPlayTrainer:
 
             # GPU usage (if CUDA available)
             if torch.cuda.is_available():
-                metrics["gpu_memory_allocated_gb"] = (
-                    torch.cuda.memory_allocated() / (1024**3)
-                )
-                metrics["gpu_memory_reserved_gb"] = (
-                    torch.cuda.memory_reserved() / (1024**3)
-                )
+                metrics["gpu_memory_allocated_gb"] = torch.cuda.memory_allocated() / (1024**3)
+                metrics["gpu_memory_reserved_gb"] = torch.cuda.memory_reserved() / (1024**3)
 
         return metrics
 

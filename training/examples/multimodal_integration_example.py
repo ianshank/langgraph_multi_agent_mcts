@@ -25,10 +25,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from training.multimodal_knowledge_base import MultiModalRAG
 from training.research_corpus_builder import ResearchCorpusBuilder
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -49,9 +46,9 @@ async def download_pdf(pdf_url: str, save_dir: Path) -> Path | None:
         save_dir.mkdir(parents=True, exist_ok=True)
 
         # Extract filename from URL
-        filename = pdf_url.split('/')[-1]
-        if not filename.endswith('.pdf'):
-            filename += '.pdf'
+        filename = pdf_url.split("/")[-1]
+        if not filename.endswith(".pdf"):
+            filename += ".pdf"
 
         save_path = save_dir / filename
 
@@ -62,7 +59,7 @@ async def download_pdf(pdf_url: str, save_dir: Path) -> Path | None:
                 response = await client.get(pdf_url)
                 response.raise_for_status()
 
-                with open(save_path, 'wb') as f:
+                with open(save_path, "wb") as f:
                     f.write(response.content)
 
             logger.info(f"Saved to: {save_path}")
@@ -93,7 +90,8 @@ async def process_arxiv_papers_with_multimodal(
     logger.info("\n[1/5] Initializing research corpus builder...")
     corpus_config = {
         "categories": ["cs.AI", "cs.LG"],
-        "keywords": keywords or [
+        "keywords": keywords
+        or [
             "MCTS",
             "Monte Carlo Tree Search",
             "AlphaZero",
@@ -114,9 +112,9 @@ async def process_arxiv_papers_with_multimodal(
 
     # Step 3: Fetch and process papers
     logger.info(f"\n[3/5] Fetching papers from arXiv (max {max_papers})...")
-    papers = list(corpus_builder.fetcher.fetch_papers_by_keywords(
-        max_per_keyword=max_papers // len(corpus_config["keywords"])
-    ))
+    papers = list(
+        corpus_builder.fetcher.fetch_papers_by_keywords(max_per_keyword=max_papers // len(corpus_config["keywords"]))
+    )
 
     logger.info(f"Fetched {len(papers)} papers")
 
@@ -161,11 +159,13 @@ async def process_arxiv_papers_with_multimodal(
             logger.info(f"✓ Images described: {stats['images_described']}")
             logger.info(f"✓ Code blocks: {stats.get('code_blocks_extracted', 0)}")
 
-            results.append({
-                "paper": paper,
-                "pdf_path": pdf_path,
-                "stats": stats,
-            })
+            results.append(
+                {
+                    "paper": paper,
+                    "pdf_path": pdf_path,
+                    "stats": stats,
+                }
+            )
 
             # Add text chunks to RAG index
             text_chunks = corpus_builder.processor.process_paper(paper)
@@ -231,9 +231,9 @@ async def demo_queries(multimodal_rag: MultiModalRAG):
         try:
             # Retrieve results
             results = await multimodal_rag.retrieve(
-                query=query_info['query'],
+                query=query_info["query"],
                 k=5,
-                modalities=query_info['modalities'],
+                modalities=query_info["modalities"],
             )
 
             # Display results
@@ -243,7 +243,7 @@ async def demo_queries(multimodal_rag: MultiModalRAG):
                     for j, result in enumerate(items[:3], 1):
                         logger.info(f"  {j}. Score: {result.score:.4f}")
 
-                        if modality == "image" and hasattr(result.content, 'description'):
+                        if modality == "image" and hasattr(result.content, "description"):
                             logger.info(f"     Type: {result.content.image_type.value}")
                             logger.info(f"     Description: {result.content.description[:100]}...")
                         elif modality == "code":
@@ -255,7 +255,7 @@ async def demo_queries(multimodal_rag: MultiModalRAG):
             if i == 1:
                 logger.info("\n--- Generated Response ---")
                 response = await multimodal_rag.generate_response(
-                    query=query_info['query'],
+                    query=query_info["query"],
                     context=results,
                     max_tokens=512,
                 )
@@ -292,17 +292,13 @@ async def analyze_paper_images(multimodal_rag: MultiModalRAG, pdf_path: Path):
 
         # Generate description
         description = await multimodal_rag.vision_adapter.generate_image_description(
-            image,
-            context=f"From paper: {pdf_path.stem}"
+            image, context=f"From paper: {pdf_path.stem}"
         )
 
         logger.info(f"Description: {description}")
 
         # Classify type
-        image_type = multimodal_rag.vision_adapter.classify_image_type(
-            description,
-            image.caption
-        )
+        image_type = multimodal_rag.vision_adapter.classify_image_type(description, image.caption)
         logger.info(f"Type: {image_type.value}")
 
 
@@ -339,7 +335,7 @@ async def search_by_image_type(multimodal_rag: MultiModalRAG):
         logger.info(f"Found {len(results)} results")
         for i, result in enumerate(results, 1):
             logger.info(f"  {i}. Score: {result.score:.4f}")
-            if hasattr(result.content, 'description'):
+            if hasattr(result.content, "description"):
                 logger.info(f"     {result.content.description[:100]}...")
 
 
@@ -348,28 +344,10 @@ async def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="Multi-modal ArXiv paper processing")
-    parser.add_argument(
-        "--max-papers",
-        type=int,
-        default=5,
-        help="Maximum number of papers to process"
-    )
-    parser.add_argument(
-        "--keywords",
-        nargs="+",
-        default=None,
-        help="Keywords to search for"
-    )
-    parser.add_argument(
-        "--analyze-images",
-        action="store_true",
-        help="Perform detailed image analysis"
-    )
-    parser.add_argument(
-        "--search-by-type",
-        action="store_true",
-        help="Search images by type"
-    )
+    parser.add_argument("--max-papers", type=int, default=5, help="Maximum number of papers to process")
+    parser.add_argument("--keywords", nargs="+", default=None, help="Keywords to search for")
+    parser.add_argument("--analyze-images", action="store_true", help="Perform detailed image analysis")
+    parser.add_argument("--search-by-type", action="store_true", help="Search images by type")
 
     args = parser.parse_args()
 

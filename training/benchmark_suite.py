@@ -183,8 +183,10 @@ class RetrievalMetrics:
             dcg += relevance / np.log2(rank + 1)
 
         # Compute IDCG (ideal DCG with perfect ranking)
-        ideal_ranks = sorted(result.ground_truth_rankings.values()) if result.ground_truth_rankings else list(
-            range(len(result.ground_truth_relevant))
+        ideal_ranks = (
+            sorted(result.ground_truth_rankings.values())
+            if result.ground_truth_rankings
+            else list(range(len(result.ground_truth_relevant)))
         )
         idcg = 0.0
         for i, _rank in enumerate(ideal_ranks[:k]):
@@ -686,9 +688,7 @@ class BenchmarkSuite:
                 relevance_scores = retrieved.get("scores", [])
             elif isinstance(retrieved, list):
                 retrieved_docs = [doc if isinstance(doc, str) else doc.get("doc_id", "") for doc in retrieved]
-                relevance_scores = [
-                    doc.get("score", 0.0) if isinstance(doc, dict) else 0.0 for doc in retrieved
-                ]
+                relevance_scores = [doc.get("score", 0.0) if isinstance(doc, dict) else 0.0 for doc in retrieved]
             else:
                 logger.warning(f"Unexpected retrieval output format: {type(retrieved)}")
                 continue
@@ -835,7 +835,9 @@ class BenchmarkSuite:
         accuracy = ReasoningMetrics.accuracy(predictions, ground_truths)
         avg_quality = np.mean(quality_scores)
 
-        accuracy_ci = StatisticalAnalysis.bootstrap_confidence_interval([float(p == g) for p, g in zip(predictions, ground_truths, strict=False)])
+        accuracy_ci = StatisticalAnalysis.bootstrap_confidence_interval(
+            [float(p == g) for p, g in zip(predictions, ground_truths, strict=False)]
+        )
         quality_ci = StatisticalAnalysis.bootstrap_confidence_interval(quality_scores)
 
         metrics = {
@@ -869,7 +871,11 @@ class BenchmarkSuite:
         return benchmark_run
 
     def run_code_generation_benchmark(
-        self, dataset_name: str, code_gen_fn: Any, model_config: dict[str, Any] | None = None, k_values: list[int] | None = None
+        self,
+        dataset_name: str,
+        code_gen_fn: Any,
+        model_config: dict[str, Any] | None = None,
+        k_values: list[int] | None = None,
     ) -> BenchmarkRun:
         """
         Run code generation benchmark.
@@ -1015,7 +1021,10 @@ class BenchmarkSuite:
         return report
 
     def generate_report(
-        self, run: BenchmarkRun, output_format: Literal["json", "markdown", "html"] = "json", output_file: Path | None = None
+        self,
+        run: BenchmarkRun,
+        output_format: Literal["json", "markdown", "html"] = "json",
+        output_file: Path | None = None,
     ) -> str:
         """
         Generate benchmark report.
@@ -1186,7 +1195,9 @@ class BenchmarkSuite:
                 return run
         return None
 
-    def _empty_benchmark_run(self, benchmark_name: str, dataset_name: str, model_config: dict[str, Any]) -> BenchmarkRun:
+    def _empty_benchmark_run(
+        self, benchmark_name: str, dataset_name: str, model_config: dict[str, Any]
+    ) -> BenchmarkRun:
         """Create empty benchmark run."""
         return BenchmarkRun(
             benchmark_name=benchmark_name,
@@ -1229,10 +1240,14 @@ class BenchmarkSuite:
                         significant_regressions.append(f"{metric_name} ({delta:.3f})")
 
             if significant_improvements:
-                recommendations.append(f"Run {run_name}: Significant improvements in {', '.join(significant_improvements)}")
+                recommendations.append(
+                    f"Run {run_name}: Significant improvements in {', '.join(significant_improvements)}"
+                )
 
             if significant_regressions:
-                recommendations.append(f"Run {run_name}: Significant regressions in {', '.join(significant_regressions)}")
+                recommendations.append(
+                    f"Run {run_name}: Significant regressions in {', '.join(significant_regressions)}"
+                )
 
         if not recommendations:
             recommendations.append("No statistically significant differences detected")
@@ -1280,7 +1295,11 @@ class BenchmarkSuite:
         ]
 
         for metric in run.metrics.values():
-            ci_str = f"[{metric.confidence_interval[0]:.4f}, {metric.confidence_interval[1]:.4f}]" if metric.confidence_interval else "N/A"
+            ci_str = (
+                f"[{metric.confidence_interval[0]:.4f}, {metric.confidence_interval[1]:.4f}]"
+                if metric.confidence_interval
+                else "N/A"
+            )
             lines.append(f"| {metric.metric_name} | {metric.value:.4f} | {ci_str} | {metric.sample_size} |")
 
         return "\n".join(lines)
@@ -1322,7 +1341,11 @@ class BenchmarkSuite:
 """
 
         for metric in run.metrics.values():
-            ci_str = f"[{metric.confidence_interval[0]:.4f}, {metric.confidence_interval[1]:.4f}]" if metric.confidence_interval else "N/A"
+            ci_str = (
+                f"[{metric.confidence_interval[0]:.4f}, {metric.confidence_interval[1]:.4f}]"
+                if metric.confidence_interval
+                else "N/A"
+            )
             html += f"""
         <tr>
             <td>{metric.metric_name}</td>
@@ -1620,7 +1643,11 @@ def main():
     # Print results
     logger.info("\nRetrieval Metrics:")
     for metric_name, metric in retrieval_run.metrics.items():
-        ci_str = f"±{(metric.confidence_interval[1] - metric.confidence_interval[0])/2:.4f}" if metric.confidence_interval else ""
+        ci_str = (
+            f"±{(metric.confidence_interval[1] - metric.confidence_interval[0])/2:.4f}"
+            if metric.confidence_interval
+            else ""
+        )
         logger.info(f"  {metric_name}: {metric.value:.4f} {ci_str}")
 
     # Test reasoning benchmark
@@ -1634,7 +1661,11 @@ def main():
 
     logger.info("\nReasoning Metrics:")
     for metric_name, metric in reasoning_run.metrics.items():
-        ci_str = f"±{(metric.confidence_interval[1] - metric.confidence_interval[0])/2:.4f}" if metric.confidence_interval else ""
+        ci_str = (
+            f"±{(metric.confidence_interval[1] - metric.confidence_interval[0])/2:.4f}"
+            if metric.confidence_interval
+            else ""
+        )
         logger.info(f"  {metric_name}: {metric.value:.4f} {ci_str}")
 
     # Test code generation benchmark

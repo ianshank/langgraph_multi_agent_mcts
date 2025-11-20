@@ -37,9 +37,9 @@ class TestExtractedImage:
     def test_to_pil_image(self):
         """Test conversion to PIL Image."""
         # Create a simple PNG image
-        pil_img = Image.new('RGB', (100, 100), color='red')
+        pil_img = Image.new("RGB", (100, 100), color="red")
         img_bytes = io.BytesIO()
-        pil_img.save(img_bytes, format='PNG')
+        pil_img.save(img_bytes, format="PNG")
         img_bytes = img_bytes.getvalue()
 
         extracted = ExtractedImage(
@@ -210,9 +210,7 @@ class TestMultiModalEmbedder:
         emb2 = embedder.embed_text(text)
 
         # Should be very similar (cosine similarity > 0.99)
-        similarity = np.dot(emb1, emb2) / (
-            np.linalg.norm(emb1) * np.linalg.norm(emb2)
-        )
+        similarity = np.dot(emb1, emb2) / (np.linalg.norm(emb1) * np.linalg.norm(emb2))
         assert similarity > 0.99
 
 
@@ -304,9 +302,9 @@ class TestImageProcessor:
     def test_save_image(self, processor):
         """Test image saving."""
         # Create a test image
-        pil_img = Image.new('RGB', (100, 100), color='blue')
+        pil_img = Image.new("RGB", (100, 100), color="blue")
         img_bytes = io.BytesIO()
-        pil_img.save(img_bytes, format='PNG')
+        pil_img.save(img_bytes, format="PNG")
 
         image = ExtractedImage(
             image_id="test_save",
@@ -349,9 +347,9 @@ class TestVisualIndexBuilder:
         # Create test images
         images = []
         for i in range(3):
-            pil_img = Image.new('RGB', (100, 100))
+            pil_img = Image.new("RGB", (100, 100))
             img_bytes = io.BytesIO()
-            pil_img.save(img_bytes, format='PNG')
+            pil_img.save(img_bytes, format="PNG")
 
             img = ExtractedImage(
                 image_id=f"test_{i}",
@@ -431,7 +429,7 @@ rag:
         config_path.write_text(config_content)
         return str(config_path)
 
-    @patch('training.multimodal_knowledge_base.MultiModalRAG.__init__')
+    @patch("training.multimodal_knowledge_base.MultiModalRAG.__init__")
     def test_initialization(self, mock_init):
         """Test RAG initialization."""
         mock_init.return_value = None
@@ -451,8 +449,9 @@ class TestPerformance:
         extractor = CodeBlockExtractor({"min_code_lines": 3})
 
         # Generate large text with many code blocks
-        text = "\n\n".join([
-            f"""
+        text = "\n\n".join(
+            [
+                f"""
             Section {i}:
             ```python
             def function_{i}():
@@ -460,8 +459,10 @@ class TestPerformance:
                     process(j)
                 return True
             ```
-            """ for i in range(100)
-        ])
+            """
+                for i in range(100)
+            ]
+        )
 
         start = time.time()
         codes = extractor.extract_code_blocks(text, "perf_test")
@@ -474,10 +475,12 @@ class TestPerformance:
         """Test embedding generation speed."""
         import time
 
-        embedder = MultiModalEmbedder({
-            "text_model": "sentence-transformers/all-MiniLM-L6-v2",
-            "use_clip": False,
-        })
+        embedder = MultiModalEmbedder(
+            {
+                "text_model": "sentence-transformers/all-MiniLM-L6-v2",
+                "use_clip": False,
+            }
+        )
 
         texts = [f"Test text number {i}" for i in range(100)]
 

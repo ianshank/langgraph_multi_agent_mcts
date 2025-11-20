@@ -31,30 +31,35 @@ from PIL import Image
 # Optional imports with fallbacks
 try:
     import fitz  # PyMuPDF
+
     HAS_PYMUPDF = True
 except ImportError:
     HAS_PYMUPDF = False
 
 try:
     from pdf2image import convert_from_path
+
     HAS_PDF2IMAGE = True
 except ImportError:
     HAS_PDF2IMAGE = False
 
 try:
     from transformers import CLIPModel, CLIPProcessor
+
     HAS_CLIP = True
 except ImportError:
     HAS_CLIP = False
 
 try:
     from pinecone import Pinecone
+
     HAS_PINECONE = True
 except ImportError:
     HAS_PINECONE = False
 
 try:
     from sentence_transformers import SentenceTransformer
+
     HAS_SENTENCE_TRANSFORMERS = True
 except ImportError:
     HAS_SENTENCE_TRANSFORMERS = False
@@ -66,6 +71,7 @@ logger = logging.getLogger(__name__)
 
 class ImageType(Enum):
     """Classification of image/diagram types."""
+
     ARCHITECTURE_DIAGRAM = "architecture"
     FLOWCHART = "flowchart"
     PLOT_CHART = "plot"
@@ -101,13 +107,13 @@ class ExtractedImage:
 
     def to_base64(self) -> str:
         """Convert to base64 for API calls."""
-        return base64.b64encode(self.image_data).decode('utf-8')
+        return base64.b64encode(self.image_data).decode("utf-8")
 
     def save(self, path: Path) -> None:
         """Save image to file."""
         path = Path(path)
         path.parent.mkdir(parents=True, exist_ok=True)
-        with open(path, 'wb') as f:
+        with open(path, "wb") as f:
             f.write(self.image_data)
 
 
@@ -215,7 +221,7 @@ class ImageProcessor:
                         pil_img.thumbnail(self.max_size, Image.Resampling.LANCZOS)
                         # Convert back to bytes
                         img_buffer = io.BytesIO()
-                        pil_img.save(img_buffer, format='PNG')
+                        pil_img.save(img_buffer, format="PNG")
                         image_bytes = img_buffer.getvalue()
                         image_ext = "png"
                         width, height = pil_img.size
@@ -239,7 +245,7 @@ class ImageProcessor:
                         metadata={
                             "extraction_method": "pymupdf",
                             "xref": xref,
-                        }
+                        },
                     )
 
                     images.append(extracted)
@@ -265,7 +271,7 @@ class ImageProcessor:
 
                 # Convert to bytes
                 img_buffer = io.BytesIO()
-                pil_img.save(img_buffer, format='PNG')
+                pil_img.save(img_buffer, format="PNG")
                 image_bytes = img_buffer.getvalue()
 
                 # Generate image ID
@@ -283,7 +289,7 @@ class ImageProcessor:
                     metadata={
                         "extraction_method": "pdf2image",
                         "full_page": True,
-                    }
+                    },
                 )
 
                 images.append(extracted)
@@ -371,12 +377,14 @@ class VisionModelAdapter:
         try:
             if self.provider == "openai":
                 from src.adapters.llm.openai_client import OpenAIClient
+
                 self._client = OpenAIClient(
                     model=self.model_name,
                     timeout=120.0,
                 )
             elif self.provider == "anthropic":
                 from src.adapters.llm.anthropic_client import AnthropicClient
+
                 self._client = AnthropicClient(
                     model=self.model_name,
                     timeout=120.0,
@@ -422,11 +430,9 @@ class VisionModelAdapter:
                             {"type": "text", "text": prompt},
                             {
                                 "type": "image_url",
-                                "image_url": {
-                                    "url": f"data:image/{image.format};base64,{image_b64}"
-                                }
-                            }
-                        ]
+                                "image_url": {"url": f"data:image/{image.format};base64,{image_b64}"},
+                            },
+                        ],
                     }
                 ]
             elif self.provider == "anthropic":
@@ -440,10 +446,10 @@ class VisionModelAdapter:
                                     "type": "base64",
                                     "media_type": f"image/{image.format}",
                                     "data": image_b64,
-                                }
+                                },
                             },
-                            {"type": "text", "text": prompt}
-                        ]
+                            {"type": "text", "text": prompt},
+                        ],
                     }
                 ]
             else:
@@ -478,21 +484,27 @@ class VisionModelAdapter:
         ]
 
         if image.caption:
-            prompt_parts.extend([
-                "",
-                f"Image caption: {image.caption}",
-            ])
+            prompt_parts.extend(
+                [
+                    "",
+                    f"Image caption: {image.caption}",
+                ]
+            )
 
         if context:
-            prompt_parts.extend([
-                "",
-                f"Paper context: {context[:500]}",
-            ])
+            prompt_parts.extend(
+                [
+                    "",
+                    f"Paper context: {context[:500]}",
+                ]
+            )
 
-        prompt_parts.extend([
-            "",
-            "Provide a concise but comprehensive description suitable for retrieval and understanding.",
-        ])
+        prompt_parts.extend(
+            [
+                "",
+                "Provide a concise but comprehensive description suitable for retrieval and understanding.",
+            ]
+        )
 
         return "\n".join(prompt_parts)
 
@@ -593,7 +605,7 @@ class MultiModalEmbedder:
             inputs = self.clip_processor(images=pil_image, return_tensors="pt")
 
             # Generate embedding
-            with np.errstate(all='ignore'):
+            with np.errstate(all="ignore"):
                 image_features = self.clip_model.get_image_features(**inputs)
                 embedding = image_features.detach().numpy()[0]
 
@@ -654,9 +666,7 @@ class MultiModalEmbedder:
         text_emb = self.embed_text(text, use_clip=True)
 
         # Cosine similarity
-        similarity = np.dot(image_emb, text_emb) / (
-            np.linalg.norm(image_emb) * np.linalg.norm(text_emb) + 1e-8
-        )
+        similarity = np.dot(image_emb, text_emb) / (np.linalg.norm(image_emb) * np.linalg.norm(text_emb) + 1e-8)
 
         return float(max(0.0, min(1.0, (similarity + 1) / 2)))  # Normalize to 0-1
 
@@ -737,7 +747,7 @@ class CodeBlockExtractor:
             code = match.group(2).strip()
 
             # Filter by line count
-            if code.count('\n') + 1 < self.min_code_lines:
+            if code.count("\n") + 1 < self.min_code_lines:
                 continue
 
             # Detect language if not specified
@@ -749,18 +759,20 @@ class CodeBlockExtractor:
 
             code_id = f"{doc_id}_code_md_{i}"
 
-            blocks.append(ExtractedCode(
-                code_id=code_id,
-                doc_id=doc_id,
-                code=code,
-                language=language,
-                context=context,
-                is_pseudocode=(language.lower() == "pseudocode"),
-                metadata={
-                    "extraction_method": "markdown",
-                    "start_pos": match.start(),
-                }
-            ))
+            blocks.append(
+                ExtractedCode(
+                    code_id=code_id,
+                    doc_id=doc_id,
+                    code=code,
+                    language=language,
+                    context=context,
+                    is_pseudocode=(language.lower() == "pseudocode"),
+                    metadata={
+                        "extraction_method": "markdown",
+                        "start_pos": match.start(),
+                    },
+                )
+            )
 
         return blocks
 
@@ -776,7 +788,7 @@ class CodeBlockExtractor:
             language = match.group(1) or "unknown"
             code = match.group(2).strip()
 
-            if code.count('\n') + 1 < self.min_code_lines:
+            if code.count("\n") + 1 < self.min_code_lines:
                 continue
 
             if language == "unknown":
@@ -785,17 +797,19 @@ class CodeBlockExtractor:
             context = self._extract_context(text, match.start())
             code_id = f"{doc_id}_code_latex_{i}"
 
-            blocks.append(ExtractedCode(
-                code_id=code_id,
-                doc_id=doc_id,
-                code=code,
-                language=language,
-                context=context,
-                metadata={
-                    "extraction_method": "latex",
-                    "start_pos": match.start(),
-                }
-            ))
+            blocks.append(
+                ExtractedCode(
+                    code_id=code_id,
+                    doc_id=doc_id,
+                    code=code,
+                    language=language,
+                    context=context,
+                    metadata={
+                        "extraction_method": "latex",
+                        "start_pos": match.start(),
+                    },
+                )
+            )
 
         return blocks
 
@@ -813,24 +827,26 @@ class CodeBlockExtractor:
             # Clean LaTeX commands
             code = self._clean_latex_algorithm(code)
 
-            if code.count('\n') + 1 < self.min_code_lines:
+            if code.count("\n") + 1 < self.min_code_lines:
                 continue
 
             context = self._extract_context(text, match.start())
             code_id = f"{doc_id}_algo_{i}"
 
-            blocks.append(ExtractedCode(
-                code_id=code_id,
-                doc_id=doc_id,
-                code=code,
-                language="pseudocode",
-                context=context,
-                is_pseudocode=True,
-                metadata={
-                    "extraction_method": "algorithm_env",
-                    "start_pos": match.start(),
-                }
-            ))
+            blocks.append(
+                ExtractedCode(
+                    code_id=code_id,
+                    doc_id=doc_id,
+                    code=code,
+                    language="pseudocode",
+                    context=context,
+                    is_pseudocode=True,
+                    metadata={
+                        "extraction_method": "algorithm_env",
+                        "start_pos": match.start(),
+                    },
+                )
+            )
 
         return blocks
 
@@ -869,7 +885,7 @@ class CodeBlockExtractor:
         context = text[start:end].strip()
 
         # Get first paragraph before code
-        paragraphs = context.split('\n\n')
+        paragraphs = context.split("\n\n")
         if paragraphs:
             return paragraphs[-1].strip()
 
@@ -886,12 +902,14 @@ class CodeBlockExtractor:
         Returns:
             Updated ExtractedCode with paper metadata
         """
-        code.metadata.update({
-            "paper_title": paper_metadata.get("title"),
-            "paper_authors": paper_metadata.get("authors", []),
-            "paper_arxiv_id": paper_metadata.get("arxiv_id"),
-            "paper_url": paper_metadata.get("pdf_url"),
-        })
+        code.metadata.update(
+            {
+                "paper_title": paper_metadata.get("title"),
+                "paper_authors": paper_metadata.get("authors", []),
+                "paper_arxiv_id": paper_metadata.get("arxiv_id"),
+                "paper_url": paper_metadata.get("pdf_url"),
+            }
+        )
 
         return code
 
@@ -961,11 +979,13 @@ class VisualIndexBuilder:
 
                 # Add to vectors
                 vector_id = f"img_{image.image_id}"
-                vectors.append({
-                    "id": vector_id,
-                    "values": embedding.tolist(),
-                    "metadata": metadata,
-                })
+                vectors.append(
+                    {
+                        "id": vector_id,
+                        "values": embedding.tolist(),
+                        "metadata": metadata,
+                    }
+                )
 
                 # Cache metadata locally
                 self.image_metadata[image.image_id] = {
@@ -982,7 +1002,7 @@ class VisualIndexBuilder:
             try:
                 batch_size = 100
                 for i in range(0, len(vectors), batch_size):
-                    batch = vectors[i:i + batch_size]
+                    batch = vectors[i : i + batch_size]
                     self.index.upsert(vectors=batch, namespace=self.namespace)
                     indexed_count += len(batch)
 
@@ -1003,7 +1023,9 @@ class VisualIndexBuilder:
 
         return stats
 
-    def search_by_text(self, query: str, k: int = 10, filter_type: ImageType | None = None) -> list[MultiModalSearchResult]:
+    def search_by_text(
+        self, query: str, k: int = 10, filter_type: ImageType | None = None
+    ) -> list[MultiModalSearchResult]:
         """
         Search images using text query.
 
@@ -1047,13 +1069,15 @@ class VisualIndexBuilder:
                 cached = self.image_metadata.get(image_id)
                 content = cached["image"] if cached else metadata
 
-                search_results.append(MultiModalSearchResult(
-                    result_id=match["id"],
-                    result_type="image",
-                    score=float(match["score"]),
-                    content=content,
-                    metadata=metadata,
-                ))
+                search_results.append(
+                    MultiModalSearchResult(
+                        result_id=match["id"],
+                        result_type="image",
+                        score=float(match["score"]),
+                        content=content,
+                        metadata=metadata,
+                    )
+                )
 
             return search_results
 
@@ -1100,13 +1124,15 @@ class VisualIndexBuilder:
                 cached = self.image_metadata.get(image_id)
                 content = cached["image"] if cached else metadata
 
-                search_results.append(MultiModalSearchResult(
-                    result_id=match["id"],
-                    result_type="image",
-                    score=float(match["score"]),
-                    content=content,
-                    metadata=metadata,
-                ))
+                search_results.append(
+                    MultiModalSearchResult(
+                        result_id=match["id"],
+                        result_type="image",
+                        score=float(match["score"]),
+                        content=content,
+                        metadata=metadata,
+                    )
+                )
 
                 if len(search_results) >= k:
                     break
@@ -1142,6 +1168,7 @@ class MultiModalRAG:
 
         # Text RAG (from existing system)
         from training.rag_builder import VectorIndexBuilder
+
         rag_config = full_config.get("rag", {})
         rag_config["namespace"] = self.config.get("text_namespace", "multimodal_text")
         self.text_index = VectorIndexBuilder(rag_config)
@@ -1224,7 +1251,7 @@ class MultiModalRAG:
                             "language": code.language,
                             "is_pseudocode": code.is_pseudocode,
                             "doc_id": doc_id,
-                        }
+                        },
                     )
                     for code in code_blocks
                 ]
@@ -1337,7 +1364,9 @@ class MultiModalRAG:
                 prompt_parts.append(f"{i}. {result.content[:300]}...\n")
 
         prompt_parts.append("\n=== Task ===\n")
-        prompt_parts.append("Based on the retrieved context (text, diagrams, and code), provide a comprehensive answer.\n")
+        prompt_parts.append(
+            "Based on the retrieved context (text, diagrams, and code), provide a comprehensive answer.\n"
+        )
 
         prompt = "".join(prompt_parts)
 
@@ -1453,6 +1482,8 @@ if __name__ == "__main__":
     extracted_code = code_extractor.extract_code_blocks(test_doc, "test_doc")
     logger.info(f"Extracted {len(extracted_code)} code blocks")
     if extracted_code:
-        logger.info(f"First code block: language={extracted_code[0].language}, lines={extracted_code[0].code.count(chr(10)) + 1}")
+        logger.info(
+            f"First code block: language={extracted_code[0].language}, lines={extracted_code[0].code.count(chr(10)) + 1}"
+        )
 
     logger.info("Multi-Modal Knowledge Base test complete!")

@@ -142,6 +142,7 @@ print(f"Output: {output}")
 # Fixtures
 # ============================================================================
 
+
 @pytest.fixture
 def temp_config(tmp_path):
     """Create temporary configuration."""
@@ -194,6 +195,7 @@ def sample_example_file(tmp_path):
 # Tests: PythonCodeParser
 # ============================================================================
 
+
 def test_parser_initialization(temp_config):
     """Test parser initialization."""
     parser = PythonCodeParser(temp_config["code_corpus"])
@@ -210,9 +212,7 @@ def test_parse_function(sample_code_file, temp_config):
     assert len(chunks) > 0
 
     # Find simple_function
-    simple_func = next(
-        (c for c in chunks if c.function_name == "simple_function"), None
-    )
+    simple_func = next((c for c in chunks if c.function_name == "simple_function"), None)
     assert simple_func is not None
     assert simple_func.docstring != ""
     assert "Args:" in simple_func.docstring
@@ -225,9 +225,7 @@ def test_parse_class(sample_code_file, temp_config):
     chunks = parser.parse_file(sample_code_file, "test/repo")
 
     # Find class chunk
-    class_chunk = next(
-        (c for c in chunks if "class SampleClass" in c.function_name), None
-    )
+    class_chunk = next((c for c in chunks if "class SampleClass" in c.function_name), None)
     assert class_chunk is not None
     assert class_chunk.docstring != ""
 
@@ -236,9 +234,7 @@ def test_parse_class(sample_code_file, temp_config):
     assert len(method_chunks) > 0
 
     # Check method with docstring
-    method_with_doc = next(
-        (c for c in method_chunks if "method_with_docstring" in c.function_name), None
-    )
+    method_with_doc = next((c for c in method_chunks if "method_with_docstring" in c.function_name), None)
     assert method_with_doc is not None
     assert method_with_doc.docstring != ""
     assert method_with_doc.metadata["class"] == "SampleClass"
@@ -260,9 +256,7 @@ def test_extract_paper_references(sample_code_file, temp_config):
     parser = PythonCodeParser(temp_config["code_corpus"])
     chunks = parser.parse_file(sample_code_file, "test/repo")
 
-    simple_func = next(
-        (c for c in chunks if c.function_name == "simple_function"), None
-    )
+    simple_func = next((c for c in chunks if c.function_name == "simple_function"), None)
     assert simple_func is not None
     assert len(simple_func.related_papers) > 0
     # Should find arXiv reference
@@ -274,9 +268,7 @@ def test_async_function_detection(sample_code_file, temp_config):
     parser = PythonCodeParser(temp_config["code_corpus"])
     chunks = parser.parse_file(sample_code_file, "test/repo")
 
-    async_func = next(
-        (c for c in chunks if c.function_name == "async_function"), None
-    )
+    async_func = next((c for c in chunks if c.function_name == "async_function"), None)
     assert async_func is not None
     assert async_func.metadata.get("is_async") is True
 
@@ -287,12 +279,8 @@ def test_complexity_calculation(sample_code_file, temp_config):
     chunks = parser.parse_file(sample_code_file, "test/repo")
 
     # Complex function should have higher complexity
-    complex_func = next(
-        (c for c in chunks if c.function_name == "complex_function"), None
-    )
-    simple_func = next(
-        (c for c in chunks if c.function_name == "simple_function"), None
-    )
+    complex_func = next((c for c in chunks if c.function_name == "complex_function"), None)
+    simple_func = next((c for c in chunks if c.function_name == "simple_function"), None)
 
     assert complex_func is not None
     assert simple_func is not None
@@ -302,6 +290,7 @@ def test_complexity_calculation(sample_code_file, temp_config):
 # ============================================================================
 # Tests: ExampleExtractor
 # ============================================================================
+
 
 def test_example_extraction(tmp_path, sample_code_file, sample_example_file, temp_config):
     """Test extracting usage examples."""
@@ -323,9 +312,7 @@ def test_find_test_files(tmp_path, sample_code_file, sample_test_file, temp_conf
 
     extractor = ExampleExtractor(temp_config["code_corpus"])
 
-    simple_func = next(
-        (c for c in chunks if c.function_name == "simple_function"), None
-    )
+    simple_func = next((c for c in chunks if c.function_name == "simple_function"), None)
     assert simple_func is not None
 
     test_files = extractor.find_test_files(tmp_path, simple_func)
@@ -336,6 +323,7 @@ def test_find_test_files(tmp_path, sample_code_file, sample_test_file, temp_conf
 # ============================================================================
 # Tests: CodeQualityFilter
 # ============================================================================
+
 
 def test_quality_score_calculation(temp_config):
     """Test quality score calculation."""
@@ -431,6 +419,7 @@ def test_deduplication(temp_config):
 # Tests: CodeChunk
 # ============================================================================
 
+
 def test_code_chunk_to_document_chunk():
     """Test converting CodeChunk to DocumentChunk."""
     code_chunk = CodeChunk(
@@ -484,6 +473,7 @@ def test_code_chunk_serialization():
 # Tests: RepositoryFetcher
 # ============================================================================
 
+
 def test_repository_fetcher_initialization(temp_config):
     """Test repository fetcher initialization."""
     fetcher = RepositoryFetcher(temp_config["code_corpus"])
@@ -530,11 +520,13 @@ def test_license_compliance_check(tmp_path, temp_config):
 # Tests: CodeCorpusBuilder
 # ============================================================================
 
+
 def test_corpus_builder_initialization(temp_config, tmp_path):
     """Test corpus builder initialization."""
     # Create config file
     config_file = tmp_path / "config.yaml"
     import yaml
+
     with open(config_file, "w") as f:
         yaml.dump(temp_config, f)
 
@@ -548,6 +540,7 @@ def test_save_and_load_corpus(temp_config, tmp_path):
     # Create config file
     config_file = tmp_path / "config.yaml"
     import yaml
+
     with open(config_file, "w") as f:
         yaml.dump(temp_config, f)
 
@@ -588,6 +581,7 @@ def test_corpus_statistics(temp_config, tmp_path):
     # Create config file
     config_file = tmp_path / "config.yaml"
     import yaml
+
     with open(config_file, "w") as f:
         yaml.dump(temp_config, f)
 
@@ -623,6 +617,7 @@ def test_simple_code_search(temp_config, tmp_path):
     # Create config file
     config_file = tmp_path / "config.yaml"
     import yaml
+
     with open(config_file, "w") as f:
         yaml.dump(temp_config, f)
 
@@ -664,11 +659,13 @@ def test_simple_code_search(temp_config, tmp_path):
 # Integration Test
 # ============================================================================
 
+
 def test_end_to_end_pipeline(tmp_path, sample_code_file, temp_config):
     """Test end-to-end pipeline from parsing to indexing."""
     # Create config file
     config_file = tmp_path / "config.yaml"
     import yaml
+
     with open(config_file, "w") as f:
         yaml.dump(temp_config, f)
 

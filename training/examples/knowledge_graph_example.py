@@ -135,13 +135,7 @@ def example_1_manual_graph_construction():
     ]
 
     for source, target, rel_type, desc in relationships:
-        builder.add_relationship(
-            source,
-            target,
-            rel_type,
-            properties={"description": desc},
-            confidence=0.95
-        )
+        builder.add_relationship(source, target, rel_type, properties={"description": desc}, confidence=0.95)
         logger.info(f"Added relationship: {source} --[{rel_type.value}]--> {target}")
 
     # Save the graph
@@ -178,7 +172,7 @@ def example_2_query_graph(builder: KnowledgeGraphBuilder):
     logger.info("\n--- Query 3: What does AlphaZero use? ---")
     uses_rels = query_engine.get_relationships("alphazero", relation_type=RelationType.USES)
     for rel in uses_rels:
-        target_concept = query_engine.find_concept(rel['target'])
+        target_concept = query_engine.find_concept(rel["target"])
         logger.info(f"  - {target_concept.name}: {target_concept.description}")
 
     # Query 4: Find path between concepts
@@ -194,7 +188,7 @@ def example_2_query_graph(builder: KnowledgeGraphBuilder):
     logger.info("\n--- Query 5: Concepts related to MCTS (depth=2) ---")
     related = query_engine.get_related_concepts("mcts", depth=2)
     logger.info(f"Root: {related['root']['name']}")
-    for depth, concepts in related['related'].items():
+    for depth, concepts in related["related"].items():
         logger.info(f"\nDepth {depth}:")
         for item in concepts:
             logger.info(f"  - {item['concept']['name']} ({item['relation']})")
@@ -242,6 +236,7 @@ async def example_4_extract_from_paper():
 
     # Note: Requires OPENAI_API_KEY environment variable
     import os
+
     if not os.environ.get("OPENAI_API_KEY"):
         logger.warning("OPENAI_API_KEY not set, skipping extraction example")
         return None
@@ -273,11 +268,7 @@ async def example_4_extract_from_paper():
 
     logger.info(f"Extracting from paper: {paper['title']}")
 
-    concepts, relationships = await extractor.extract_from_paper(
-        paper['id'],
-        paper['title'],
-        paper['abstract']
-    )
+    concepts, relationships = await extractor.extract_from_paper(paper["id"], paper["title"], paper["abstract"])
 
     logger.info(f"\nExtracted {len(concepts)} concepts:")
     for concept in concepts:
@@ -344,7 +335,8 @@ def example_6_hybrid_retrieval():
     logger.info("This example requires a vector index from rag_builder.py")
     logger.info("For a complete implementation, integrate with VectorIndexBuilder:")
 
-    logger.info("""
+    logger.info(
+        """
     from training.rag_builder import VectorIndexBuilder
     from training.knowledge_graph import HybridKnowledgeRetriever
 
@@ -368,7 +360,8 @@ def example_6_hybrid_retrieval():
         print(f"Score: {result['score']:.3f}")
         print(f"Text: {result['text'][:200]}...")
         print(f"Relationships: {len(result['relationships'])}")
-    """)
+    """
+    )
 
 
 def example_7_advanced_queries():
@@ -392,30 +385,25 @@ def example_7_advanced_queries():
     for concept_id, concept in query_engine.concepts.items():
         rels = query_engine.get_relationships(concept_id, direction="outgoing")
         for rel in rels:
-            if rel['target'] == 'mcts' and rel['relation'] in ['extends', 'improves', 'is_a']:
+            if rel["target"] == "mcts" and rel["relation"] in ["extends", "improves", "is_a"]:
                 mcts_variants.append(concept.name)
 
     logger.info(f"MCTS variants: {mcts_variants}")
 
     # Query 2: Find all components of AlphaZero
     logger.info("\n--- What components does AlphaZero use? ---")
-    alphazero_components = query_engine.get_relationships(
-        "alphazero",
-        relation_type=RelationType.USES
-    )
+    alphazero_components = query_engine.get_relationships("alphazero", relation_type=RelationType.USES)
 
     for rel in alphazero_components:
-        component = query_engine.find_concept(rel['target'])
+        component = query_engine.find_concept(rel["target"])
         if component:
             logger.info(f"  - {component.name}: {component.description}")
 
     # Query 3: Compare AlphaZero and MuZero
     logger.info("\n--- Compare AlphaZero and MuZero ---")
 
-    az_rels = {(r['relation'], r['target'])
-                  for r in query_engine.get_relationships("alphazero", direction="outgoing")}
-    mz_rels = {(r['relation'], r['target'])
-                  for r in query_engine.get_relationships("muzero", direction="outgoing")}
+    az_rels = {(r["relation"], r["target"]) for r in query_engine.get_relationships("alphazero", direction="outgoing")}
+    mz_rels = {(r["relation"], r["target"]) for r in query_engine.get_relationships("muzero", direction="outgoing")}
 
     common = az_rels & mz_rels
     az_only = az_rels - mz_rels
@@ -455,28 +443,29 @@ def example_8_export_visualization():
 
     json_path = Path("./cache/knowledge_graph_examples/graph_export.json")
     import json
-    with open(json_path, 'w') as f:
+
+    with open(json_path, "w") as f:
         json.dump(graph_data, f, indent=2)
 
     logger.info(f"Exported graph to JSON: {json_path}")
 
     # Generate simple DOT format for Graphviz
     dot_path = Path("./cache/knowledge_graph_examples/graph_export.dot")
-    with open(dot_path, 'w') as f:
+    with open(dot_path, "w") as f:
         f.write("digraph KnowledgeGraph {\n")
         f.write("  rankdir=LR;\n")
         f.write("  node [shape=box, style=rounded];\n\n")
 
         # Write nodes
         for node_id, node_data in builder.graph.nodes(data=True):
-            label = node_data.get('name', node_id)
+            label = node_data.get("name", node_id)
             f.write(f'  "{node_id}" [label="{label}"];\n')
 
         f.write("\n")
 
         # Write edges
         for source, target, edge_data in builder.graph.edges(data=True):
-            relation = edge_data.get('relation', 'related')
+            relation = edge_data.get("relation", "related")
             f.write(f'  "{source}" -> "{target}" [label="{relation}"];\n')
 
         f.write("}\n")

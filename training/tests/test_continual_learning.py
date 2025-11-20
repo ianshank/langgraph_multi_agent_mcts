@@ -337,14 +337,10 @@ class TestFailurePatternAnalyzer:
 
         # Mix of failure types
         interactions = [
-            {"interaction_id": f"low_{i}", "user_feedback_score": 2.0, "user_query": f"Query {i}"}
-            for i in range(3)
+            {"interaction_id": f"low_{i}", "user_feedback_score": 2.0, "user_query": f"Query {i}"} for i in range(3)
         ]
         interactions.extend(
-            [
-                {"interaction_id": f"slow_{i}", "latency_ms": 6000.0, "user_query": f"Query {i}"}
-                for i in range(3)
-            ]
+            [{"interaction_id": f"slow_{i}", "latency_ms": 6000.0, "user_query": f"Query {i}"} for i in range(3)]
         )
 
         patterns = analyzer.analyze_failures(interactions)
@@ -355,8 +351,7 @@ class TestFailurePatternAnalyzer:
         analyzer = FailurePatternAnalyzer(test_config)
 
         interactions = [
-            {"interaction_id": f"low_{i}", "user_feedback_score": 2.0, "user_query": f"Query {i}"}
-            for i in range(3)
+            {"interaction_id": f"low_{i}", "user_feedback_score": 2.0, "user_query": f"Query {i}"} for i in range(3)
         ]
 
         analyzer.analyze_failures(interactions)
@@ -610,9 +605,7 @@ class TestABTestFramework:
         """Test creating A/B test."""
         framework = ABTestFramework(test_config)
 
-        test_id = framework.create_test(
-            "test_experiment", model_a="v1", model_b="v2", metric_fn=lambda _x, _y: 1.0
-        )
+        test_id = framework.create_test("test_experiment", model_a="v1", model_b="v2", metric_fn=lambda _x, _y: 1.0)
 
         assert test_id in framework.tests
         assert framework.tests[test_id]["status"] == "running"
@@ -620,9 +613,7 @@ class TestABTestFramework:
     def test_assign_group(self, test_config):
         """Test group assignment."""
         framework = ABTestFramework(test_config)
-        test_id = framework.create_test(
-            "test_experiment", model_a="v1", model_b="v2", metric_fn=lambda _x, _y: 1.0
-        )
+        test_id = framework.create_test("test_experiment", model_a="v1", model_b="v2", metric_fn=lambda _x, _y: 1.0)
 
         # Should consistently assign same request to same group
         group1 = framework.assign_group(test_id, "request_123")

@@ -16,10 +16,7 @@ from training.code_corpus_builder import REPOSITORIES, CodeCorpusBuilder
 from training.data_pipeline import DataOrchestrator
 from training.rag_builder import VectorIndexBuilder
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -64,9 +61,15 @@ def build_and_index_code_corpus(max_repos: int = 4):
     print(f"Avg code length: {stats['avg_code_length']:.1f} chars")
     print(f"Avg complexity: {stats['avg_complexity']:.1f}")
     print("\nQuality metrics:")
-    print(f"  - Chunks with docstrings: {stats['chunks_with_docstrings']} ({100*stats['chunks_with_docstrings']/stats['total_chunks']:.1f}%)")
-    print(f"  - Chunks with examples: {stats['chunks_with_examples']} ({100*stats['chunks_with_examples']/stats['total_chunks']:.1f}%)")
-    print(f"  - Chunks with tests: {stats['chunks_with_tests']} ({100*stats['chunks_with_tests']/stats['total_chunks']:.1f}%)")
+    print(
+        f"  - Chunks with docstrings: {stats['chunks_with_docstrings']} ({100*stats['chunks_with_docstrings']/stats['total_chunks']:.1f}%)"
+    )
+    print(
+        f"  - Chunks with examples: {stats['chunks_with_examples']} ({100*stats['chunks_with_examples']/stats['total_chunks']:.1f}%)"
+    )
+    print(
+        f"  - Chunks with tests: {stats['chunks_with_tests']} ({100*stats['chunks_with_tests']/stats['total_chunks']:.1f}%)"
+    )
     print(f"  - Avg quality score: {stats['avg_quality_score']:.2f}")
     print("=" * 80)
 
@@ -75,6 +78,7 @@ def build_and_index_code_corpus(max_repos: int = 4):
 
     # Initialize RAG index builder with code corpus namespace
     import yaml
+
     with open("training/config.yaml") as f:
         config = yaml.safe_load(f)
 
@@ -214,21 +218,11 @@ def main():
     """Main execution."""
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Code corpus builder integration example"
-    )
+    parser = argparse.ArgumentParser(description="Code corpus builder integration example")
     parser.add_argument(
-        "--mode",
-        choices=["build", "search", "load", "integrate"],
-        default="build",
-        help="Operation mode"
+        "--mode", choices=["build", "search", "load", "integrate"], default="build", help="Operation mode"
     )
-    parser.add_argument(
-        "--max-repos",
-        type=int,
-        default=2,
-        help="Maximum repositories to process (for build mode)"
-    )
+    parser.add_argument("--max-repos", type=int, default=2, help="Maximum repositories to process (for build mode)")
 
     args = parser.parse_args()
 
@@ -240,6 +234,7 @@ def main():
     elif args.mode == "search":
         # Load existing index and search
         import yaml
+
         with open("training/config.yaml") as f:
             config = yaml.safe_load(f)
 

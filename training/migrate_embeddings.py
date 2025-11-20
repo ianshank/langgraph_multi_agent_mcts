@@ -23,12 +23,8 @@ def main():
     """Run migration from command line."""
     parser = argparse.ArgumentParser(description="Migrate embeddings to new model")
     parser.add_argument("--config", type=str, default="training/config.yaml", help="Path to config file")
-    parser.add_argument(
-        "--source-namespace", type=str, required=True, help="Source namespace to migrate from"
-    )
-    parser.add_argument(
-        "--target-namespace", type=str, help="Target namespace (default: source_migrated)"
-    )
+    parser.add_argument("--source-namespace", type=str, required=True, help="Source namespace to migrate from")
+    parser.add_argument("--target-namespace", type=str, help="Target namespace (default: source_migrated)")
     parser.add_argument(
         "--target-model",
         type=str,

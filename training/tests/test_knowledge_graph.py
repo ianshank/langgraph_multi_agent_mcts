@@ -83,18 +83,10 @@ def graph_builder(test_config, sample_concepts):
         builder.add_concept(concept)
 
     # Add relationships
-    builder.add_relationship(
-        "alphazero", "mcts", RelationType.USES, confidence=0.95
-    )
-    builder.add_relationship(
-        "alphazero", "neural_network", RelationType.USES, confidence=0.9
-    )
-    builder.add_relationship(
-        "mcts", "ucb1", RelationType.USES, confidence=0.85
-    )
-    builder.add_relationship(
-        "alphazero", "mcts", RelationType.EXTENDS, confidence=0.88
-    )
+    builder.add_relationship("alphazero", "mcts", RelationType.USES, confidence=0.95)
+    builder.add_relationship("alphazero", "neural_network", RelationType.USES, confidence=0.9)
+    builder.add_relationship("mcts", "ucb1", RelationType.USES, confidence=0.85)
+    builder.add_relationship("alphazero", "mcts", RelationType.EXTENDS, confidence=0.88)
 
     return builder
 
@@ -372,11 +364,7 @@ class TestGraphQueryEngine:
         """Test filtering relationships by type."""
         engine = GraphQueryEngine(graph_builder)
 
-        uses_rels = engine.get_relationships(
-            "alphazero",
-            relation_type=RelationType.USES,
-            direction="outgoing"
-        )
+        uses_rels = engine.get_relationships("alphazero", relation_type=RelationType.USES, direction="outgoing")
 
         for rel in uses_rels:
             assert rel["relation"] == "uses"
@@ -525,12 +513,11 @@ class TestHybridKnowledgeRetriever:
         class MockVectorIndex:
             def search(self, query, k=10):
                 return [
-                    type('Result', (), {
-                        'text': 'MCTS is a search algorithm',
-                        'score': 0.9,
-                        'doc_id': 'doc1',
-                        'metadata': {}
-                    })()
+                    type(
+                        "Result",
+                        (),
+                        {"text": "MCTS is a search algorithm", "score": 0.9, "doc_id": "doc1", "metadata": {}},
+                    )()
                 ]
 
         vector_index = MockVectorIndex()
@@ -538,7 +525,7 @@ class TestHybridKnowledgeRetriever:
         retriever = HybridKnowledgeRetriever(
             query_engine=engine,
             vector_index=vector_index,
-            config={"expansion_depth": 2, "vector_weight": 0.6, "graph_weight": 0.4}
+            config={"expansion_depth": 2, "vector_weight": 0.6, "graph_weight": 0.4},
         )
 
         assert retriever.query_engine == engine
@@ -552,12 +539,16 @@ class TestHybridKnowledgeRetriever:
         class MockVectorIndex:
             def search(self, query, k=10):
                 return [
-                    type('Result', (), {
-                        'text': 'AlphaZero uses MCTS for game playing',
-                        'score': 0.9,
-                        'doc_id': 'doc1',
-                        'metadata': {'category': 'algorithms'}
-                    })()
+                    type(
+                        "Result",
+                        (),
+                        {
+                            "text": "AlphaZero uses MCTS for game playing",
+                            "score": 0.9,
+                            "doc_id": "doc1",
+                            "metadata": {"category": "algorithms"},
+                        },
+                    )()
                 ]
 
         vector_index = MockVectorIndex()
@@ -565,7 +556,7 @@ class TestHybridKnowledgeRetriever:
         retriever = HybridKnowledgeRetriever(
             query_engine=engine,
             vector_index=vector_index,
-            config={"expansion_depth": 1, "vector_weight": 0.6, "graph_weight": 0.4}
+            config={"expansion_depth": 1, "vector_weight": 0.6, "graph_weight": 0.4},
         )
 
         results = retriever.retrieve("How does AlphaZero work?", k=5)

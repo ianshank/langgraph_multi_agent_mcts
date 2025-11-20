@@ -30,10 +30,7 @@ from training.multimodal_knowledge_base import (
 )
 
 # Setup logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -238,7 +235,7 @@ async def example_5_multi_modal_search(images: list[ExtractedImage]):
 
         for i, result in enumerate(results):
             logger.info(f"  Result {i+1}: score={result.score:.4f}")
-            if hasattr(result.content, 'description'):
+            if hasattr(result.content, "description"):
                 logger.info(f"    Description: {result.content.description[:100]}...")
             logger.info(f"    Type: {result.metadata.get('image_type', 'unknown')}")
 
@@ -288,7 +285,7 @@ async def example_6_full_multimodal_rag():
         logger.info(f"\nImage results: {len(results['image'])}")
         for i, result in enumerate(results["image"][:2]):
             logger.info(f"  {i+1}. (score={result.score:.4f})")
-            if hasattr(result.content, 'description'):
+            if hasattr(result.content, "description"):
                 logger.info(f"     {result.content.description[:150]}...")
 
     # Display code results

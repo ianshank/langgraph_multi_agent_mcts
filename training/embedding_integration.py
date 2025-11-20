@@ -171,7 +171,9 @@ class AdvancedVectorIndexBuilder(BaseVectorIndexBuilder):
             }
 
 
-def create_rag_index_builder(config_path: str = "training/config.yaml", use_advanced: bool = True) -> AdvancedVectorIndexBuilder:
+def create_rag_index_builder(
+    config_path: str = "training/config.yaml", use_advanced: bool = True
+) -> AdvancedVectorIndexBuilder:
     """
     Factory function to create RAG index builder.
 

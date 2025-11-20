@@ -291,8 +291,10 @@ async def example_data_extraction_details():
     value_examples = training_data["value"]
     if value_examples:
         logger.info(f"  Total: {len(value_examples)}")
-        logger.info(f"  Target range: [{min(e.target for e in value_examples):.2f}, "
-                    f"{max(e.target for e in value_examples):.2f}]")
+        logger.info(
+            f"  Target range: [{min(e.target for e in value_examples):.2f}, "
+            f"{max(e.target for e in value_examples):.2f}]"
+        )
 
     # Analyze negative examples
     logger.info("\nNegative Examples Analysis:")

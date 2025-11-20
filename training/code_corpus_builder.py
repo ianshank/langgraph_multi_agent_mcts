@@ -22,6 +22,7 @@ import yaml
 
 try:
     from github import Github
+
     HAS_GITHUB = True
 except ImportError:
     HAS_GITHUB = False
@@ -94,6 +95,7 @@ REPOSITORIES = [
 # Data Structures
 # ============================================================================
 
+
 @dataclass
 class CodeChunk:
     """Represents an extracted code snippet with metadata."""
@@ -161,9 +163,7 @@ class CodeChunk:
             text_parts.append("")
 
         # Create unique doc_id
-        doc_id = hashlib.md5(
-            f"{self.repo_name}:{self.file_path}:{self.function_name}".encode()
-        ).hexdigest()
+        doc_id = hashlib.md5(f"{self.repo_name}:{self.file_path}:{self.function_name}".encode()).hexdigest()
 
         # Enhanced metadata
         metadata = {
@@ -211,6 +211,7 @@ class RepositoryMetadata:
 # ============================================================================
 # Repository Fetcher
 # ============================================================================
+
 
 class RepositoryFetcher:
     """Handles repository cloning and fetching via Git or GitHub API."""
@@ -365,6 +366,7 @@ class RepositoryFetcher:
 # Code Parser
 # ============================================================================
 
+
 class PythonCodeParser:
     """Parse Python files and extract code structures using AST."""
 
@@ -412,17 +414,13 @@ class PythonCodeParser:
         # Extract functions and classes
         for node in ast.walk(tree):
             if isinstance(node, ast.FunctionDef):
-                chunk = self._extract_function(
-                    node, source_code, file_path, repo_name, imports
-                )
+                chunk = self._extract_function(node, source_code, file_path, repo_name, imports)
                 if chunk:
                     chunks.append(chunk)
 
             elif isinstance(node, ast.ClassDef):
                 # Extract class and its methods
-                class_chunks = self._extract_class(
-                    node, source_code, file_path, repo_name, imports
-                )
+                class_chunks = self._extract_class(node, source_code, file_path, repo_name, imports)
                 chunks.extend(class_chunks)
 
         return chunks
@@ -453,7 +451,7 @@ class PythonCodeParser:
         """Extract function as a code chunk."""
         # Get function source code
         try:
-            func_lines = source_code.split("\n")[node.lineno - 1:node.end_lineno]
+            func_lines = source_code.split("\n")[node.lineno - 1 : node.end_lineno]
             func_code = "\n".join(func_lines)
         except Exception:
             return None
@@ -576,9 +574,7 @@ class PythonCodeParser:
         # Extract methods
         for item in node.body:
             if isinstance(item, ast.FunctionDef):
-                method_chunk = self._extract_function(
-                    item, source_code, file_path, repo_name, imports
-                )
+                method_chunk = self._extract_function(item, source_code, file_path, repo_name, imports)
                 if method_chunk:
                     # Update method metadata to include class info
                     method_chunk.metadata["class"] = node.name
@@ -641,6 +637,7 @@ class PythonCodeParser:
 # Example and Test Extractor
 # ============================================================================
 
+
 class ExampleExtractor:
     """Extract usage examples and test cases from code."""
 
@@ -648,9 +645,7 @@ class ExampleExtractor:
         """Initialize example extractor."""
         self.config = config
 
-    def extract_examples_from_repo(
-        self, repo_path: Path, chunks: list[CodeChunk]
-    ) -> dict[str, list[str]]:
+    def extract_examples_from_repo(self, repo_path: Path, chunks: list[CodeChunk]) -> dict[str, list[str]]:
         """
         Extract usage examples from examples/ and tests/ directories.
 
@@ -713,9 +708,7 @@ class ExampleExtractor:
 
         return examples[:3]  # Limit to 3 examples
 
-    def find_test_files(
-        self, repo_path: Path, chunk: CodeChunk
-    ) -> list[str]:
+    def find_test_files(self, repo_path: Path, chunk: CodeChunk) -> list[str]:
         """Find test files that test a given function."""
         test_files = []
 
@@ -744,6 +737,7 @@ class ExampleExtractor:
 # ============================================================================
 # Quality Filter
 # ============================================================================
+
 
 class CodeQualityFilter:
     """Filter code chunks based on quality metrics."""
@@ -810,8 +804,7 @@ class CodeQualityFilter:
                 filtered.append(chunk)
 
         logger.info(
-            f"Quality filter: {len(filtered)}/{len(chunks)} chunks passed "
-            f"(threshold: {self.min_quality_score})"
+            f"Quality filter: {len(filtered)}/{len(chunks)} chunks passed " f"(threshold: {self.min_quality_score})"
         )
 
         return filtered
@@ -829,9 +822,7 @@ class CodeQualityFilter:
                 seen_hashes.add(code_hash)
                 unique_chunks.append(chunk)
 
-        logger.info(
-            f"Deduplication: {len(unique_chunks)}/{len(chunks)} unique chunks"
-        )
+        logger.info(f"Deduplication: {len(unique_chunks)}/{len(chunks)} unique chunks")
 
         return unique_chunks
 
@@ -839,6 +830,7 @@ class CodeQualityFilter:
 # ============================================================================
 # Main Code Corpus Builder
 # ============================================================================
+
 
 class CodeCorpusBuilder:
     """Main orchestrator for building code corpus."""
@@ -939,9 +931,7 @@ class CodeCorpusBuilder:
         # Check license
         license_info = self.fetcher.check_license_compliance(repo_path)
         if not license_info["compliant"]:
-            logger.warning(
-                f"Repository {repo_name} may have licensing issues: {license_info['type']}"
-            )
+            logger.warning(f"Repository {repo_name} may have licensing issues: {license_info['type']}")
 
         # Get metadata
         metadata = self.fetcher.get_repository_metadata(repo_info)
@@ -964,9 +954,7 @@ class CodeCorpusBuilder:
 
         # Extract usage examples
         if self.config.get("extract_examples", True):
-            examples_map = self.example_extractor.extract_examples_from_repo(
-                repo_path, all_chunks
-            )
+            examples_map = self.example_extractor.extract_examples_from_repo(repo_path, all_chunks)
 
             # Add examples to chunks
             for chunk in all_chunks:
@@ -976,9 +964,7 @@ class CodeCorpusBuilder:
         # Find test files
         if self.config.get("find_tests", True):
             for chunk in all_chunks:
-                chunk.test_files = self.example_extractor.find_test_files(
-                    repo_path, chunk
-                )
+                chunk.test_files = self.example_extractor.find_test_files(repo_path, chunk)
 
         # Update metadata
         metadata.total_files = len(python_files)
@@ -1048,9 +1034,7 @@ class CodeCorpusBuilder:
         with open(chunks_file) as f:
             chunks_data = json.load(f)
 
-        self.all_chunks = [
-            CodeChunk(**chunk_data) for chunk_data in chunks_data
-        ]
+        self.all_chunks = [CodeChunk(**chunk_data) for chunk_data in chunks_data]
 
         logger.info(f"Loaded {len(self.all_chunks)} chunks from {chunks_file}")
 
@@ -1143,6 +1127,7 @@ class CodeCorpusBuilder:
 # Main Execution
 # ============================================================================
 
+
 def main():
     """Main execution function."""
     import argparse
@@ -1156,10 +1141,7 @@ def main():
 
     args = parser.parse_args()
 
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     builder = CodeCorpusBuilder(args.config)
 
@@ -1186,9 +1168,9 @@ def main():
 
         # Print statistics
         stats = builder.get_corpus_statistics()
-        print("\n" + "="*60)
+        print("\n" + "=" * 60)
         print("CODE CORPUS STATISTICS")
-        print("="*60)
+        print("=" * 60)
         print(f"Total chunks: {stats['total_chunks']}")
         print(f"Total repositories: {stats['total_repositories']}")
         print(f"Chunk types: {stats['chunk_types']}")
@@ -1198,7 +1180,7 @@ def main():
         print(f"Chunks with examples: {stats['chunks_with_examples']}")
         print(f"Chunks with tests: {stats['chunks_with_tests']}")
         print(f"Avg quality score: {stats['avg_quality_score']:.2f}")
-        print("="*60)
+        print("=" * 60)
 
 
 if __name__ == "__main__":

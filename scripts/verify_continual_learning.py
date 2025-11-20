@@ -11,6 +11,7 @@ from pathlib import Path
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
+
 def check_imports():
     """Check all imports work."""
     print("Checking imports...")
@@ -35,13 +36,23 @@ def check_imports():
             ProductionInteraction,
             ProductionInteractionLogger,
         )
+
         # Verify all classes are importable
         classes_to_verify = [
-            ABTestFramework, ActiveLearningCandidate, ActiveLearningSelector,
-            DataQualityValidator, DriftDetector, DriftReport,
-            FailurePattern, FailurePatternAnalyzer, FeedbackCollector,
-            FeedbackSample, IncrementalRetrainingPipeline, IncrementalTrainer,
-            ProductionInteraction, ProductionInteractionLogger
+            ABTestFramework,
+            ActiveLearningCandidate,
+            ActiveLearningSelector,
+            DataQualityValidator,
+            DriftDetector,
+            DriftReport,
+            FailurePattern,
+            FailurePatternAnalyzer,
+            FeedbackCollector,
+            FeedbackSample,
+            IncrementalRetrainingPipeline,
+            IncrementalTrainer,
+            ProductionInteraction,
+            ProductionInteractionLogger,
         ]
         print(f"✓ All {len(classes_to_verify)} imports successful")
         return True
@@ -56,6 +67,7 @@ def check_config():
 
     try:
         import yaml
+
         with open("training/config.yaml") as f:
             config = yaml.safe_load(f)
 

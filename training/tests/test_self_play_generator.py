@@ -263,10 +263,7 @@ class TestTrainingDataExtractor:
         """Test extracting value examples."""
         extractor = TrainingDataExtractor()
 
-        states = [
-            State(state_id=f"state_{i}", representation=torch.randn(256), raw_state={})
-            for i in range(4)
-        ]
+        states = [State(state_id=f"state_{i}", representation=torch.randn(256), raw_state={}) for i in range(4)]
 
         episode = SelfPlayEpisode(
             task_id="test",
@@ -289,10 +286,7 @@ class TestTrainingDataExtractor:
         """Test extracting negative examples."""
         extractor = TrainingDataExtractor()
 
-        states = [
-            State(state_id=f"state_{i}", representation=torch.randn(256), raw_state={})
-            for i in range(3)
-        ]
+        states = [State(state_id=f"state_{i}", representation=torch.randn(256), raw_state={}) for i in range(3)]
 
         mcts_traces = [
             MCTSTrace(

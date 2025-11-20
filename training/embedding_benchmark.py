@@ -76,9 +76,7 @@ class EmbeddingBenchmark:
         self.corpus = data["corpus"]
         self.ground_truth = data["ground_truth"]
 
-        logger.info(
-            f"Loaded evaluation dataset: {len(self.test_queries)} queries, {len(self.corpus)} documents"
-        )
+        logger.info(f"Loaded evaluation dataset: {len(self.test_queries)} queries, {len(self.corpus)} documents")
 
     def create_synthetic_dataset(
         self, num_queries: int = 50, num_docs: int = 1000, relevant_docs_per_query: int = 5
@@ -152,9 +150,7 @@ class EmbeddingBenchmark:
             relevant_indices = np.random.choice(num_docs, size=relevant_docs_per_query, replace=False)
             self.ground_truth[query["id"]] = [f"d{idx}" for idx in relevant_indices]
 
-        logger.info(
-            f"Created synthetic dataset: {num_queries} queries, {num_docs} documents"
-        )
+        logger.info(f"Created synthetic dataset: {num_queries} queries, {num_docs} documents")
 
     def benchmark_embedder(self, embedder: BaseEmbedder) -> BenchmarkResult:
         """
@@ -167,7 +163,9 @@ class EmbeddingBenchmark:
             BenchmarkResult
         """
         if not self.test_queries or not self.corpus:
-            raise ValueError("No evaluation dataset loaded. Call load_evaluation_dataset or create_synthetic_dataset first.")
+            raise ValueError(
+                "No evaluation dataset loaded. Call load_evaluation_dataset or create_synthetic_dataset first."
+            )
 
         logger.info(f"Benchmarking embedder: {embedder.model_name}")
 
@@ -477,7 +475,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(
-        level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     main()

@@ -357,7 +357,8 @@ class ProductionInteractionLogger:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE TABLE IF NOT EXISTS interactions (
                 interaction_id TEXT PRIMARY KEY,
                 timestamp REAL NOT NULL,
@@ -378,19 +379,26 @@ class ProductionInteractionLogger:
                 metadata TEXT,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_timestamp ON interactions(timestamp)
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_session ON interactions(session_id)
-        """)
+        """
+        )
 
-        cursor.execute("""
+        cursor.execute(
+            """
             CREATE INDEX IF NOT EXISTS idx_feedback ON interactions(user_feedback_score)
-        """)
+        """
+        )
 
         conn.commit()
         conn.close()
@@ -803,8 +811,7 @@ class FailurePatternAnalyzer:
         failures = [
             i
             for i in interactions
-            if (i.get("user_feedback_score") is not None and i["user_feedback_score"] < 3)
-            or i.get("error_occurred")
+            if (i.get("user_feedback_score") is not None and i["user_feedback_score"] < 3) or i.get("error_occurred")
         ]
 
         if len(failures) < self.min_cluster_size * 2:
@@ -896,9 +903,7 @@ class ActiveLearningSelector:
 
         logger.info(f"ActiveLearningSelector initialized with strategy: {self.selection_strategy}")
 
-    def select_for_annotation(
-        self, interactions: list[dict[str, Any]], budget: int
-    ) -> list[ActiveLearningCandidate]:
+    def select_for_annotation(self, interactions: list[dict[str, Any]], budget: int) -> list[ActiveLearningCandidate]:
         """
         Select most valuable interactions for annotation.
 
@@ -927,9 +932,7 @@ class ActiveLearningSelector:
         logger.info(f"Selected {len(candidates)} candidates for annotation")
         return candidates
 
-    def _uncertainty_sampling(
-        self, interactions: list[dict[str, Any]], budget: int
-    ) -> list[ActiveLearningCandidate]:
+    def _uncertainty_sampling(self, interactions: list[dict[str, Any]], budget: int) -> list[ActiveLearningCandidate]:
         """Select samples with highest uncertainty."""
         # Calculate uncertainty scores
         scored = []
@@ -965,9 +968,7 @@ class ActiveLearningSelector:
 
         return candidates
 
-    def _diversity_sampling(
-        self, interactions: list[dict[str, Any]], budget: int
-    ) -> list[ActiveLearningCandidate]:
+    def _diversity_sampling(self, interactions: list[dict[str, Any]], budget: int) -> list[ActiveLearningCandidate]:
         """Select diverse samples to cover feature space."""
         if not HAS_SKLEARN or len(interactions) < budget:
             return self._uncertainty_sampling(interactions, budget)
@@ -1043,9 +1044,7 @@ class ActiveLearningSelector:
 
         return uncertainty_candidates + diversity_candidates
 
-    def _failure_prioritization(
-        self, interactions: list[dict[str, Any]], budget: int
-    ) -> list[ActiveLearningCandidate]:
+    def _failure_prioritization(self, interactions: list[dict[str, Any]], budget: int) -> list[ActiveLearningCandidate]:
         """Prioritize failed interactions."""
         # Score failures
         scored = []

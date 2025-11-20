@@ -392,7 +392,9 @@ class TestBenchmarkSuite(unittest.TestCase):
 
         # Compare
         comparison = suite.compare_runs(
-            baseline_run_id=run1.timestamp, comparison_run_ids=[run2.timestamp], output_file=self.output_dir / "comparison.json"
+            baseline_run_id=run1.timestamp,
+            comparison_run_ids=[run2.timestamp],
+            output_file=self.output_dir / "comparison.json",
         )
 
         # Check comparison

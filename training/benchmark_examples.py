@@ -230,9 +230,7 @@ def example_integration_tracking():
     retrieval_fn = create_example_retrieval_function()
     model_config = {"model": "tracked-model-v1", "embedding_dim": 384}
 
-    suite.run_retrieval_benchmark(
-        dataset_name="custom_mcts", retrieval_fn=retrieval_fn, model_config=model_config
-    )
+    suite.run_retrieval_benchmark(dataset_name="custom_mcts", retrieval_fn=retrieval_fn, model_config=model_config)
 
     # Results are automatically logged to W&B and LangSmith
     print("\nBenchmark complete!")
