@@ -235,8 +235,13 @@ def test_ragas_import():
     logger.info("=== Testing RAGAS Package ===")
 
     try:
-        from ragas import evaluate
-        from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
+        from ragas import evaluate  # noqa: F401
+        from ragas.metrics import (  # noqa: F401
+            answer_relevancy,
+            context_precision,
+            context_recall,
+            faithfulness,
+        )
 
         logger.info("✓ RAGAS package imported successfully")
         logger.info("  - Available metrics: faithfulness, answer_relevancy, context_precision, context_recall")
