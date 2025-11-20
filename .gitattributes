@@ -1,11 +1,9 @@
 # Set default behavior to automatically normalize line endings
 * text=auto
-
 # Force LF line endings for Python files
 *.py text eol=lf
 *.pyx text eol=lf
 *.pxd text eol=lf
-
 # Force LF for configuration files
 *.yml text eol=lf
 *.yaml text eol=lf
@@ -14,13 +12,10 @@
 *.cfg text eol=lf
 *.ini text eol=lf
 *.txt text eol=lf
-
 # Markdown files
 *.md text eol=lf
-
 # Shell scripts
 *.sh text eol=lf
-
 # Keep binary files as-is
 *.png binary
 *.jpg binary
@@ -28,3 +23,5 @@
 *.gif binary
 *.ico binary
 *.pdf binary
+*.pt filter=lfs diff=lfs merge=lfs -text
+*.safetensors filter=lfs diff=lfs merge=lfs -text
