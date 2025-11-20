@@ -101,6 +101,13 @@ class IntegratedFramework:
         print(f"Using device: {self.device}")
         
         # Debug: List files in models directory
+        import os
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Listing all files in /app:")
+        for root, dirs, files in os.walk("/app"):
+            for file in files:
+                print(os.path.join(root, file))
+        
         models_dir = Path(__file__).parent / "models"
         print(f"Checking models directory: {models_dir}")
         if models_dir.exists():
