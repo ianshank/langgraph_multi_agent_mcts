@@ -99,6 +99,14 @@ class IntegratedFramework:
         """Initialize the framework with trained models."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Using device: {self.device}")
+        
+        # Debug: List files in models directory
+        models_dir = Path(__file__).parent / "models"
+        print(f"Checking models directory: {models_dir}")
+        if models_dir.exists():
+            print(f"Models directory contents: {[p.name for p in models_dir.glob('*')]}")
+        else:
+            print("Models directory does NOT exist!")
 
         # Load trained RNN Meta-Controller
         print("Loading RNN Meta-Controller...")
