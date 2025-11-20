@@ -1,5 +1,4 @@
 # LangGraph Multi-Agent MCTS Demo - Dependencies
-# Force update for peft
 # Optimized for Hugging Face Spaces deployment with trained models
 
 # Core UI Framework
