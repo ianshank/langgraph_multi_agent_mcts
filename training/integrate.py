@@ -388,7 +388,7 @@ class HotSwapper:
 
         logger.info("HotSwapper initialized")
 
-    def prepare_swap(self, model_name: str, new_model: Any, validation_fn: callable | None = None) -> bool:
+    def prepare_swap(self, model_name: str, new_model: Any, validation_fn = None) -> bool:
         """
         Prepare a model for hot-swapping.
 

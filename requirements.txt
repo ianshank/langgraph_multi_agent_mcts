@@ -17,6 +17,9 @@ pydantic-settings>=2.0.0
 # Numpy for numerical operations
 numpy>=1.24.0
 
+# Progress bars for CLI tools
+tqdm>=4.65.0
+
 # ============================================================================
 # LangGraph and LangChain (Multi-Agent Orchestration)
 # ============================================================================
@@ -31,6 +34,21 @@ langsmith>=0.1.0  # For tracing and evaluation
 # ============================================================================
 chromadb>=0.4.0
 faiss-cpu>=1.7.4
+
+# Pinecone vector database
+pinecone-client>=3.0.0
+
+# Sentence transformers for embeddings
+sentence-transformers>=2.2.0
+
+# BM25 for hybrid search
+rank-bm25>=0.2.2
+
+# arXiv API for research corpus building
+arxiv>=2.1.0
+
+# HTTP requests library
+requests>=2.31.0
 
 # ============================================================================
 # Machine Learning (for Neural MCTS and Agent Training)

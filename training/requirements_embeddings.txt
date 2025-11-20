@@ -1,0 +1,34 @@
+# Advanced Embeddings Requirements
+# Install with: pip install -r training/requirements_embeddings.txt
+
+# Core dependencies (required)
+numpy>=1.24.0
+pyyaml>=6.0
+
+# Sentence transformers (required for fallback)
+sentence-transformers>=2.2.0
+torch>=2.0.0
+
+# Optional: API-based embeddings (install as needed)
+# Voyage AI (Top MTEB 2024)
+voyageai>=0.2.0
+
+# Cohere Embed v3 (Matryoshka support)
+cohere>=4.0.0
+
+# OpenAI embeddings
+openai>=1.0.0
+
+# Vector database (required for RAG)
+pinecone-client>=3.0.0
+
+# Optional: For hybrid search
+rank-bm25>=0.2.2
+
+# Testing (optional)
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# Benchmarking (optional)
+matplotlib>=3.7.0
+seaborn>=0.12.0

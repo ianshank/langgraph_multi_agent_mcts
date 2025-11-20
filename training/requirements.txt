@@ -45,6 +45,18 @@ tqdm>=4.65.0
 colorlog>=6.7.0
 python-dotenv>=1.0.0
 
+# Code corpus builder
+PyGithub>=2.1.1  # GitHub API access
+
+# Knowledge Graph
+networkx>=3.0  # Graph data structure and algorithms
+openai>=1.0.0  # LLM for knowledge extraction
+neo4j>=5.0.0  # Optional: Neo4j graph database driver
+
+# Research corpus builder
+arxiv>=2.0.0  # arXiv API client
+requests>=2.31.0  # HTTP requests
+
 # Optional: Advanced Features
 # chromadb>=0.4.0  # Alternative to FAISS
 # langchain>=0.0.300  # For LangGraph integration

@@ -1,0 +1,156 @@
+# Synthetic Knowledge Generator Configuration
+
+# LLM Configuration
+llm:
+  provider: "openai"  # openai, anthropic, lmstudio
+  model: "gpt-4-turbo-preview"  # or gpt-3.5-turbo for lower cost
+  # model: "claude-3-sonnet-20240229"  # Alternative: Anthropic
+  # model: "local-model"  # Alternative: LM Studio
+  api_key: null  # Set via environment variable
+  base_url: null  # Optional: for LM Studio or custom endpoints
+  timeout: 120.0
+  max_retries: 3
+  rate_limit_per_minute: 60  # Adjust based on your API tier
+
+# Generation Configuration
+generation:
+  # Number of Q&A pairs to generate
+  target_samples: 10000
+
+  # Quality control
+  min_question_length: 20
+  min_answer_length: 100
+  min_quality_score: 0.6  # Filter threshold (0.0-1.0)
+
+  # Batch processing
+  batch_size: 10  # Concurrent API calls
+  checkpoint_frequency: 50  # Save progress every N pairs
+
+  # Diversity settings
+  variations_per_template: 5  # Variations of each template
+  temperature: 0.7  # LLM temperature for generation
+  max_tokens: 2000  # Max tokens per answer
+
+  # Reasoning paths
+  generate_reasoning_paths: true
+  num_reasoning_paths: 3
+  reasoning_path_threshold: 0.7  # Only for high-quality pairs
+
+  # Categories to include (null = all)
+  categories:
+    - mcts_algorithms
+    - exploration_exploitation
+    - alphazero_neural
+    - langgraph_workflows
+    - multi_agent_coordination
+    - code_implementation
+    - system_design
+    - advanced_mcts
+    - practical_applications
+
+  # Difficulty distribution
+  difficulty_distribution:
+    easy: 0.3
+    medium: 0.5
+    hard: 0.2
+
+# Output Configuration
+output:
+  directory: "training/synthetic_data"
+  formats:
+    - langsmith  # LangSmith dataset format
+    - raw        # Raw JSON format
+
+  # Output files
+  langsmith_file: "synthetic_qa_langsmith_{timestamp}.json"
+  raw_file: "synthetic_qa_raw_{timestamp}.json"
+  stats_file: "generation_stats_{timestamp}.json"
+  checkpoint_file: "checkpoint.json"
+
+# Resume Configuration
+resume:
+  enabled: true
+  checkpoint_file: "training/synthetic_data/checkpoint.json"
+
+# Cost Management
+cost:
+  # Maximum cost limit (USD) - generation stops when reached
+  max_total_cost: 100.0
+
+  # Alert thresholds
+  cost_alert_threshold: 50.0
+
+  # Token limits
+  max_total_tokens: 10000000  # 10M tokens
+
+# Integration with existing datasets
+integration:
+  # Extend existing RAG eval dataset
+  extend_rag_eval_dataset: true
+  rag_eval_dataset_name: "rag-eval-dataset"
+
+  # Upload to LangSmith
+  upload_to_langsmith: false  # Set to true to auto-upload
+  langsmith_project: "multi-agent-mcts-training"
+  langsmith_dataset_name: "synthetic-knowledge-{timestamp}"
+
+  # Merge with data pipeline
+  merge_with_data_pipeline: true
+  data_pipeline_config: "training/config.yaml"
+
+# Advanced Features
+advanced:
+  # Deduplication
+  enable_deduplication: true
+  dedup_similarity_threshold: 0.9
+
+  # Augmentation
+  enable_augmentation: true
+  paraphrase_questions: true
+  paraphrase_percentage: 0.2
+
+  # Code generation
+  include_code_snippets: true
+  code_languages:
+    - python
+    - typescript
+
+  # Context enhancement
+  enhance_contexts: true
+  context_expansion_model: "sentence-transformers/all-MiniLM-L6-v2"
+
+# Monitoring and Logging
+monitoring:
+  log_level: "INFO"  # DEBUG, INFO, WARNING, ERROR
+  log_file: "training/logs/synthetic_generator.log"
+
+  # Progress tracking
+  show_progress_bar: true
+  log_every_n_pairs: 10
+
+  # Metrics to track
+  track_metrics:
+    - generation_rate  # pairs per minute
+    - quality_distribution
+    - category_distribution
+    - cost_per_pair
+    - token_usage
+
+# Validation Rules
+validation:
+  # Content checks
+  reject_placeholders: true
+  reject_incomplete_answers: true
+
+  # Length limits
+  max_question_length: 500
+  max_answer_length: 5000
+
+  # Required elements
+  require_contexts: true
+  min_contexts: 2
+  max_contexts: 5
+
+  # Quality checks
+  check_factual_consistency: true
+  check_code_syntax: true

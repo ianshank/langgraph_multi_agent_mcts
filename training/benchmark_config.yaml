@@ -1,0 +1,153 @@
+# Benchmark Suite Configuration
+# Configuration for comprehensive RAG and knowledge base evaluation
+
+benchmarks:
+  # RAG Retrieval Benchmarks
+  rag_retrieval:
+    enabled: true
+    datasets:
+      - name: "custom_mcts"
+        description: "MCTS-related queries and documents"
+        size: 100
+      - name: "custom_langgraph"
+        description: "LangGraph framework queries"
+        size: 150
+      - name: "custom_multiagent"
+        description: "Multi-agent system queries"
+        size: 80
+    metrics:
+      - "nDCG@10"
+      - "nDCG@20"
+      - "Recall@100"
+      - "MRR"
+      - "MAP"
+      - "Precision@5"
+      - "Precision@10"
+    k_values: [5, 10, 20, 100]
+
+  # Reasoning Benchmarks
+  reasoning:
+    enabled: true
+    datasets:
+      - name: "gsm8k_subset"
+        description: "Grade school math problems"
+        size: 50
+      - name: "math_subset"
+        description: "Mathematical reasoning"
+        size: 40
+      - name: "dabstep_subset"
+        description: "Multi-step reasoning from DABStep"
+        size: 60
+    metrics:
+      - "Accuracy"
+      - "Reasoning_quality"
+      - "Step_correctness"
+    use_llm_judge: false  # Set to true to enable LLM-as-judge scoring
+
+  # Code Generation Benchmarks
+  code_generation:
+    enabled: true
+    datasets:
+      - name: "humaneval_subset"
+        description: "Python code generation from HumanEval"
+        size: 30
+      - name: "mbpp_subset"
+        description: "Basic Python programming problems"
+        size: 40
+    metrics:
+      - "Pass@1"
+      - "Pass@10"
+      - "Syntax_correctness"
+      - "Code_quality"
+    k_values: [1, 10]
+
+# Statistical Analysis Settings
+statistical:
+  confidence_level: 0.95
+  bootstrap_samples: 1000
+  significance_threshold: 0.05
+  min_sample_size: 10
+
+# Output Settings
+output:
+  base_dir: "./benchmarks"
+  save_raw_results: true
+  generate_visualizations: true
+  export_formats:
+    - "json"
+    - "csv"
+    - "markdown"
+    - "html"
+
+# Integration Settings
+integrations:
+  # Weights & Biases
+  wandb:
+    enabled: true
+    project: "rag-benchmarks"
+    entity: null  # Set via WANDB_ENTITY env var
+    tags:
+      - "benchmark"
+      - "evaluation"
+      - "rag"
+
+  # LangSmith
+  langsmith:
+    enabled: true
+    project: "rag-evaluation"
+    # API key via LANGSMITH_API_KEY env var
+
+# Baseline Comparison Settings
+comparison:
+  baseline_run_id: null  # Set to compare against specific baseline
+  auto_compare_latest: true  # Automatically compare with most recent run
+  regression_threshold: -0.05  # Flag if metrics drop by more than 5%
+
+# CI/CD Integration
+ci_cd:
+  enabled: false
+  fail_on_regression: true
+  required_metrics:
+    - metric: "nDCG@10"
+      min_value: 0.70
+    - metric: "Accuracy"
+      min_value: 0.80
+    - metric: "Pass@1"
+      min_value: 0.60
+  notification_webhook: null  # URL for notifications
+
+# Model Configurations for A/B Testing
+model_configs:
+  baseline:
+    name: "baseline-retriever"
+    embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dim: 384
+    chunk_size: 512
+    retrieval_strategy: "semantic"
+
+  experimental_v1:
+    name: "experimental-retriever-v1"
+    embedding_model: "sentence-transformers/all-mpnet-base-v2"
+    embedding_dim: 768
+    chunk_size: 512
+    retrieval_strategy: "hybrid"
+
+  experimental_v2:
+    name: "experimental-retriever-v2"
+    embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_dim: 384
+    chunk_size: 256
+    retrieval_strategy: "semantic"
+
+# Visualization Settings
+visualization:
+  enabled: true
+  dpi: 300
+  figure_size: [12, 6]
+  style: "seaborn-v0_8-darkgrid"
+  color_palette: "husl"
+  plot_types:
+    - "metric_comparison"
+    - "radar_plot"
+    - "trend_analysis"
+    - "confidence_intervals"
