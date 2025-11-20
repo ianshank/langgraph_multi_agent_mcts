@@ -1,5 +1,5 @@
-# LangGraph Multi-Agent MCTS Demo - Minimal Dependencies
-# Optimized for Hugging Face Spaces deployment
+# LangGraph Multi-Agent MCTS Demo - Dependencies
+# Optimized for Hugging Face Spaces deployment with trained models
 
 # Core UI Framework
 gradio>=4.0.0,<5.0.0
@@ -7,18 +7,21 @@ gradio>=4.0.0,<5.0.0
 # Numerical computation
 numpy>=1.24.0,<2.0.0
 
+# Machine Learning - Neural Models
+torch>=2.1.0
+transformers>=4.35.0
+peft>=0.7.0
+
+# Configuration
+pyyaml>=6.0
+
 # Experiment Tracking
 wandb>=0.16.0
 
-# Required for Gradio OAuth
+# Required for Gradio OAuth and model loading
 huggingface_hub>=0.20.0,<0.30.0
 
-# Note: This demo uses mock LLM responses by default for:
-# - Fast loading times on free tier
-# - No API key requirements
-# - Predictable demo behavior
-#
-# To use real Hugging Face models:
-# 1. Uncomment huggingface_hub above
-# 2. Set HF_TOKEN in Space secrets
-# 3. Update app.py to use HuggingFaceClient
+# Note: This demo now uses REAL trained models:
+# - RNN Meta-Controller (models/rnn_meta_controller.pt)
+# - BERT with LoRA adapters (models/bert_lora/final_model/)
+# - Actual HRM and TRM agent implementations
