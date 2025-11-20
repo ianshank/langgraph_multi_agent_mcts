@@ -322,7 +322,8 @@ class FrameworkFactory:
         self.logger.info(
             f"Creating framework: provider={llm_provider}, "
             f"mcts_enabled={mcts_enabled}, "
-            f"seed={mcts_seed}"
+            f"seed={mcts_seed}, "
+            f"additional_config={list(kwargs.keys())}"
         )
 
         # This would create the actual framework
@@ -332,6 +333,7 @@ class FrameworkFactory:
             "agent_factory": agent_factory,
             "mcts_engine": mcts_engine,
             "settings": self.settings,
+            "additional_config": kwargs,  # Store for future use
         }
 
 

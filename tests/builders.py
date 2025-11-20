@@ -241,7 +241,7 @@ class LLMResponseBuilder:
         ... )
     """
 
-    _content: str = "Test LLM response"
+    _text: str = "Test LLM response"
     _model: str = "gpt-4-turbo-preview"
     _prompt_tokens: int = 50
     _completion_tokens: int = 100
@@ -249,9 +249,14 @@ class LLMResponseBuilder:
     _finish_reason: str = "stop"
     _metadata: dict = field(default_factory=dict)
 
+    def with_text(self, text: str) -> LLMResponseBuilder:
+        """Set response text."""
+        self._text = text
+        return self
+
     def with_content(self, content: str) -> LLMResponseBuilder:
-        """Set response content."""
-        self._content = content
+        """Set response content (alias for text)."""
+        self._text = content
         return self
 
     def with_model(self, model: str) -> LLMResponseBuilder:
@@ -281,15 +286,17 @@ class LLMResponseBuilder:
         from src.adapters.llm.base import LLMResponse
 
         total = self._total_tokens or (self._prompt_tokens + self._completion_tokens)
+        usage = {
+            "prompt_tokens": self._prompt_tokens,
+            "completion_tokens": self._completion_tokens,
+            "total_tokens": total,
+        }
 
         return LLMResponse(
-            content=self._content,
+            text=self._text,
             model=self._model,
-            prompt_tokens=self._prompt_tokens,
-            completion_tokens=self._completion_tokens,
-            total_tokens=total,
+            usage=usage,
             finish_reason=self._finish_reason,
-            metadata=self._metadata,
         )
 
 

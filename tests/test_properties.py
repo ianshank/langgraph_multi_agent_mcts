@@ -193,24 +193,27 @@ class TestLLMResponseProperties:
         """
         from src.adapters.llm.base import LLMResponse
 
+        total_tokens = prompt_tokens + completion_tokens
         response = LLMResponse(
-            content="test",
+            text="test",
             model="test-model",
-            prompt_tokens=prompt_tokens,
-            completion_tokens=completion_tokens,
-            total_tokens=prompt_tokens + completion_tokens,
+            usage={
+                "prompt_tokens": prompt_tokens,
+                "completion_tokens": completion_tokens,
+                "total_tokens": total_tokens,
+            },
         )
 
-        assert response.total_tokens == prompt_tokens + completion_tokens
+        assert response.total_tokens == total_tokens
         assert response.total_tokens >= 0
 
     @pytest.mark.property
     @given(
-        content=st.text(min_size=0, max_size=10000),
+        text=st.text(min_size=0, max_size=10000),
         model=st.text(min_size=1, max_size=100),
     )
     @settings(max_examples=50)
-    def test_response_creation_always_succeeds(self, content: str, model: str):
+    def test_response_creation_always_succeeds(self, text: str, model: str):
         """
         Property: Response creation should never fail with valid inputs.
 
@@ -219,14 +222,12 @@ class TestLLMResponseProperties:
         from src.adapters.llm.base import LLMResponse
 
         response = LLMResponse(
-            content=content,
+            text=text,
             model=model,
-            prompt_tokens=10,
-            completion_tokens=20,
-            total_tokens=30,
+            usage={"prompt_tokens": 10, "completion_tokens": 20, "total_tokens": 30},
         )
 
-        assert response.content == content
+        assert response.text == text
         assert response.model == model
         assert isinstance(response.prompt_tokens, int)
 
@@ -245,12 +246,12 @@ class TestValidationProperties:
 
         This tests query validation for legitimate inputs.
         """
-        from src.models.validation import QueryRequest
+        from src.models.validation import QueryInput
 
         # Strip to handle whitespace-only strings
         stripped = query.strip()
         if stripped:
-            request = QueryRequest(query=stripped)
+            request = QueryInput(query=stripped)
             assert len(request.query) > 0
 
     @pytest.mark.property
@@ -280,10 +281,10 @@ class TestMCTSConfigProperties:
     @pytest.mark.property
     @given(
         exploration_weight=st.floats(min_value=0.1, max_value=10.0, allow_nan=False, allow_infinity=False),
-        iterations=st.integers(min_value=1, max_value=10000),
+        num_iterations=st.integers(min_value=50, max_value=10000),  # Must be >= min_iterations_before_termination
     )
     @settings(max_examples=50)
-    def test_config_positive_values(self, exploration_weight: float, iterations: int):
+    def test_config_positive_values(self, exploration_weight: float, num_iterations: int):
         """
         Property: MCTS config values should be positive.
 
@@ -293,11 +294,11 @@ class TestMCTSConfigProperties:
 
         config = MCTSConfig(
             exploration_weight=exploration_weight,
-            iterations=iterations,
+            num_iterations=num_iterations,
         )
 
         assert config.exploration_weight > 0
-        assert config.iterations > 0
+        assert config.num_iterations > 0
 
     @pytest.mark.property
     @given(
