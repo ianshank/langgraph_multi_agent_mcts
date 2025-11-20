@@ -1,0 +1,188 @@
+{
+  "dashboard": {
+    "title": "MCTS Framework - MCTS Operations",
+    "tags": ["mcts", "monte-carlo", "simulation"],
+    "timezone": "utc",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "MCTS Iteration Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(mcts_iterations_total[5m])",
+            "legendFormat": "{{outcome}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Iterations/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "MCTS Iteration Latency",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(mcts_iteration_latency_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(mcts_iteration_latency_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(mcts_iteration_latency_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 3,
+        "title": "MCTS Success vs Timeout Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(mcts_iterations_total{outcome=\"completed\"}[5m])",
+            "legendFormat": "Completed",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(mcts_iterations_total{outcome=\"timeout\"}[5m])",
+            "legendFormat": "Timeout",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(mcts_iterations_total{outcome=\"error\"}[5m])",
+            "legendFormat": "Error",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "ops", "label": "Rate"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "MCTS Simulation Depth",
+        "type": "heatmap",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "rate(mcts_simulation_depth_bucket[5m])",
+            "format": "heatmap",
+            "refId": "A"
+          }
+        ],
+        "yAxis": {"format": "short", "label": "Depth"}
+      },
+      {
+        "id": 5,
+        "title": "Active MCTS Nodes",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "mcts_active_nodes",
+            "legendFormat": "Active Nodes",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Node Count"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "MCTS Best Action Confidence",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(mcts_best_action_confidence_bucket[5m]))",
+            "legendFormat": "Median Confidence",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Confidence", "max": 1, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "MCTS Completion Rate",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 24},
+        "targets": [
+          {
+            "expr": "rate(mcts_iterations_total{outcome=\"completed\"}[5m]) / rate(mcts_iterations_total[5m])",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "textMode": "value_and_name",
+          "graphMode": "area",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.8, "color": "yellow"},
+                {"value": 0.95, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Total MCTS Iterations",
+        "type": "stat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 24},
+        "targets": [
+          {
+            "expr": "sum(mcts_iterations_total)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "textMode": "value",
+          "graphMode": "none",
+          "colorMode": "value"
+        },
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        }
+      }
+    ]
+  }
+}

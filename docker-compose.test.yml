@@ -1,0 +1,218 @@
+version: '3.8'
+
+services:
+  # ============================================================================
+  # Test Runner Service
+  # ============================================================================
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runtime
+    container_name: mcts-test-runner
+    environment:
+      # LLM Provider Configuration
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+
+      # Monitoring & Tracing
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_ORG_ID=${LANGSMITH_ORG_ID}
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-langgraph-mcts-training}
+
+      # Experiment Tracking
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - WANDB_PROJECT=langgraph-mcts-training
+      - WANDB_MODE=online
+
+      - BRAINTRUST_API_KEY=${BRAINTRUST_API_KEY}
+
+      # Vector Database
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_HOST=${PINECONE_HOST}
+
+      # Test Configuration
+      - PYTEST_TIMEOUT=600
+      - PYTEST_WORKERS=auto
+      - COVERAGE_THRESHOLD=50.0
+      - LOG_LEVEL=DEBUG
+
+      # CI/CD Metadata (auto-populated in CI)
+      - CI=${CI:-false}
+      - GITHUB_REF_NAME=${GITHUB_REF_NAME:-local}
+      - GITHUB_SHA=${GITHUB_SHA:-local}
+      - GITHUB_RUN_ID=${GITHUB_RUN_ID:-local}
+
+    volumes:
+      - ./test-results:/app/test-results
+      - ./coverage:/app/coverage
+      - ./logs:/app/logs
+      - ./reports:/app/reports
+    networks:
+      - test-network
+    command: >
+      pytest tests/
+      -v
+      --tb=short
+      --cov=src
+      --cov-report=html:/app/coverage/html
+      --cov-report=json:/app/coverage/coverage.json
+      --cov-report=term-missing
+      --junit-xml=/app/test-results/junit.xml
+      --maxfail=5
+
+  # ============================================================================
+  # Training Module Executor
+  # ============================================================================
+  training-executor:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: training
+    container_name: mcts-training-executor
+    environment:
+      # Same as test-runner
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - LLM_PROVIDER=${LLM_PROVIDER:-openai}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_ORG_ID=${LANGSMITH_ORG_ID}
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_ENDPOINT=${LANGSMITH_ENDPOINT:-https://api.smith.langchain.com}
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-langgraph-mcts-training}
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - WANDB_PROJECT=langgraph-mcts-training
+      - BRAINTRUST_API_KEY=${BRAINTRUST_API_KEY}
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_HOST=${PINECONE_HOST}
+
+    volumes:
+      - ./docs/training:/app/docs/training
+      - ./test-results:/app/test-results
+      - ./reports:/app/reports
+    networks:
+      - test-network
+    command: ["--modules", "1,2,3,4"]
+
+  # ============================================================================
+  # Component Test Runner (Module 2 Agents)
+  # ============================================================================
+  component-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runtime
+    container_name: mcts-component-tests
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-langgraph-mcts-training}
+    volumes:
+      - ./test-results:/app/test-results
+      - ./coverage:/app/coverage
+    networks:
+      - test-network
+    command: >
+      pytest tests/components/
+      -v
+      --tb=short
+      -m "not slow"
+      --cov=src/agents
+      --cov-report=html:/app/coverage/component-html
+      --junit-xml=/app/test-results/component-junit.xml
+
+  # ============================================================================
+  # E2E Test Runner (Module 3 Flows)
+  # ============================================================================
+  e2e-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runtime
+    container_name: mcts-e2e-tests
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_TRACING=true
+      - LANGSMITH_PROJECT=${LANGSMITH_PROJECT:-langgraph-mcts-training}
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - WANDB_MODE=online
+    volumes:
+      - ./test-results:/app/test-results
+      - ./coverage:/app/coverage
+    networks:
+      - test-network
+    command: >
+      pytest tests/e2e/
+      -v
+      --tb=short
+      --cov=src
+      --cov-report=html:/app/coverage/e2e-html
+      --junit-xml=/app/test-results/e2e-junit.xml
+      --timeout=600
+
+  # ============================================================================
+  # Performance/Integration Tests
+  # ============================================================================
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runtime
+    container_name: mcts-integration-tests
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - LANGSMITH_API_KEY=${LANGSMITH_API_KEY}
+      - LANGSMITH_TRACING=true
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - PINECONE_HOST=${PINECONE_HOST}
+    volumes:
+      - ./test-results:/app/test-results
+    networks:
+      - test-network
+    command: >
+      pytest tests/
+      -v
+      --tb=short
+      -m "integration or performance"
+      --junit-xml=/app/test-results/integration-junit.xml
+      --timeout=1200
+
+  # ============================================================================
+  # Code Quality Checks
+  # ============================================================================
+  code-quality:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test-runtime
+    container_name: mcts-code-quality
+    volumes:
+      - ./reports:/app/reports
+    networks:
+      - test-network
+    command: >
+      sh -c "
+        echo 'Running code quality checks...' &&
+        ruff check src/ tests/ > /app/reports/ruff-report.txt 2>&1;
+        black --check src/ tests/ > /app/reports/black-report.txt 2>&1;
+        mypy src/ > /app/reports/mypy-report.txt 2>&1;
+        bandit -r src/ -f json -o /app/reports/bandit-report.json;
+        echo 'Code quality checks complete'
+      "
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  test-results:
+    driver: local
+  coverage:
+    driver: local
+  reports:
+    driver: local

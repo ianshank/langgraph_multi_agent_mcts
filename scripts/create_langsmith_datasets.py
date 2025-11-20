@@ -587,42 +587,44 @@ def main():
     print("=" * 70)
     print()
 
-    try:
-        # Create datasets
-        tactical_id = create_tactical_dataset()
-        print()
+    created_datasets = {}
+    dataset_functions = [
+        ("tactical_e2e_scenarios", create_tactical_dataset),
+        ("cybersecurity_e2e_scenarios", create_cybersecurity_dataset),
+        ("mcts_benchmark_scenarios", create_mcts_benchmark_dataset),
+        ("stem_scenarios", create_stem_scenarios_dataset),
+        ("generic_scenarios", create_generic_scenarios_dataset),
+    ]
 
-        cyber_id = create_cybersecurity_dataset()
-        print()
+    for dataset_name, create_func in dataset_functions:
+        try:
+            dataset_id = create_func()
+            created_datasets[dataset_name] = dataset_id
+            print()
+        except Exception as e:
+            if "409" in str(e) or "already exists" in str(e).lower():
+                print(f"[SKIP] Dataset '{dataset_name}' already exists, skipping...")
+                created_datasets[dataset_name] = "existing"
+                print()
+            else:
+                print(f"[ERROR] Failed to create '{dataset_name}': {e}")
+                print()
 
-        mcts_id = create_mcts_benchmark_dataset()
-        print()
-
-        stem_id = create_stem_scenarios_dataset()
-        print()
-
-        generic_id = create_generic_scenarios_dataset()
-        print()
-
-        print("=" * 70)
-        print("[SUCCESS] All datasets created successfully!")
-        print("=" * 70)
-        print()
-        print("Dataset IDs:")
-        print(f"  - tactical_e2e_scenarios: {tactical_id}")
-        print(f"  - cybersecurity_e2e_scenarios: {cyber_id}")
-        print(f"  - mcts_benchmark_scenarios: {mcts_id}")
-        print(f"  - stem_scenarios: {stem_id}")
-        print(f"  - generic_scenarios: {generic_id}")
-        print()
-        print("Next steps:")
-        print("  1. View datasets in LangSmith UI")
-        print("  2. Run experiments with: python scripts/run_langsmith_experiments.py")
-        print()
-
-    except Exception as e:
-        print(f"[ERROR] Error creating datasets: {e}")
-        sys.exit(1)
+    print("=" * 70)
+    print("[COMPLETE] Dataset creation finished!")
+    print("=" * 70)
+    print()
+    print("Dataset Status:")
+    for name, dataset_id in created_datasets.items():
+        if dataset_id == "existing":
+            print(f"  - {name}: [EXISTING]")
+        else:
+            print(f"  - {name}: [CREATED] (ID: {dataset_id})")
+    print()
+    print("Next steps:")
+    print("  1. View datasets in LangSmith UI")
+    print("  2. Run experiments with: python scripts/run_langsmith_experiments.py")
+    print()
 
 
 if __name__ == "__main__":

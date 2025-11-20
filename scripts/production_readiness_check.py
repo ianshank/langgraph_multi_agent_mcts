@@ -570,6 +570,235 @@ def run_dependency_checks(root: Path) -> list[CheckResult]:
     return results
 
 
+def run_observability_checks(root: Path) -> list[CheckResult]:
+    """Run observability and monitoring checks."""
+    results = []
+
+    # Check 1: Prometheus metrics module
+    metrics_file = root / "src" / "monitoring" / "prometheus_metrics.py"
+    if check_file_exists(metrics_file, "Prometheus metrics"):
+        content = metrics_file.read_text()
+        if "Counter" in content and "Histogram" in content and "Gauge" in content:
+            results.append(
+                CheckResult(
+                    name="Prometheus Metrics",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message="Prometheus metrics module implemented",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    name="Prometheus Metrics",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message="Metrics module exists but may be incomplete",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
+                name="Prometheus Metrics",
+                status=Status.FAIL,
+                priority=Priority.P1,
+                message="Prometheus metrics module NOT found",
+                details="Create src/monitoring/prometheus_metrics.py",
+            )
+        )
+
+    # Check 2: OpenTelemetry tracing
+    tracing_file = root / "src" / "monitoring" / "otel_tracing.py"
+    if check_file_exists(tracing_file, "OpenTelemetry tracing"):
+        content = tracing_file.read_text()
+        if "setup_tracing" in content and "trace_operation" in content:
+            results.append(
+                CheckResult(
+                    name="OpenTelemetry Tracing",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message="Distributed tracing configured",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    name="OpenTelemetry Tracing",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message="Tracing module exists but may be incomplete",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
+                name="OpenTelemetry Tracing",
+                status=Status.WARN,
+                priority=Priority.P2,
+                message="OpenTelemetry tracing not configured (optional)",
+                details="Consider adding src/monitoring/otel_tracing.py",
+            )
+        )
+
+    # Check 3: Grafana dashboards
+    dashboards_dir = root / "monitoring" / "grafana" / "dashboards"
+    if check_dir_exists(dashboards_dir, "Grafana dashboards"):
+        dashboard_files = list(dashboards_dir.glob("*.json"))
+        if len(dashboard_files) >= 2:
+            results.append(
+                CheckResult(
+                    name="Grafana Dashboards",
+                    status=Status.PASS,
+                    priority=Priority.P2,
+                    message=f"{len(dashboard_files)} Grafana dashboard(s) configured",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    name="Grafana Dashboards",
+                    status=Status.WARN,
+                    priority=Priority.P2,
+                    message=f"Only {len(dashboard_files)} dashboard(s) found",
+                    details="Add more dashboards for comprehensive monitoring",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
+                name="Grafana Dashboards",
+                status=Status.WARN,
+                priority=Priority.P2,
+                message="Grafana dashboards not configured",
+                details="Create monitoring/grafana/dashboards/",
+            )
+        )
+
+    # Check 4: Alert rules
+    alerts_file = root / "monitoring" / "alerts.yml"
+    if check_file_exists(alerts_file, "Prometheus alerts"):
+        content = alerts_file.read_text()
+        alert_count = content.count("alert:")
+        if alert_count >= 5:
+            results.append(
+                CheckResult(
+                    name="Alert Rules",
+                    status=Status.PASS,
+                    priority=Priority.P1,
+                    message=f"{alert_count} alert rules configured",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    name="Alert Rules",
+                    status=Status.WARN,
+                    priority=Priority.P1,
+                    message=f"Only {alert_count} alert rules found",
+                    details="Add more comprehensive alerting",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
+                name="Alert Rules",
+                status=Status.FAIL,
+                priority=Priority.P1,
+                message="Alert rules NOT configured",
+                details="Create monitoring/alerts.yml",
+            )
+        )
+
+    return results
+
+
+def run_cicd_checks(root: Path) -> list[CheckResult]:
+    """Run CI/CD pipeline checks."""
+    results = []
+
+    # Check 1: CI workflow exists
+    ci_workflow = root / ".github" / "workflows" / "ci.yml"
+    if check_file_exists(ci_workflow, "CI workflow"):
+        content = ci_workflow.read_text()
+        has_lint = "lint" in content.lower() or "ruff" in content.lower()
+        has_test = "test" in content.lower() or "pytest" in content.lower()
+        has_security = "bandit" in content.lower() or "security" in content.lower()
+        has_docker = "docker" in content.lower()
+
+        checks = {
+            "linting": has_lint,
+            "testing": has_test,
+            "security_scan": has_security,
+            "docker_build": has_docker,
+        }
+
+        passed = sum(checks.values())
+        total = len(checks)
+
+        if passed == total:
+            results.append(
+                CheckResult(
+                    name="CI Pipeline",
+                    status=Status.PASS,
+                    priority=Priority.P0,
+                    message=f"Comprehensive CI pipeline ({passed}/{total} checks)",
+                )
+            )
+        elif passed >= total * 0.75:
+            results.append(
+                CheckResult(
+                    name="CI Pipeline",
+                    status=Status.WARN,
+                    priority=Priority.P0,
+                    message=f"CI pipeline partially complete ({passed}/{total} checks)",
+                    details=f"Missing: {', '.join(k for k, v in checks.items() if not v)}",
+                )
+            )
+        else:
+            results.append(
+                CheckResult(
+                    name="CI Pipeline",
+                    status=Status.FAIL,
+                    priority=Priority.P0,
+                    message=f"CI pipeline incomplete ({passed}/{total} checks)",
+                    details=f"Missing: {', '.join(k for k, v in checks.items() if not v)}",
+                )
+            )
+    else:
+        results.append(
+            CheckResult(
+                name="CI Pipeline",
+                status=Status.FAIL,
+                priority=Priority.P0,
+                message="CI workflow NOT found",
+                details="Create .github/workflows/ci.yml",
+            )
+        )
+
+    # Check 2: Production readiness script exists
+    readiness_script = root / "scripts" / "production_readiness_check.py"
+    if check_file_exists(readiness_script, "Production readiness script"):
+        results.append(
+            CheckResult(
+                name="Production Readiness Script",
+                status=Status.PASS,
+                priority=Priority.P1,
+                message="Production readiness check script exists",
+            )
+        )
+    else:
+        results.append(
+            CheckResult(
+                name="Production Readiness Script",
+                status=Status.WARN,
+                priority=Priority.P1,
+                message="Production readiness script not found",
+            )
+        )
+
+    return results
+
+
 def generate_report(results: list[CheckResult], verbose: bool = False) -> int:
     """Generate and print the readiness report."""
     print("\n" + "=" * 70)
@@ -664,6 +893,12 @@ def main():
 
     print("[DEPS] Dependency checks...")
     all_results.extend(run_dependency_checks(root))
+
+    print("[OBSERVABILITY] Observability checks...")
+    all_results.extend(run_observability_checks(root))
+
+    print("[CI/CD] CI/CD pipeline checks...")
+    all_results.extend(run_cicd_checks(root))
 
     # Output results
     if args.json_output:

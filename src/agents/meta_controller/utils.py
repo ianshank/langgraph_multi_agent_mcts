@@ -205,23 +205,12 @@ def convert_features_to_text(features: MetaControllerFeatures) -> str:
     """
     Convert MetaControllerFeatures to a text description for BERT input.
 
+    This is an alias for features_to_text() to maintain backward compatibility.
+
     Args:
         features: MetaControllerFeatures instance
 
     Returns:
         Text description of the features
     """
-    text = (
-        f"Task Analysis:\n"
-        f"Complexity: {features.task_complexity:.2f}\n"
-        f"Decomposability: {features.task_decomposability:.2f}\n"
-        f"Ambiguity: {features.task_ambiguity:.2f}\n"
-        f"Requires creativity: {features.requires_creativity:.2f}\n"
-        f"Requires planning: {features.requires_planning:.2f}\n"
-        f"Requires search: {features.requires_search:.2f}\n"
-        f"Task type: {features.task_type}\n"
-        f"Domain: {features.domain}\n"
-        f"User preference: {features.user_preference}"
-    )
-
-    return text
+    return features_to_text(features)

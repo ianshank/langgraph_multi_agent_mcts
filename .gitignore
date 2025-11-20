@@ -208,3 +208,5 @@ docker/volumes/
 # Ruff temporary output files
 ruff_output.txt
 ruff_non_adapters.txt
+nul
+_ul

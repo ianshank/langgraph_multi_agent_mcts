@@ -1,0 +1,86 @@
+# Multi-stage Docker configuration for testing and evaluation
+# Optimized for running comprehensive Module 1-4 assessments with LangSmith, WandB, and Braintrust
+
+FROM python:3.11-slim as base
+
+# Set environment variables for Python
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PYTHONPATH="/app:$PYTHONPATH"
+
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    g++ \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# ============================================================================
+# Test Dependencies Stage
+# ============================================================================
+FROM base as test-deps
+
+# Copy dependency files
+COPY requirements.txt pyproject.toml ./
+
+# Install Python dependencies including dev/test extras
+RUN pip install --upgrade pip setuptools wheel && \
+    pip install -r requirements.txt && \
+    pip install -e ".[dev,prometheus,neural,experiment,vectordb]"
+
+# ============================================================================
+# Test Runtime Stage
+# ============================================================================
+FROM test-deps as test-runtime
+
+# Copy application code
+COPY src/ ./src/
+COPY tests/ ./tests/
+COPY scripts/ ./scripts/
+COPY examples/ ./examples/
+COPY docs/ ./docs/
+COPY .env.example .env
+
+# Create necessary directories
+RUN mkdir -p /app/test-results /app/logs /app/coverage /app/reports
+
+# Set test environment defaults
+ENV PYTEST_TIMEOUT=600 \
+    PYTEST_WORKERS=auto \
+    COVERAGE_THRESHOLD=50.0 \
+    LOG_LEVEL=INFO
+
+# Default command runs full test suite
+CMD ["pytest", "tests/", "-v", "--tb=short", "--cov=src", "--cov-report=html:/app/coverage/html", "--cov-report=json:/app/coverage/coverage.json", "--junit-xml=/app/test-results/junit.xml"]
+
+# ============================================================================
+# Training Module Execution Stage
+# ============================================================================
+FROM test-runtime as training
+
+# Additional training-specific setup
+ENV LANGSMITH_TRACING=true \
+    WANDB_MODE=online
+
+# Entrypoint for running training modules
+ENTRYPOINT ["python", "scripts/run_comprehensive_training.py"]
+
+# ============================================================================
+# Evaluation Stage (with Docker-in-Docker support)
+# ============================================================================
+FROM test-runtime as evaluation
+
+# Install Docker CLI for Docker-in-Docker scenarios
+RUN curl -fsSL https://get.docker.com | sh
+
+# Evaluation-specific environment
+ENV EVALUATION_MODE=true \
+    DOCKER_ENABLED=true
+
+# Run evaluation scripts
+CMD ["python", "scripts/run_comprehensive_training.py", "--modules", "1,2,3,4"]
