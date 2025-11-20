@@ -17,27 +17,33 @@ def check_imports():
 
     try:
         from training.continual_learning import (
-            # Data classes
-            ProductionInteraction,
-            FailurePattern,
+            ABTestFramework,
             ActiveLearningCandidate,
-            FeedbackSample,
-            DriftReport,
-
+            ActiveLearningSelector,
             # Core components
             DataQualityValidator,
-            ProductionInteractionLogger,
+            DriftDetector,
+            DriftReport,
+            FailurePattern,
             FailurePatternAnalyzer,
-            ActiveLearningSelector,
-            IncrementalRetrainingPipeline,
-
             # Legacy components
             FeedbackCollector,
+            FeedbackSample,
+            IncrementalRetrainingPipeline,
             IncrementalTrainer,
-            DriftDetector,
-            ABTestFramework,
+            # Data classes
+            ProductionInteraction,
+            ProductionInteractionLogger,
         )
-        print("✓ All imports successful")
+        # Verify all classes are importable
+        classes_to_verify = [
+            ABTestFramework, ActiveLearningCandidate, ActiveLearningSelector,
+            DataQualityValidator, DriftDetector, DriftReport,
+            FailurePattern, FailurePatternAnalyzer, FeedbackCollector,
+            FeedbackSample, IncrementalRetrainingPipeline, IncrementalTrainer,
+            ProductionInteraction, ProductionInteractionLogger
+        ]
+        print(f"✓ All {len(classes_to_verify)} imports successful")
         return True
     except ImportError as e:
         print(f"✗ Import error: {e}")

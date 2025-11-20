@@ -9,7 +9,7 @@ This is a sophisticated, production-ready multi-agent framework combining **MCTS
 ## 1. COMPLETE DIRECTORY STRUCTURE
 
 ```
-/home/user/langgraph_multi_agent_mcts/
+
 ├── .claude/                           # Claude AI configuration
 ├── .github/                           # GitHub Actions CI/CD
 ├── .git/                              # Git repository
@@ -135,7 +135,7 @@ This is a sophisticated, production-ready multi-agent framework combining **MCTS
 ## 2. KEY FILE LOCATIONS & PURPOSES
 
 ### Core Agent Framework
-- **Base Classes**: `/home/user/langgraph_multi_agent_mcts/src/framework/agents/base.py`
+- **Base Classes**: `src/framework/agents/base.py`
   - `AsyncAgentBase`: Abstract base for all agents
   - `ParallelAgent`: Run multiple agents concurrently
   - `SequentialAgent`: Chain agents together
@@ -143,58 +143,58 @@ This is a sophisticated, production-ready multi-agent framework combining **MCTS
   - `AgentResult`: Output data structure
 
 ### MCTS Implementation (New Deterministic Core)
-- **Core Engine**: `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/core.py`
+- **Core Engine**: `src/framework/mcts/core.py`
   - `MCTSEngine`: Main MCTS orchestrator
   - `MCTSNode`: Tree node with UCB1 scoring
   - `MCTSState`: Hashable state for caching
   - Features: Seeded RNG, progressive widening, simulation caching, parallel rollouts
 
-- **Configuration**: `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/config.py`
+- **Configuration**: `src/framework/mcts/config.py`
   - `MCTSConfig`: 20+ configurable parameters
   - Presets: FAST (25 iter), BALANCED (100 iter), THOROUGH (500 iter)
   - Plus: EXPLORATION_HEAVY, EXPLOITATION_HEAVY variants
 
-- **Policies**: `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/policies.py`
+- **Policies**: `src/framework/mcts/policies.py`
   - `ucb1()`: Upper Confidence Bound formula
   - `SelectionPolicy`: Enum for action selection (MAX_VISITS, MAX_VALUE, ROBUST_CHILD)
   - `RandomRolloutPolicy`, `GreedyRolloutPolicy`, `HybridRolloutPolicy`
 
 ### LangGraph Orchestration
-- **Graph Building**: `/home/user/langgraph_multi_agent_mcts/src/framework/graph.py`
+- **Graph Building**: `src/framework/graph.py`
   - `AgentState`: TypedDict for shared state across graph
   - Node functions for: initialization, RAG retrieval, routing, agent execution
   - Integration with new MCTS core
   - Meta-controller support (optional)
 
 ### Neural Meta-Controllers
-- **Base Classes**: `/home/user/langgraph_multi_agent_mcts/src/agents/meta_controller/base.py`
+- **Base Classes**: `src/agents/meta_controller/base.py`
   - `AbstractMetaController`: Base for all controllers
   - `MetaControllerFeatures`: 8-dimensional feature vector (confidence, iteration, etc.)
   - `MetaControllerPrediction`: Agent selection output
 
-- **RNN Controller** (RECOMMENDED): `/home/user/langgraph_multi_agent_mcts/src/agents/meta_controller/rnn_controller.py`
+- **RNN Controller** (RECOMMENDED): `src/agents/meta_controller/rnn_controller.py`
   - `RNNMetaControllerModel`: GRU-based architecture
   - `RNNMetaController`: Wrapper with prediction logic
   - **Accuracy**: 99.78% on test set
 
-- **BERT Controller**: `/home/user/langgraph_multi_agent_mcts/src/agents/meta_controller/bert_controller.py`
+- **BERT Controller**: `src/agents/meta_controller/bert_controller.py`
   - `BERTMetaControllerModel`: BERT+LoRA architecture
   - `BERTMetaController`: Wrapper with tokenization
   - **Accuracy**: 47.68% (experimental, slower)
 
 ### LLM Adapters (Provider-Agnostic)
-- **Base Protocol**: `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/base.py`
+- **Base Protocol**: `src/adapters/llm/base.py`
   - `LLMClient` Protocol: Structural subtyping interface
   - `LLMResponse`: Standardized response format
   - `ToolCall`: Tool/function call representation
 
 - **Implementations**:
-  - OpenAI: `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/openai_client.py`
-  - Anthropic: `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/anthropic_client.py`
-  - LM Studio: `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/lmstudio_client.py`
+  - OpenAI: `src/adapters/llm/openai_client.py`
+  - Anthropic: `src/adapters/llm/anthropic_client.py`
+  - LM Studio: `src/adapters/llm/lmstudio_client.py`
 
 ### Configuration Management
-- **Settings**: `/home/user/langgraph_multi_agent_mcts/src/config/settings.py`
+- **Settings**: `src/config/settings.py`
   - Pydantic Settings v2 with environment variable validation
   - LLM provider selection
   - MCTS parameters
@@ -202,17 +202,17 @@ This is a sophisticated, production-ready multi-agent framework combining **MCTS
   - Supports: OpenAI, Anthropic, LM Studio, Pinecone, Braintrust
 
 ### Training Pipelines
-- **Data Generator**: `/home/user/langgraph_multi_agent_mcts/src/training/data_generator.py` (23K lines)
+- **Data Generator**: `src/training/data_generator.py` (23K lines)
   - `MetaControllerDataGenerator`: Generates synthetic training data
   - 3-class classification (HRM, TRM, MCTS)
   - Supports balanced/unbalanced datasets
 
-- **RNN Training**: `/home/user/langgraph_multi_agent_mcts/src/training/train_rnn.py` (33K lines)
+- **RNN Training**: `src/training/train_rnn.py` (33K lines)
   - `RNNTrainer`: Full training pipeline
   - Features: Early stopping, checkpointing, per-class metrics
   - Braintrust integration for experiment tracking
 
-- **BERT LoRA Training**: `/home/user/langgraph_multi_agent_mcts/src/training/train_bert_lora.py` (24K lines)
+- **BERT LoRA Training**: `src/training/train_bert_lora.py` (24K lines)
   - `BERTLoRATrainer`: Training with HuggingFace Trainer
   - LoRA adapters for parameter efficiency
   - Full evaluation pipeline
@@ -294,13 +294,13 @@ response = await client.generate(messages=[...], temperature=0.7)
 - **Purpose**: Hierarchical decomposition of complex queries
 - **Interface**: Via `AsyncAgentBase`
 - **Status**: Base implementation available
-- **Location**: Framework integration in `/home/user/langgraph_multi_agent_mcts/src/framework/graph.py`
+- **Location**: Framework integration in `src/framework/graph.py`
 
 ### TRM Agent (Task Response Model)  
 - **Purpose**: Iterative refinement and quality improvement
 - **Interface**: Via `AsyncAgentBase`
 - **Status**: Base implementation available
-- **Location**: Framework integration in `/home/user/langgraph_multi_agent_mcts/src/framework/graph.py`
+- **Location**: Framework integration in `src/framework/graph.py`
 
 ### MCTS Agent
 - **Purpose**: Monte Carlo Tree Search for exploring action spaces
@@ -311,7 +311,7 @@ response = await client.generate(messages=[...], temperature=0.7)
   - Simulation caching (SHA-256 based)
   - Parallel rollouts with bounded concurrency
   - Multiple rollout policies (random, greedy, hybrid, LLM)
-- **Location**: `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/`
+- **Location**: `src/framework/mcts/`
 - **Status**: Fully implemented and tested
 
 ### Neural Meta-Controller
@@ -328,8 +328,8 @@ response = await client.generate(messages=[...], temperature=0.7)
   - Trainable parameters: 17,155 of 11,188,486 (0.15%)
   - Training time: ~11 seconds
 
-- **Location**: `/home/user/langgraph_multi_agent_mcts/src/agents/meta_controller/`
-- **Status**: Fully implemented with trained models in `/home/user/langgraph_multi_agent_mcts/models/`
+- **Location**: `src/agents/meta_controller/`
+- **Status**: Fully implemented with trained models in `models/`
 
 ---
 
@@ -382,7 +382,7 @@ app = graph.compile(checkpointer=MemorySaver())
 ## 6. EXISTING TRAINING & EVALUATION CODE
 
 ### Training Pipelines
-1. **RNN Meta-Controller Training** (`/home/user/langgraph_multi_agent_mcts/src/training/train_rnn.py`)
+1. **RNN Meta-Controller Training** (`src/training/train_rnn.py`)
    - `RNNTrainer` class with 150+ lines of methods
    - Full training loop with validation
    - Early stopping with patience
@@ -390,7 +390,7 @@ app = graph.compile(checkpointer=MemorySaver())
    - Model checkpointing
    - Braintrust experiment tracking (optional)
 
-2. **BERT LoRA Training** (`/home/user/langgraph_multi_agent_mcts/src/training/train_bert_lora.py`)
+2. **BERT LoRA Training** (`src/training/train_bert_lora.py`)
    - `BERTLoRATrainer` class
    - HuggingFace Trainer integration
    - LoRA adapter fine-tuning
@@ -398,7 +398,7 @@ app = graph.compile(checkpointer=MemorySaver())
    - Full evaluation suite
 
 ### Data Generation
-- **MetaControllerDataGenerator** (`/home/user/langgraph_multi_agent_mcts/src/training/data_generator.py`)
+- **MetaControllerDataGenerator** (`src/training/data_generator.py`)
   - Generates synthetic training data
   - 3-class labels (HRM, TRM, MCTS)
   - Feature generation: confidence scores, iteration counts, etc.
@@ -408,7 +408,7 @@ app = graph.compile(checkpointer=MemorySaver())
 ### Existing Training Results
 - **RNN**: 99.78% accuracy, F1=0.9988 (best class HRM=1.0000)
 - **BERT**: 47.68% accuracy (less suitable for this task)
-- Models saved in `/home/user/langgraph_multi_agent_mcts/models/`
+- Models saved in `models/`
 
 ---
 
@@ -540,14 +540,14 @@ config = MetaControllerConfigLoader.load_from_yaml("config.yaml")
 ### Where to Hook New Training Code
 
 1. **Data Generation Enhancement**
-   - Location: `/home/user/langgraph_multi_agent_mcts/src/training/data_generator.py`
+   - Location: `src/training/data_generator.py`
    - Current: `MetaControllerDataGenerator` generates 8-dim feature vectors
    - Enhancement: Collect real production data instead of synthetic
    - Interface: Same `MetaControllerFeatures` dataclass
 
 2. **Training Script Entry Points**
-   - RNN: `/home/user/langgraph_multi_agent_mcts/src/training/train_rnn.py`
-   - BERT: `/home/user/langgraph_multi_agent_mcts/src/training/train_bert_lora.py`
+   - RNN: `src/training/train_rnn.py`
+   - BERT: `src/training/train_bert_lora.py`
    - Both have `main()` functions for CLI execution
    - Can be called as Python modules or CLI scripts
 
@@ -557,17 +557,17 @@ config = MetaControllerConfigLoader.load_from_yaml("config.yaml")
    - Confusion matrices, loss curves
 
 4. **Experiment Tracking**
-   - Location: `/home/user/langgraph_multi_agent_mcts/src/observability/braintrust_tracker.py`
+   - Location: `src/observability/braintrust_tracker.py`
    - Can log metrics to Braintrust
    - Function: `create_training_tracker()`
 
 5. **Model Persistence**
    - RNN: Saves to `.pt` (PyTorch) format
    - BERT: Uses HuggingFace safe tensor format
-   - Location: `/home/user/langgraph_multi_agent_mcts/models/`
+   - Location: `models/`
 
 6. **Graph Integration**
-   - Location: `/home/user/langgraph_multi_agent_mcts/src/framework/graph.py`
+   - Location: `src/framework/graph.py`
    - Import new controllers: `from src.agents.meta_controller.rnn_controller import RNNMetaController`
    - Add to graph nodes: `graph.add_node("meta_control", select_agent_via_controller)`
 
@@ -687,7 +687,7 @@ async def run_mcts():
    - OpenTelemetry for distributed tracing
 
 4. **Integration checkpoints**:
-   - Update `/home/user/langgraph_multi_agent_mcts/src/framework/graph.py` to use new controllers
+   - Update `src/framework/graph.py` to use new controllers
    - Add training script to CI/CD in `.github/workflows/`
    - Document in README and architecture.md
 

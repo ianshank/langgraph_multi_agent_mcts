@@ -165,11 +165,11 @@ class BaseEmbedder(ABC):
 
         # Embed uncached texts
         if texts_to_embed:
-            indices, uncached_texts = zip(*texts_to_embed)
+            indices, uncached_texts = zip(*texts_to_embed, strict=False)
             new_embeddings = self.embed(list(uncached_texts))
 
             # Save to cache
-            for i, (idx, text) in enumerate(texts_to_embed):
+            for i, (idx, _text) in enumerate(texts_to_embed):
                 cache_key = cache_keys[idx]
                 self._save_to_cache(cache_key, new_embeddings[i])
         else:
@@ -643,7 +643,7 @@ class EnsembleEmbedder(BaseEmbedder):
             normalized_weights = [w / total_weight for w in available_weights]
 
             weighted_sum = np.zeros_like(embeddings_list[0])
-            for emb, weight in zip(embeddings_list, normalized_weights):
+            for emb, weight in zip(embeddings_list, normalized_weights, strict=False):
                 weighted_sum += emb * weight
             return weighted_sum
         else:
@@ -708,13 +708,9 @@ class EmbedderFactory:
         # Determine embedder type from model name
         if "voyage" in model.lower():
             return VoyageEmbedder(config)
-        elif "embed-" in model.lower() and "cohere" in model.lower():
+        elif "embed-" in model.lower() and "cohere" in model.lower() or "cohere" in config.get("provider", "").lower():
             return CohereEmbedder(config)
-        elif "cohere" in config.get("provider", "").lower():
-            return CohereEmbedder(config)
-        elif "text-embedding" in model.lower():
-            return OpenAIEmbedder(config)
-        elif "openai" in config.get("provider", "").lower():
+        elif "text-embedding" in model.lower() or "openai" in config.get("provider", "").lower():
             return OpenAIEmbedder(config)
         elif "bge" in model.lower():
             return BGEEmbedder(config)

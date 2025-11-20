@@ -10,11 +10,10 @@ Tests all components:
 - MultiModalRAG
 """
 
-import asyncio
 import io
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import patch
 
 import numpy as np
 import pytest
@@ -22,12 +21,10 @@ from PIL import Image
 
 from training.multimodal_knowledge_base import (
     CodeBlockExtractor,
-    ExtractedCode,
     ExtractedImage,
     ImageProcessor,
     ImageType,
     MultiModalEmbedder,
-    MultiModalRAG,
     MultiModalSearchResult,
     VisionModelAdapter,
     VisualIndexBuilder,

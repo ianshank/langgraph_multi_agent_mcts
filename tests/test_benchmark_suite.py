@@ -54,7 +54,7 @@ except ImportError:
 
         class random:
             @staticmethod
-            def choice(values, size, replace):
+            def choice(values, size, _replace):
                 import random
 
                 return [random.choice(values) for _ in range(size)]

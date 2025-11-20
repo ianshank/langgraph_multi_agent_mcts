@@ -24,7 +24,6 @@ import logging
 import os
 import random
 import re
-from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -353,10 +352,9 @@ class QualityValidator:
                 errors.append(f"Contains placeholder text: {placeholder}")
 
         # Check for duplicate content (question in answer)
-        if qa_pair.question.lower() in qa_pair.answer.lower():
-            # This is often okay, but flag very short answers that just repeat the question
-            if len(qa_pair.answer) < len(qa_pair.question) * 2:
-                errors.append("Answer mostly repeats the question")
+        # This is often okay, but flag very short answers that just repeat the question
+        if qa_pair.question.lower() in qa_pair.answer.lower() and len(qa_pair.answer) < len(qa_pair.question) * 2:
+            errors.append("Answer mostly repeats the question")
 
         # Check contexts
         if not qa_pair.contexts or len(qa_pair.contexts) == 0:
@@ -785,7 +783,6 @@ Answer:"""
         all_pairs = []
 
         # Create task list
-        tasks = []
         category_templates = []
 
         for category in categories:

@@ -12,9 +12,9 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from training.code_corpus_builder import CodeCorpusBuilder, REPOSITORIES
-from training.rag_builder import VectorIndexBuilder
+from training.code_corpus_builder import REPOSITORIES, CodeCorpusBuilder
 from training.data_pipeline import DataOrchestrator
+from training.rag_builder import VectorIndexBuilder
 
 logging.basicConfig(
     level=logging.INFO,
@@ -45,7 +45,7 @@ def build_and_index_code_corpus(max_repos: int = 4):
     for repo in high_priority_repos:
         logger.info(f"  - {repo['name']}: {repo['description']}")
 
-    chunks = builder.build_corpus(repositories=high_priority_repos)
+    builder.build_corpus(repositories=high_priority_repos)
 
     # Step 2: Save corpus to disk
     logger.info("\nStep 2: Saving corpus to disk...")
@@ -63,7 +63,7 @@ def build_and_index_code_corpus(max_repos: int = 4):
     print(f"\nChunk types: {stats['chunk_types']}")
     print(f"Avg code length: {stats['avg_code_length']:.1f} chars")
     print(f"Avg complexity: {stats['avg_complexity']:.1f}")
-    print(f"\nQuality metrics:")
+    print("\nQuality metrics:")
     print(f"  - Chunks with docstrings: {stats['chunks_with_docstrings']} ({100*stats['chunks_with_docstrings']/stats['total_chunks']:.1f}%)")
     print(f"  - Chunks with examples: {stats['chunks_with_examples']} ({100*stats['chunks_with_examples']/stats['total_chunks']:.1f}%)")
     print(f"  - Chunks with tests: {stats['chunks_with_tests']} ({100*stats['chunks_with_tests']/stats['total_chunks']:.1f}%)")
@@ -91,7 +91,7 @@ def build_and_index_code_corpus(max_repos: int = 4):
         # Build index
         index_stats = index_builder.build_index(iter(document_chunks), batch_size=50)
 
-        logger.info(f"\nIndex built successfully:")
+        logger.info("\nIndex built successfully:")
         logger.info(f"  - Total documents: {index_stats.total_documents}")
         logger.info(f"  - Total chunks: {index_stats.total_chunks}")
         logger.info(f"  - Index size: {index_stats.index_size_mb:.2f} MB")
@@ -99,7 +99,7 @@ def build_and_index_code_corpus(max_repos: int = 4):
 
         # Save index metadata
         index_builder.save_index()
-        logger.info(f"Index metadata saved")
+        logger.info("Index metadata saved")
 
     else:
         logger.warning("Pinecone not available. Skipping indexing.")
@@ -187,10 +187,10 @@ def integrate_with_training_pipeline():
     logger.info("=" * 80)
 
     # Initialize data orchestrator
-    orchestrator = DataOrchestrator("training/config.yaml")
+    DataOrchestrator("training/config.yaml")
 
     # Build code corpus
-    code_builder = CodeCorpusBuilder("training/config.yaml")
+    CodeCorpusBuilder("training/config.yaml")
 
     logger.info("\nData sources available:")
     logger.info("  1. DABStep multi-step reasoning tasks")

@@ -17,10 +17,8 @@ from training.knowledge_graph import (
     ConceptNode,
     GraphQA,
     GraphQueryEngine,
-    HybridKnowledgeRetriever,
     KnowledgeExtractor,
     KnowledgeGraphBuilder,
-    KnowledgeGraphSystem,
     RelationType,
 )
 
@@ -327,7 +325,7 @@ def example_5_build_from_papers():
 
     stats = builder.build_from_corpus(extractor, papers)
 
-    logger.info(f"\nGraph building complete:")
+    logger.info("\nGraph building complete:")
     logger.info(f"  Concepts: {stats['total_concepts']}")
     logger.info(f"  Relationships: {stats['total_relationships']}")
     logger.info(f"  Papers processed: {stats['papers_processed']}")
@@ -414,17 +412,17 @@ def example_7_advanced_queries():
     # Query 3: Compare AlphaZero and MuZero
     logger.info("\n--- Compare AlphaZero and MuZero ---")
 
-    az_rels = set((r['relation'], r['target'])
-                  for r in query_engine.get_relationships("alphazero", direction="outgoing"))
-    mz_rels = set((r['relation'], r['target'])
-                  for r in query_engine.get_relationships("muzero", direction="outgoing"))
+    az_rels = {(r['relation'], r['target'])
+                  for r in query_engine.get_relationships("alphazero", direction="outgoing")}
+    mz_rels = {(r['relation'], r['target'])
+                  for r in query_engine.get_relationships("muzero", direction="outgoing")}
 
     common = az_rels & mz_rels
     az_only = az_rels - mz_rels
     mz_only = mz_rels - az_rels
 
     logger.info(f"Common: {len(common)} relationships")
-    for rel, target in list(common)[:5]:
+    for _rel, target in list(common)[:5]:
         concept = query_engine.find_concept(target)
         if concept:
             logger.info(f"  Both use: {concept.name}")

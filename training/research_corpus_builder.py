@@ -15,10 +15,8 @@ Features:
 - Comprehensive error handling and rate limiting
 """
 
-import hashlib
 import json
 import logging
-import os
 import re
 import time
 from collections.abc import Iterator
@@ -26,9 +24,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
 
-import numpy as np
 import yaml
 
 try:
@@ -39,7 +35,7 @@ except ImportError:
     HAS_ARXIV = False
 
 try:
-    import requests
+    import requests  # noqa: F401 - reserved for future use
 
     HAS_REQUESTS = True
 except ImportError:
@@ -516,7 +512,7 @@ class ResearchCorpusCache:
         """Load set of already processed paper IDs."""
         if self.processed_ids_file.exists():
             with open(self.processed_ids_file) as f:
-                return set(line.strip() for line in f if line.strip())
+                return {line.strip() for line in f if line.strip()}
         return set()
 
     def _load_metadata_cache(self) -> dict[str, Any]:

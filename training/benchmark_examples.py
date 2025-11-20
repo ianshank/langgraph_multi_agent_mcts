@@ -18,7 +18,6 @@ from pathlib import Path
 from training.benchmark_suite import (
     BenchmarkSuite,
     RetrievalResult,
-    create_example_code_gen_function,
     create_example_reasoning_function,
     create_example_retrieval_function,
 )
@@ -231,7 +230,7 @@ def example_integration_tracking():
     retrieval_fn = create_example_retrieval_function()
     model_config = {"model": "tracked-model-v1", "embedding_dim": 384}
 
-    run = suite.run_retrieval_benchmark(
+    suite.run_retrieval_benchmark(
         dataset_name="custom_mcts", retrieval_fn=retrieval_fn, model_config=model_config
     )
 

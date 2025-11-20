@@ -7,8 +7,6 @@ Demonstrates basic usage of the advanced embedding system.
 import logging
 import os
 
-import yaml
-
 from training.advanced_embeddings import (
     CohereEmbedder,
     EmbedderFactory,
@@ -190,7 +188,7 @@ def example_rag_integration():
 
         # Get embedder info
         info = builder.get_embedder_info()
-        logger.info(f"\nRAG Index Builder Info:")
+        logger.info("\nRAG Index Builder Info:")
         logger.info(f"  Type: {info['type']}")
         logger.info(f"  Model: {info['model']}")
         logger.info(f"  Dimension: {info['dimension']}")

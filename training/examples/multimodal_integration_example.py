@@ -16,15 +16,14 @@ This is the recommended way to use the multimodal system in production.
 
 import asyncio
 import logging
-from pathlib import Path
 import sys
+from pathlib import Path
 
 # Add parent directory to path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from training.research_corpus_builder import ResearchCorpusBuilder
 from training.multimodal_knowledge_base import MultiModalRAG
-from training.rag_builder import VectorIndexBuilder
+from training.research_corpus_builder import ResearchCorpusBuilder
 
 logging.basicConfig(
     level=logging.INFO,

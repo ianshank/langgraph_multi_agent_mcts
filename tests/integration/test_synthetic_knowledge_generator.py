@@ -4,22 +4,19 @@ Integration tests for Synthetic Knowledge Generator.
 These tests validate the end-to-end generation pipeline.
 """
 
-import asyncio
 import json
-import os
 import tempfile
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
 from src.adapters.llm.base import LLMResponse
 from training.synthetic_knowledge_generator import (
+    DOMAIN_VOCABULARIES,
+    QUESTION_TEMPLATES,
     QAPair,
     QualityValidator,
     SyntheticKnowledgeGenerator,
-    QUESTION_TEMPLATES,
-    DOMAIN_VOCABULARIES,
 )
 
 
@@ -36,7 +33,7 @@ class MockLLMClient:
 
         # Simulate different responses based on prompt
         if "Reasoning Path" in prompt:
-            answer = f"Step 1: Analyze the problem. Step 2: Apply MCTS principles. Step 3: Validate results."
+            answer = "Step 1: Analyze the problem. Step 2: Apply MCTS principles. Step 3: Validate results."
             tokens = 50
         else:
             answer = (
@@ -411,7 +408,7 @@ def mcts():
             output_dir=temp_output_dir,
         )
 
-        pairs1 = await generator1.generate_batch(num_samples=3, batch_size=2)
+        await generator1.generate_batch(num_samples=3, batch_size=2)
         generator1._save_checkpoint()
 
         initial_count = generator1.stats["valid_pairs"]
@@ -474,7 +471,7 @@ class TestQuestionTemplates:
 
     def test_all_templates_valid(self):
         """Test that all templates are non-empty strings."""
-        for category, templates in QUESTION_TEMPLATES.items():
+        for _category, templates in QUESTION_TEMPLATES.items():
             assert isinstance(templates, list)
             assert len(templates) > 0
             for template in templates:

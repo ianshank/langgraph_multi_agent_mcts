@@ -21,10 +21,9 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 import networkx as nx
-import numpy as np
 import yaml
 
 try:
@@ -39,7 +38,6 @@ try:
 except ImportError:
     HAS_NEO4J = False
 
-from training.data_pipeline import DocumentChunk
 
 logger = logging.getLogger(__name__)
 
@@ -691,31 +689,29 @@ class GraphQueryEngine:
         concept_id = concept_node.id
         results = []
 
-        if direction in ["outgoing", "both"]:
-            if concept_id in self.graph:
-                for target in self.graph.successors(concept_id):
-                    for edge_data in self.graph[concept_id][target].values():
-                        if relation_type is None or edge_data.get("relation") == relation_type.value:
-                            results.append({
-                                "source": concept_id,
-                                "target": target,
-                                "relation": edge_data.get("relation"),
-                                "properties": edge_data.get("properties", {}),
-                                "confidence": edge_data.get("confidence", 1.0),
-                            })
+        if direction in ["outgoing", "both"] and concept_id in self.graph:
+            for target in self.graph.successors(concept_id):
+                for edge_data in self.graph[concept_id][target].values():
+                    if relation_type is None or edge_data.get("relation") == relation_type.value:
+                        results.append({
+                            "source": concept_id,
+                            "target": target,
+                            "relation": edge_data.get("relation"),
+                            "properties": edge_data.get("properties", {}),
+                            "confidence": edge_data.get("confidence", 1.0),
+                        })
 
-        if direction in ["incoming", "both"]:
-            if concept_id in self.graph:
-                for source in self.graph.predecessors(concept_id):
-                    for edge_data in self.graph[source][concept_id].values():
-                        if relation_type is None or edge_data.get("relation") == relation_type.value:
-                            results.append({
-                                "source": source,
-                                "target": concept_id,
-                                "relation": edge_data.get("relation"),
-                                "properties": edge_data.get("properties", {}),
-                                "confidence": edge_data.get("confidence", 1.0),
-                            })
+        if direction in ["incoming", "both"] and concept_id in self.graph:
+            for source in self.graph.predecessors(concept_id):
+                for edge_data in self.graph[source][concept_id].values():
+                    if relation_type is None or edge_data.get("relation") == relation_type.value:
+                        results.append({
+                            "source": source,
+                            "target": concept_id,
+                            "relation": edge_data.get("relation"),
+                            "properties": edge_data.get("properties", {}),
+                            "confidence": edge_data.get("confidence", 1.0),
+                        })
 
         return results
 

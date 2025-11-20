@@ -24,12 +24,9 @@ import yaml
 from training.continual_learning import (
     ABTestFramework,
     ActiveLearningSelector,
-    DataQualityValidator,
     DriftDetector,
     FailurePatternAnalyzer,
-    FeedbackCollector,
     IncrementalRetrainingPipeline,
-    IncrementalTrainer,
     ProductionInteraction,
     ProductionInteractionLogger,
 )
@@ -143,7 +140,7 @@ async def demo_production_logging(config, interactions):
 
     # Show statistics
     stats = logger.get_statistics()
-    print(f"\nLogging Statistics:")
+    print("\nLogging Statistics:")
     print(f"  Total logged: {stats['total_logged']}")
     print(f"  Total in DB: {stats.get('total_in_db', 0)}")
     print(f"  Avg feedback score: {stats.get('avg_feedback_score', 0):.2f}/5.0")
@@ -152,7 +149,7 @@ async def demo_production_logging(config, interactions):
     print(f"  PII sanitized: {stats['pii_sanitized']}")
 
     # Demo querying
-    print(f"\nQuerying low-rated interactions (< 3 stars):")
+    print("\nQuerying low-rated interactions (< 3 stars):")
     low_rated = logger.query_interactions(max_feedback_score=3.0, limit=5)
     print(f"  Found {len(low_rated)} low-rated interactions")
 
@@ -193,7 +190,7 @@ def demo_failure_analysis(config, logger):
 
     # Show summary
     summary = analyzer.get_summary()
-    print(f"\nPattern Summary:")
+    print("\nPattern Summary:")
     print(f"  Total patterns: {summary['total_patterns']}")
     print(f"  Pattern types: {summary.get('pattern_types', {})}")
     print(f"  Total failures: {summary.get('total_failures_analyzed', 0)}")
@@ -244,7 +241,7 @@ def demo_active_learning(config, logger):
     for c in candidates:
         selection_reasons[c.selection_reason] = selection_reasons.get(c.selection_reason, 0) + 1
 
-    print(f"\nSelection breakdown:")
+    print("\nSelection breakdown:")
     for reason, count in selection_reasons.items():
         print(f"  {reason}: {count} samples")
 
@@ -290,7 +287,7 @@ async def demo_incremental_retraining(config, logger):
         if result["status"] == "completed":
             print(f"  Timestamp: {result['timestamp']}")
             print(f"  Samples used: {result['num_samples']}")
-            print(f"\n  Pipeline steps:")
+            print("\n  Pipeline steps:")
             for step in result["steps"]:
                 print(f"    {step['step']}: {step['status']}")
                 if "metrics" in step:
@@ -358,12 +355,12 @@ def demo_drift_detection(config, interactions):
 
     if drift_detected:
         summary = detector.get_drift_summary()
-        print(f"\nDrift detected!")
+        print("\nDrift detected!")
         print(f"  Total drifts: {summary['total_drifts']}")
         print(f"  Avg severity: {summary.get('avg_severity', 0):.3f}")
 
         if "recent_drifts" in summary:
-            print(f"\n  Recent drifts:")
+            print("\n  Recent drifts:")
             for drift in summary["recent_drifts"]:
                 print(f"    Type: {drift['type']}, Severity: {drift['severity']:.3f}")
     else:
@@ -426,14 +423,14 @@ def demo_ab_testing(config):
 
     # Get status
     status = framework.get_test_status(test_id)
-    print(f"\nTest Status:")
+    print("\nTest Status:")
     print(f"  Status: {status['status']}")
     print(f"  Control samples: {status['samples_control']}")
     print(f"  Treatment samples: {status['samples_treatment']}")
 
     if "result" in status:
         result = status["result"]
-        print(f"\nTest Result:")
+        print("\nTest Result:")
         print(f"  Control mean: {result['mean_control']:.4f}")
         print(f"  Treatment mean: {result['mean_treatment']:.4f}")
         print(f"  Improvement: {result['improvement'] * 100:.2f}%")
@@ -472,13 +469,13 @@ async def main():
     candidates = demo_active_learning(config, logger)
 
     # 4. Incremental retraining
-    pipeline = await demo_incremental_retraining(config, logger)
+    await demo_incremental_retraining(config, logger)
 
     # 5. Drift detection
-    detector = demo_drift_detection(config, interactions)
+    demo_drift_detection(config, interactions)
 
     # 6. A/B testing
-    framework = demo_ab_testing(config)
+    demo_ab_testing(config)
 
     # Summary
     print("\n" + "=" * 80)

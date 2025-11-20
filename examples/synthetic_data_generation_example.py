@@ -22,10 +22,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.adapters.llm import create_client
-from training.synthetic_knowledge_generator import (
-    SyntheticKnowledgeGenerator,
+from src.adapters.llm import create_client  # noqa: E402
+from training.synthetic_knowledge_generator import (  # noqa: E402
     QUESTION_TEMPLATES,
+    SyntheticKnowledgeGenerator,
 )
 
 logging.basicConfig(
@@ -78,7 +78,7 @@ async def example_basic_generation():
 
     # Statistics
     stats = generator.get_statistics()
-    logger.info(f"\nStatistics:")
+    logger.info("\nStatistics:")
     logger.info(f"  Total API calls: {stats['api_calls']}")
     logger.info(f"  Total tokens: {stats['total_tokens']:,}")
     logger.info(f"  Estimated cost: ${stats['total_cost']:.4f}")
@@ -160,7 +160,7 @@ async def example_high_quality_filtering():
     quality_scores = [pair.quality_score for pair in pairs]
     avg_quality = sum(quality_scores) / len(quality_scores) if quality_scores else 0
 
-    logger.info(f"\nQuality distribution:")
+    logger.info("\nQuality distribution:")
     logger.info(f"  Average: {avg_quality:.3f}")
     logger.info(f"  Min: {min(quality_scores):.3f}")
     logger.info(f"  Max: {max(quality_scores):.3f}")
@@ -270,7 +270,7 @@ async def example_resume_from_checkpoint():
     )
 
     logger.info("Phase 1: Generating initial batch...")
-    pairs1 = await generator1.generate_batch(num_samples=5, batch_size=2)
+    await generator1.generate_batch(num_samples=5, batch_size=2)
     generator1._save_checkpoint()
 
     initial_count = generator1.stats["valid_pairs"]

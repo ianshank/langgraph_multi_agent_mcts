@@ -20,7 +20,7 @@ import logging
 import os
 import time
 from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal
@@ -30,14 +30,14 @@ import yaml
 
 try:
     import matplotlib.pyplot as plt
-    import seaborn as sns
+    import seaborn  # noqa: F401 - reserved for future use
 
     HAS_PLOTTING = True
 except ImportError:
     HAS_PLOTTING = False
 
 try:
-    import pandas as pd
+    import pandas  # noqa: F401 - reserved for future use
 
     HAS_PANDAS = True
 except ImportError:
@@ -396,13 +396,13 @@ class CodeMetrics:
     """Compute code generation metrics."""
 
     @staticmethod
-    def pass_at_k(results: list[dict[str, Any]], k: int = 1) -> float:
+    def pass_at_k(results: list[dict[str, Any]], _k: int = 1) -> float:
         """
         Compute Pass@k metric for code generation.
 
         Args:
             results: List of results with 'passed' and 'total_tests' fields
-            k: Number of samples to consider
+            _k: Number of samples to consider (currently unused, placeholder for future implementation)
 
         Returns:
             Pass@k score (0.0 to 1.0)
@@ -1131,8 +1131,8 @@ class BenchmarkSuite:
 
     def _create_mock_dataset(self, benchmark_type: str) -> list[dict[str, Any]]:
         """Create mock dataset for testing."""
-        if benchmark_type == "retrieval":
-            return [
+        datasets = {
+            "retrieval": [
                 {
                     "query": "What is MCTS?",
                     "ground_truth_relevant": ["doc1", "doc2"],
@@ -1143,24 +1143,23 @@ class BenchmarkSuite:
                     "ground_truth_relevant": ["doc3", "doc4", "doc5"],
                     "ground_truth_rankings": {"doc3": 0, "doc4": 1, "doc5": 2},
                 },
-            ]
-        elif benchmark_type == "reasoning":
-            return [
+            ],
+            "reasoning": [
                 {"problem": "What is 2+2?", "answer": "4", "steps": ["Add 2 and 2", "Result is 4"]},
                 {
                     "problem": "Solve: x + 5 = 10",
                     "answer": "x = 5",
                     "steps": ["Subtract 5 from both sides", "x = 10 - 5", "x = 5"],
                 },
-            ]
-        elif benchmark_type == "code_generation":
-            return [
+            ],
+            "code_generation": [
                 {
                     "problem": "Write a function to add two numbers",
                     "test_cases": [("add(2, 3)", 5), ("add(0, 0)", 0)],
                 },
-            ]
-        return []
+            ],
+        }
+        return datasets.get(benchmark_type, [])
 
     def _run_code_tests(self, code: str, test_cases: list[tuple[str, Any]]) -> bool:
         """Run test cases on generated code (simplified)."""
@@ -1425,7 +1424,7 @@ class BenchmarkSuite:
         angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
         angles += angles[:1]  # Complete the circle
 
-        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw=dict(projection="polar"))
+        fig, ax = plt.subplots(figsize=(10, 10), subplot_kw={"projection": "polar"})
 
         for run in runs[:5]:  # Limit to 5 runs for clarity
             values = [run.metrics.get(m, MetricResult("", 0.0)).value for m in metric_names]
@@ -1655,15 +1654,15 @@ def main():
     logger.info("\n--- Generating Reports ---")
 
     # JSON report
-    json_report = suite.generate_report(retrieval_run, output_format="json", output_file=suite.output_dir / "report.json")
+    suite.generate_report(retrieval_run, output_format="json", output_file=suite.output_dir / "report.json")
     logger.info("JSON report generated")
 
     # Markdown report
-    md_report = suite.generate_report(retrieval_run, output_format="markdown", output_file=suite.output_dir / "report.md")
+    suite.generate_report(retrieval_run, output_format="markdown", output_file=suite.output_dir / "report.md")
     logger.info("Markdown report generated")
 
     # HTML report
-    html_report = suite.generate_report(retrieval_run, output_format="html", output_file=suite.output_dir / "report.html")
+    suite.generate_report(retrieval_run, output_format="html", output_file=suite.output_dir / "report.html")
     logger.info("HTML report generated")
 
     # Export to CSV

@@ -5,7 +5,6 @@ Provides drop-in replacement for VectorIndexBuilder with advanced embeddings.
 """
 
 import logging
-from pathlib import Path
 from typing import Any
 
 import numpy as np
@@ -236,7 +235,7 @@ def migrate_embeddings(
     migrated_count = 0
     batch_vectors = []
 
-    for i, chunk in enumerate(chunks):
+    for _i, chunk in enumerate(chunks):
         # Re-embed text
         embedding = new_embedder.embed([chunk["text"]])[0]
 

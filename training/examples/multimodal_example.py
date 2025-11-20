@@ -12,20 +12,21 @@ This example demonstrates how to:
 
 import asyncio
 import logging
-from pathlib import Path
 
 # Add parent directory to path
 import sys
+from pathlib import Path
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from training.multimodal_knowledge_base import (
-    MultiModalRAG,
-    ImageProcessor,
-    VisionModelAdapter,
     CodeBlockExtractor,
-    MultiModalEmbedder,
-    VisualIndexBuilder,
     ExtractedImage,
+    ImageProcessor,
+    MultiModalEmbedder,
+    MultiModalRAG,
+    VisionModelAdapter,
+    VisualIndexBuilder,
 )
 
 # Setup logging

@@ -29,8 +29,8 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.adapters.llm import create_client
-from training.synthetic_knowledge_generator import SyntheticKnowledgeGenerator
+from src.adapters.llm import create_client  # noqa: E402
+from training.synthetic_knowledge_generator import SyntheticKnowledgeGenerator  # noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +40,6 @@ def load_existing_rag_dataset() -> list[dict]:
     try:
         # Import the dataset creation function
         sys.path.insert(0, str(project_root / "scripts"))
-        from create_rag_eval_datasets import create_rag_eval_dataset
 
         # This returns the dataset in the expected format
         # We need to extract the examples instead

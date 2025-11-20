@@ -13,15 +13,12 @@ Tests all components of the production feedback loop:
 - ABTestFramework
 """
 
-import asyncio
-import json
 import tempfile
 import time
 from pathlib import Path
 
 import numpy as np
 import pytest
-import yaml
 
 from training.continual_learning import (
     ABTestFramework,
@@ -29,17 +26,13 @@ from training.continual_learning import (
     ActiveLearningSelector,
     DataQualityValidator,
     DriftDetector,
-    DriftReport,
-    FailurePattern,
     FailurePatternAnalyzer,
     FeedbackCollector,
     FeedbackSample,
     IncrementalRetrainingPipeline,
-    IncrementalTrainer,
     ProductionInteraction,
     ProductionInteractionLogger,
 )
-
 
 # =============================================================================
 # Fixtures
@@ -597,9 +590,9 @@ class TestDriftDetector:
         detector.set_reference_distribution(reference)
 
         # Add samples with drift
-        for i in range(100):
+        for _i in range(100):
             sample = np.random.randn(5) + 2.0  # Shifted distribution
-            report = detector.add_sample(sample)
+            detector.add_sample(sample)
 
         # Should detect drift
         assert len(detector.drift_history) > 0
@@ -618,7 +611,7 @@ class TestABTestFramework:
         framework = ABTestFramework(test_config)
 
         test_id = framework.create_test(
-            "test_experiment", model_a="v1", model_b="v2", metric_fn=lambda x, y: 1.0
+            "test_experiment", model_a="v1", model_b="v2", metric_fn=lambda _x, _y: 1.0
         )
 
         assert test_id in framework.tests
@@ -628,7 +621,7 @@ class TestABTestFramework:
         """Test group assignment."""
         framework = ABTestFramework(test_config)
         test_id = framework.create_test(
-            "test_experiment", model_a="v1", model_b="v2", metric_fn=lambda x, y: 1.0
+            "test_experiment", model_a="v1", model_b="v2", metric_fn=lambda _x, _y: 1.0
         )
 
         # Should consistently assign same request to same group

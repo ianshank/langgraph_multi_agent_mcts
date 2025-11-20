@@ -5,11 +5,9 @@ This module contains comprehensive tests for the AlphaZero-style
 self-play training pipeline.
 """
 
-import asyncio
 import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
 import torch
 
@@ -19,9 +17,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 from training.self_play_generator import (
     Action,
     CodeGenerationTaskGenerator,
+    MathProblemGenerator,
     MCTSSearchTaskGenerator,
     MCTSTrace,
-    MathProblemGenerator,
     MultiStepReasoningGenerator,
     SelfPlayDataset,
     SelfPlayEpisode,

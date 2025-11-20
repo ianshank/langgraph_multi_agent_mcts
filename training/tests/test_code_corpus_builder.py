@@ -4,10 +4,7 @@ Tests for Code Corpus Builder
 Tests repository fetching, code parsing, quality filtering, and RAG integration.
 """
 
-import ast
 import json
-import tempfile
-from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
@@ -19,9 +16,7 @@ from training.code_corpus_builder import (
     ExampleExtractor,
     PythonCodeParser,
     RepositoryFetcher,
-    RepositoryMetadata,
 )
-
 
 # ============================================================================
 # Test Data

@@ -13,16 +13,12 @@ Features:
 - Integration with existing research corpus builder
 """
 
-import asyncio
 import base64
 import hashlib
 import io
-import json
 import logging
 import os
 import re
-import uuid
-from collections.abc import AsyncIterator, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path

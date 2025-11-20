@@ -12,8 +12,6 @@ import asyncio
 import logging
 from pathlib import Path
 
-import torch
-
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
@@ -55,7 +53,7 @@ async def example_basic_usage():
     extractor = TrainingDataExtractor()
     training_data = extractor.extract_examples([episode])
 
-    logger.info(f"\nTraining data extracted:")
+    logger.info("\nTraining data extracted:")
     logger.info(f"  Policy examples: {len(training_data['policy'])}")
     logger.info(f"  Value examples: {len(training_data['value'])}")
     logger.info(f"  Reasoning examples: {len(training_data['reasoning'])}")
@@ -66,8 +64,8 @@ async def example_basic_usage():
 
 async def example_with_agents():
     """Example with HRM and TRM agents."""
-    from src.agents.hrm_agent import HRMAgent, create_hrm_agent
-    from src.agents.trm_agent import TRMAgent, create_trm_agent
+    from src.agents.hrm_agent import create_hrm_agent
+    from src.agents.trm_agent import create_trm_agent
     from src.training.system_config import HRMConfig, TRMConfig
     from training.self_play_generator import SelfPlayEpisodeGenerator
 
@@ -221,8 +219,8 @@ async def example_task_diversity():
     """Example: Diverse task generation."""
     from training.self_play_generator import (
         CodeGenerationTaskGenerator,
-        MCTSSearchTaskGenerator,
         MathProblemGenerator,
+        MCTSSearchTaskGenerator,
         MultiStepReasoningGenerator,
     )
 
@@ -250,8 +248,6 @@ async def example_task_diversity():
 async def example_data_extraction_details():
     """Example: Detailed training data extraction."""
     from training.self_play_generator import (
-        MathProblemGenerator,
-        SelfPlayEpisodeGenerator,
         SelfPlayTrainer,
         TrainingDataExtractor,
     )
@@ -323,7 +319,7 @@ async def example_checkpoint_management():
     )
 
     logger.info("Running iteration and saving checkpoint...")
-    metrics = await trainer.iteration(0)
+    await trainer.iteration(0)
 
     logger.info(f"Best model metric: {trainer.best_model_metric:.2%}")
 

@@ -793,16 +793,16 @@ This creates a **flywheel effect** where the system continuously improves with u
 ## 📞 Support & Resources
 
 ### Documentation Locations
-- **Quick Starts**: `/home/user/langgraph_multi_agent_mcts/training/*QUICKSTART*.md`
-- **Full Guides**: `/home/user/langgraph_multi_agent_mcts/training/docs/*.md`
-- **Examples**: `/home/user/langgraph_multi_agent_mcts/training/examples/`
-- **Tests**: `/home/user/langgraph_multi_agent_mcts/training/tests/`
-- **Training Modules**: `/home/user/langgraph_multi_agent_mcts/docs/training/MODULE_*.md`
+- **Quick Starts**: `training/*QUICKSTART*.md`
+- **Full Guides**: `training/docs/*.md`
+- **Examples**: `training/examples/`
+- **Tests**: `training/tests/`
+- **Training Modules**: `docs/training/MODULE_*.md`
 
 ### Key Configuration
-- **Main Config**: `/home/user/langgraph_multi_agent_mcts/training/config.yaml`
-- **Requirements**: `/home/user/langgraph_multi_agent_mcts/requirements.txt`
-- **Training Requirements**: `/home/user/langgraph_multi_agent_mcts/training/requirements*.txt`
+- **Main Config**: `training/config.yaml`
+- **Requirements**: `requirements.txt`
+- **Training Requirements**: `training/requirements*.txt`
 
 ---
 

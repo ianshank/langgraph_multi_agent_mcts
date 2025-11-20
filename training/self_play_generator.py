@@ -22,11 +22,11 @@ Key Features:
 """
 
 import asyncio
+import contextlib
 import hashlib
 import logging
 import time
-from collections import defaultdict
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
@@ -302,7 +302,7 @@ class CodeGenerationTaskGenerator(BaseTaskGenerator):
         for i in range(num_tasks):
             difficulty = self.rng.uniform(*self.difficulty_range)
             language = self.rng.choice(self.languages)
-            task_type = self.rng.choice(self.task_types)
+            self.rng.choice(self.task_types)
 
             if difficulty < 0.4:
                 task = self._generate_simple_function(language)
@@ -902,10 +902,8 @@ class TrainingDataExtractor:
         self.tokenizer = None
 
         if HAS_TRANSFORMERS:
-            try:
+            with contextlib.suppress(Exception):
                 self.tokenizer = AutoTokenizer.from_pretrained("gpt2")
-            except Exception:
-                pass
 
     def extract_examples(
         self, episodes: list[SelfPlayEpisode]
@@ -938,7 +936,7 @@ class TrainingDataExtractor:
         """Extract policy training examples from successful episode."""
         examples = []
 
-        for i, (state, trace) in enumerate(zip(episode.states[:-1], episode.mcts_traces)):
+        for i, (state, trace) in enumerate(zip(episode.states[:-1], episode.mcts_traces, strict=False)):
             # Create policy target from MCTS visit counts
             total_visits = sum(trace.visit_counts.values())
             if total_visits == 0:
@@ -980,7 +978,7 @@ class TrainingDataExtractor:
             returns.insert(0, G)
 
         # Create value examples
-        for i, (state, value_target) in enumerate(zip(episode.states[:-1], returns)):
+        for i, (state, value_target) in enumerate(zip(episode.states[:-1], returns, strict=False)):
             example = TrainingExample(
                 example_id=f"{episode.task_id}_value_{i}",
                 example_type="value",
@@ -1287,7 +1285,7 @@ class SelfPlayTrainer:
         # Distribute tasks across generators
         tasks_per_generator = num_tasks // len(self.task_generators)
 
-        for generator_name, generator in self.task_generators.items():
+        for _generator_name, generator in self.task_generators.items():
             gen_tasks = generator.generate(tasks_per_generator)
             tasks.extend(gen_tasks)
 
@@ -1334,7 +1332,7 @@ class SelfPlayTrainer:
             policy_loss = 0.0
             num_batches = 0
 
-            for batch in policy_loader:
+            for _batch in policy_loader:
                 # Simplified: would use actual training loop here
                 num_batches += 1
                 if num_batches >= 10:  # Limit for demo
@@ -1354,7 +1352,7 @@ class SelfPlayTrainer:
             value_loss = 0.0
             num_batches = 0
 
-            for batch in value_loader:
+            for _batch in value_loader:
                 # Simplified: would use actual training loop here
                 num_batches += 1
                 if num_batches >= 10:  # Limit for demo
@@ -1549,7 +1547,7 @@ async def main():
         # Show resource usage
         resources = trainer.get_resource_usage()
         if resources:
-            logger.info(f"\nResource Usage:")
+            logger.info("\nResource Usage:")
             for key, value in resources.items():
                 logger.info(f"  {key}: {value:.2f}")
 

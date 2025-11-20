@@ -64,7 +64,7 @@ class TestBaseEmbedder:
             embedder = RandomEmbedder(config)
 
             texts = ["test text 1"]
-            result = embedder.embed_with_cache(texts)
+            embedder.embed_with_cache(texts)
 
             # Check that cache directory is empty
             cache_files = list(Path(tmpdir).glob("*.npy"))

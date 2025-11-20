@@ -12,13 +12,12 @@ import logging
 import os
 import re
 import subprocess
-import tempfile
 from collections import defaultdict
+from collections.abc import Iterator
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
-import numpy as np
 import yaml
 
 try:
@@ -268,7 +267,7 @@ class RepositoryFetcher:
                 cmd.extend(["--depth", "1"])
             cmd.extend([repo_url, str(repo_path)])
 
-            result = subprocess.run(
+            subprocess.run(
                 cmd,
                 capture_output=True,
                 text=True,
@@ -1179,7 +1178,7 @@ def main():
 
     else:
         logger.info("Building code corpus...")
-        chunks = builder.build_corpus(max_repos=args.max_repos)
+        builder.build_corpus(max_repos=args.max_repos)
 
         # Save corpus
         output_path = Path(args.output) if args.output else None

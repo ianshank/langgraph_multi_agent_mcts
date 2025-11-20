@@ -50,10 +50,10 @@ from pathlib import Path
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-import yaml
+import yaml  # noqa: E402
 
-from src.adapters.llm import create_client, create_client_from_config
-from training.synthetic_knowledge_generator import SyntheticKnowledgeGenerator
+from src.adapters.llm import create_client, create_client_from_config  # noqa: E402
+from training.synthetic_knowledge_generator import SyntheticKnowledgeGenerator  # noqa: E402
 
 logger = logging.getLogger(__name__)
 

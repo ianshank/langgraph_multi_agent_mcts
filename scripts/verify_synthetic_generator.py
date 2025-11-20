@@ -54,7 +54,7 @@ def check_llm_adapters():
     logger.info("\nChecking LLM adapters...")
 
     try:
-        from src.adapters.llm import create_client, list_providers
+        from src.adapters.llm import list_providers
 
         providers = list_providers()
         logger.info(f"  ✓ Available providers: {', '.join(providers)}")
@@ -71,16 +71,19 @@ def check_generator_import():
 
     try:
         from training.synthetic_knowledge_generator import (
-            SyntheticKnowledgeGenerator,
+            QUESTION_TEMPLATES,
             QAPair,
             QualityValidator,
-            QUESTION_TEMPLATES,
+            SyntheticKnowledgeGenerator,
         )
+
+        # Verify all classes are importable
+        classes_to_verify = [QAPair, QualityValidator, SyntheticKnowledgeGenerator]
 
         num_categories = len(QUESTION_TEMPLATES)
         num_templates = sum(len(t) for t in QUESTION_TEMPLATES.values())
 
-        logger.info(f"  ✓ Generator module loaded")
+        logger.info(f"  ✓ Generator module loaded ({len(classes_to_verify)} classes verified)")
         logger.info(f"  ✓ {num_categories} categories available")
         logger.info(f"  ✓ {num_templates} total templates")
 
@@ -195,7 +198,7 @@ async def test_mock_generation():
 
         # Create mock client
         class MockClient:
-            async def generate(self, **kwargs):
+            async def generate(self, **_kwargs):
                 return LLMResponse(
                     text="This is a test answer.",
                     usage={"total_tokens": 100, "prompt_tokens": 50, "completion_tokens": 50},

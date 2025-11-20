@@ -236,9 +236,8 @@ class DataQualityValidator:
             issues.append("Response lacks coherence")
 
         # Check feedback consistency
-        if interaction.user_feedback_score is not None:
-            if not (1 <= interaction.user_feedback_score <= 5):
-                issues.append(f"Invalid feedback score: {interaction.user_feedback_score}")
+        if interaction.user_feedback_score is not None and not (1 <= interaction.user_feedback_score <= 5):
+            issues.append(f"Invalid feedback score: {interaction.user_feedback_score}")
 
         is_valid = len(issues) == 0
         return is_valid, issues
@@ -298,10 +297,8 @@ class DataQualityValidator:
         # Check for excessive repetition
         word_counts = Counter(words)
         most_common_count = word_counts.most_common(1)[0][1] if word_counts else 0
-        if most_common_count > len(words) * 0.5:  # >50% repetition
-            return False
-
-        return True
+        # Return False if >50% repetition
+        return most_common_count <= len(words) * 0.5
 
 
 # =============================================================================
@@ -833,7 +830,7 @@ class FailurePatternAnalyzer:
                 if label == -1:  # Noise
                     continue
 
-                cluster_indices = [i for i, l in enumerate(labels) if l == label]
+                cluster_indices = [i for i, lbl in enumerate(labels) if lbl == label]
                 cluster_interactions = [failures[i] for i in cluster_indices]
 
                 pattern_id = hashlib.md5(f"cluster_{label}_{datetime.now()}".encode()).hexdigest()[:8]

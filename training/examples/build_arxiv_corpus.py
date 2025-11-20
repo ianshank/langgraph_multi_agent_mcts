@@ -23,11 +23,11 @@ from pathlib import Path
 # Add parent directory to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
+from training.rag_builder import VectorIndexBuilder
 from training.research_corpus_builder import (
     ResearchCorpusBuilder,
     integrate_with_rag_pipeline,
 )
-from training.rag_builder import VectorIndexBuilder
 
 
 def setup_logging(verbose: bool = False) -> None:
@@ -107,7 +107,7 @@ def build_corpus_only(args: argparse.Namespace) -> None:
     logger.info(f"Papers cached:     {stats.papers_cached}")
     logger.info(f"Papers skipped:    {stats.papers_skipped}")
     logger.info(f"Errors:            {stats.errors}")
-    logger.info(f"\nCategory breakdown:")
+    logger.info("\nCategory breakdown:")
     for cat, count in sorted(stats.categories_breakdown.items(), key=lambda x: x[1], reverse=True):
         logger.info(f"  {cat}: {count}")
 
@@ -238,7 +238,7 @@ def build_and_index(args: argparse.Namespace) -> None:
         # Save index if requested
         if args.save_index:
             index_builder.save_index()
-            logger.info(f"\nIndex metadata saved to cache directory")
+            logger.info("\nIndex metadata saved to cache directory")
 
     except Exception as e:
         logger.error(f"Error during build and index: {e}", exc_info=True)
