@@ -100,6 +100,14 @@ class IntegratedFramework:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         print(f"Using device: {self.device}")
         
+        # Debug: Print installed packages
+        import subprocess
+        print("Installed packages:")
+        try:
+            subprocess.run(["pip", "freeze"], check=True)
+        except Exception as e:
+            print(f"Could not run pip freeze: {e}")
+
         # Debug: List files in models directory
         import os
         print(f"Current working directory: {os.getcwd()}")
