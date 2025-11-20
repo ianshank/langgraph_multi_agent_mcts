@@ -1,0 +1,48 @@
+# Multi-Modal Knowledge Base Requirements
+# Additional dependencies for image/code extraction and multi-modal RAG
+
+# PDF Processing and Image Extraction
+PyMuPDF>=1.23.0  # Fast PDF processing and image extraction (fitz)
+pdf2image>=1.16.0  # Alternative PDF to image conversion (requires poppler)
+Pillow>=10.0.0  # Image processing
+
+# Vision Models and Multi-Modal Embeddings
+# Note: CLIP requires transformers and torch (already in main requirements)
+
+# OCR (Optional, for text extraction from images)
+pytesseract>=0.3.10  # OCR engine wrapper
+# easyocr>=1.7.0  # Alternative deep learning OCR
+
+# Code Analysis (Optional enhancements)
+pygments>=2.15.0  # Syntax highlighting and language detection
+tree-sitter>=0.20.0  # Advanced code parsing (optional)
+
+# HTTP Client (for LLM API calls)
+httpx>=0.24.0  # Async HTTP client
+tenacity>=8.2.0  # Retry logic
+
+# Already in main requirements but needed for multimodal:
+# - transformers>=4.30.0 (for CLIP)
+# - torch>=2.0.0 (for CLIP)
+# - sentence-transformers>=2.2.0 (for text embeddings)
+# - pinecone>=5.0.0 (for vector storage)
+# - Pillow is included via other packages
+
+# Installation Notes:
+#
+# For PyMuPDF (recommended, faster):
+#   pip install PyMuPDF
+#
+# For pdf2image (requires system dependency):
+#   - Ubuntu/Debian: sudo apt-get install poppler-utils
+#   - macOS: brew install poppler
+#   - Then: pip install pdf2image
+#
+# For OCR with pytesseract:
+#   - Ubuntu/Debian: sudo apt-get install tesseract-ocr
+#   - macOS: brew install tesseract
+#   - Then: pip install pytesseract
+#
+# For CLIP models (downloads ~350MB-1.7GB depending on model):
+#   pip install transformers torch
+#   # Models download automatically on first use

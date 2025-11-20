@@ -128,6 +128,57 @@ rag:
   embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
   embedding_dim: 384
 
+  # Advanced embeddings configuration
+  embeddings:
+    # Primary model (Voyage AI - Top MTEB 2024)
+    model: "voyage-large-2-instruct"  # voyage-large-2-instruct, embed-english-v3.0, text-embedding-3-large, BAAI/bge-large-en-v1.5
+    provider: "voyage"  # voyage, cohere, openai, huggingface
+    dimension: 1024  # Full dimension (supports Matryoshka: 1024, 512, 256, 128 for Cohere/OpenAI)
+    batch_size: 32
+    cache_enabled: true
+    cache_dir: "./cache/embeddings"
+
+    # Fallback chain (tried in order if primary fails)
+    fallback_models:
+      - model: "embed-english-v3.0"
+        provider: "cohere"
+        dimension: 1024
+      - model: "text-embedding-3-large"
+        provider: "openai"
+        dimension: 1024
+      - model: "BAAI/bge-large-en-v1.5"
+        provider: "huggingface"
+        dimension: 1024
+      - model: "sentence-transformers/all-MiniLM-L6-v2"
+        provider: "huggingface"
+        dimension: 384
+
+    # Model-specific settings
+    voyage:
+      input_type: "document"  # document or query
+      truncate: true
+
+    cohere:
+      input_type: "search_document"  # search_document or search_query
+      truncate: "END"  # END, START, NONE
+      embedding_types: ["float"]
+
+    openai:
+      model: "text-embedding-3-large"  # text-embedding-3-large, text-embedding-3-small
+
+    # Ensemble settings
+    ensemble:
+      enabled: false
+      models: ["voyage-large-2-instruct", "embed-english-v3.0"]
+      combination_method: "mean"  # concat, mean, weighted
+      weights: null  # Auto-calculated if null
+
+    # Matryoshka embedding dimensions
+    matryoshka:
+      enabled: true
+      dimensions: [1024, 512, 256, 128]
+      default_dimension: 1024
+
   # Chunking strategy
   chunk_size: 512
   chunk_overlap: 50
@@ -264,13 +315,57 @@ monitoring:
     profile_steps: [10, 100, 1000]
 
 continual_learning:
-  # Feedback collection
+  # Production interaction logging
+  logging:
+    enabled: true
+    storage: "./cache/production_logs"
+    use_sqlite: true  # Use SQLite for queryable storage
+    use_compression: true  # Compress JSON backups
+    buffer_size: 1000  # Batch write buffer
+    sanitize_pii: true  # Remove PII from logs
+    use_langsmith: false  # Enable LangSmith integration
+    langsmith_project: "production-feedback"
+
+    # Data quality validation
+    min_query_length: 3
+    max_query_length: 5000
+    min_response_length: 1
+    max_response_length: 10000
+    blocked_patterns: []  # Regex patterns to block
+
+  # Failure pattern analysis
+  failure_analysis:
+    enabled: true
+    min_cluster_size: 5  # Minimum failures to form a pattern
+    similarity_threshold: 0.7  # For clustering similar failures
+    analyze_frequency: "daily"  # How often to run analysis
+
+  # Active learning for data selection
+  active_learning:
+    enabled: true
+    budget_per_cycle: 50  # Number of samples to select for annotation
+    selection_strategy: "hybrid"  # uncertainty, diversity, hybrid, failure
+    diversity_weight: 0.3  # Weight for diversity in hybrid mode
+
+  # Incremental retraining pipeline
+  retraining:
+    schedule: "weekly"  # daily, weekly, monthly
+    min_new_samples: 100  # Minimum samples before retraining
+    validation_split: 0.2  # Train/val split
+    enable_ab_test: true  # A/B test new vs old model
+
+    # Model update targets
+    update_meta_controller: true  # Update routing model
+    update_rag_index: true  # Add new documents to RAG
+    update_benchmarks: true  # Re-run evaluation suite
+
+  # Feedback collection (legacy compatibility)
   feedback:
     enabled: true
     buffer_size: 100000
     sample_rate: 0.1
 
-  # Incremental training
+  # Incremental training (EWC-based)
   incremental:
     retrain_threshold: 1000  # samples
     forgetting_prevention: "elastic_weight_consolidation"
@@ -281,7 +376,7 @@ continual_learning:
     enabled: true
     window_size: 1000
     threshold: 0.1
-    detection_method: "kolmogorov_smirnov"
+    detection_method: "kolmogorov_smirnov"  # kolmogorov_smirnov, population_stability_index
 
   # A/B testing
   ab_testing:
@@ -290,9 +385,315 @@ continual_learning:
     min_samples: 1000
     confidence_level: 0.95
 
+  # Metrics to track over time
+  metrics_tracking:
+    enabled: true
+    track_satisfaction: true  # User satisfaction scores
+    track_retrieval_quality: true  # Retrieval precision/recall
+    track_agent_accuracy: true  # Agent selection accuracy
+    track_latency: true  # Response latency distribution
+    track_failure_rate: true  # Failure rate by category
+
+    # Trending windows
+    short_term_window: 24  # hours
+    medium_term_window: 168  # 1 week in hours
+    long_term_window: 720  # 30 days in hours
+
+  # Privacy and security
+  privacy:
+    anonymize_user_ids: true
+    hash_session_ids: true
+    redact_sensitive_fields: true
+    retention_days: 90  # Delete data after 90 days
+
+  # Storage optimization
+  storage:
+    compress_old_logs: true  # Compress logs older than 7 days
+    archive_threshold_days: 30  # Archive to cold storage
+    max_db_size_gb: 10  # Maximum SQLite DB size
+
+# Research corpus from arXiv
+research_corpus:
+  # Paper fetching configuration
+  categories:
+    - "cs.AI"      # Artificial Intelligence
+    - "cs.LG"      # Machine Learning
+    - "cs.CL"      # Computation and Language (NLP)
+    - "cs.NE"      # Neural and Evolutionary Computing
+
+  keywords:
+    - "MCTS"
+    - "Monte Carlo Tree Search"
+    - "AlphaZero"
+    - "MuZero"
+    - "reinforcement learning"
+    - "multi-agent"
+    - "multi-agent systems"
+    - "LLM reasoning"
+    - "chain-of-thought"
+    - "tree-of-thought"
+    - "self-improvement"
+    - "Constitutional AI"
+    - "RLHF"
+    - "reinforcement learning from human feedback"
+    - "DPO"
+    - "direct preference optimization"
+    - "tree search"
+    - "policy gradient"
+    - "actor-critic"
+
+  # Date range for papers (YYYY-MM-DD)
+  date_start: "2020-01-01"
+  date_end: "2025-12-31"  # Current year
+
+  # Fetching limits
+  max_results: 1000  # Total maximum papers to fetch
+  max_per_keyword: 100  # Max papers per keyword
+  max_per_category: 500  # Max papers per category
+
+  # Rate limiting (arXiv API guidelines)
+  rate_limit_delay: 3.0  # seconds between requests
+  retry_attempts: 3
+
+  # Processing configuration
+  chunk_size: 512  # Characters per chunk
+  chunk_overlap: 50  # Overlap between chunks
+  include_citations: true
+  extract_sections: true
+
+  # Cache configuration
+  cache_dir: "./cache/research_corpus"
+  enable_caching: true
+
+  # Integration with RAG pipeline
+  auto_index: false  # Automatically add to Pinecone index
+  pinecone_namespace: "arxiv_research"
+  batch_size: 100  # Batch size for vector indexing
+
+# Code corpus builder configuration
+code_corpus:
+  # Repository settings
+  cache_dir: "./cache/code_repos"
+  output_dir: "./cache/code_corpus"
+  use_github_api: true
+  github_token: null  # Set via GITHUB_TOKEN environment variable
+  shallow_clone: true  # Use shallow clone to save space
+
+  # Parsing settings
+  min_function_lines: 3
+  max_function_lines: 200
+  extract_tests: true
+  extract_examples: true
+  find_tests: true
+  include_tests: false  # Don't include test files in initial parse
+
+  # Quality filtering
+  min_quality_score: 0.5
+
+  # Integration with RAG pipeline
+  auto_index: false  # Automatically add to Pinecone index
+  pinecone_namespace: "code-corpus"
+  batch_size: 100  # Batch size for vector indexing
+
+  # Repositories to process (priority order)
+  repositories:
+    high_priority:
+      - "deepmind/mctx"
+      - "langchain-ai/langgraph"
+      - "openai/gym"
+      - "karpathy/nanoGPT"
+    medium_priority:
+      - "facebookresearch/ReAgent"
+      - "google-deepmind/alphatensor"
+      - "microsoft/DeepSpeed"
+    low_priority:
+      - "huggingface/transformers"
+
 # Resource constraints
 resources:
   max_gpu_memory: null  # Auto-detect
   max_cpu_workers: 8
   prefetch_factor: 2
   pin_memory: true
+
+# Multi-Modal Knowledge Base Configuration
+multimodal:
+  # Vision model for image description
+  vision_model:
+    model: "claude-3-5-sonnet-20241022"  # or "gpt-4-vision-preview"
+    provider: "anthropic"  # anthropic or openai
+    max_tokens: 1024
+    temperature: 0.3
+
+  # Image extraction and processing
+  image_processor:
+    min_size: [100, 100]  # Minimum image dimensions in pixels
+    max_size: [4096, 4096]  # Maximum dimensions (will resize)
+    formats: ["png", "jpg", "jpeg"]
+    images_dir: "./cache/images"
+    backend: "pymupdf"  # pymupdf or pdf2image
+
+  # Multi-modal embeddings (CLIP)
+  embeddings:
+    clip_model: "openai/clip-vit-large-patch14"  # CLIP model for image-text embeddings
+    text_model: "sentence-transformers/all-MiniLM-L6-v2"  # Text-only embeddings
+    use_clip: true  # Enable cross-modal search
+    cache_dir: "./cache/clip_models"
+
+  # Code extraction
+  code_extractor:
+    extract_pseudocode: true
+    min_code_lines: 3
+    context_window: 200  # Characters of context around code
+    supported_languages:
+      - "python"
+      - "javascript"
+      - "java"
+      - "cpp"
+      - "pseudocode"
+
+  # Visual index (Pinecone)
+  visual_index:
+    api_key: null  # Set via PINECONE_API_KEY env var
+    index_name: "multi-agent-mcts-rag"  # Same index, different namespace
+    namespace: "images"  # Namespace for image vectors
+    batch_size: 100
+
+  # Namespaces for different content types
+  text_namespace: "multimodal_text"
+  code_namespace: "multimodal_code"
+  image_namespace: "images"
+
+  # Processing options
+  processing:
+    concurrent_images: 5  # Parallel image description generation
+    cache_descriptions: true
+    cache_embeddings: true
+    skip_large_images: true  # Skip images > max_size
+
+  # OCR settings (optional)
+  ocr:
+    enabled: false
+    engine: "pytesseract"  # pytesseract or easyocr
+    languages: ["eng"]
+
+  # Image classification
+  classification:
+    auto_classify: true  # Automatically classify image types
+    types:
+      - "architecture"
+      - "flowchart"
+      - "plot"
+      - "table"
+      - "tree"
+      - "neural_network"
+      - "algorithm"
+      - "equation"
+
+# Knowledge Graph Configuration
+knowledge_graph:
+  # Backend selection
+  backend: "networkx"  # networkx (development) or neo4j (production)
+  storage: "./cache/knowledge_graph"
+
+  # Neo4j configuration (if using Neo4j backend)
+  neo4j:
+    uri: "bolt://localhost:7687"
+    user: "neo4j"
+    password: null  # Set via NEO4J_PASSWORD environment variable
+
+  # Knowledge extraction settings
+  extraction:
+    llm_model: "gpt-4-turbo-preview"  # LLM for entity/relationship extraction
+    confidence_threshold: 0.7  # Minimum confidence for extracted relationships
+    api_key: null  # Set via OPENAI_API_KEY environment variable
+    rate_limit_delay: 1.0  # Seconds between LLM requests
+    batch_size: 10  # Number of papers to process in batch
+
+    # Extraction features
+    extract_from_papers: true
+    extract_from_code: true
+    extract_algorithms: true
+    extract_metrics: true
+    extract_architectures: true
+    extract_techniques: true
+
+  # Graph building settings
+  building:
+    auto_merge_duplicates: true  # Automatically merge duplicate concepts
+    min_confidence: 0.5  # Minimum confidence to add to graph
+    max_concepts_per_paper: 20  # Limit concepts extracted per paper
+    enable_validation: true  # Validate extracted relationships
+
+  # Hybrid retrieval configuration
+  hybrid_retrieval:
+    enabled: true
+    expansion_depth: 2  # How many hops to traverse in graph
+    vector_weight: 0.6  # Weight for vector similarity
+    graph_weight: 0.4  # Weight for graph relevance
+    max_expanded_concepts: 50  # Limit graph expansion
+
+  # Graph query settings
+  query:
+    max_path_length: 5  # Maximum path length for path finding
+    max_related_depth: 3  # Maximum depth for related concepts
+    cache_queries: true  # Cache frequent queries
+    enable_inference: false  # Enable graph reasoning/inference
+
+  # Question answering settings
+  qa:
+    enabled: true
+    confidence_threshold: 0.7  # Minimum confidence for QA answers
+    max_context_concepts: 10  # Maximum concepts to include in answer
+    use_llm_generation: false  # Use LLM to generate natural language answers
+
+  # Integration settings
+  integration:
+    sync_with_rag: true  # Automatically sync concepts with RAG index
+    pinecone_namespace: "knowledge_graph"  # Namespace for KG concepts
+    update_frequency: "daily"  # How often to rebuild graph
+
+  # Export and visualization
+  export:
+    auto_export: false  # Automatically export graph after building
+    export_formats: ["json", "graphml"]  # Formats to export
+    export_dir: "./cache/knowledge_graph/exports"
+
+  # Performance settings
+  performance:
+    cache_size: 1000  # LRU cache size for concepts
+    parallel_extraction: true  # Parallel paper processing
+    max_workers: 4  # Number of parallel workers
+    memory_limit_gb: 8  # Memory limit for graph operations
+
+  # Monitoring and logging
+  monitoring:
+    track_extraction_quality: true
+    log_low_confidence: true  # Log low-confidence extractions
+    alert_on_errors: true
+
+  # Concept types to extract
+  concept_types:
+    - "algorithm"
+    - "technique"
+    - "architecture"
+    - "metric"
+    - "framework"
+    - "dataset"
+    - "model"
+    - "method"
+    - "approach"
+
+  # Relationship types to extract (see RelationType enum)
+  relationship_types:
+    - "is_a"
+    - "uses"
+    - "improves"
+    - "extends"
+    - "implemented_in"
+    - "compared_to"
+    - "requires"
+    - "part_of"
+    - "related_to"
+    - "influences"
+    - "precedes"
