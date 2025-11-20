@@ -70,8 +70,8 @@ wandb/
 *.history.json
 
 # Models (too large for container - mount as volume)
-models/
-*.pt
+# models/
+# *.pt
 *.pth
 *.bin
 *.onnx

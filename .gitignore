@@ -174,7 +174,7 @@ logs/
 .pre-commit-cache/
 
 # BERT LoRA checkpoints (keep only final model)
-models/bert_lora/checkpoint-*/
+# models/bert_lora/checkpoint-*/
 
 # Weights & Biases
 wandb/
@@ -187,11 +187,11 @@ service_account.json
 google_credentials.json
 
 # Model artifacts (large files)
-*.pt
+# *.pt
 *.pth
 *.h5
 *.onnx
-rnn_meta_controller.pt
+# rnn_meta_controller.pt
 rnn_meta_controller.history.json
 artifacts/
 
