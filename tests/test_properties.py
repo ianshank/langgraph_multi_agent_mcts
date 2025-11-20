@@ -12,7 +12,8 @@ Best Practices 2025:
 """
 
 import pytest
-from hypothesis import given, settings, strategies as st
+from hypothesis import given, settings
+from hypothesis import strategies as st
 
 from src.framework.mcts.core import MCTSNode, MCTSState
 
@@ -58,7 +59,7 @@ class TestMCTSNodeProperties:
         """
         # Ensure equal length lists
         min_len = min(len(feature_keys), len(feature_values))
-        features = dict(zip(feature_keys[:min_len], feature_values[:min_len]))
+        features = dict(zip(feature_keys[:min_len], feature_values[:min_len], strict=False))
 
         state1 = MCTSState(state_id=state_id, features=features)
         state2 = MCTSState(state_id=state_id, features=features)
@@ -168,7 +169,7 @@ class TestAgentContextProperties:
 
         # Create metadata dict
         min_len = min(len(metadata_keys), len(metadata_values))
-        metadata = dict(zip(metadata_keys[:min_len], metadata_values[:min_len]))
+        metadata = dict(zip(metadata_keys[:min_len], metadata_values[:min_len], strict=False))
 
         context = AgentContext(query="test", metadata=metadata)
         context_dict = context.to_dict()

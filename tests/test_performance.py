@@ -2,7 +2,7 @@
 Performance and benchmark tests for critical paths.
 
 Performance testing ensures the framework maintains acceptable
-performance characteristics as it evolves. 
+performance characteristics as it evolves.
 
 Best Practices 2025:
 - Use pytest-benchmark for consistent measurements
@@ -158,6 +158,7 @@ class TestFactoryPerformance:
         Target: < 5ms per factory creation (includes settings load)
         """
         import os
+
         from src.framework.factories import MCTSEngineFactory
 
         # Set minimal env to avoid validation errors
@@ -264,6 +265,7 @@ class TestMemoryEfficiency:
         This helps ensure we can build large trees without OOM.
         """
         import sys
+
         from src.framework.mcts.core import MCTSNode, MCTSState
 
         # Create a node

@@ -15,10 +15,11 @@ Best Practices 2025:
 - Document expected behaviors
 """
 
-import pytest
 from typing import Protocol, runtime_checkable
 
-from src.adapters.llm.base import LLMClient, LLMResponse
+import pytest
+
+from src.adapters.llm.base import LLMResponse
 from src.framework.agents.base import AgentContext, AgentResult
 
 
@@ -358,8 +359,9 @@ class TestValidationContract:
         """
         Contract: QueryInput should be a Pydantic model.
         """
-        from src.models.validation import QueryInput
         from pydantic import BaseModel
+
+        from src.models.validation import QueryInput
 
         # Should inherit from BaseModel
         assert issubclass(QueryInput, BaseModel)
