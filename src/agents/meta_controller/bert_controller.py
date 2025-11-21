@@ -39,15 +39,16 @@ try:
     from peft import LoraConfig, TaskType, get_peft_model
 
     _PEFT_AVAILABLE = True
-except ImportError:
-    warnings.warn(
-        "peft library not installed. Install it with: pip install peft",
-        ImportWarning,
-        stacklevel=2,
-    )
-    LoraConfig = None  # type: ignore
-    TaskType = None  # type: ignore
-    get_peft_model = None  # type: ignore
+except ImportError as e:
+    # Only suppress if it's genuinely missing, not if it's broken
+    if "No module named 'peft'" in str(e):
+        _PEFT_AVAILABLE = False
+        LoraConfig = None  # type: ignore
+        TaskType = None  # type: ignore
+        get_peft_model = None  # type: ignore
+    else:
+        # Re-raise other import errors (e.g. missing dependencies like accelerate)
+        raise ImportError(f"Failed to import peft: {e}") from e
 
 
 class BERTMetaController(AbstractMetaController):

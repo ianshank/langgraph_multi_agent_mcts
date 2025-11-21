@@ -11,6 +11,15 @@ This is a production demonstration using real trained models.
 import asyncio
 import time
 from dataclasses import dataclass
+# Fail fast if critical dependencies are missing or broken
+try:
+    import peft
+    print(f"✓ PEFT library imported successfully (version: {peft.__version__})")
+except ImportError as e:
+    print(f"CRITICAL ERROR: Could not import peft library: {e}")
+    # We don't exit here to allow the app to crash naturally later with full stack trace,
+    # but this print ensures it's visible in the logs immediately.
+
 from pathlib import Path
 
 import gradio as gr
