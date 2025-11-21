@@ -29,6 +29,62 @@ data:
     cache_dir: "./cache/primus_instruct"
     max_samples: null  # Use all 835 samples
 
+  # ARC (Abstraction and Reasoning Corpus) for HRM training
+  arc:
+    path: "barc0/abstraction_and_reasoning_corpus"
+    cache_dir: "./cache/arc"
+    enabled: false  # Enable for HRM hierarchical reasoning training
+    split: "train"  # train, evaluation, test
+    max_samples: 1000  # ~1,000 training examples available
+    trust_remote_code: true
+
+  # GSM8K (Grade School Math) for mathematical reasoning
+  gsm8k:
+    path: "openai/gsm8k"
+    cache_dir: "./cache/gsm8k"
+    enabled: false  # Enable for TRM iterative refinement training
+    config: "main"  # main or socratic
+    split: "train"  # train (7.5k) or test (1k)
+    max_samples: null  # Use all samples
+
+  # IDoFT (Illinois Dataset of Flaky Tests) for quality engineering
+  idoft:
+    enabled: false  # Enable for quality engineering training
+    data_path: null  # Path to local IDoFT clone (if available)
+    cache_dir: "./cache/idoft"
+    categories:  # Filter by flaky test categories
+      - "async_wait"
+      - "concurrency"
+      - "time_dependent"
+      - "unordered_collection"
+      - "test_order_dependency"
+    max_samples: null
+
+  # HumanEval for code generation evaluation
+  humaneval:
+    path: "openai/openai_humaneval"
+    cache_dir: "./cache/humaneval"
+    enabled: false  # Enable for code generation training
+    split: "test"  # HumanEval typically only has test split (164 problems)
+
+  # Chess Games for MCTS strategic planning training
+  chess_games:
+    path: "angeluriot/chess_games"
+    cache_dir: "./cache/chess_games"
+    enabled: false  # Enable for MCTS policy training
+    min_elo: 2000  # Minimum player ELO rating
+    max_samples: 10000  # Limit samples (14M available)
+    streaming: true  # Required for large dataset
+
+  # BIG-Bench Hard for complex reasoning evaluation
+  bigbench_hard:
+    path: "maveriq/bigbenchhard"
+    cache_dir: "./cache/bigbench_hard"
+    enabled: false  # Enable for reasoning evaluation
+    split: "train"  # train or validation
+    tasks: null  # Specific tasks to load (null for all 23 tasks)
+    max_samples: null
+
   # Data augmentation settings
   augmentation:
     enabled: true
