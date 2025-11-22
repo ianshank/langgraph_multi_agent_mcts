@@ -1,0 +1,36 @@
+{
+  "start_time": "2025-11-19T18:20:56.031646",
+  "modules": {
+    "module_1": {
+      "labs": {
+        "lab1": {
+          "status": "completed",
+          "deliverable": "docs/training/MODULE_1_LAB_RESULTS.md"
+        },
+        "lab2": {
+          "status": "failed",
+          "command": "python scripts/smoke_test_traced.py",
+          "returncode": 1,
+          "stdout": "",
+          "stderr": "Traceback (most recent call last):\n  File \"c:\\Users\\iansh\\OneDrive\\Documents\\GitHub\\langgraph_multi_agent_mcts\\scripts\\smoke_test_traced.py\", line 24, in <module>\n    from tests.utils.langsmith_tracing import (\nModuleNotFoundError: No module named 'tests'\n",
+          "success": false
+        },
+        "lab3": {
+          "status": "completed",
+          "deliverable": "docs\\training\\MODULE_1_LAB3_RAM_PLAN.md"
+        }
+      },
+      "quiz": {
+        "status": "completed",
+        "score": "80%",
+        "passing": true,
+        "deliverable": "docs/training/MODULE_1_QUIZ_RESULTS.md"
+      },
+      "execution_time_seconds": 0.6958246231079102
+    }
+  },
+  "tests": {},
+  "summary": {},
+  "end_time": "2025-11-19T18:21:00.867510",
+  "total_duration": 4.835864
+}

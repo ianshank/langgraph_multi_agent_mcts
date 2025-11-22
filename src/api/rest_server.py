@@ -248,13 +248,13 @@ async def verify_api_key(x_api_key: str = Header(..., description="API key for a
     except AuthenticationError as e:
         if PROMETHEUS_AVAILABLE:
             ERROR_COUNT.labels(error_type="authentication").inc()
-        raise HTTPException(status_code=401, detail=e.user_message)
+        raise HTTPException(status_code=401, detail=e.user_message) from e
     except RateLimitError as e:
         if PROMETHEUS_AVAILABLE:
             ERROR_COUNT.labels(error_type="rate_limit").inc()
         raise HTTPException(
             status_code=429, detail=e.user_message, headers={"Retry-After": str(e.retry_after_seconds or 60)}
-        )
+        ) from e
 
 
 # Exception handlers
@@ -373,7 +373,7 @@ async def process_query(request: QueryRequest, client_info: ClientInfo = Depends
         except Exception as e:
             if PROMETHEUS_AVAILABLE:
                 ERROR_COUNT.labels(error_type="validation").inc()
-            raise HTTPException(status_code=400, detail=f"Validation failed: {str(e)}")
+            raise HTTPException(status_code=400, detail=f"Validation failed: {str(e)}") from e
 
     # Process query (mock implementation for demo)
     # In production, this would call the actual framework

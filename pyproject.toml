@@ -178,6 +178,9 @@ markers = [
     "chaos: Chaos engineering tests for system resilience",
     "smoke: Smoke tests for basic functionality",
     "benchmark: Performance benchmark tests",
+    "component: Component-level tests for specific modules",
+    "contract: Contract tests for API and interface compliance",
+    "property: Property-based tests using hypothesis",
 ]
 
 [tool.coverage.run]

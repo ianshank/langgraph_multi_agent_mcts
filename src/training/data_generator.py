@@ -382,7 +382,7 @@ class MetaControllerDataGenerator:
         try:
             y_list = [self.LABEL_TO_INDEX[label] for label in labels_list]
         except KeyError as e:
-            raise KeyError(f"Invalid agent label: {e}. Valid labels: {self.AGENT_NAMES}")
+            raise KeyError(f"Invalid agent label: {e}. Valid labels: {self.AGENT_NAMES}") from e
         y = torch.tensor(y_list, dtype=torch.int64)
 
         return X, y
@@ -432,7 +432,7 @@ class MetaControllerDataGenerator:
         try:
             label_indices = [self.LABEL_TO_INDEX[label] for label in labels_list]
         except KeyError as e:
-            raise KeyError(f"Invalid agent label: {e}. Valid labels: {self.AGENT_NAMES}")
+            raise KeyError(f"Invalid agent label: {e}. Valid labels: {self.AGENT_NAMES}") from e
 
         return text_list, label_indices
 

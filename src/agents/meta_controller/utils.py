@@ -199,3 +199,18 @@ def features_to_text(features: MetaControllerFeatures) -> str:
     )
 
     return text
+
+
+def convert_features_to_text(features: MetaControllerFeatures) -> str:
+    """
+    Convert MetaControllerFeatures to a text description for BERT input.
+
+    This is an alias for features_to_text() to maintain backward compatibility.
+
+    Args:
+        features: MetaControllerFeatures instance
+
+    Returns:
+        Text description of the features
+    """
+    return features_to_text(features)

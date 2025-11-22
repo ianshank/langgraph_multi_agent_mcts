@@ -413,8 +413,8 @@ class APIRequestMetadata(BaseModel):
 
             try:
                 ipaddress.ip_address(v)
-            except ValueError:
-                raise ValueError(f"Invalid IP address format: {v}")
+            except ValueError as e:
+                raise ValueError(f"Invalid IP address format: {v}") from e
         return v
 
 

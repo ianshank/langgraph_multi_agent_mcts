@@ -11,6 +11,7 @@ alerting:
 
 rule_files:
   - /etc/prometheus/alerts.yml
+  - /etc/prometheus/alerts_rag.yml
 
 scrape_configs:
   # Prometheus self-monitoring

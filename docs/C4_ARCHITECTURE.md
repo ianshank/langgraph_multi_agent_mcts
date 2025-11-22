@@ -81,7 +81,11 @@ graph TB
             HRM[HRM Agent<br/>PyTorch<br/><br/>Hierarchical reasoning]
             TRM[TRM Agent<br/>PyTorch<br/><br/>Recursive refinement]
             MCTS[Neural MCTS<br/>Python/PyTorch<br/><br/>Tree search with NN]
+            ParallelMCTS[Parallel MCTS<br/>AsyncIO/PyTorch<br/><br/>Virtual loss parallelization]
             PVNet[Policy-Value Network<br/>PyTorch ResNet<br/><br/>Action probabilities + value]
+            PolicyNet[Policy Network<br/>PyTorch MLP<br/><br/>Fast action selection]
+            ValueNet[Value Network<br/>PyTorch MLP<br/><br/>Position evaluation]
+            HybridAgent[Hybrid Agent<br/>PyTorch/LLM<br/><br/>Neural + LLM reasoning]
         end
 
         subgraph "Inference System"
@@ -108,9 +112,12 @@ graph TB
     Orchestrator -->|Trains| HRM
     Orchestrator -->|Trains| TRM
     Orchestrator -->|Trains| PVNet
+    Orchestrator -->|Trains| PolicyNet
+    Orchestrator -->|Trains| ValueNet
     Orchestrator -->|Uses| Monitor
 
     SelfPlay -->|Uses| MCTS
+    SelfPlay -->|Uses| ParallelMCTS
     SelfPlay -->|Stores| ReplayBuffer
 
     MCTS -->|Evaluates with| PVNet
@@ -118,11 +125,20 @@ graph TB
     MCTS -->|Guided by| HRM
     MCTS -->|Refines with| TRM
 
+    ParallelMCTS -->|Evaluates with| PolicyNet
+    ParallelMCTS -->|Evaluates with| ValueNet
+
+    HybridAgent -->|Uses| PolicyNet
+    HybridAgent -->|Uses| ValueNet
+    HybridAgent -->|Falls back to| HRM
+
     API -->|Routes to| InferenceEngine
     InferenceEngine -->|Uses| HRM
     InferenceEngine -->|Uses| TRM
     InferenceEngine -->|Uses| MCTS
+    InferenceEngine -->|Uses| ParallelMCTS
     InferenceEngine -->|Uses| PVNet
+    InferenceEngine -->|Uses| HybridAgent
 
     Orchestrator -->|Logs to| WandB
     Monitor -->|Exports to| Prometheus
@@ -149,7 +165,11 @@ graph TB
 | **HRM Agent** | PyTorch, Transformers | Hierarchical problem decomposition |
 | **TRM Agent** | PyTorch, GRU | Recursive solution refinement |
 | **Neural MCTS** | Python, NumPy, PyTorch | Tree search with neural guidance |
+| **Parallel MCTS** | Python, AsyncIO, PyTorch | Parallelized tree search with virtual loss |
 | **Policy-Value Network** | PyTorch, ResNet | Predicts action probabilities and values |
+| **Policy Network** | PyTorch, MLP | Fast action probability prediction |
+| **Value Network** | PyTorch, MLP | Fast position value estimation |
+| **Hybrid Agent** | PyTorch, LLM | Cost-optimized neural+LLM reasoning |
 | **FastAPI Server** | FastAPI, Uvicorn | REST API for inference |
 | **Inference Engine** | PyTorch | Model inference and prediction |
 | **Replay Buffer** | Python, NumPy | Stores and samples experiences |
@@ -428,7 +448,149 @@ graph TB
     style HAttention fill:#3498DB,stroke:#1F618D,stroke-width:2px,color:#fff
 ```
 
-### 3.5 TRM Agent Components
+### 3.5 Advanced MCTS Components (Module 8)
+
+```mermaid
+graph TB
+    subgraph "Advanced MCTS Container"
+        subgraph "Parallel MCTS Engine"
+            ParEngine[Parallel MCTS Engine<br/><br/>AsyncIO coordination]
+            VirtualLossCtrl[Virtual Loss Controller<br/><br/>Collision prevention]
+            WorkerPool[Worker Pool<br/><br/>Concurrent simulations]
+        end
+
+        subgraph "Virtual Loss Mechanism"
+            VLNode[Virtual Loss Node<br/><br/>Extended MCTS node]
+            VLAdd[Add Virtual Loss<br/><br/>Pessimistic value]
+            VLRevert[Revert Virtual Loss<br/><br/>Restore true value]
+            CollisionTrack[Collision Tracker<br/><br/>Monitor conflicts]
+        end
+
+        subgraph "Progressive Widening"
+            PWEngine[Progressive Widening Engine<br/><br/>Adaptive expansion]
+            PWCriterion[Expansion Criterion<br/><br/>N(s) > k * |C(s)|^α]
+            AdaptiveK[Adaptive K Tuner<br/><br/>Variance-based]
+            ActionFilter[Action Filter<br/><br/>Prune unpromising]
+        end
+
+        subgraph "RAVE (Rapid Action Value Estimation)"
+            RAVENode[RAVE Node<br/><br/>AMAF statistics]
+            RAVEBackprop[RAVE Backpropagation<br/><br/>All-Moves-As-First]
+            BetaDecay[Beta Decay<br/><br/>UCB-RAVE mixing]
+            HybridSelect[Hybrid Selection<br/><br/>(1-β)*UCB + β*RAVE]
+        end
+
+        subgraph "Parallelization Strategies"
+            TreePar[Tree Parallelization<br/><br/>Shared tree + VL]
+            RootPar[Root Parallelization<br/><br/>Independent trees]
+            LeafPar[Leaf Parallelization<br/><br/>Parallel rollouts]
+        end
+    end
+
+    ParEngine -->|Manages| WorkerPool
+    ParEngine -->|Uses| VirtualLossCtrl
+
+    VirtualLossCtrl -->|Creates| VLNode
+    VLNode -->|Adds pessimism| VLAdd
+    VLNode -->|Restores value| VLRevert
+    VLAdd -->|Tracked by| CollisionTrack
+
+    PWEngine -->|Evaluates| PWCriterion
+    PWCriterion -->|Adjusts| AdaptiveK
+    PWEngine -->|Applies| ActionFilter
+
+    RAVENode -->|Stores| RAVEBackprop
+    RAVEBackprop -->|Computes| BetaDecay
+    BetaDecay -->|Influences| HybridSelect
+
+    ParEngine -->|Strategy 1| TreePar
+    ParEngine -->|Strategy 2| RootPar
+    ParEngine -->|Strategy 3| LeafPar
+
+    style ParEngine fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff
+    style PWEngine fill:#9B59B6,stroke:#6C3483,stroke-width:2px,color:#fff
+```
+
+### 3.6 Neural Network Components (Module 9)
+
+```mermaid
+graph TB
+    subgraph "Neural Network Integration Container"
+        subgraph "Policy Network"
+            PolInput[Input Layer<br/><br/>State encoding]
+            PolHidden[Hidden Layers<br/><br/>2-3 layers, 256-512 units]
+            PolBatchNorm[Batch Normalization<br/><br/>Training stability]
+            PolDropout[Dropout Layer<br/><br/>Regularization]
+            PolOutput[Output Layer<br/><br/>Action probabilities]
+        end
+
+        subgraph "Value Network"
+            ValInput[Input Layer<br/><br/>State encoding]
+            ValHidden[Hidden Layers<br/><br/>2-3 layers, 256-512 units]
+            ValBatchNorm[Batch Normalization<br/><br/>Training stability]
+            ValDropout[Dropout Layer<br/><br/>Regularization]
+            ValOutput[Output Layer<br/><br/>Value estimate]
+        end
+
+        subgraph "Neural Trainer"
+            DataLoader[Data Loader<br/><br/>Batch sampling]
+            LossCompute[Loss Computation<br/><br/>Policy + Value loss]
+            Optimizer[Adam Optimizer<br/><br/>Learning rate scheduler]
+            ValTracker[Validation Tracker<br/><br/>Early stopping]
+            CheckpointMgr[Checkpoint Manager<br/><br/>Model versioning]
+        end
+
+        subgraph "Data Collection"
+            MCTSCollect[MCTS Data Collector<br/><br/>Self-play games]
+            StateConvert[State Converter<br/><br/>Format adaptation]
+            PolicyTarget[Policy Target<br/><br/>MCTS visit distribution]
+            ValueTarget[Value Target<br/><br/>Game outcome]
+        end
+
+        subgraph "Hybrid Agent"
+            ThresholdCheck[Confidence Threshold<br/><br/>Decision router]
+            NeuralPath[Neural Inference Path<br/><br/>Fast, cheap]
+            LLMPath[LLM Inference Path<br/><br/>High quality, expensive]
+            ResultMerge[Result Merger<br/><br/>Confidence weighting]
+            CostTracker[Cost Tracker<br/><br/>ROI monitoring]
+        end
+    end
+
+    PolInput -->|Through| PolHidden
+    PolHidden -->|Normalized by| PolBatchNorm
+    PolBatchNorm -->|Regularized by| PolDropout
+    PolDropout -->|Outputs| PolOutput
+
+    ValInput -->|Through| ValHidden
+    ValHidden -->|Normalized by| ValBatchNorm
+    ValBatchNorm -->|Regularized by| ValDropout
+    ValDropout -->|Outputs| ValOutput
+
+    DataLoader -->|Feeds| LossCompute
+    LossCompute -->|Updates via| Optimizer
+    Optimizer -->|Validates with| ValTracker
+    ValTracker -->|Saves to| CheckpointMgr
+
+    MCTSCollect -->|Converts via| StateConvert
+    StateConvert -->|Generates| PolicyTarget
+    StateConvert -->|Generates| ValueTarget
+    PolicyTarget -->|Trains| PolOutput
+    ValueTarget -->|Trains| ValOutput
+
+    ThresholdCheck -->|High confidence| NeuralPath
+    ThresholdCheck -->|Low confidence| LLMPath
+    NeuralPath -->|Uses| PolOutput
+    NeuralPath -->|Uses| ValOutput
+    NeuralPath -->|Result to| ResultMerge
+    LLMPath -->|Result to| ResultMerge
+    ResultMerge -->|Tracked by| CostTracker
+
+    style PolOutput fill:#E67E22,stroke:#BA4A00,stroke-width:2px,color:#fff
+    style ValOutput fill:#E67E22,stroke:#BA4A00,stroke-width:2px,color:#fff
+    style ThresholdCheck fill:#16A085,stroke:#0E6655,stroke-width:2px,color:#fff
+```
+
+### 3.7 TRM Agent Components
 
 ```mermaid
 graph TB
