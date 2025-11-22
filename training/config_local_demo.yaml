@@ -1,0 +1,399 @@
+# Local Demo Training Configuration for 16GB VRAM
+# ===================================================
+# This configuration is optimized for rapid verification of all training
+# components (HRM, TRM, MCTS, RAG) on a local 16GB GPU.
+# Expected completion time: 30-45 minutes
+
+demo:
+  mode: true
+  name: "local_verification_demo"
+  description: "End-to-end training verification on 16GB GPU"
+  target_duration_minutes: 45
+  verbose_logging: true
+
+data:
+  # DABStep multi-step reasoning dataset (REDUCED)
+  dabstep:
+    path: "adyen/DABstep"
+    cache_dir: "./cache/dabstep"
+    max_samples: 100  # DEMO: Reduced from all samples (450+)
+    streaming: false
+    train_split: 0.8  # 80 samples for training
+    val_split: 0.1    # 10 samples for validation
+    test_split: 0.1   # 10 samples for testing
+    seed: 42
+
+  # PRIMUS cybersecurity document corpus (REDUCED)
+  primus_seed:
+    path: "trendmicro-ailab/Primus-Seed"
+    cache_dir: "./cache/primus_seed"
+    categories:
+      - "mitre"      # Focus on MITRE ATT&CK framework
+      - "cyber_companies"  # Industry best practices
+    max_documents: 500  # DEMO: Reduced from 674k documents
+    streaming: true
+
+  # PRIMUS instruction tuning dataset (REDUCED)
+  primus_instruct:
+    path: "trendmicro-ailab/Primus-Instruct"
+    cache_dir: "./cache/primus_instruct"
+    max_samples: 50  # DEMO: Reduced from 835 samples
+
+  # Data augmentation (SIMPLIFIED)
+  augmentation:
+    enabled: false  # DEMO: Disabled to reduce processing time
+    task_permutations: 1
+    difficulty_scaling: false
+    paraphrase_probability: 0.0
+
+training:
+  # General training parameters (OPTIMIZED FOR 16GB)
+  batch_size: 8  # DEMO: Reduced from 32
+  learning_rate: 3e-5  # Slightly higher for faster convergence
+  weight_decay: 0.01
+  epochs: 3  # DEMO: Reduced from 10
+  max_steps: null
+  warmup_ratio: 0.05  # DEMO: Reduced warmup
+  gradient_accumulation_steps: 2  # DEMO: Reduced from 4
+  fp16: true  # Mixed precision essential for 16GB
+  gradient_clip_norm: 1.0
+
+  # Memory optimization
+  memory_optimization:
+    gradient_checkpointing: true  # 2025 best practice for memory efficiency
+    empty_cache_freq: 10  # Clear CUDA cache every 10 steps
+    pin_memory: true
+    num_workers: 2
+
+  # LoRA configuration (SMALLER RANK)
+  lora:
+    rank: 8  # DEMO: Reduced from 16
+    alpha: 16  # DEMO: Reduced from 32
+    dropout: 0.1
+    target_modules:
+      - "query_proj"
+      - "key_proj"
+      - "value_proj"
+
+  # Curriculum learning (SIMPLIFIED)
+  curriculum:
+    enabled: false  # DEMO: Disabled for faster execution
+
+  # Checkpointing (FREQUENT)
+  checkpointing:
+    save_strategy: "epoch"  # DEMO: Save every epoch
+    save_steps: null
+    save_total_limit: 2  # DEMO: Keep only last 2 checkpoints
+    resume_from_checkpoint: null
+    output_dir: "./checkpoints/demo"
+
+  # Distributed training (DISABLED)
+  distributed:
+    enabled: false
+
+  # Early stopping for demo
+  early_stopping:
+    enabled: true
+    patience: 2
+    min_delta: 0.001
+
+agents:
+  # Hierarchical Reasoning Model (LIGHTWEIGHT)
+  hrm:
+    model_name: "microsoft/deberta-v3-small"  # DEMO: Smaller model (768 hidden)
+    max_decomposition_depth: 3  # DEMO: Reduced from 5
+    min_subtasks: 2
+    max_subtasks: 5  # DEMO: Reduced from 10
+    learning_rate: 3e-5
+    lora_rank: 8  # DEMO: Reduced from 16
+    hidden_size: 768  # FIX #17: deberta-v3-small actual size
+    num_labels: 3
+
+  # Task Refinement Model (LIGHTWEIGHT)
+  trm:
+    model_name: "microsoft/deberta-v3-small"  # DEMO: Smaller model
+    max_refinement_iterations: 2  # DEMO: Reduced from 3
+    convergence_threshold: 0.90  # DEMO: Slightly lower threshold
+    learning_rate: 3e-5
+    lora_rank: 8  # DEMO: Reduced from 16
+    hidden_size: 768  # FIX #17: deberta-v3-small actual size
+    improvement_threshold: 0.02  # DEMO: Higher to converge faster
+
+  # Monte Carlo Tree Search (REDUCED SIMULATIONS)
+  mcts:
+    simulations: 50  # DEMO: Reduced from 200
+    exploration_constant: 1.414
+    discount_factor: 0.99
+    value_network:
+      hidden_layers: [128, 64]  # DEMO: Reduced from [256, 128, 64]
+      activation: "relu"
+      learning_rate: 1e-3
+    policy_network:
+      hidden_layers: [128, 64]  # DEMO: Reduced from [256, 128]
+      temperature: 1.0
+      learning_rate: 1e-3
+    self_play:
+      games_per_iteration: 20  # DEMO: Reduced from 100
+      buffer_size: 1000  # DEMO: Reduced from 10000
+      update_frequency: 5  # DEMO: More frequent updates
+
+rag:
+  # Use lightweight embedding model for demo
+  embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+  embedding_dim: 384
+
+  # Simplified embeddings configuration
+  embeddings:
+    # Use lightweight model for demo
+    model: "sentence-transformers/all-MiniLM-L6-v2"
+    provider: "huggingface"
+    dimension: 384
+    batch_size: 16  # DEMO: Reduced from 32
+    cache_enabled: true
+    cache_dir: "./cache/embeddings"
+
+    # Fallback chain (minimal for demo)
+    fallback_models:
+      - model: "all-MiniLM-L12-v2"
+        provider: "huggingface"
+        dimension: 384
+
+    # Disable advanced features for demo
+    ensemble:
+      enabled: false
+
+    matryoshka:
+      enabled: false
+
+  # Chunking strategy (SMALLER CHUNKS)
+  chunk_size: 256  # DEMO: Reduced from 512
+  chunk_overlap: 32  # DEMO: Reduced from 50
+  chunk_strategy: "fixed"  # DEMO: Simpler strategy
+
+  # Pinecone configuration (REAL INTEGRATION)
+  pinecone:
+    api_key: null  # Set via environment variable PINECONE_API_KEY
+    environment: "us-east-1"
+    cloud: "aws"
+    index_name: "multi-agent-mcts-demo"  # DEMO: Separate index
+    namespace: "demo"
+    metric: "cosine"
+    batch_size: 50  # DEMO: Reduced from 100
+
+  # Index configuration
+  index_type: "pinecone"
+  index_path: "./cache/rag_index_demo"
+  num_neighbors: 5  # DEMO: Reduced from 10
+  similarity_metric: "cosine"
+
+  # Hybrid search (SIMPLIFIED)
+  hybrid_search:
+    enabled: false  # DEMO: Disabled for simplicity
+
+  # Single domain index for demo
+  domain_indices:
+    - name: "demo"
+      categories: ["mitre", "cyber_companies"]
+      namespace: "demo"
+
+meta_controller:
+  # Router configuration (SMALLER)
+  router:
+    model_type: "mlp"
+    input_features: 12
+    hidden_layers: [64, 32]  # DEMO: Reduced from [128, 64, 32]
+    num_agents: 3
+    dropout: 0.2
+    learning_rate: 1e-3
+
+  # Aggregator configuration
+  aggregator:
+    method: "weighted_voting"
+    confidence_threshold: 0.65  # DEMO: Slightly lower
+    fallback_strategy: "consensus"
+
+  # Trace collection (REDUCED)
+  trace_collection:
+    buffer_size: 5000  # DEMO: Reduced from 50000
+    sample_rate: 1.0
+    features:
+      - "task_complexity"
+      - "agent_confidence"
+      - "iteration_count"
+      - "consensus_score"
+      - "latency"
+
+evaluation:
+  # Test configuration
+  test_size: 0.1
+  validation_frequency: 20  # DEMO: More frequent validation
+
+  # Metrics to track
+  metrics:
+    - "accuracy"
+    - "f1_score"
+    - "precision"
+    - "recall"
+    - "latency_ms"
+    - "memory_mb"
+    - "consensus_rate"
+
+  # Benchmarking (SIMPLIFIED)
+  benchmarks:
+    dabstep:
+      enabled: true
+      report_path: "./reports/demo_benchmark.json"
+
+  # Relaxed success criteria for demo
+  success_criteria:
+    hrm_accuracy: 0.70  # DEMO: Lower threshold
+    trm_avg_iterations: 2.5
+    mcts_win_rate: 0.60
+    rag_precision_at_10: 0.75
+    router_accuracy: 0.65
+
+  # Adversarial testing (DISABLED)
+  adversarial:
+    enabled: false
+
+monitoring:
+  # Experiment tracking (ENABLED - REAL W&B)
+  experiment_tracking:
+    platform: "wandb"
+    project_name: "multi-agent-mcts-demo"
+    run_name: null  # Auto-generated
+    tags: ["demo", "local", "16gb", "verification"]
+    notes: "Local verification demo run on 16GB GPU"
+
+  # Logging configuration
+  logging:
+    level: "DEBUG"  # DEMO: Verbose logging
+    format: "json"
+    log_dir: "./logs/demo"
+    max_bytes: 5242880  # 5MB
+    backup_count: 3
+
+  # Alerting (STRICT)
+  alerts:
+    loss_spike_threshold: 2.0
+    gradient_explosion_threshold: 100.0
+    oom_warning_threshold: 0.85  # DEMO: Alert at 85% GPU memory
+
+  # Profiling (ENABLED)
+  profiling:
+    enabled: true  # DEMO: Monitor performance
+    cpu_profiling: true
+    memory_profiling: true
+    profile_steps: [1, 10, 50]  # Profile early and often
+
+continual_learning:
+  # Production interaction logging (DISABLED FOR DEMO)
+  logging:
+    enabled: false
+
+  # Periodic retraining (DISABLED FOR DEMO)
+  retraining:
+    enabled: false
+
+  # Human feedback collection (DISABLED FOR DEMO)
+  feedback_collection:
+    enabled: false
+
+# Demo-specific phases configuration
+phases:
+  # Phase 1: Base Pre-training (SHORTENED)
+  base_pretraining:
+    duration_minutes: 10
+    enabled: true
+    description: "Pre-train HRM and TRM on reduced dataset"
+
+  # Phase 2: Instruction Fine-tuning (SHORTENED)
+  instruction_finetuning:
+    duration_minutes: 8
+    enabled: true
+    description: "Fine-tune on PRIMUS instruct subset"
+
+  # Phase 3: MCTS Self-play (SHORTENED)
+  mcts_self_play:
+    duration_minutes: 15
+    enabled: true
+    description: "Run MCTS self-play with reduced simulations"
+
+  # Phase 4: Meta-controller Training (SHORTENED)
+  meta_controller_training:
+    duration_minutes: 7
+    enabled: true
+    description: "Train router on synthetic traces"
+
+  # Phase 5: Evaluation (SHORTENED)
+  evaluation:
+    duration_minutes: 5
+    enabled: true
+    description: "Evaluate all components and generate reports"
+
+# External service verification requirements
+external_services:
+  required:
+    - name: "pinecone"
+      env_var: "PINECONE_API_KEY"
+      description: "Vector database for RAG"
+      verification_endpoint: "https://api.pinecone.io/indexes"
+
+    - name: "wandb"
+      env_var: "WANDB_API_KEY"
+      description: "Experiment tracking and monitoring"
+      verification_endpoint: "https://api.wandb.ai/graphql"
+
+    - name: "github"
+      env_var: "GITHUB_TOKEN"
+      description: "Repository access for data fetching"
+      verification_endpoint: "https://api.github.com/user"
+
+  optional:
+    - name: "openai"
+      env_var: "OPENAI_API_KEY"
+      description: "OpenAI API for extraction (optional)"
+      verification_endpoint: "https://api.openai.com/v1/models"
+
+    - name: "neo4j"
+      env_var: "NEO4J_PASSWORD"
+      description: "Knowledge graph database (optional)"
+      verification_endpoint: null
+
+# Resource limits for demo
+resource_limits:
+  max_gpu_memory_gb: 15  # Leave 1GB buffer
+  max_cpu_cores: 8
+  max_ram_gb: 32
+  timeout_minutes: 60  # Kill if exceeds 1 hour
+
+# Verification checkpoints
+verification:
+  checkpoints:
+    - name: "data_loading"
+      description: "Verify datasets load correctly"
+      critical: true
+
+    - name: "model_initialization"
+      description: "Verify models initialize within memory limits"
+      critical: true
+
+    - name: "training_loop"
+      description: "Verify training loop runs without OOM"
+      critical: true
+
+    - name: "checkpoint_save"
+      description: "Verify checkpoints save correctly"
+      critical: true
+
+    - name: "rag_indexing"
+      description: "Verify RAG index creation and Pinecone upload"
+      critical: true
+
+    - name: "evaluation"
+      description: "Verify evaluation metrics computation"
+      critical: true
+
+    - name: "wandb_sync"
+      description: "Verify W&B synchronization"
+      critical: false  # Non-critical but important

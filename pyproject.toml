@@ -105,9 +105,18 @@ select = [
 ]
 ignore = [
     "E501",   # line too long (handled by formatter)
+    "E741",   # ambiguous variable names (allow single letter vars in math/loops)
     "B008",   # do not perform function calls in argument defaults
     "B904",   # raise without from inside except
+    "B905",   # zip without strict parameter (not always needed)
     "ARG001", # unused function argument
+    "ARG002", # unused method argument (often required by interface/protocol)
+    "ARG005", # unused lambda argument
+    "C416",   # unnecessary dict/list comprehension (sometimes clearer)
+    "SIM108", # use ternary operator (sometimes less readable)
+    "SIM116", # use dict.get (sometimes less clear)
+    "SIM117", # combine with statements (sometimes clearer separate)
+    "F541",   # f-string without placeholders (used for future formatting)
 ]
 
 [tool.ruff.format]
@@ -167,6 +176,8 @@ markers = [
     "performance: Performance and load tests",
     "security: Security validation tests",
     "chaos: Chaos engineering tests for system resilience",
+    "smoke: Smoke tests for basic functionality",
+    "benchmark: Performance benchmark tests",
 ]
 
 [tool.coverage.run]

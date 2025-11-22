@@ -1,0 +1,119 @@
+# =============================================================================
+# Multi-Agent MCTS Training Pipeline - GPU-Enabled Dockerfile
+# =============================================================================
+#
+# Optimized for GPU training with CUDA 12.1, PyTorch 2.1+
+# Supports both demo mode (16GB GPU) and full training
+#
+# Build:
+#   docker build -f Dockerfile.train -t langgraph-mcts-train:latest .
+#   docker build -f Dockerfile.train -t langgraph-mcts-train:demo --target demo .
+#
+# Run:
+#   docker run --gpus all -it langgraph-mcts-train:latest
+#
+# =============================================================================
+
+# Base image with CUDA 12.1 and cuDNN 8
+FROM nvidia/cuda:12.1.1-cudnn8-devel-ubuntu22.04 AS base
+
+# Build arguments
+ARG PYTHON_VERSION=3.11
+ARG TORCH_CUDA_ARCH_LIST="7.0 7.5 8.0 8.6 8.9 9.0+PTX"
+
+# Environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    CUDA_HOME=/usr/local/cuda \
+    LD_LIBRARY_PATH=/usr/local/cuda/lib64:$LD_LIBRARY_PATH \
+    PATH=/usr/local/cuda/bin:$PATH \
+    PYTHONPATH=/app:$PYTHONPATH
+
+# Labels
+LABEL maintainer="MCTS Framework Team <team@example.com>" \
+      version="1.0.0" \
+      description="Multi-Agent MCTS Training Pipeline with GPU Support" \
+      cuda.version="12.1" \
+      python.version="3.11"
+
+# =============================================================================
+# System Dependencies
+# =============================================================================
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python${PYTHON_VERSION} \
+    python${PYTHON_VERSION}-dev \
+    python3-pip \
+    build-essential \
+    cmake \
+    git \
+    git-lfs \
+    wget \
+    curl \
+    ca-certificates \
+    htop \
+    nvtop \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set python3.11 as default
+RUN update-alternatives --install /usr/bin/python python /usr/bin/python${PYTHON_VERSION} 1 \
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python${PYTHON_VERSION} 1
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# =============================================================================
+# Application Setup
+# =============================================================================
+
+WORKDIR /app
+
+# Create non-root user
+RUN useradd -m -u 1000 -s /bin/bash appuser \
+    && mkdir -p /app/data /app/models /app/checkpoints /app/logs /app/cache /app/reports \
+    && chown -R appuser:appuser /app
+
+# Copy training requirements
+COPY --chown=appuser:appuser training/requirements.txt ./requirements.txt
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=appuser:appuser src/ ./src/
+COPY --chown=appuser:appuser training/ ./training/
+COPY --chown=appuser:appuser scripts/ ./scripts/
+COPY --chown=appuser:appuser tests/ ./tests/
+COPY --chown=appuser:appuser pyproject.toml ./
+COPY --chown=appuser:appuser README.md ./
+
+# Copy health check and entrypoint scripts
+COPY --chown=appuser:appuser healthcheck.py /app/healthcheck.py
+COPY --chown=appuser:appuser entrypoint.sh /app/entrypoint.sh
+
+RUN chmod +x /app/healthcheck.py && chmod +x /app/entrypoint.sh
+
+USER appuser
+
+EXPOSE 8000 8001 9090
+
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD python /app/healthcheck.py
+
+ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["python", "-m", "training.cli", "train", "--demo"]
+
+# =============================================================================
+# Build Stages
+# =============================================================================
+
+FROM base AS demo
+ENV DEMO_MODE=1
+CMD ["python", "-m", "training.cli", "train", "--demo"]
+
+FROM base AS production
+CMD ["python", "-m", "training.cli", "train", "--config", "training/config.yaml"]

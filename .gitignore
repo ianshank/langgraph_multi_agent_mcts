@@ -174,7 +174,7 @@ logs/
 .pre-commit-cache/
 
 # BERT LoRA checkpoints (keep only final model)
-models/bert_lora/checkpoint-*/
+# models/bert_lora/checkpoint-*/
 
 # Weights & Biases
 wandb/
@@ -187,11 +187,11 @@ service_account.json
 google_credentials.json
 
 # Model artifacts (large files)
-*.pt
+# *.pt
 *.pth
 *.h5
 *.onnx
-rnn_meta_controller.pt
+# rnn_meta_controller.pt
 rnn_meta_controller.history.json
 artifacts/
 
@@ -208,3 +208,19 @@ docker/volumes/
 # Ruff temporary output files
 ruff_output.txt
 ruff_non_adapters.txt
+
+# Training artifacts and caches
+cache/
+checkpoints/
+reports/
+training/models/
+
+# Temporary files
+nul
+_ul
+
+# Docker build logs
+docker_build.log
+docker_rebuild.log
+docker_final_build.log
+docker_correct_build.log

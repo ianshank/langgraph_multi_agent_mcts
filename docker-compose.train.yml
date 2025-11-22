@@ -1,0 +1,97 @@
+# =============================================================================
+# Training-Specific Docker Compose Configuration
+# =============================================================================
+#
+# GPU-enabled training services with comprehensive monitoring
+#
+# Usage:
+#   # Demo training
+#   docker-compose -f docker-compose.train.yml up training-demo
+#
+#   # Production training with monitoring
+#   docker-compose -f docker-compose.train.yml --profile production up
+#
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ===========================================================================
+  # Training Service - Demo Mode (16GB GPU)
+  # ===========================================================================
+  training-demo:
+    build:
+      context: .
+      dockerfile: Dockerfile.train
+      target: demo
+    image: langgraph-mcts-train:demo
+    container_name: mcts-training-demo
+    runtime: nvidia
+    command: ["python", "-m", "training.cli", "train", "--demo", "--skip-verification"]
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - CUDA_VISIBLE_DEVICES=0
+      - DEMO_MODE=1
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+    volumes:
+      - ./training:/app/training
+      - ./checkpoints:/app/checkpoints
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+      - ./reports:/app/reports
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    networks:
+      - training-network
+    healthcheck:
+      test: ["CMD", "python", "/app/healthcheck.py"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # ===========================================================================
+  # Training Service - Production Mode
+  # ===========================================================================
+  training-prod:
+    build:
+      context: .
+      dockerfile: Dockerfile.train
+      target: production
+    image: langgraph-mcts-train:prod
+    container_name: mcts-training-prod
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
+      - PINECONE_API_KEY=${PINECONE_API_KEY}
+      - WANDB_API_KEY=${WANDB_API_KEY}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
+    volumes:
+      - ./training:/app/training:ro
+      - ./checkpoints:/app/checkpoints
+      - ./logs:/app/logs
+      - ./cache:/app/cache
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    networks:
+      - training-network
+    profiles:
+      - production
+    restart: unless-stopped
+
+networks:
+  training-network:
+    driver: bridge

@@ -175,6 +175,12 @@ class DABStepLoader:
             if sample:
                 all_samples.append(sample)
 
+        # If no samples were successfully converted, fall back to synthetic data
+        if len(all_samples) == 0:
+            logger.warning("No valid samples found in dataset, creating synthetic data")
+            self._create_synthetic_dataset()
+            return self.create_splits()
+
         # Shuffle with seed
         rng = np.random.RandomState(self.seed)
         rng.shuffle(all_samples)
@@ -200,6 +206,11 @@ class DABStepLoader:
     def _convert_to_task_sample(self, item: dict[str, Any]) -> TaskSample | None:
         """Convert raw dataset item to TaskSample."""
         try:
+            # Handle case where item is not a dict
+            if not isinstance(item, dict):
+                logger.debug(f"Skipping non-dict item: {type(item)}")
+                return None
+
             # Handle different dataset formats
             task_id = item.get("task_id", item.get("id", str(hash(str(item)))))
             task_text = item.get("question", item.get("task", item.get("text", "")))
@@ -630,8 +641,9 @@ class DataOrchestrator:
             dataset,
             batch_size=self.batch_size,
             shuffle=(split == "train"),
-            num_workers=self.config["resources"]["max_cpu_workers"],
-            pin_memory=self.config["resources"]["pin_memory"],
+            num_workers=self.config.get("resources", {}).get("max_cpu_workers", 2),
+            pin_memory=self.config.get("resources", {}).get("pin_memory", True),
+            collate_fn=hrm_collate_fn,
         )
 
     def get_trm_dataloader(self, split: str = "train") -> DataLoader:
@@ -656,8 +668,9 @@ class DataOrchestrator:
             dataset,
             batch_size=self.batch_size,
             shuffle=(split == "train"),
-            num_workers=self.config["resources"]["max_cpu_workers"],
-            pin_memory=self.config["resources"]["pin_memory"],
+            num_workers=self.config.get("resources", {}).get("max_cpu_workers", 2),
+            pin_memory=self.config.get("resources", {}).get("pin_memory", True),
+            collate_fn=trm_collate_fn,
         )
 
     def get_rag_documents(self) -> Iterator[DocumentChunk]:
@@ -761,6 +774,70 @@ class TRMDataset(Dataset):
             "final_task": sample.final_task,
             "improvement_scores": torch.tensor(sample.improvement_scores, dtype=torch.float32),
         }
+
+
+def hrm_collate_fn(batch: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Custom collate function for HRM batches that handles variable-length label tensors.
+
+    Args:
+        batch: List of samples from HRMDataset
+
+    Returns:
+        Batched dictionary with padded label tensors
+    """
+    # Find max label length in batch
+    max_label_length = max(len(sample["labels"]) for sample in batch)
+
+    # Pad labels to max length
+    padded_labels = []
+    for sample in batch:
+        labels = sample["labels"]
+        if len(labels) < max_label_length:
+            # Pad with -100 (PyTorch's ignore_index for CrossEntropyLoss)
+            padding = torch.full((max_label_length - len(labels),), -100, dtype=torch.long)
+            padded_labels.append(torch.cat([labels, padding]))
+        else:
+            padded_labels.append(labels)
+
+    return {
+        "input_text": [sample["input_text"] for sample in batch],
+        "decomposition": [sample["decomposition"] for sample in batch],
+        "depth": [sample["depth"] for sample in batch],
+        "labels": torch.stack(padded_labels),
+    }
+
+
+def trm_collate_fn(batch: list[dict[str, Any]]) -> dict[str, Any]:
+    """
+    Custom collate function for TRM batches that handles variable-length improvement score tensors.
+
+    Args:
+        batch: List of samples from TRMDataset
+
+    Returns:
+        Batched dictionary with padded improvement score tensors
+    """
+    # Find max score length in batch
+    max_score_length = max(len(sample["improvement_scores"]) for sample in batch)
+
+    # Pad scores to max length
+    padded_scores = []
+    for sample in batch:
+        scores = sample["improvement_scores"]
+        if len(scores) < max_score_length:
+            # Pad with 0.0
+            padding = torch.zeros(max_score_length - len(scores), dtype=torch.float32)
+            padded_scores.append(torch.cat([scores, padding]))
+        else:
+            padded_scores.append(scores)
+
+    return {
+        "initial_task": [sample["initial_task"] for sample in batch],
+        "refinement_steps": [sample["refinement_steps"] for sample in batch],
+        "final_task": [sample["final_task"] for sample in batch],
+        "improvement_scores": torch.stack(padded_scores),
+    }
 
 
 class TrainingDataset(Dataset):

@@ -372,7 +372,8 @@ class EnsembleAggregator(nn.Module):
         super().__init__()
 
         self.method = config.get("method", "weighted_voting")
-        self.confidence_threshold = config.get("confidence_threshold", 0.7)
+        # Ensure numeric values are floats (YAML may parse them as strings)
+        self.confidence_threshold = float(config.get("confidence_threshold", 0.7))
         self.num_agents = 3
 
         if self.method == "attention":
@@ -485,6 +486,8 @@ class MetaControllerTrainer:
             self.config = yaml.safe_load(f)
 
         self.mc_config = self.config["meta_controller"]
+        # Ensure numeric values are floats (YAML may parse them as strings)
+        self.mc_config["router"]["learning_rate"] = float(self.mc_config["router"]["learning_rate"])
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
         # Initialize components
@@ -691,7 +694,7 @@ class MetaControllerTrainer:
             logger.warning(f"No checkpoint found at {self.checkpoint_path}")
             return
 
-        checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+        checkpoint = torch.load(self.checkpoint_path, map_location=self.device, weights_only=True)
 
         self.router.load_state_dict(checkpoint["router_state"])
         self.aggregator.load_state_dict(checkpoint["aggregator_state"])
