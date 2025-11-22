@@ -328,10 +328,10 @@ class LMStudioClient(BaseLLMClient):
                             except (json.JSONDecodeError, KeyError):
                                 continue
 
-            except httpx.TimeoutException:
-                raise LLMTimeoutError(self.PROVIDER_NAME, self.timeout)
-            except httpx.ConnectError:
-                raise LLMConnectionError(self.PROVIDER_NAME, self.base_url)
+            except httpx.TimeoutException as e:
+                raise LLMTimeoutError(self.PROVIDER_NAME, self.timeout) from e
+            except httpx.ConnectError as e:
+                raise LLMConnectionError(self.PROVIDER_NAME, self.base_url) from e
             except Exception as e:
                 if isinstance(e, LLMClientError):
                     raise
