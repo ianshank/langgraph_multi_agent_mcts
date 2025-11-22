@@ -64,6 +64,7 @@ class AgentState(TypedDict):
     query: str
     use_mcts: bool
     use_rag: bool
+    use_web_search: NotRequired[bool]
 
     # RAG context
     rag_context: NotRequired[str]
@@ -72,6 +73,7 @@ class AgentState(TypedDict):
     # Agent results
     hrm_results: NotRequired[dict]
     trm_results: NotRequired[dict]
+    web_search_results: NotRequired[dict]
     agent_outputs: Annotated[list[dict], operator.add]
 
     # MCTS simulation (updated for new core)
@@ -114,6 +116,7 @@ class GraphBuilder:
         model_adapter,
         logger,
         vector_store=None,
+        web_search_agent=None,
         mcts_config: MCTSConfig | None = None,
         top_k_retrieval: int = 5,
         max_iterations: int = 3,
@@ -130,6 +133,7 @@ class GraphBuilder:
             model_adapter: Model adapter for LLM calls
             logger: Logger instance
             vector_store: Optional vector store for RAG
+            web_search_agent: Optional web search agent instance
             mcts_config: MCTS configuration (uses balanced preset if None)
             top_k_retrieval: Number of documents for RAG
             max_iterations: Maximum agent iterations
@@ -139,6 +143,7 @@ class GraphBuilder:
         """
         self.hrm_agent = hrm_agent
         self.trm_agent = trm_agent
+        self.web_search_agent = web_search_agent
         self.model_adapter = model_adapter
         self.logger = logger
         self.vector_store = vector_store
@@ -190,6 +195,7 @@ class GraphBuilder:
         workflow.add_node("parallel_agents", self._parallel_agents_node)
         workflow.add_node("hrm_agent", self._hrm_agent_node)
         workflow.add_node("trm_agent", self._trm_agent_node)
+        workflow.add_node("web_search_agent", self._web_search_agent_node)
         workflow.add_node("mcts_simulator", self._mcts_simulator_node)
         workflow.add_node("aggregate_results", self._aggregate_results_node)
         workflow.add_node("evaluate_consensus", self._evaluate_consensus_node)
@@ -208,6 +214,7 @@ class GraphBuilder:
                 "parallel": "parallel_agents",
                 "hrm": "hrm_agent",
                 "trm": "trm_agent",
+                "web_search": "web_search_agent",
                 "mcts": "mcts_simulator",
                 "aggregate": "aggregate_results",
             },
@@ -219,6 +226,7 @@ class GraphBuilder:
         # Sequential agent nodes
         workflow.add_edge("hrm_agent", "aggregate_results")
         workflow.add_edge("trm_agent", "aggregate_results")
+        workflow.add_edge("web_search_agent", "aggregate_results")
         workflow.add_edge("mcts_simulator", "aggregate_results")
 
         # Aggregation to evaluation
@@ -458,6 +466,10 @@ class GraphBuilder:
                 elif "trm_results" not in state:
                     return "trm"
 
+        # Run web search if enabled and not yet done
+        if state.get("use_web_search", False) and "web_search_results" not in state and self.web_search_agent:
+            return "web_search"
+
         # Run MCTS if enabled and not yet done
         if state.get("use_mcts", False) and "mcts_stats" not in state:
             return "mcts"
@@ -561,6 +573,47 @@ class GraphBuilder:
                     "agent": "trm",
                     "response": result["response"],
                     "confidence": result["metadata"].get("final_quality_score", 0.7),
+                }
+            ],
+        }
+
+    async def _web_search_agent_node(self, state: AgentState) -> dict:
+        """Execute Web Search agent."""
+        self.logger.info("Executing Web Search agent")
+
+        if not self.web_search_agent:
+            self.logger.warning("Web search agent not configured, skipping")
+            return {
+                "web_search_results": {
+                    "response": "Web search not configured",
+                    "metadata": {"error": "agent_not_configured"},
+                    "sources": [],
+                },
+                "agent_outputs": [],
+            }
+
+        result = await self.web_search_agent.process(
+            query=state["query"],
+            rag_context=state.get("rag_context"),
+        )
+
+        # Calculate confidence based on number and quality of results
+        sources = result.get("sources", [])
+        avg_relevance = sum(s.get("relevance_score", 0.5) for s in sources) / len(sources) if sources else 0.5
+        confidence = min(0.9, 0.5 + (len(sources) / 10) * 0.3 + avg_relevance * 0.1)
+
+        return {
+            "web_search_results": {
+                "response": result["response"],
+                "metadata": result["metadata"],
+                "sources": sources,
+            },
+            "agent_outputs": [
+                {
+                    "agent": "web_search",
+                    "response": result["response"],
+                    "confidence": confidence,
+                    "sources": sources,
                 }
             ],
         }

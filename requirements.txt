@@ -90,3 +90,20 @@ opentelemetry-api>=1.20.0
 opentelemetry-sdk>=1.20.0
 opentelemetry-exporter-otlp-proto-grpc>=1.20.0
 opentelemetry-instrumentation-httpx>=0.42b0
+
+# ============================================================================
+# Web Search Integration
+# ============================================================================
+
+# Tavily AI Search (recommended for RAG applications)
+tavily-python>=0.3.0
+
+# SerpAPI for Google Search
+google-search-results>=2.4.2
+
+# DuckDuckGo Search (no API key required)
+duckduckgo-search>=3.9.0
+
+# HTML parsing for web scraping
+beautifulsoup4>=4.12.0
+lxml>=4.9.0

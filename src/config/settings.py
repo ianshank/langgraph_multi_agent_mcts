@@ -28,6 +28,15 @@ class LLMProvider(str, Enum):
     LMSTUDIO = "lmstudio"
 
 
+class WebSearchProvider(str, Enum):
+    """Supported web search providers."""
+
+    TAVILY = "tavily"
+    SERPAPI = "serpapi"
+    DUCKDUCKGO = "duckduckgo"
+    DISABLED = "disabled"
+
+
 class LogLevel(str, Enum):
     """Supported log levels."""
 
@@ -161,6 +170,59 @@ class Settings(BaseSettings):
         default=60, ge=1, le=1000, description="Rate limit for API requests per minute"
     )
 
+    # ============================================================================
+    # Web Search Configuration
+    # ============================================================================
+
+    WEB_SEARCH_ENABLED: bool = Field(default=False, description="Enable web search functionality")
+
+    WEB_SEARCH_PROVIDER: WebSearchProvider = Field(
+        default=WebSearchProvider.DISABLED, description="Web search provider to use"
+    )
+
+    # Web Search API Keys
+    TAVILY_API_KEY: SecretStr | None = Field(
+        default=None, description="Tavily API key for web search (required if using Tavily)"
+    )
+
+    SERPAPI_API_KEY: SecretStr | None = Field(
+        default=None, description="SerpAPI key for web search (required if using SerpAPI)"
+    )
+
+    # Web Search Configuration
+    WEB_SEARCH_MAX_RESULTS: int = Field(
+        default=5, ge=1, le=20, description="Maximum number of search results to retrieve (1-20)"
+    )
+
+    WEB_SEARCH_TIMEOUT_SECONDS: int = Field(
+        default=10, ge=1, le=60, description="Timeout for web search requests in seconds"
+    )
+
+    WEB_SEARCH_RATE_LIMIT_PER_MINUTE: int = Field(
+        default=10, ge=1, le=100, description="Rate limit for web search requests per minute"
+    )
+
+    WEB_SEARCH_CACHE_TTL_SECONDS: int = Field(
+        default=3600, ge=60, le=86400, description="Time-to-live for cached search results in seconds (1 min - 24 hrs)"
+    )
+
+    WEB_SEARCH_INCLUDE_RAW_CONTENT: bool = Field(
+        default=True, description="Include raw HTML content in search results for RAG processing"
+    )
+
+    WEB_SEARCH_USER_AGENT: str = Field(
+        default="LangGraph-Multi-Agent-MCTS/0.1.0", description="User agent string for web search requests"
+    )
+
+    # Search result storage
+    SEARCH_RESULTS_STORAGE_ENABLED: bool = Field(
+        default=True, description="Enable persistent storage of search results"
+    )
+
+    SEARCH_RESULTS_VECTOR_STORE: str = Field(
+        default="chroma", description="Vector store for search results (chroma, faiss, pinecone)"
+    )
+
     @field_validator("OPENAI_API_KEY")
     @classmethod
     def validate_openai_key_format(cls, v: SecretStr | None) -> SecretStr | None:
@@ -239,6 +301,30 @@ class Settings(BaseSettings):
                 raise ValueError("W&B API key appears to be too short")
         return v
 
+    @field_validator("TAVILY_API_KEY")
+    @classmethod
+    def validate_tavily_key_format(cls, v: SecretStr | None) -> SecretStr | None:
+        """Validate Tavily API key format without exposing the value."""
+        if v is not None:
+            secret_value = v.get_secret_value()
+            if secret_value in ("", "your-api-key-here", "REPLACE_ME"):
+                raise ValueError("Tavily API key appears to be a placeholder value")
+            if len(secret_value) < 20:
+                raise ValueError("Tavily API key appears to be too short")
+        return v
+
+    @field_validator("SERPAPI_API_KEY")
+    @classmethod
+    def validate_serpapi_key_format(cls, v: SecretStr | None) -> SecretStr | None:
+        """Validate SerpAPI key format without exposing the value."""
+        if v is not None:
+            secret_value = v.get_secret_value()
+            if secret_value in ("", "your-api-key-here", "REPLACE_ME"):
+                raise ValueError("SerpAPI key appears to be a placeholder value")
+            if len(secret_value) < 20:
+                raise ValueError("SerpAPI key appears to be too short")
+        return v
+
     @field_validator("PINECONE_HOST")
     @classmethod
     def validate_pinecone_host(cls, v: str | None) -> str | None:
@@ -307,6 +393,22 @@ class Settings(BaseSettings):
                 )
         elif self.LLM_PROVIDER == LLMProvider.LMSTUDIO and self.LMSTUDIO_BASE_URL is None:
             raise ValueError("LMSTUDIO_BASE_URL is required when using LM Studio provider.")
+
+        # Validate web search provider credentials
+        if self.WEB_SEARCH_ENABLED and self.WEB_SEARCH_PROVIDER != WebSearchProvider.DISABLED:
+            if self.WEB_SEARCH_PROVIDER == WebSearchProvider.TAVILY:
+                if self.TAVILY_API_KEY is None:
+                    raise ValueError(
+                        "TAVILY_API_KEY is required when using Tavily web search. "
+                        "Set the TAVILY_API_KEY environment variable."
+                    )
+            elif self.WEB_SEARCH_PROVIDER == WebSearchProvider.SERPAPI:
+                if self.SERPAPI_API_KEY is None:
+                    raise ValueError(
+                        "SERPAPI_API_KEY is required when using SerpAPI web search. "
+                        "Set the SERPAPI_API_KEY environment variable."
+                    )
+
         return self
 
     def get_api_key(self) -> str | None:
@@ -336,6 +438,8 @@ class Settings(BaseSettings):
             "PINECONE_API_KEY",
             "LANGSMITH_API_KEY",
             "WANDB_API_KEY",
+            "TAVILY_API_KEY",
+            "SERPAPI_API_KEY",
         ]
         for field in secret_fields:
             if field in data and data[field]:
@@ -382,9 +486,36 @@ class Settings(BaseSettings):
             return self.WANDB_API_KEY.get_secret_value()
         return None
 
+    def get_tavily_api_key(self) -> str | None:
+        """
+        Get the Tavily API key if configured.
+
+        Returns the secret value - use with caution to avoid logging.
+        """
+        if self.TAVILY_API_KEY:
+            return self.TAVILY_API_KEY.get_secret_value()
+        return None
+
+    def get_serpapi_api_key(self) -> str | None:
+        """
+        Get the SerpAPI key if configured.
+
+        Returns the secret value - use with caution to avoid logging.
+        """
+        if self.SERPAPI_API_KEY:
+            return self.SERPAPI_API_KEY.get_secret_value()
+        return None
+
     def __repr__(self) -> str:
         """Safe string representation that doesn't expose secrets."""
-        return f"Settings(LLM_PROVIDER={self.LLM_PROVIDER}, MCTS_ENABLED={self.MCTS_ENABLED}, MCTS_IMPL={self.MCTS_IMPL}, LOG_LEVEL={self.LOG_LEVEL})"
+        return (
+            f"Settings(LLM_PROVIDER={self.LLM_PROVIDER}, "
+            f"MCTS_ENABLED={self.MCTS_ENABLED}, "
+            f"MCTS_IMPL={self.MCTS_IMPL}, "
+            f"WEB_SEARCH_ENABLED={self.WEB_SEARCH_ENABLED}, "
+            f"WEB_SEARCH_PROVIDER={self.WEB_SEARCH_PROVIDER}, "
+            f"LOG_LEVEL={self.LOG_LEVEL})"
+        )
 
 
 # Global settings instance (lazily loaded)
@@ -426,6 +557,7 @@ __all__ = [
     "LLMProvider",
     "LogLevel",
     "MCTSImplementation",
+    "WebSearchProvider",
     "get_settings",
     "reset_settings",
 ]
