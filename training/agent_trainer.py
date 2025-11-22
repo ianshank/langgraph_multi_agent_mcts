@@ -25,7 +25,12 @@ from torch.optim.lr_scheduler import CosineAnnealingWarmRestarts
 from torch.utils.data import DataLoader
 
 try:
-    from transformers import AutoModel, AutoTokenizer, get_linear_schedule_with_warmup
+    from transformers import (
+        AutoModel,
+        AutoTokenizer,
+        DebertaV2Tokenizer,
+        get_linear_schedule_with_warmup,
+    )
 
     HAS_TRANSFORMERS = True
 except ImportError:
@@ -98,8 +103,8 @@ class BaseAgentTrainer(ABC):
         """Setup optimizer and learning rate scheduler."""
         self.optimizer = AdamW(
             self.model.parameters(),
-            lr=self.config["training"]["learning_rate"],
-            weight_decay=self.config["training"]["weight_decay"],
+            lr=float(self.config["training"]["learning_rate"]),
+            weight_decay=float(self.config["training"]["weight_decay"]),
         )
 
         total_steps = self.config["training"]["epochs"] * 1000  # Approximate
@@ -241,12 +246,12 @@ class HRMTrainer(BaseAgentTrainer):
 
         # Load base model
         base_model = AutoModel.from_pretrained(self.hrm_config["model_name"])
-        self.tokenizer = AutoTokenizer.from_pretrained(self.hrm_config["model_name"])
+        # Use explicit slow tokenizer for DeBERTa to avoid tiktoken conversion issues
+        self.tokenizer = DebertaV2Tokenizer.from_pretrained(self.hrm_config["model_name"])
 
         # Apply LoRA if available
         if HAS_PEFT:
             lora_config = LoraConfig(
-                task_type=TaskType.TOKEN_CLS,
                 r=self.hrm_config["lora_rank"],
                 lora_alpha=self.config["training"]["lora"]["alpha"],
                 lora_dropout=self.config["training"]["lora"]["dropout"],
@@ -304,14 +309,21 @@ class HRMTrainer(BaseAgentTrainer):
         else:
             logits = self.model(input_ids)
 
+        # FIX #18: With CLS pooling, logits shape is [batch_size, num_labels]
+        # Use first label from each sample (labels shape: [batch_size, label_length])
+        if labels.dim() == 2:
+            # Take first label from each sample
+            labels = labels[:, 0]  # [batch_size]
+
         # Compute cross-entropy loss
-        loss = F.cross_entropy(logits.view(-1, self.hrm_config["num_labels"]), labels.view(-1), ignore_index=-100)
+        loss = F.cross_entropy(logits, labels, ignore_index=-100)
 
         # Add depth regularization
         if "depth" in batch:
-            target_depth = batch["depth"]
+            # FIX #19: Convert depth list to tensor before calling .float()
+            target_depth = torch.tensor(batch["depth"], dtype=torch.float32).to(self.device)
             predicted_depth = self._predict_depth(logits)
-            depth_loss = F.mse_loss(predicted_depth.float(), target_depth.float())
+            depth_loss = F.mse_loss(predicted_depth.float(), target_depth)
             loss = loss + 0.1 * depth_loss
 
         return loss
@@ -386,6 +398,8 @@ class TRMTrainer(BaseAgentTrainer):
     def __init__(self, config: dict[str, Any], device: str | None = None):
         super().__init__(config, device)
         self.trm_config = config["agents"]["trm"]
+        # Ensure numeric values are floats (YAML may parse them as strings)
+        self.trm_config["convergence_threshold"] = float(self.trm_config["convergence_threshold"])
         self.build_model()
         self.setup_optimizer()
 
@@ -398,12 +412,12 @@ class TRMTrainer(BaseAgentTrainer):
 
         # Load base model (can share with HRM)
         base_model = AutoModel.from_pretrained(self.trm_config["model_name"])
-        self.tokenizer = AutoTokenizer.from_pretrained(self.trm_config["model_name"])
+        # Use explicit slow tokenizer for DeBERTa to avoid tiktoken conversion issues
+        self.tokenizer = DebertaV2Tokenizer.from_pretrained(self.trm_config["model_name"])
 
         # Apply LoRA
         if HAS_PEFT:
             lora_config = LoraConfig(
-                task_type=TaskType.SEQ_CLS,
                 r=self.trm_config["lora_rank"],
                 lora_alpha=self.config["training"]["lora"]["alpha"],
                 lora_dropout=self.config["training"]["lora"]["dropout"],
@@ -449,7 +463,8 @@ class TRMTrainer(BaseAgentTrainer):
         else:
             input_ids = batch.get("input_ids")
 
-        target_scores = batch["improvement_scores"]
+        # FIX #20: Trim target to max_iterations to match model output
+        target_scores = batch["improvement_scores"][:, :self.trm_config["max_refinement_iterations"]]
 
         # Forward pass
         if hasattr(self.model, "refinement_head"):
@@ -533,6 +548,15 @@ class MCTSTrainer(BaseAgentTrainer):
     def __init__(self, config: dict[str, Any], device: str | None = None):
         super().__init__(config, device)
         self.mcts_config = config["agents"]["mcts"]
+        # Ensure numeric values are floats/ints (YAML may parse them as strings)
+        self.mcts_config["value_network"]["learning_rate"] = float(self.mcts_config["value_network"]["learning_rate"])
+        self.mcts_config["policy_network"]["learning_rate"] = float(self.mcts_config["policy_network"]["learning_rate"])
+        self.mcts_config["self_play"]["buffer_size"] = int(self.mcts_config["self_play"]["buffer_size"])
+        self.mcts_config["self_play"]["games_per_iteration"] = int(self.mcts_config["self_play"]["games_per_iteration"])
+        self.mcts_config["self_play"]["update_frequency"] = int(self.mcts_config["self_play"]["update_frequency"])
+        self.mcts_config["simulations"] = int(self.mcts_config["simulations"])
+        self.mcts_config["exploration_constant"] = float(self.mcts_config["exploration_constant"])
+        self.mcts_config["discount_factor"] = float(self.mcts_config["discount_factor"])
         self.build_model()
         self.setup_optimizer()
 
@@ -838,11 +862,15 @@ class HRMModel(nn.Module):
         else:
             sequence_output = outputs[0]
 
-        # Decomposition logits
-        logits = self.decomposition_head(sequence_output)
+        # FIX #18: Use CLS token for decomposition (pooling) to avoid label alignment issues
+        # This matches the depth_predictor approach and simplifies training for demo mode
+        cls_output = sequence_output[:, 0, :]  # [batch_size, hidden_size]
+
+        # Decomposition logits from CLS token
+        logits = self.decomposition_head(cls_output)  # [batch_size, num_labels]
 
         # Depth prediction (from CLS token)
-        depth_logits = self.depth_predictor(sequence_output[:, 0, :])
+        depth_logits = self.depth_predictor(cls_output)
 
         return {"logits": logits, "depth_logits": depth_logits}
 

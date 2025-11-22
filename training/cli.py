@@ -39,6 +39,110 @@ def train_command(args):
     from training.orchestrator import TrainingPipeline
 
     logger = logging.getLogger(__name__)
+
+    # Demo mode handling
+    if args.demo:
+        logger.info("=" * 80)
+        logger.info("DEMO MODE: Local 16GB GPU Verification Training")
+        logger.info("=" * 80)
+
+        # Override config path for demo
+        demo_config_path = "training/config_local_demo.yaml"
+        if not Path(demo_config_path).exists():
+            logger.error(f"Demo configuration not found: {demo_config_path}")
+            logger.error("Please create the demo config first")
+            sys.exit(1)
+
+        args.config = demo_config_path
+        logger.info(f"Using demo configuration: {demo_config_path}")
+
+        # Run service verification first
+        logger.info("\nStep 1/3: Verifying external services...")
+        logger.info("-" * 80)
+
+        try:
+            import subprocess
+            import asyncio
+
+            # Import verification functions directly (not main to avoid argparse conflict)
+            sys.path.insert(0, str(Path(__file__).parent.parent))
+            from scripts.verify_external_services import (
+                verify_all_services,
+                display_results,
+                check_critical_failures,
+                setup_logging as verify_setup_logging,
+            )
+            from rich.console import Console
+
+            # Run verification with explicit config path
+            config_path = Path(args.config)
+            console = Console()
+            verify_logger = verify_setup_logging(False)
+
+            async def run_verification():
+                results = await verify_all_services(config_path, verify_logger, console)
+                display_results(results, console)
+                return 0 if check_critical_failures(results) else 1
+
+            verification_result = asyncio.run(run_verification())
+
+            if verification_result != 0:
+                logger.error("External services verification failed!")
+                logger.error("Please ensure all required environment variables are set:")
+                logger.error("  - PINECONE_API_KEY")
+                logger.error("  - WANDB_API_KEY")
+                logger.error("  - GITHUB_TOKEN")
+                logger.error("  - OPENAI_API_KEY (optional)")
+                logger.error("  - NEO4J_PASSWORD (optional)")
+                if args.skip_verification:
+                    logger.warning("--skip-verification flag set, continuing anyway...")
+                else:
+                    logger.error("Use --skip-verification to bypass this check (not recommended)")
+                    sys.exit(1)
+            else:
+                logger.info("✓ All critical services verified successfully")
+
+        except Exception as e:
+            logger.error(f"Service verification failed: {e}")
+            if args.skip_verification:
+                logger.warning("--skip-verification flag set, continuing anyway...")
+            else:
+                logger.error("Use --skip-verification to bypass this check (not recommended)")
+                sys.exit(1)
+
+        logger.info("\nStep 2/3: Checking GPU availability...")
+        logger.info("-" * 80)
+
+        try:
+            import torch
+
+            if not torch.cuda.is_available():
+                logger.error("CUDA is not available! Demo requires GPU support.")
+                logger.error("Please ensure you have:")
+                logger.error("  1. NVIDIA GPU with CUDA support")
+                logger.error("  2. PyTorch with CUDA installed")
+                sys.exit(1)
+
+            gpu_name = torch.cuda.get_device_name(0)
+            gpu_memory = torch.cuda.get_device_properties(0).total_memory / (1024**3)
+
+            logger.info(f"✓ GPU detected: {gpu_name}")
+            logger.info(f"✓ GPU memory: {gpu_memory:.1f} GB")
+
+            if gpu_memory < 15:
+                logger.warning(f"WARNING: GPU has {gpu_memory:.1f}GB, demo optimized for 16GB")
+                logger.warning("Training may encounter OOM errors")
+
+        except ImportError:
+            logger.error("PyTorch not installed! Please install torch to continue.")
+            sys.exit(1)
+        except Exception as e:
+            logger.error(f"GPU check failed: {e}")
+            sys.exit(1)
+
+        logger.info("\nStep 3/3: Starting demo training pipeline...")
+        logger.info("-" * 80)
+
     logger.info(f"Starting training pipeline with config: {args.config}")
 
     pipeline = TrainingPipeline(args.config)
@@ -65,6 +169,22 @@ def train_command(args):
 
                 json.dump(results, f, indent=2, default=str)
             logger.info(f"Results saved to {args.output}")
+
+        # Demo mode summary
+        if args.demo:
+            logger.info("\n" + "=" * 80)
+            logger.info("DEMO COMPLETED SUCCESSFULLY!")
+            logger.info("=" * 80)
+            logger.info("\nVerification Results:")
+            logger.info(f"  ✓ Total training time: {results['total_time'] / 60:.1f} minutes")
+            logger.info(f"  ✓ Phases completed: {len(results.get('phase_results', []))}")
+            logger.info(f"  ✓ Checkpoints saved: {results.get('checkpoints_saved', 'N/A')}")
+            logger.info("\nNext Steps:")
+            logger.info("  1. View training metrics in W&B dashboard")
+            logger.info("  2. Check logs in ./logs/demo/")
+            logger.info("  3. Review checkpoints in ./checkpoints/demo/")
+            logger.info("  4. Scale to full training with: python -m training.cli train")
+            logger.info("=" * 80)
 
 
 def evaluate_command(args):
@@ -260,6 +380,9 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
+  # Run local demo mode (16GB GPU verification)
+  python -m training.cli train --demo
+
   # Run full training pipeline
   python -m training.cli train --config training/config.yaml
 
@@ -297,6 +420,16 @@ Examples:
     train_parser.add_argument("--phase", default=None, help="Run specific phase")
     train_parser.add_argument("--resume", default=None, help="Resume from checkpoint")
     train_parser.add_argument("--output", default=None, help="Output file for results")
+    train_parser.add_argument(
+        "--demo",
+        action="store_true",
+        help="Run in demo mode (16GB GPU, reduced dataset, external service verification)",
+    )
+    train_parser.add_argument(
+        "--skip-verification",
+        action="store_true",
+        help="Skip external service verification (demo mode only, not recommended)",
+    )
     train_parser.set_defaults(func=train_command)
 
     # Evaluate command
@@ -349,10 +482,9 @@ Examples:
         args.func(args)
     except Exception as e:
         logging.error(f"Command failed: {e}")
-        if args.log_level == "DEBUG":
-            import traceback
-
-            traceback.print_exc()
+        # Always print traceback for better debugging
+        import traceback
+        traceback.print_exc()
         sys.exit(1)
 
 

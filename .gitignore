@@ -208,3 +208,19 @@ docker/volumes/
 # Ruff temporary output files
 ruff_output.txt
 ruff_non_adapters.txt
+
+# Training artifacts and caches
+cache/
+checkpoints/
+reports/
+training/models/
+
+# Temporary files
+nul
+_ul
+
+# Docker build logs
+docker_build.log
+docker_rebuild.log
+docker_final_build.log
+docker_correct_build.log

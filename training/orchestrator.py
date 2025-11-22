@@ -66,14 +66,18 @@ class PhaseManager:
 
     def _define_phases(self) -> list[dict[str, Any]]:
         """Define training phases."""
+        # Ensure numeric values are properly converted
+        base_lr = float(self.config["training"]["learning_rate"])
+        base_batch_size = int(self.config["training"]["batch_size"])
+
         phases = [
             {
                 "name": "base_pretraining",
                 "description": "Base pre-training on DABStep + PRIMUS",
                 "duration_hours": 48,  # 1-2 days
                 "components": ["hrm", "trm", "rag"],
-                "learning_rate": self.config["training"]["learning_rate"],
-                "batch_size": self.config["training"]["batch_size"],
+                "learning_rate": base_lr,
+                "batch_size": base_batch_size,
                 "priority": "training",
             },
             {
@@ -81,8 +85,8 @@ class PhaseManager:
                 "description": "Instruction fine-tuning with PRIMUS-Instruct",
                 "duration_hours": 8,  # 4-8 hours
                 "components": ["hrm", "trm"],
-                "learning_rate": self.config["training"]["learning_rate"] / 2,
-                "batch_size": self.config["training"]["batch_size"] * 2,
+                "learning_rate": base_lr / 2,
+                "batch_size": base_batch_size * 2,
                 "priority": "finetuning",
             },
             {
@@ -90,7 +94,7 @@ class PhaseManager:
                 "description": "MCTS self-play reinforcement learning",
                 "duration_hours": 72,  # 2-3 days
                 "components": ["mcts"],
-                "learning_rate": self.config["agents"]["mcts"]["value_network"]["learning_rate"],
+                "learning_rate": float(self.config["agents"]["mcts"]["value_network"]["learning_rate"]),
                 "batch_size": 64,
                 "priority": "training",
             },
@@ -99,7 +103,7 @@ class PhaseManager:
                 "description": "Train meta-controller on collected traces",
                 "duration_hours": 24,  # 1 day
                 "components": ["router", "aggregator"],
-                "learning_rate": self.config["meta_controller"]["router"]["learning_rate"],
+                "learning_rate": float(self.config["meta_controller"]["router"]["learning_rate"]),
                 "batch_size": 64,
                 "priority": "training",
             },
@@ -157,9 +161,13 @@ class PhaseManager:
 
     def get_resource_allocation(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Get resource allocation for a phase."""
+        # Get CPU workers from config with fallback
+        max_cpu_workers = self.config.get("resources", {}).get("max_cpu_workers",
+                                                                 self.config.get("resource_limits", {}).get("max_cpu_cores", 4))
+
         allocation = {
             "num_gpus": 1,
-            "cpu_workers": self.config["resources"]["max_cpu_workers"],
+            "cpu_workers": max_cpu_workers,
             "memory_gb": 32,
             "priority": phase["priority"],
         }

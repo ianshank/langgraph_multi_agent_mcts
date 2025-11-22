@@ -63,11 +63,11 @@ class TrainingMonitor:
         self.log_dir = Path(config.get("logging", {}).get("log_dir", "./logs"))
         self.log_dir.mkdir(parents=True, exist_ok=True)
 
-        # Alert thresholds
+        # Alert thresholds (ensure numeric values are floats)
         self.alert_config = config.get("alerts", {})
-        self.loss_spike_threshold = self.alert_config.get("loss_spike_threshold", 2.0)
-        self.gradient_explosion_threshold = self.alert_config.get("gradient_explosion_threshold", 100.0)
-        self.oom_warning_threshold = self.alert_config.get("oom_warning_threshold", 0.9)
+        self.loss_spike_threshold = float(self.alert_config.get("loss_spike_threshold", 2.0))
+        self.gradient_explosion_threshold = float(self.alert_config.get("gradient_explosion_threshold", 100.0))
+        self.oom_warning_threshold = float(self.alert_config.get("oom_warning_threshold", 0.9))
 
         # Metric history
         self.metric_history = {}

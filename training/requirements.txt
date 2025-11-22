@@ -5,6 +5,7 @@ torch>=2.0.0
 transformers>=4.30.0
 datasets>=2.14.0
 peft>=0.4.0
+sentencepiece>=0.1.99  # Required for DeBERTa tokenizer
 
 # Sentence Embeddings and RAG
 sentence-transformers>=2.2.0
@@ -44,6 +45,9 @@ hypothesis>=6.82.0
 tqdm>=4.65.0
 colorlog>=6.7.0
 python-dotenv>=1.0.0
+rich>=13.0.0  # Terminal formatting and progress bars
+tiktoken>=0.5.0  # Required for DeBERTa and modern tokenizers
+tenacity>=8.2.0  # Retry logic for external services
 
 # Code corpus builder
 PyGithub>=2.1.1  # GitHub API access
@@ -59,5 +63,5 @@ requests>=2.31.0  # HTTP requests
 
 # Optional: Advanced Features
 # chromadb>=0.4.0  # Alternative to FAISS
-# langchain>=0.0.300  # For LangGraph integration
+langchain>=0.0.300  # For LangGraph integration
 # opentelemetry-api>=1.20.0  # Distributed tracing
