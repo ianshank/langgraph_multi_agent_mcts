@@ -354,8 +354,8 @@ class VisionModelAdapter:
         self.config = config
         self.model_name = config.get("model", "claude-3-5-sonnet-20241022")
         self.provider = self._detect_provider(self.model_name)
-        self.max_tokens = config.get("max_tokens", 1024)
-        self.temperature = config.get("temperature", 0.3)
+        self.max_tokens = int(config.get("max_tokens", 1024))
+        self.temperature = float(config.get("temperature", 0.3))
 
         # Initialize LLM client
         self._client = None

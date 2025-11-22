@@ -167,6 +167,8 @@ markers = [
     "performance: Performance and load tests",
     "security: Security validation tests",
     "chaos: Chaos engineering tests for system resilience",
+    "smoke: Smoke tests for basic functionality",
+    "benchmark: Performance benchmark tests",
 ]
 
 [tool.coverage.run]
