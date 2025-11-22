@@ -27,7 +27,7 @@ PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
 # Import after path setup
-from scripts.verify_external_services import (  # noqa: E402
+from scripts.verify_external_services import (  # noqa: E402, I001
     GitHubVerifier,
     Neo4jVerifier,
     OpenAIVerifier,

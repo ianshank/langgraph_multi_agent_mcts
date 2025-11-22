@@ -67,7 +67,7 @@ def train_command(args):
 
             # Import verification functions directly (not main to avoid argparse conflict)
             sys.path.insert(0, str(Path(__file__).parent.parent))
-            from scripts.verify_external_services import (
+            from scripts.verify_external_services import (  # noqa: E402, I001
                 check_critical_failures,
                 display_results,
                 setup_logging as verify_setup_logging,
