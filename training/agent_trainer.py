@@ -27,7 +27,6 @@ from torch.utils.data import DataLoader
 try:
     from transformers import (
         AutoModel,
-        AutoTokenizer,
         DebertaV2Tokenizer,
         get_linear_schedule_with_warmup,
     )
@@ -37,7 +36,7 @@ except ImportError:
     HAS_TRANSFORMERS = False
 
 try:
-    from peft import LoraConfig, TaskType, get_peft_model
+    from peft import LoraConfig, get_peft_model
 
     HAS_PEFT = True
 except ImportError:

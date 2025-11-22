@@ -12,9 +12,9 @@ Tests the complete demo pipeline end-to-end with mocked external services.
 - Performance benchmarks with timing
 """
 
-import json
 import os
 import shutil
+import sys
 import tempfile
 import time
 from pathlib import Path
@@ -25,8 +25,6 @@ import torch
 import yaml
 
 # Add project root to path
-import sys
-
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 

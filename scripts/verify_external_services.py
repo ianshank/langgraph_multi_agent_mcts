@@ -33,11 +33,11 @@ import sys
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any
 
 import httpx
 import yaml
-from pydantic import BaseModel, Field, SecretStr, field_validator
+from pydantic import BaseModel, Field, field_validator
 from rich.console import Console
 from rich.logging import RichHandler
 from rich.table import Table
@@ -82,8 +82,8 @@ class VerificationResult:
     service_name: str
     status: ServiceStatus
     message: str
-    details: Dict[str, Any] = field(default_factory=dict)
-    latency_ms: Optional[float] = None
+    details: dict[str, Any] = field(default_factory=dict)
+    latency_ms: float | None = None
     is_critical: bool = True
 
 
@@ -93,7 +93,7 @@ class ServiceConfig(BaseModel):
     name: str = Field(..., description="Service name")
     env_var: str = Field(..., description="Environment variable for API key")
     description: str = Field(..., description="Service description")
-    verification_endpoint: Optional[str] = Field(
+    verification_endpoint: str | None = Field(
         None, description="Endpoint for connectivity check"
     )
     required: bool = Field(True, description="Is service required?")
@@ -181,7 +181,7 @@ class ServiceVerifier:
         """Context manager exit - cleanup resources."""
         await self.client.aclose()
 
-    def get_api_key(self) -> Optional[str]:
+    def get_api_key(self) -> str | None:
         """
         Get API key from environment.
 
@@ -628,7 +628,7 @@ async def verify_all_services(
     config_path: Path,
     logger: logging.Logger,
     console: Console,
-) -> List[VerificationResult]:
+) -> list[VerificationResult]:
     """
     Verify all external services concurrently.
 
@@ -645,7 +645,7 @@ async def verify_all_services(
         config = yaml.safe_load(f)
 
     # Extract service configurations
-    services: List[ServiceConfig] = []
+    services: list[ServiceConfig] = []
 
     # Required services
     for svc in config.get("external_services", {}).get("required", []):
@@ -685,7 +685,7 @@ async def verify_all_services(
 
 
 def display_results(
-    results: List[VerificationResult],
+    results: list[VerificationResult],
     console: Console,
 ) -> None:
     """
@@ -727,7 +727,7 @@ def display_results(
     console.print(table)
 
 
-def check_critical_failures(results: List[VerificationResult]) -> bool:
+def check_critical_failures(results: list[VerificationResult]) -> bool:
     """
     Check if any critical services failed.
 

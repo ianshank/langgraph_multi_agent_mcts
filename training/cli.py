@@ -61,7 +61,6 @@ def train_command(args):
         logger.info("-" * 80)
 
         try:
-            import subprocess
             import asyncio
 
             # Import verification functions directly (not main to avoid argparse conflict)

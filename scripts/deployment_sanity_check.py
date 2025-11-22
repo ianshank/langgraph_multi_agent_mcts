@@ -29,7 +29,6 @@ import os
 import subprocess
 import sys
 from pathlib import Path
-from typing import Dict, List, Tuple
 
 import yaml
 from rich.console import Console
@@ -46,8 +45,8 @@ class DeploymentSanityChecker:
     def __init__(self, verbose: bool = False):
         self.console = Console()
         self.verbose = verbose
-        self.failures: List[str] = []
-        self.warnings: List[str] = []
+        self.failures: list[str] = []
+        self.warnings: list[str] = []
 
         # Setup logging
         level = logging.DEBUG if verbose else logging.INFO
