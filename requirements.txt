@@ -22,6 +22,9 @@ wandb>=0.16.0
 # Required for Gradio OAuth and model loading
 huggingface_hub>=0.20.0,<0.30.0
 
+# Testing
+pytest>=7.4.0
+
 # Note: This demo now uses REAL trained models:
 # - RNN Meta-Controller (models/rnn_meta_controller.pt)
 # - BERT with LoRA adapters (models/bert_lora/final_model/)

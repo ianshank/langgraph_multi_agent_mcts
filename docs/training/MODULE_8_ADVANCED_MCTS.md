@@ -891,19 +891,13 @@ class LockFreeNode:
 
     def atomic_increment_visits(self):
         """Thread-safe visit increment."""
-        while True:
-            current = self._visits.value
-            if threading._CAS(self._visits, current, current + 1):
-                break
+        with self._expansion_lock:
+            self._visits.value += 1
 
     def atomic_add_value(self, value):
         """Thread-safe value addition."""
-        # Use compare-and-swap loop
-        while True:
-            current = self._value_sum.value
-            new_value = current + value
-            if threading._CAS(self._value_sum, current, new_value):
-                break
+        with self._expansion_lock:
+            self._value_sum.value += value
 ```
 
 ### 3.5 Root Parallelization

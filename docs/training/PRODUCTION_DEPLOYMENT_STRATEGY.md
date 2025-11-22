@@ -30,7 +30,7 @@ Based on comprehensive experiments across 115 scenarios spanning tactical, cyber
 
 PRODUCTION_CONFIG = {
     # Model Selection
-    "model": "gpt-4o-mini",  # 80% cheaper than gpt-4o
+    "model": "gpt-4o-mini",  # 87% cheaper than gpt-4o
     "model_provider": "openai",
     "temperature": 0.7,
 

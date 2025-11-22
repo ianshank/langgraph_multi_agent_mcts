@@ -76,7 +76,7 @@ ENTRYPOINT ["python", "scripts/run_comprehensive_training.py"]
 FROM test-runtime as evaluation
 
 # Install Docker CLI for Docker-in-Docker scenarios
-RUN curl -fsSL https://get.docker.com | sh
+RUN apt-get update && apt-get install -y docker.io && rm -rf /var/lib/apt/lists/*
 
 # Evaluation-specific environment
 ENV EVALUATION_MODE=true \

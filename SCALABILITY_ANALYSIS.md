@@ -10,9 +10,9 @@ The codebase demonstrates **good foundational design** for scalability with seve
 
 ### 1.1 HTTP Connection Management - GOOD
 **Files:** 
-- `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/openai_client.py` (lines 168-183)
-- `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/anthropic_client.py` (lines 124-138)
-- `/home/user/langgraph_multi_agent_mcts/src/adapters/llm/lmstudio_client.py` (lines 77-91)
+- `src/adapters/llm/openai_client.py` (lines 168-183)
+- `src/adapters/llm/anthropic_client.py` (lines 124-138)
+- `src/adapters/llm/lmstudio_client.py` (lines 77-91)
 
 **Findings:**
 - Uses `httpx.AsyncClient` with proper async context managers
@@ -32,7 +32,7 @@ self._boto_config = BotoConfig(
 ### 1.2 Memory Management - WARNING: CRITICAL ISSUES
 
 #### Issue #1: Unbounded MCTS Cache
-**File:** `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/core.py` (lines 192-194, 304-338)
+**File:** `src/framework/mcts/core.py` (lines 192-194, 304-338)
 
 **Problem:**
 ```python
@@ -80,7 +80,7 @@ class MCTSEngine:
 ```
 
 #### Issue #2: Recursive Tree Operations
-**File:** `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/core.py` (lines 525-536)
+**File:** `src/framework/mcts/core.py` (lines 525-536)
 
 **Problem:**
 ```python
@@ -134,7 +134,7 @@ def count_nodes(self, node: MCTSNode) -> int:
 ```
 
 ### 1.3 Pinecone Vector Store - ISSUE: No Cleanup
-**File:** `/home/user/langgraph_multi_agent_mcts/src/storage/pinecone_store.py` (lines 38-94)
+**File:** `src/storage/pinecone_store.py` (lines 38-94)
 
 **Problem:**
 - Has `_operation_buffer` that grows indefinitely
@@ -169,7 +169,7 @@ def _add_to_buffer(self, operation):
 ```
 
 ### 1.4 S3 Storage Client - GOOD
-**File:** `/home/user/langgraph_multi_agent_mcts/src/storage/s3_client.py`
+**File:** `src/storage/s3_client.py`
 
 **Findings:**
 - Implements async context managers properly
@@ -184,7 +184,7 @@ def _add_to_buffer(self, operation):
 ## 2. ASYNC/CONCURRENT PATTERNS
 
 ### 2.1 Parallel Agents - GOOD
-**File:** `/home/user/langgraph_multi_agent_mcts/src/framework/graph.py` (lines 494-542)
+**File:** `src/framework/graph.py` (lines 494-542)
 
 **Implementation:**
 ```python
@@ -201,7 +201,7 @@ async def _parallel_agents_node(self, state: AgentState) -> Dict:
 - Estimated improvement: 40-60% latency reduction when both agents take similar time
 
 ### 2.2 Parallel Rollouts - GOOD with WARNING
-**File:** `/home/user/langgraph_multi_agent_mcts/src/framework/mcts/core.py` (lines 315-325)
+**File:** `src/framework/mcts/core.py` (lines 315-325)
 
 **Implementation:**
 ```python
