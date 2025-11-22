@@ -112,6 +112,27 @@ class VirtualLossNode(MCTSNode):
         self.virtual_loss -= loss_value
         self.virtual_loss_count -= 1
 
+    def add_child(self, action: str, child_state: MCTSState) -> VirtualLossNode:
+        """
+        Add a child node for the given action.
+
+        Args:
+            action: Action taken to reach child state
+            child_state: State of the child node
+
+        Returns:
+            Newly created child node
+        """
+        child = VirtualLossNode(
+            state=child_state,
+            parent=self,
+            action=action,
+            rng=self._rng,
+        )
+        self.children.append(child)
+        self.expanded_actions.add(action)
+        return child
+
     def select_child_with_vl(self, exploration_weight: float = 1.414) -> VirtualLossNode:
         """
         Select best child using UCB1 with virtual loss.

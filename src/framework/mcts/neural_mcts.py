@@ -490,7 +490,8 @@ class NeuralMCTS:
             return actions[np.argmax(probs)]
 
         # Sample from distribution
-        return np.random.choice(actions, p=probs)
+        idx = np.random.choice(len(actions), p=probs)
+        return actions[idx]
 
     def clear_cache(self):
         """Clear the evaluation cache."""
