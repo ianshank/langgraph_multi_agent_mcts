@@ -162,8 +162,9 @@ class PhaseManager:
     def get_resource_allocation(self, phase: dict[str, Any]) -> dict[str, Any]:
         """Get resource allocation for a phase."""
         # Get CPU workers from config with fallback
-        max_cpu_workers = self.config.get("resources", {}).get("max_cpu_workers",
-                                                                 self.config.get("resource_limits", {}).get("max_cpu_cores", 4))
+        max_cpu_workers = self.config.get("resources", {}).get(
+            "max_cpu_workers", self.config.get("resource_limits", {}).get("max_cpu_cores", 4)
+        )
 
         allocation = {
             "num_gpus": 1,

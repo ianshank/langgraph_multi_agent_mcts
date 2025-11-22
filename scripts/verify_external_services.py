@@ -93,14 +93,10 @@ class ServiceConfig(BaseModel):
     name: str = Field(..., description="Service name")
     env_var: str = Field(..., description="Environment variable for API key")
     description: str = Field(..., description="Service description")
-    verification_endpoint: str | None = Field(
-        None, description="Endpoint for connectivity check"
-    )
+    verification_endpoint: str | None = Field(None, description="Endpoint for connectivity check")
     required: bool = Field(True, description="Is service required?")
     timeout_seconds: int = Field(10, description="Request timeout")
-    service_type: ServiceType = Field(
-        ServiceType.API, description="Type of service"
-    )
+    service_type: ServiceType = Field(ServiceType.API, description="Type of service")
 
     @field_validator("env_var")
     @classmethod
@@ -190,10 +186,7 @@ class ServiceVerifier:
         """
         key = os.getenv(self.config.env_var)
         if key:
-            self.logger.debug(
-                f"Found API key for {self.config.name} "
-                f"(length: {len(key)})"
-            )
+            self.logger.debug(f"Found API key for {self.config.name} " f"(length: {len(key)})")
         return key
 
     @retry(
@@ -349,12 +342,7 @@ class WandBVerifier(ServiceVerifier):
                         details={
                             "user_id": viewer.get("id"),
                             "username": viewer.get("username"),
-                            "teams": [
-                                edge["node"]["name"]
-                                for edge in viewer.get("teams", {}).get(
-                                    "edges", []
-                                )
-                            ],
+                            "teams": [edge["node"]["name"] for edge in viewer.get("teams", {}).get("edges", [])],
                         },
                         latency_ms=latency,
                         is_critical=self.config.required,
@@ -425,9 +413,7 @@ class GitHubVerifier(ServiceVerifier):
                     details={
                         "username": data.get("login"),
                         "user_type": data.get("type"),
-                        "scopes": response.headers.get(
-                            "X-OAuth-Scopes", ""
-                        ).split(", "),
+                        "scopes": response.headers.get("X-OAuth-Scopes", "").split(", "),
                     },
                     latency_ms=latency,
                     is_critical=self.config.required,
@@ -503,9 +489,7 @@ class OpenAIVerifier(ServiceVerifier):
                     message=f"Connected ({len(models)} models available)",
                     details={
                         "model_count": len(models),
-                        "sample_models": [
-                            m.get("id") for m in models[:5]
-                        ],
+                        "sample_models": [m.get("id") for m in models[:5]],
                     },
                     latency_ms=latency,
                     is_critical=self.config.required,
@@ -711,11 +695,7 @@ def display_results(
             ServiceStatus.SKIPPED: "dim",
         }.get(result.status, "white")
 
-        latency_str = (
-            f"{result.latency_ms:.0f}ms"
-            if result.latency_ms is not None
-            else "-"
-        )
+        latency_str = f"{result.latency_ms:.0f}ms" if result.latency_ms is not None else "-"
 
         table.add_row(
             result.service_name,
@@ -737,11 +717,7 @@ def check_critical_failures(results: list[VerificationResult]) -> bool:
     Returns:
         True if all critical services passed, False otherwise
     """
-    critical_failures = [
-        r
-        for r in results
-        if r.is_critical and r.status == ServiceStatus.FAILED
-    ]
+    critical_failures = [r for r in results if r.is_critical and r.status == ServiceStatus.FAILED]
 
     return len(critical_failures) == 0
 
@@ -781,9 +757,7 @@ async def main():
 
     # Verify config exists
     if not args.config.exists():
-        console.print(
-            f"[red]Error: Configuration file not found: {args.config}[/red]"
-        )
+        console.print(f"[red]Error: Configuration file not found: {args.config}[/red]")
         return 1
 
     # Run verification
@@ -795,17 +769,11 @@ async def main():
 
         # Check for critical failures
         if check_critical_failures(results):
-            console.print(
-                "\n[bold green]✓ All critical services verified successfully![/bold green]\n"
-            )
+            console.print("\n[bold green]✓ All critical services verified successfully![/bold green]\n")
             return 0
         else:
-            console.print(
-                "\n[bold red]✗ Critical service verification failed![/bold red]"
-            )
-            console.print(
-                "[yellow]Please ensure all required environment variables are set.[/yellow]\n"
-            )
+            console.print("\n[bold red]✗ Critical service verification failed![/bold red]")
+            console.print("[yellow]Please ensure all required environment variables are set.[/yellow]\n")
             return 1
 
     except Exception as e:

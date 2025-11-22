@@ -78,6 +78,7 @@ class DeploymentSanityChecker:
                         yaml.safe_load(f)
                 elif config_file.suffix == ".toml":
                     import tomli
+
                     with open(config_file, "rb") as f:
                         tomli.load(f)
 
@@ -300,6 +301,7 @@ def main():
         checker.console.print(f"\n[bold red]Error: {e}[/bold red]")
         if args.verbose:
             import traceback
+
             traceback.print_exc()
         return 1
 

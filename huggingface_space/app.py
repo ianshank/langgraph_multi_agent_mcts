@@ -28,6 +28,7 @@ from src.agents.meta_controller.rnn_controller import RNNMetaController
 @dataclass
 class AgentResult:
     """Result from a single agent."""
+
     agent_name: str
     response: str
     confidence: float
@@ -38,6 +39,7 @@ class AgentResult:
 @dataclass
 class ControllerDecision:
     """Decision made by the meta-controller."""
+
     selected_agent: str
     confidence: float
     routing_probabilities: dict[str, float]
@@ -112,11 +114,7 @@ class IntegratedFramework:
 
         # Load trained RNN Meta-Controller
         print("Loading RNN Meta-Controller...")
-        self.rnn_controller = RNNMetaController(
-            name="RNNController",
-            seed=42,
-            device=self.device
-        )
+        self.rnn_controller = RNNMetaController(name="RNNController", seed=42, device=self.device)
 
         # Load the trained weights
         rnn_model_path = Path(__file__).parent / "models" / "rnn_meta_controller.pt"
@@ -130,12 +128,7 @@ class IntegratedFramework:
 
         # Load trained BERT Meta-Controller with LoRA
         print("Loading BERT Meta-Controller with LoRA...")
-        self.bert_controller = BERTMetaController(
-            name="BERTController",
-            seed=42,
-            device=self.device,
-            use_lora=True
-        )
+        self.bert_controller = BERTMetaController(name="BERTController", seed=42, device=self.device, use_lora=True)
 
         bert_model_path = Path(__file__).parent / "models" / "bert_lora" / "final_model"
         if bert_model_path.exists():
@@ -187,13 +180,7 @@ class IntegratedFramework:
         confidence = prediction.confidence
 
         # Get routing probabilities
-        routing_probs = dict(
-            zip(
-                ["hrm", "trm", "mcts"],
-                prediction.probabilities,
-                strict=True
-            )
-        )
+        routing_probs = dict(zip(["hrm", "trm", "mcts"], prediction.probabilities, strict=True))
 
         # Step 3: Route to selected agent
         handler = self.agent_handlers.get(selected_agent, self._handle_hrm)
@@ -211,7 +198,7 @@ class IntegratedFramework:
                 "consensus_score": features.consensus_score,
                 "query_length": features.query_length,
                 "is_technical": features.is_technical_query,
-            }
+            },
         )
 
         total_time = (time.perf_counter() - start_time) * 1000
@@ -228,7 +215,7 @@ class IntegratedFramework:
             "Decompose query into hierarchical subproblems",
             "Apply high-level reasoning (H-Module)",
             "Execute low-level refinement (L-Module)",
-            "Synthesize hierarchical solution"
+            "Synthesize hierarchical solution",
         ]
 
         response = f"[HRM Analysis] Breaking down the problem hierarchically: {query[:100]}..."
@@ -238,7 +225,7 @@ class IntegratedFramework:
             response=response,
             confidence=0.85,
             reasoning_steps=steps,
-            execution_time_ms=0.0
+            execution_time_ms=0.0,
         )
 
     async def _handle_trm(self, query: str) -> AgentResult:
@@ -250,7 +237,7 @@ class IntegratedFramework:
             "Initialize solution state",
             "Recursive refinement iteration 1",
             "Recursive refinement iteration 2",
-            "Convergence achieved - finalize"
+            "Convergence achieved - finalize",
         ]
 
         response = f"[TRM Analysis] Applying iterative refinement: {query[:100]}..."
@@ -260,7 +247,7 @@ class IntegratedFramework:
             response=response,
             confidence=0.80,
             reasoning_steps=steps,
-            execution_time_ms=0.0
+            execution_time_ms=0.0,
         )
 
     async def _handle_mcts(self, query: str) -> AgentResult:
@@ -273,7 +260,7 @@ class IntegratedFramework:
             "Selection: UCB1 exploration",
             "Expansion: Add promising nodes",
             "Simulation: Rollout evaluation",
-            "Backpropagation: Update values"
+            "Backpropagation: Update values",
         ]
 
         response = f"[MCTS Analysis] Strategic exploration via tree search: {query[:100]}..."
@@ -283,7 +270,7 @@ class IntegratedFramework:
             response=response,
             confidence=0.88,
             reasoning_steps=steps,
-            execution_time_ms=0.0
+            execution_time_ms=0.0,
         )
 
 
@@ -312,20 +299,11 @@ def process_query_sync(
         framework = IntegratedFramework()
 
     if not query.strip():
-        return (
-            "Please enter a query.",
-            {},
-            "",
-            {},
-            ""
-        )
+        return ("Please enter a query.", {}, "", {}, "")
 
     # Run async function
     agent_result, controller_decision = asyncio.run(
-        framework.process_query(
-            query=query,
-            controller_type=controller_type.lower()
-        )
+        framework.process_query(query=query, controller_type=controller_type.lower())
     )
 
     # Format outputs
@@ -408,18 +386,11 @@ with gr.Blocks(
     with gr.Row():
         with gr.Column(scale=2):
             query_input = gr.Textbox(
-                label="Query",
-                placeholder="Enter your question or reasoning task...",
-                lines=4,
-                max_lines=10
+                label="Query", placeholder="Enter your question or reasoning task...", lines=4, max_lines=10
             )
 
             gr.Markdown("**Example Queries:**")
-            example_dropdown = gr.Dropdown(
-                choices=EXAMPLE_QUERIES,
-                label="Select an example",
-                interactive=True
-            )
+            example_dropdown = gr.Dropdown(choices=EXAMPLE_QUERIES, label="Select an example", interactive=True)
 
             def load_example(example):
                 return example
@@ -432,14 +403,16 @@ with gr.Blocks(
                 choices=["RNN", "BERT"],
                 value="RNN",
                 label="Controller Type",
-                info="Choose which trained controller to use"
+                info="Choose which trained controller to use",
             )
 
-            gr.Markdown("""
+            gr.Markdown(
+                """
             **Controller Comparison:**
             - **RNN**: Fast, captures sequential patterns
             - **BERT**: More context-aware, text understanding
-            """)
+            """
+            )
 
     process_btn = gr.Button("🚀 Process Query", variant="primary", size="lg")
 
@@ -448,11 +421,7 @@ with gr.Blocks(
     with gr.Row():
         with gr.Column():
             gr.Markdown("### 🎯 Agent Response")
-            final_response_output = gr.Textbox(
-                label="Response",
-                lines=4,
-                interactive=False
-            )
+            final_response_output = gr.Textbox(label="Response", lines=4, interactive=False)
 
             gr.Markdown("### 📈 Performance Metrics")
             metrics_output = gr.Markdown()
@@ -471,13 +440,7 @@ with gr.Blocks(
             query_input,
             controller_type,
         ],
-        outputs=[
-            final_response_output,
-            agent_details_output,
-            routing_viz,
-            features_viz,
-            metrics_output
-        ],
+        outputs=[final_response_output, agent_details_output, routing_viz, features_viz, metrics_output],
     )
 
     gr.Markdown(
@@ -511,9 +474,4 @@ if __name__ == "__main__":
     framework = IntegratedFramework()
 
     # Launch the demo
-    demo.launch(
-        server_name="0.0.0.0",
-        server_port=7860,
-        share=False,
-        show_error=True
-    )
+    demo.launch(server_name="0.0.0.0", server_port=7860, share=False, show_error=True)

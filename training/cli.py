@@ -484,6 +484,7 @@ Examples:
         logging.error(f"Command failed: {e}")
         # Always print traceback for better debugging
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

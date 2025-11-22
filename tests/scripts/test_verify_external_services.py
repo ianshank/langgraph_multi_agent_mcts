@@ -224,9 +224,7 @@ async def test_pinecone_verifier_success(
     }
     mock_response.headers = {"X-Api-Version": "2024-01"}
 
-    async with PineconeVerifier(
-        pinecone_config, mock_logger, mock_console
-    ) as verifier:
+    async with PineconeVerifier(pinecone_config, mock_logger, mock_console) as verifier:
         # Mock client.get
         verifier.client.get = AsyncMock(return_value=mock_response)
 
@@ -250,9 +248,7 @@ async def test_pinecone_verifier_missing_api_key(
     # Ensure env var is not set
     monkeypatch.delenv("PINECONE_API_KEY", raising=False)
 
-    async with PineconeVerifier(
-        pinecone_config, mock_logger, mock_console
-    ) as verifier:
+    async with PineconeVerifier(pinecone_config, mock_logger, mock_console) as verifier:
         result = await verifier.verify()
 
         assert result.status == ServiceStatus.FAILED
@@ -273,9 +269,7 @@ async def test_pinecone_verifier_invalid_api_key(
     mock_response = MagicMock()
     mock_response.status_code = 401
 
-    async with PineconeVerifier(
-        pinecone_config, mock_logger, mock_console
-    ) as verifier:
+    async with PineconeVerifier(pinecone_config, mock_logger, mock_console) as verifier:
         verifier.client.get = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()
@@ -294,12 +288,8 @@ async def test_pinecone_verifier_timeout(
     """Test Pinecone verification timeout."""
     monkeypatch.setenv("PINECONE_API_KEY", "test-key")
 
-    async with PineconeVerifier(
-        pinecone_config, mock_logger, mock_console
-    ) as verifier:
-        verifier.client.get = AsyncMock(
-            side_effect=httpx.TimeoutException("Request timeout")
-        )
+    async with PineconeVerifier(pinecone_config, mock_logger, mock_console) as verifier:
+        verifier.client.get = AsyncMock(side_effect=httpx.TimeoutException("Request timeout"))
 
         # Tenacity will retry, but we want to test the final result
         # Patch tenacity to not retry for this test
@@ -346,9 +336,7 @@ async def test_wandb_verifier_success(
         }
     }
 
-    async with WandBVerifier(
-        wandb_config, mock_logger, mock_console
-    ) as verifier:
+    async with WandBVerifier(wandb_config, mock_logger, mock_console) as verifier:
         verifier.client.post = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()
@@ -373,9 +361,7 @@ async def test_wandb_verifier_invalid_response(
     mock_response.status_code = 200
     mock_response.json.return_value = {"data": {}}  # No viewer
 
-    async with WandBVerifier(
-        wandb_config, mock_logger, mock_console
-    ) as verifier:
+    async with WandBVerifier(wandb_config, mock_logger, mock_console) as verifier:
         verifier.client.post = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()
@@ -407,9 +393,7 @@ async def test_github_verifier_success(
     }
     mock_response.headers = {"X-OAuth-Scopes": "repo, read:org"}
 
-    async with GitHubVerifier(
-        github_config, mock_logger, mock_console
-    ) as verifier:
+    async with GitHubVerifier(github_config, mock_logger, mock_console) as verifier:
         verifier.client.get = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()
@@ -432,9 +416,7 @@ async def test_github_verifier_insufficient_permissions(
     mock_response = MagicMock()
     mock_response.status_code = 401
 
-    async with GitHubVerifier(
-        github_config, mock_logger, mock_console
-    ) as verifier:
+    async with GitHubVerifier(github_config, mock_logger, mock_console) as verifier:
         verifier.client.get = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()
@@ -468,9 +450,7 @@ async def test_openai_verifier_success(
         ]
     }
 
-    async with OpenAIVerifier(
-        openai_config, mock_logger, mock_console
-    ) as verifier:
+    async with OpenAIVerifier(openai_config, mock_logger, mock_console) as verifier:
         verifier.client.get = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()
@@ -490,9 +470,7 @@ async def test_openai_verifier_optional_missing(
     """Test OpenAI verification when optional and missing."""
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
 
-    async with OpenAIVerifier(
-        openai_config, mock_logger, mock_console
-    ) as verifier:
+    async with OpenAIVerifier(openai_config, mock_logger, mock_console) as verifier:
         result = await verifier.verify()
 
         assert result.status == ServiceStatus.SKIPPED
@@ -515,9 +493,7 @@ async def test_neo4j_verifier_credentials_present(
     """Test Neo4j verification with credentials present."""
     monkeypatch.setenv("NEO4J_PASSWORD", "test-password")
 
-    async with Neo4jVerifier(
-        neo4j_config, mock_logger, mock_console
-    ) as verifier:
+    async with Neo4jVerifier(neo4j_config, mock_logger, mock_console) as verifier:
         result = await verifier.verify()
 
         assert result.status == ServiceStatus.WARNING
@@ -534,9 +510,7 @@ async def test_neo4j_verifier_optional_missing(
     """Test Neo4j verification when optional and missing."""
     monkeypatch.delenv("NEO4J_PASSWORD", raising=False)
 
-    async with Neo4jVerifier(
-        neo4j_config, mock_logger, mock_console
-    ) as verifier:
+    async with Neo4jVerifier(neo4j_config, mock_logger, mock_console) as verifier:
         result = await verifier.verify()
 
         assert result.status == ServiceStatus.SKIPPED
@@ -548,25 +522,19 @@ async def test_neo4j_verifier_optional_missing(
 # ============================================================================
 
 
-def test_create_verifier_pinecone(
-    pinecone_config: ServiceConfig, mock_logger, mock_console
-):
+def test_create_verifier_pinecone(pinecone_config: ServiceConfig, mock_logger, mock_console):
     """Test verifier factory creates PineconeVerifier."""
     verifier = create_verifier(pinecone_config, mock_logger, mock_console)
     assert isinstance(verifier, PineconeVerifier)
 
 
-def test_create_verifier_wandb(
-    wandb_config: ServiceConfig, mock_logger, mock_console
-):
+def test_create_verifier_wandb(wandb_config: ServiceConfig, mock_logger, mock_console):
     """Test verifier factory creates WandBVerifier."""
     verifier = create_verifier(wandb_config, mock_logger, mock_console)
     assert isinstance(verifier, WandBVerifier)
 
 
-def test_create_verifier_github(
-    github_config: ServiceConfig, mock_logger, mock_console
-):
+def test_create_verifier_github(github_config: ServiceConfig, mock_logger, mock_console):
     """Test verifier factory creates GitHubVerifier."""
     verifier = create_verifier(github_config, mock_logger, mock_console)
     assert isinstance(verifier, GitHubVerifier)
@@ -591,13 +559,11 @@ async def test_verify_all_services(
     monkeypatch.setenv("OPENAI_API_KEY", "test-openai-key")
 
     # Mock all HTTP calls
-    with patch(
-        "scripts.verify_external_services.PineconeVerifier.verify"
-    ) as mock_pinecone, patch(
-        "scripts.verify_external_services.WandBVerifier.verify"
-    ) as mock_wandb, patch(
-        "scripts.verify_external_services.OpenAIVerifier.verify"
-    ) as mock_openai:
+    with (
+        patch("scripts.verify_external_services.PineconeVerifier.verify") as mock_pinecone,
+        patch("scripts.verify_external_services.WandBVerifier.verify") as mock_wandb,
+        patch("scripts.verify_external_services.OpenAIVerifier.verify") as mock_openai,
+    ):
 
         mock_pinecone.return_value = VerificationResult(
             service_name="pinecone",
@@ -620,9 +586,7 @@ async def test_verify_all_services(
             is_critical=False,
         )
 
-        results = await verify_all_services(
-            demo_config_path, mock_logger, mock_console
-        )
+        results = await verify_all_services(demo_config_path, mock_logger, mock_console)
 
         assert len(results) == 3
         assert all(r.status == ServiceStatus.SUCCESS for r in results)
@@ -721,9 +685,7 @@ async def test_pinecone_various_status_codes(
         mock_response.json.return_value = {"indexes": []}
         mock_response.headers = {}
 
-    async with PineconeVerifier(
-        pinecone_config, mock_logger, mock_console
-    ) as verifier:
+    async with PineconeVerifier(pinecone_config, mock_logger, mock_console) as verifier:
         verifier.client.get = AsyncMock(return_value=mock_response)
 
         result = await verifier.verify()

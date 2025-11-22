@@ -463,7 +463,7 @@ class TRMTrainer(BaseAgentTrainer):
             input_ids = batch.get("input_ids")
 
         # FIX #20: Trim target to max_iterations to match model output
-        target_scores = batch["improvement_scores"][:, :self.trm_config["max_refinement_iterations"]]
+        target_scores = batch["improvement_scores"][:, : self.trm_config["max_refinement_iterations"]]
 
         # Forward pass
         if hasattr(self.model, "refinement_head"):

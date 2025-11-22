@@ -71,11 +71,11 @@ def temp_workspace(tmp_path):
 @pytest.fixture
 def mock_gpu():
     """Mock CUDA GPU availability."""
-    with patch("torch.cuda.is_available", return_value=True), patch(
-        "torch.cuda.get_device_name", return_value="NVIDIA GeForce RTX 4080"
-    ), patch(
-        "torch.cuda.get_device_properties"
-    ) as mock_props:
+    with (
+        patch("torch.cuda.is_available", return_value=True),
+        patch("torch.cuda.get_device_name", return_value="NVIDIA GeForce RTX 4080"),
+        patch("torch.cuda.get_device_properties") as mock_props,
+    ):
 
         # Mock device properties
         mock_device = Mock()
@@ -103,9 +103,7 @@ def mock_external_services(monkeypatch):
     # Mock Pinecone
     with patch("pinecone.Index") as mock_index:
         mock_index.return_value.upsert = MagicMock()
-        mock_index.return_value.query = MagicMock(
-            return_value={"matches": []}
-        )
+        mock_index.return_value.query = MagicMock(return_value={"matches": []})
 
         yield
 
@@ -209,9 +207,7 @@ def test_cli_imports():
 
 @pytest.mark.integration
 @pytest.mark.asyncio
-async def test_verification_script_executes(
-    demo_config, mock_external_services
-):
+async def test_verification_script_executes(demo_config, mock_external_services):
     """Test that verification script executes without errors."""
     import logging
 
@@ -226,19 +222,16 @@ async def test_verification_script_executes(
     logger = logging.getLogger("test")
 
     # Create temp config file
-    with tempfile.NamedTemporaryFile(
-        mode="w", suffix=".yaml", delete=False
-    ) as f:
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
         yaml.dump(demo_config, f)
         config_path = Path(f.name)
 
     try:
         # Mock HTTP calls
-        with patch(
-            "scripts.verify_external_services.PineconeVerifier.verify"
-        ) as mock_pinecone, patch(
-            "scripts.verify_external_services.WandBVerifier.verify"
-        ) as mock_wandb:
+        with (
+            patch("scripts.verify_external_services.PineconeVerifier.verify") as mock_pinecone,
+            patch("scripts.verify_external_services.WandBVerifier.verify") as mock_wandb,
+        ):
 
             from scripts.verify_external_services import (
                 ServiceStatus,
@@ -259,9 +252,7 @@ async def test_verification_script_executes(
                 is_critical=True,
             )
 
-            results = await verify_all_services(
-                config_path, logger, console
-            )
+            results = await verify_all_services(config_path, logger, console)
 
             assert len(results) > 0
             assert check_critical_failures(results) is True
@@ -284,9 +275,7 @@ async def test_verification_script_executes(
 def test_demo_pipeline_initialization(demo_config, temp_workspace, mock_gpu):
     """Test that demo pipeline initializes correctly."""
     # This test verifies initialization without running full training
-    with patch(
-        "training.orchestrator.TrainingPipeline._run_phase"
-    ) as mock_run:
+    with patch("training.orchestrator.TrainingPipeline._run_phase") as mock_run:
         mock_run.return_value = {"status": "success", "duration": 0}
 
         # We would initialize pipeline here
@@ -408,10 +397,7 @@ def test_checkpoint_save_performance(temp_workspace):
     # Create realistic checkpoint
     checkpoint = {
         "model_type": "hrm",
-        "model_state_dict": {
-            f"layer{i}.weight": torch.randn(512, 512)
-            for i in range(10)
-        },
+        "model_state_dict": {f"layer{i}.weight": torch.randn(512, 512) for i in range(10)},
         "optimizer_state": {},
         "epoch": 1,
     }
@@ -452,9 +438,7 @@ def test_demo_imports_all_dependencies():
         except ImportError:
             failed_imports.append(dep)
 
-    assert (
-        not failed_imports
-    ), f"Failed to import: {', '.join(failed_imports)}"
+    assert not failed_imports, f"Failed to import: {', '.join(failed_imports)}"
 
 
 @pytest.mark.integration
@@ -474,9 +458,7 @@ def test_demo_scripts_exist():
         if not full_path.exists():
             missing_files.append(file_path)
 
-    assert (
-        not missing_files
-    ), f"Missing required files: {', '.join(missing_files)}"
+    assert not missing_files, f"Missing required files: {', '.join(missing_files)}"
 
 
 @pytest.mark.integration
@@ -581,13 +563,9 @@ def test_documentation_has_required_sections():
         "Troubleshooting",
     ]
 
-    missing_sections = [
-        section for section in required_sections if section not in content
-    ]
+    missing_sections = [section for section in required_sections if section not in content]
 
-    assert (
-        not missing_sections
-    ), f"Missing sections: {', '.join(missing_sections)}"
+    assert not missing_sections, f"Missing sections: {', '.join(missing_sections)}"
 
 
 if __name__ == "__main__":
