@@ -90,7 +90,7 @@ class TicTacToeState(GameState):
         tensor[:, :, 2] = torch.from_numpy((self.board == 0).astype(float))
         return tensor
 
-    def action_to_index(self, action):
+    def action_to_index(self, action: tuple[int, int]) -> int:
         """Map (row, col) action to index 0-8."""
         return action[0] * 3 + action[1]
 
