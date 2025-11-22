@@ -1,0 +1,306 @@
+{
+  "dashboard": {
+    "title": "RAG Evaluation Metrics",
+    "tags": ["rag", "evaluation", "retrieval"],
+    "timezone": "utc",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "RAG Query Rate",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+        "targets": [
+          {
+            "expr": "rate(mcts_rag_queries_total[5m])",
+            "legendFormat": "{{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Queries/sec"},
+          {"format": "short"}
+        ],
+        "legend": {
+          "show": true,
+          "alignAsTable": true,
+          "rightSide": false
+        }
+      },
+      {
+        "id": 2,
+        "title": "RAG Retrieval Latency",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(mcts_rag_retrieval_latency_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(mcts_rag_retrieval_latency_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(mcts_rag_retrieval_latency_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [1.0],
+                "type": "gt"
+              },
+              "operator": {
+                "type": "and"
+              },
+              "query": {
+                "params": ["B", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High RAG Retrieval Latency",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 3,
+        "title": "Documents Retrieved per Query",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(mcts_rag_documents_retrieved_bucket[5m]))",
+            "legendFormat": "P50 Docs",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(mcts_rag_documents_retrieved_bucket[5m]))",
+            "legendFormat": "P95 Docs",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Documents"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "RAG Relevance Score Distribution",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(mcts_rag_relevance_score_bucket[5m]))",
+            "legendFormat": "P50 Relevance",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(mcts_rag_relevance_score_bucket[5m]))",
+            "legendFormat": "P95 Relevance",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Relevance Score", "max": 1, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "RAG Success Rate",
+        "type": "singlestat",
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 16},
+        "targets": [
+          {
+            "expr": "sum(rate(mcts_rag_queries_total{status=\"success\"}[5m])) / sum(rate(mcts_rag_queries_total[5m])) * 100",
+            "refId": "A"
+          }
+        ],
+        "format": "percent",
+        "valueName": "current",
+        "colorBackground": true,
+        "thresholds": "80,95",
+        "colors": ["#d44a3a", "#e0b400", "#299c46"]
+      },
+      {
+        "id": 6,
+        "title": "Average Documents per Query",
+        "type": "singlestat",
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 16},
+        "targets": [
+          {
+            "expr": "avg(rate(mcts_rag_documents_retrieved_sum[5m]) / rate(mcts_rag_documents_retrieved_count[5m]))",
+            "refId": "A"
+          }
+        ],
+        "format": "short",
+        "decimals": 1,
+        "valueName": "current"
+      },
+      {
+        "id": 7,
+        "title": "Average Relevance Score",
+        "type": "singlestat",
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 16},
+        "targets": [
+          {
+            "expr": "avg(rate(mcts_rag_relevance_score_sum[5m]) / rate(mcts_rag_relevance_score_count[5m]))",
+            "refId": "A"
+          }
+        ],
+        "format": "percentunit",
+        "decimals": 2,
+        "valueName": "current",
+        "colorBackground": true,
+        "thresholds": "0.6,0.8",
+        "colors": ["#d44a3a", "#e0b400", "#299c46"]
+      },
+      {
+        "id": 8,
+        "title": "Average Retrieval Latency",
+        "type": "singlestat",
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 16},
+        "targets": [
+          {
+            "expr": "avg(rate(mcts_rag_retrieval_latency_seconds_sum[5m]) / rate(mcts_rag_retrieval_latency_seconds_count[5m]))",
+            "refId": "A"
+          }
+        ],
+        "format": "s",
+        "decimals": 3,
+        "valueName": "current",
+        "colorBackground": true,
+        "thresholds": "0.5,1.0",
+        "colors": ["#299c46", "#e0b400", "#d44a3a"]
+      },
+      {
+        "id": 9,
+        "title": "RAGAS Metrics - Faithfulness",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+        "targets": [
+          {
+            "expr": "ragas_faithfulness_score",
+            "legendFormat": "{{dataset}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Faithfulness", "max": 1, "min": 0},
+          {"format": "short"}
+        ],
+        "description": "How grounded the answer is in the retrieved context"
+      },
+      {
+        "id": 10,
+        "title": "RAGAS Metrics - Answer Relevancy",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+        "targets": [
+          {
+            "expr": "ragas_answer_relevancy_score",
+            "legendFormat": "{{dataset}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Answer Relevancy", "max": 1, "min": 0},
+          {"format": "short"}
+        ],
+        "description": "How relevant the answer is to the question"
+      },
+      {
+        "id": 11,
+        "title": "RAGAS Metrics - Context Precision",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 28},
+        "targets": [
+          {
+            "expr": "ragas_context_precision_score",
+            "legendFormat": "{{dataset}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Context Precision", "max": 1, "min": 0},
+          {"format": "short"}
+        ],
+        "description": "Precision of retrieved context (low noise)"
+      },
+      {
+        "id": 12,
+        "title": "RAGAS Metrics - Context Recall",
+        "type": "graph",
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 28},
+        "targets": [
+          {
+            "expr": "ragas_context_recall_score",
+            "legendFormat": "{{dataset}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percentunit", "label": "Context Recall", "max": 1, "min": 0},
+          {"format": "short"}
+        ],
+        "description": "Recall of retrieved context (all relevant docs found)"
+      },
+      {
+        "id": 13,
+        "title": "MCTS vs Baseline Comparison",
+        "type": "table",
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 36},
+        "targets": [
+          {
+            "expr": "ragas_faithfulness_score{mcts=\"true\"}",
+            "legendFormat": "MCTS Faithfulness",
+            "refId": "A"
+          },
+          {
+            "expr": "ragas_faithfulness_score{mcts=\"false\"}",
+            "legendFormat": "Baseline Faithfulness",
+            "refId": "B"
+          },
+          {
+            "expr": "ragas_answer_relevancy_score{mcts=\"true\"}",
+            "legendFormat": "MCTS Relevancy",
+            "refId": "C"
+          },
+          {
+            "expr": "ragas_answer_relevancy_score{mcts=\"false\"}",
+            "legendFormat": "Baseline Relevancy",
+            "refId": "D"
+          }
+        ],
+        "transform": "table",
+        "description": "Comparison of RAG performance with and without MCTS"
+      }
+    ]
+  }
+}

@@ -1,0 +1,186 @@
+groups:
+  - name: rag_evaluation_alerts
+    interval: 30s
+    rules:
+      # High RAG Retrieval Latency
+      - alert: HighRAGRetrievalLatency
+        expr: histogram_quantile(0.95, rate(mcts_rag_retrieval_latency_seconds_bucket[5m])) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: rag
+        annotations:
+          summary: "High RAG retrieval latency detected"
+          description: "P95 RAG retrieval latency is {{ $value }}s (threshold: 1.0s)"
+
+      # Critical RAG Retrieval Latency
+      - alert: CriticalRAGRetrievalLatency
+        expr: histogram_quantile(0.95, rate(mcts_rag_retrieval_latency_seconds_bucket[5m])) > 2.0
+        for: 3m
+        labels:
+          severity: critical
+          component: rag
+        annotations:
+          summary: "Critical RAG retrieval latency detected"
+          description: "P95 RAG retrieval latency is {{ $value }}s (threshold: 2.0s)"
+
+      # Low RAG Success Rate
+      - alert: LowRAGSuccessRate
+        expr: |
+          (
+            sum(rate(mcts_rag_queries_total{status="success"}[5m]))
+            /
+            sum(rate(mcts_rag_queries_total[5m]))
+          ) < 0.90
+        for: 5m
+        labels:
+          severity: warning
+          component: rag
+        annotations:
+          summary: "Low RAG query success rate"
+          description: "RAG success rate is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # Critical RAG Success Rate
+      - alert: CriticalRAGSuccessRate
+        expr: |
+          (
+            sum(rate(mcts_rag_queries_total{status="success"}[5m]))
+            /
+            sum(rate(mcts_rag_queries_total[5m]))
+          ) < 0.75
+        for: 3m
+        labels:
+          severity: critical
+          component: rag
+        annotations:
+          summary: "Critical RAG query success rate"
+          description: "RAG success rate is {{ $value | humanizePercentage }} (threshold: 75%)"
+
+      # Low Average Relevance Score
+      - alert: LowRAGRelevanceScore
+        expr: |
+          avg(
+            rate(mcts_rag_relevance_score_sum[5m])
+            /
+            rate(mcts_rag_relevance_score_count[5m])
+          ) < 0.60
+        for: 10m
+        labels:
+          severity: warning
+          component: rag
+        annotations:
+          summary: "Low RAG relevance scores detected"
+          description: "Average RAG relevance score is {{ $value }} (threshold: 0.60)"
+
+      # Too Few Documents Retrieved
+      - alert: TooFewDocumentsRetrieved
+        expr: |
+          avg(
+            rate(mcts_rag_documents_retrieved_sum[5m])
+            /
+            rate(mcts_rag_documents_retrieved_count[5m])
+          ) < 1.0
+        for: 10m
+        labels:
+          severity: warning
+          component: rag
+        annotations:
+          summary: "RAG retrieving too few documents"
+          description: "Average documents retrieved per query is {{ $value }} (threshold: 1.0)"
+
+      # Too Many Documents Retrieved (inefficiency)
+      - alert: TooManyDocumentsRetrieved
+        expr: |
+          avg(
+            rate(mcts_rag_documents_retrieved_sum[5m])
+            /
+            rate(mcts_rag_documents_retrieved_count[5m])
+          ) > 20.0
+        for: 10m
+        labels:
+          severity: info
+          component: rag
+        annotations:
+          summary: "RAG retrieving many documents"
+          description: "Average documents retrieved per query is {{ $value }} (threshold: 20.0). Consider optimizing retrieval."
+
+      # High RAG Error Rate
+      - alert: HighRAGErrorRate
+        expr: rate(mcts_rag_queries_total{status="error"}[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: rag
+        annotations:
+          summary: "High RAG error rate detected"
+          description: "RAG error rate is {{ $value }} errors/sec"
+
+      # No RAG Queries (possible service issue)
+      - alert: NoRAGQueries
+        expr: rate(mcts_rag_queries_total[5m]) == 0
+        for: 10m
+        labels:
+          severity: warning
+          component: rag
+        annotations:
+          summary: "No RAG queries detected"
+          description: "No RAG queries have been processed in the last 10 minutes. Service may be down or not receiving traffic."
+
+  - name: ragas_evaluation_alerts
+    interval: 1m
+    rules:
+      # Low Faithfulness Score
+      - alert: LowRAGASFaithfulness
+        expr: ragas_faithfulness_score < 0.70
+        for: 5m
+        labels:
+          severity: warning
+          component: rag_evaluation
+        annotations:
+          summary: "Low RAGAS faithfulness score"
+          description: "RAGAS faithfulness score is {{ $value }} for dataset {{ $labels.dataset }} (threshold: 0.70)"
+
+      # Low Answer Relevancy
+      - alert: LowRAGASAnswerRelevancy
+        expr: ragas_answer_relevancy_score < 0.70
+        for: 5m
+        labels:
+          severity: warning
+          component: rag_evaluation
+        annotations:
+          summary: "Low RAGAS answer relevancy"
+          description: "RAGAS answer relevancy is {{ $value }} for dataset {{ $labels.dataset }} (threshold: 0.70)"
+
+      # Low Context Precision
+      - alert: LowRAGASContextPrecision
+        expr: ragas_context_precision_score < 0.70
+        for: 5m
+        labels:
+          severity: warning
+          component: rag_evaluation
+        annotations:
+          summary: "Low RAGAS context precision"
+          description: "RAGAS context precision is {{ $value }} for dataset {{ $labels.dataset }} (threshold: 0.70). Retrieved context may contain too much noise."
+
+      # Low Context Recall
+      - alert: LowRAGASContextRecall
+        expr: ragas_context_recall_score < 0.70
+        for: 5m
+        labels:
+          severity: warning
+          component: rag_evaluation
+        annotations:
+          summary: "Low RAGAS context recall"
+          description: "RAGAS context recall is {{ $value }} for dataset {{ $labels.dataset }} (threshold: 0.70). Retrieval may be missing relevant documents."
+
+      # MCTS Performance Degradation
+      - alert: MCTSRAGPerformanceDegradation
+        expr: |
+          (ragas_faithfulness_score{mcts="true"} - ragas_faithfulness_score{mcts="false"}) < -0.05
+        for: 10m
+        labels:
+          severity: info
+          component: rag_evaluation
+        annotations:
+          summary: "MCTS RAG performance degradation"
+          description: "MCTS-enabled RAG is performing {{ $value }} worse than baseline in faithfulness for dataset {{ $labels.dataset }}"

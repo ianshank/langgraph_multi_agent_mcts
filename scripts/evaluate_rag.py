@@ -25,11 +25,13 @@ import logging
 import os
 import sys
 from pathlib import Path
+from time import perf_counter
 from typing import Any
 
 import pandas as pd
 
 from src.config.settings import get_settings
+from src.monitoring.prometheus_metrics import RAG_QUERIES_TOTAL, record_rag_retrieval
 
 try:
     import wandb
@@ -143,6 +145,7 @@ def load_dataset(client: Any, dataset_name: str, limit: int | None = None) -> li
 async def evaluate_with_ragas(
     dataset: list[dict[str, Any]],
     mcts_enabled: bool,
+    settings: Any,
 ) -> pd.DataFrame:
     """
     Evaluate RAG performance using Ragas metrics.
@@ -150,6 +153,7 @@ async def evaluate_with_ragas(
     Args:
         dataset: Evaluation dataset
         mcts_enabled: Whether MCTS is enabled
+        settings: Application settings
 
     Returns:
         DataFrame with evaluation results
@@ -160,22 +164,72 @@ async def evaluate_with_ragas(
         from ragas import evaluate
         from ragas.metrics import answer_relevancy, context_precision, context_recall, faithfulness
 
-        # TODO: Replace with actual RAG pipeline predictions
-        # For now, use placeholder responses
-        predictions = []
-        for item in dataset:
-            # Simulate RAG pipeline
-            answer = f"[Placeholder answer for: {item['question']}]"
-            contexts = item["contexts"]
+        from src.adapters.llm import create_client
+        from src.framework.graph import LangGraphMultiAgentFramework
 
-            predictions.append(
-                {
-                    "question": item["question"],
-                    "answer": answer,
-                    "contexts": contexts,
-                    "ground_truth": item["ground_truth"],
-                }
-            )
+        # Initialize the RAG pipeline
+        logger.info("Initializing RAG pipeline...")
+        model_adapter = create_client(
+            provider=settings.LLM_PROVIDER,
+            model=settings.DEFAULT_MODEL,
+            timeout=60.0,
+            max_retries=3,
+        )
+
+        framework = LangGraphMultiAgentFramework(
+            model_adapter=model_adapter,
+            logger=logger,
+            mcts_iterations=settings.MCTS_ITERATIONS if mcts_enabled else 0,
+            mcts_exploration_weight=settings.MCTS_C,
+        )
+
+        # Run RAG pipeline on each example
+        predictions = []
+        for idx, item in enumerate(dataset):
+            logger.info(f"Processing example {idx + 1}/{len(dataset)}: {item['question'][:50]}...")
+
+            try:
+                # Process query through the framework with latency tracking
+                start_time = perf_counter()
+                result = await framework.process(
+                    query=item["question"],
+                    use_rag=True,
+                    use_mcts=mcts_enabled,
+                )
+                latency = perf_counter() - start_time
+
+                # Extract retrieved contexts from the result
+                retrieved_docs = result.get("metadata", {}).get("retrieved_docs", [])
+                contexts = [doc.get("content", "") for doc in retrieved_docs] if retrieved_docs else item["contexts"]
+
+                # Record RAG metrics
+                num_docs = len(retrieved_docs) if retrieved_docs else 0
+                relevance_scores = [doc.get("metadata", {}).get("score", 0.5) for doc in retrieved_docs] if retrieved_docs else []
+                record_rag_retrieval(num_docs, relevance_scores, latency)
+
+                predictions.append(
+                    {
+                        "question": item["question"],
+                        "answer": result.get("response", ""),
+                        "contexts": contexts,
+                        "ground_truth": item["ground_truth"],
+                    }
+                )
+
+                logger.debug(f"Generated answer: {result.get('response', '')[:100]}...")
+
+            except Exception as e:
+                logger.error(f"Failed to process example {idx + 1}: {e}")
+                RAG_QUERIES_TOTAL.labels(status="error").inc()
+                # Use fallback for failed examples
+                predictions.append(
+                    {
+                        "question": item["question"],
+                        "answer": f"[Error: {str(e)}]",
+                        "contexts": item["contexts"],
+                        "ground_truth": item["ground_truth"],
+                    }
+                )
 
         # Create ragas dataset
         eval_dataset = pd.DataFrame(predictions)
@@ -194,8 +248,8 @@ async def evaluate_with_ragas(
         logger.info("Evaluation complete!")
         return result.to_pandas()
 
-    except ImportError:
-        logger.error("ragas not installed; install with: pip install ragas")
+    except ImportError as ie:
+        logger.error(f"Import error: {ie}; install with: pip install ragas")
         # Return placeholder results
         return pd.DataFrame(
             {
@@ -344,7 +398,7 @@ async def main() -> int:
             return 1
 
         # Run evaluation
-        results = await evaluate_with_ragas(dataset, settings.MCTS_ENABLED)
+        results = await evaluate_with_ragas(dataset, settings.MCTS_ENABLED, settings)
 
         # Display results
         logger.info("\n=== Evaluation Results ===")

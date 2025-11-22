@@ -16,12 +16,17 @@ Environment:
 import argparse
 import sys
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
-import httpx
-from langsmith import traceable
+# Add project root to path for imports
+project_root = Path(__file__).parent.parent
+sys.path.insert(0, str(project_root))
 
-from tests.utils.langsmith_tracing import (
+import httpx  # noqa: E402
+from langsmith import traceable  # noqa: E402
+
+from tests.utils.langsmith_tracing import (  # noqa: E402
     get_test_metadata,
     update_run_metadata,
 )
