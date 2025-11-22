@@ -29,9 +29,9 @@ import torch
 # Import the trained controllers
 sys.path.insert(0, str(Path(__file__).parent))
 
-from src.agents.meta_controller.rnn_controller import RNNMetaController
-from src.agents.meta_controller.bert_controller import BERTMetaController
 from src.agents.meta_controller.base import MetaControllerFeatures
+from src.agents.meta_controller.bert_controller import BERTMetaController
+from src.agents.meta_controller.rnn_controller import RNNMetaController
 
 
 @dataclass

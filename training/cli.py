@@ -63,15 +63,16 @@ def train_command(args):
         try:
             import asyncio
 
+            from rich.console import Console
+
             # Import verification functions directly (not main to avoid argparse conflict)
             sys.path.insert(0, str(Path(__file__).parent.parent))
             from scripts.verify_external_services import (
-                verify_all_services,
-                display_results,
                 check_critical_failures,
+                display_results,
                 setup_logging as verify_setup_logging,
+                verify_all_services,
             )
-            from rich.console import Console
 
             # Run verification with explicit config path
             config_path = Path(args.config)

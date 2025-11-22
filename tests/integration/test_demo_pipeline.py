@@ -213,12 +213,14 @@ async def test_verification_script_executes(
     demo_config, mock_external_services
 ):
     """Test that verification script executes without errors."""
+    import logging
+
+    from rich.console import Console
+
     from scripts.verify_external_services import (
         check_critical_failures,
         verify_all_services,
     )
-    from rich.console import Console
-    import logging
 
     console = Console()
     logger = logging.getLogger("test")

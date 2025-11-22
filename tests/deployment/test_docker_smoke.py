@@ -25,6 +25,7 @@ Usage:
 - Validate configuration
 """
 
+import os
 import time
 
 import docker
