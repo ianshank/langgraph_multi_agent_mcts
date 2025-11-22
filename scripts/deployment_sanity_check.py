@@ -23,9 +23,7 @@ Usage:
 - Exit codes for CI/CD integration
 """
 
-import asyncio
 import logging
-import os
 import subprocess
 import sys
 from pathlib import Path
@@ -140,7 +138,7 @@ class DeploymentSanityChecker:
             self.failures.extend(errors)
             return False
 
-        self.console.print(f"  [green]✓[/green] All Python files have valid syntax")
+        self.console.print("  [green]✓[/green] All Python files have valid syntax")
         return True
 
     def check_dependencies(self) -> bool:
@@ -149,14 +147,14 @@ class DeploymentSanityChecker:
 
         requirements_file = PROJECT_ROOT / "requirements.txt"
         if not requirements_file.exists():
-            self.console.print(f"  [red]✗[/red] requirements.txt not found")
+            self.console.print("  [red]✗[/red] requirements.txt not found")
             self.failures.append("Missing requirements.txt")
             return False
 
         # Just check file is readable
         try:
             with open(requirements_file) as f:
-                lines = [l.strip() for l in f if l.strip() and not l.startswith("#")]
+                lines = [line.strip() for line in f if line.strip() and not line.startswith("#")]
             self.console.print(f"  [green]✓[/green] Found {len(lines)} dependencies")
             return True
         except Exception as e:
@@ -177,17 +175,17 @@ class DeploymentSanityChecker:
             )
 
             if result.returncode == 0:
-                self.console.print(f"  [green]✓[/green] Smoke tests passed")
+                self.console.print("  [green]✓[/green] Smoke tests passed")
                 return True
             else:
-                self.console.print(f"  [red]✗[/red] Smoke tests failed")
+                self.console.print("  [red]✗[/red] Smoke tests failed")
                 if self.verbose:
                     self.console.print(result.stdout)
                     self.console.print(result.stderr)
                 self.failures.append("Smoke tests failed")
                 return False
         except subprocess.TimeoutExpired:
-            self.console.print(f"  [red]✗[/red] Smoke tests timed out")
+            self.console.print("  [red]✗[/red] Smoke tests timed out")
             self.failures.append("Smoke tests timeout")
             return False
         except Exception as e:

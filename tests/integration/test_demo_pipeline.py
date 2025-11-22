@@ -179,9 +179,8 @@ def test_cli_demo_flag_recognition():
     from training.cli import main
 
     # Test that --demo flag is available
-    with pytest.raises(SystemExit):  # argparse will exit
-        with patch("sys.argv", ["cli.py", "train", "--help"]):
-            main()
+    with pytest.raises(SystemExit), patch("sys.argv", ["cli.py", "train", "--help"]):  # argparse will exit
+        main()
 
 
 @pytest.mark.integration
@@ -515,7 +514,7 @@ def test_missing_api_key_handling(monkeypatch):
 
     from scripts.verify_external_services import ServiceConfig
 
-    config = ServiceConfig(
+    _ = ServiceConfig(
         name="test",
         env_var="MISSING_KEY",
         description="Test service",
@@ -536,9 +535,8 @@ def test_invalid_config_handling(temp_workspace):
         f.write("invalid: yaml: syntax: [")
 
     # Should raise error when loading
-    with pytest.raises(yaml.YAMLError):
-        with open(invalid_config) as f:
-            yaml.safe_load(f)
+    with pytest.raises(yaml.YAMLError), open(invalid_config) as f:
+        yaml.safe_load(f)
 
 
 # ============================================================================

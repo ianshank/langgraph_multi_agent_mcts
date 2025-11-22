@@ -25,10 +25,7 @@ Usage:
 - Validate configuration
 """
 
-import os
-import subprocess
 import time
-from typing import Dict, List, Optional
 
 import docker
 import pytest
@@ -94,7 +91,7 @@ def wait_for_container_healthy(
 def exec_in_container(
     client: docker.DockerClient,
     container_name: str,
-    command: List[str],
+    command: list[str],
 ) -> tuple[int, str]:
     """Execute command in container."""
     try:

@@ -9,8 +9,11 @@ This is a production demonstration using real trained models.
 """
 
 import asyncio
+import sys
 import time
 from dataclasses import dataclass
+from pathlib import Path
+
 # Fail fast if critical dependencies are missing or broken
 try:
     import peft
@@ -20,14 +23,10 @@ except ImportError as e:
     # We don't exit here to allow the app to crash naturally later with full stack trace,
     # but this print ensures it's visible in the logs immediately.
 
-from pathlib import Path
-
 import gradio as gr
-import numpy as np
 import torch
 
 # Import the trained controllers
-import sys
 sys.path.insert(0, str(Path(__file__).parent))
 
 from src.agents.meta_controller.rnn_controller import RNNMetaController
@@ -160,7 +159,6 @@ class IntegratedFramework:
         self,
         query: str,
         controller_type: str = "rnn",
-        show_routing: bool = True
     ) -> tuple[AgentResult, ControllerDecision]:
         """
         Process a query using the trained meta-controller.
@@ -168,7 +166,6 @@ class IntegratedFramework:
         Args:
             query: The input query
             controller_type: Which controller to use ("rnn" or "bert")
-            show_routing: Whether to return routing information
 
         Returns:
             (agent_result, controller_decision) tuple
@@ -188,12 +185,13 @@ class IntegratedFramework:
         confidence = prediction.confidence
 
         # Get routing probabilities
-        routing_probs = {
-            agent: prob for agent, prob in zip(
+        routing_probs = dict(
+            zip(
                 ["hrm", "trm", "mcts"],
-                prediction.probabilities
+                prediction.probabilities,
+                strict=True
             )
-        }
+        )
 
         # Step 3: Route to selected agent
         handler = self.agent_handlers.get(selected_agent, self._handle_hrm)

@@ -13,9 +13,8 @@ Tests all verifiers (Pinecone, W&B, GitHub, OpenAI, Neo4j) with mocked responses
 - Structured test organization
 """
 
-import asyncio
 import logging
-import os
+import sys
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -24,8 +23,6 @@ import pytest
 import yaml
 
 # Add project root to path
-import sys
-
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
@@ -307,7 +304,7 @@ async def test_pinecone_verifier_timeout(
         # Patch tenacity to not retry for this test
         with patch(
             "scripts.verify_external_services.retry",
-            lambda **kwargs: lambda f: f,
+            lambda **_kwargs: lambda f: f,
         ):
             result = await verifier.verify()
 
