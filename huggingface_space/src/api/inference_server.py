@@ -139,7 +139,7 @@ class InferenceServer:
         """Load models from checkpoint."""
         print(f"Loading models from {checkpoint_path}...")
 
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 
         # Load config
         if config is None:

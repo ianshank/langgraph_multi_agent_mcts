@@ -1383,7 +1383,7 @@ class SelfPlayTrainer:
 
     def load_checkpoint(self, path: str) -> None:
         """Load training checkpoint."""
-        checkpoint = torch.load(path, map_location=self.device)
+        checkpoint = torch.load(path, map_location=self.device, weights_only=True)
 
         self.current_iteration = checkpoint["iteration"]
         self.best_model_metric = checkpoint["best_model_metric"]

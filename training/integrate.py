@@ -62,7 +62,7 @@ class ModelIntegrator:
             logger.warning("PyTorch not available, loading model metadata only")
             return {"type": model_type, "path": checkpoint_path}
 
-        checkpoint = torch.load(checkpoint_path, map_location="cpu")
+        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
 
         # Extract model state
         model_state = checkpoint.get("model_state_dict", checkpoint)
@@ -130,12 +130,12 @@ class ModelIntegrator:
             return
 
         # Load value network
-        value_state = torch.load(value_checkpoint, map_location="cpu")
+        value_state = torch.load(value_checkpoint, map_location="cpu", weights_only=True)
         if hasattr(mcts_engine, "value_network"):
             mcts_engine.value_network.load_state_dict(value_state["model_state_dict"])
 
         # Load policy network
-        policy_state = torch.load(policy_checkpoint, map_location="cpu")
+        policy_state = torch.load(policy_checkpoint, map_location="cpu", weights_only=True)
         if hasattr(mcts_engine, "policy_network"):
             mcts_engine.policy_network.load_state_dict(policy_state["model_state_dict"])
 

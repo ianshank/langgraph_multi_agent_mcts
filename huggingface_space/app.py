@@ -67,11 +67,22 @@ def create_features_from_query(query: str, iteration: int = 0, last_agent: str =
 
     # Normalize
     total = hrm_confidence + trm_confidence + mcts_confidence
-    hrm_confidence /= total
-    trm_confidence /= total
-    mcts_confidence /= total
+    if total == 0:
+        # If all confidences are zero, use uniform distribution
+        hrm_confidence = 1.0 / 3.0
+        trm_confidence = 1.0 / 3.0
+        mcts_confidence = 1.0 / 3.0
+    else:
+        hrm_confidence /= total
+        trm_confidence /= total
+        mcts_confidence /= total
 
-    consensus_score = min(hrm_confidence, trm_confidence, mcts_confidence) / max(hrm_confidence, trm_confidence, mcts_confidence)
+    # Calculate consensus score with guard against division by zero
+    max_confidence = max(hrm_confidence, trm_confidence, mcts_confidence)
+    if max_confidence == 0:
+        consensus_score = 0.0
+    else:
+        consensus_score = min(hrm_confidence, trm_confidence, mcts_confidence) / max_confidence
 
     features = MetaControllerFeatures(
         hrm_confidence=hrm_confidence,
@@ -110,7 +121,7 @@ class IntegratedFramework:
         # Load the trained weights
         rnn_model_path = Path(__file__).parent / "models" / "rnn_meta_controller.pt"
         if rnn_model_path.exists():
-            checkpoint = torch.load(rnn_model_path, map_location=self.device)
+            checkpoint = torch.load(rnn_model_path, map_location=self.device, weights_only=True)
             self.rnn_controller.model.load_state_dict(checkpoint)
             self.rnn_controller.model.eval()
             print(f"✓ Loaded RNN model from {rnn_model_path}")

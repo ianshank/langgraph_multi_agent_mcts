@@ -694,7 +694,7 @@ class MetaControllerTrainer:
             logger.warning(f"No checkpoint found at {self.checkpoint_path}")
             return
 
-        checkpoint = torch.load(self.checkpoint_path, map_location=self.device)
+        checkpoint = torch.load(self.checkpoint_path, map_location=self.device, weights_only=True)
 
         self.router.load_state_dict(checkpoint["router_state"])
         self.aggregator.load_state_dict(checkpoint["aggregator_state"])

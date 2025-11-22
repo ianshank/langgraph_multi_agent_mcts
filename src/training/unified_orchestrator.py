@@ -479,7 +479,7 @@ class UnifiedTrainingOrchestrator:
 
     def load_checkpoint(self, path: str):
         """Load checkpoint from file."""
-        checkpoint = torch.load(path, map_location=self.device)
+        checkpoint = torch.load(path, map_location=self.device, weights_only=True)
 
         self.policy_value_net.load_state_dict(checkpoint["policy_value_net"])
         self.hrm_agent.load_state_dict(checkpoint["hrm_agent"])

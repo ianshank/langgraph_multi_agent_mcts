@@ -225,7 +225,7 @@ def evaluate_command(args):
         # Load actual trained model
         import torch
 
-        checkpoint = torch.load(args.model, map_location="cpu")
+        checkpoint = torch.load(args.model, map_location="cpu", weights_only=True)
         # Extract model type from checkpoint or default
         model_type = checkpoint.get("model_type", "hrm") if isinstance(checkpoint, dict) else "hrm"
 

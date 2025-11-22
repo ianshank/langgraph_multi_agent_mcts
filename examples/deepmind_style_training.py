@@ -242,7 +242,7 @@ async def inference_example(checkpoint_path: str):
     config = setup_configuration()
 
     # Load checkpoint
-    checkpoint = torch.load(checkpoint_path, map_location=config.device)
+    checkpoint = torch.load(checkpoint_path, map_location=config.device, weights_only=True)
 
     # Create policy-value network
     from src.models.policy_value_net import create_policy_value_network

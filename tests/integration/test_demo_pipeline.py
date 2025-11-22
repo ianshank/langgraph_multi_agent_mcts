@@ -313,7 +313,7 @@ def test_demo_checkpoint_structure(temp_workspace):
     torch.save(checkpoint, checkpoint_path)
 
     # Verify checkpoint can be loaded
-    loaded = torch.load(checkpoint_path)
+    loaded = torch.load(checkpoint_path, weights_only=True)
     assert loaded["model_type"] == "hrm"
     assert loaded["epoch"] == 1
 

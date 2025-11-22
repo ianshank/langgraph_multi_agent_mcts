@@ -63,6 +63,31 @@ class GameState:
         """Get unique hash for this state (for caching)."""
         raise NotImplementedError
 
+    def action_to_index(self, action: Any) -> int:
+        """
+        Map action to its index in the neural network's action space.
+
+        This method should return the index corresponding to the action
+        in the network's policy output vector.
+
+        Default implementation uses string-based mapping for Tic-Tac-Toe style
+        actions (e.g., "0,0" -> 0, "0,1" -> 1, etc.). Override this method
+        for custom action mappings.
+
+        Args:
+            action: The action to map
+
+        Returns:
+            Index in the action space (0 to action_size-1)
+        """
+        # Default implementation for grid-based actions like "row,col"
+        if isinstance(action, str) and "," in action:
+            row, col = map(int, action.split(","))
+            # Assume 3x3 grid by default - override for different sizes
+            return row * 3 + col
+        # For other action types, assume they are already indices
+        return int(action)
+
 
 class NeuralMCTSNode:
     """
@@ -305,18 +330,41 @@ class NeuralMCTS:
         policy_logits = policy_logits.squeeze(0).detach().cpu().numpy()
         value = value.item()
 
-        # Mask illegal actions and normalize
-        policy_probs = np.exp(policy_logits)
+        # Proper action masking: Map legal actions to their indices in the action space
+        # Create a mask for legal actions
+        action_mask = np.full_like(policy_logits, -np.inf)  # Mask all actions initially
+        action_indices = []
 
-        # TODO: Implement proper action masking that maps network outputs to specific actions.
-        # This slicing assumes perfect alignment between network output order and legal_actions order,
-        # which is brittle. Proper implementation should use an action mapping or mask tensor.
-        policy_probs = policy_probs[: len(legal_actions)]
+        # Map legal actions to their network output indices
+        for action in legal_actions:
+            try:
+                action_idx = state.action_to_index(action)
+                if 0 <= action_idx < len(policy_logits):
+                    action_mask[action_idx] = 0  # Unmask legal actions
+                    action_indices.append(action_idx)
+            except (ValueError, IndexError, AttributeError) as e:
+                # Fallback: if action_to_index fails, use sequential mapping
+                print(f"Warning: action_to_index failed for action {action}: {e}")
+                action_indices = list(range(len(legal_actions)))
+                action_mask = np.full_like(policy_logits, -np.inf)
+                action_mask[action_indices] = 0
+                break
 
-        # Normalize
+        # Apply mask before softmax for numerical stability
+        masked_logits = policy_logits + action_mask
+
+        # Compute softmax over legal actions only
+        exp_logits = np.exp(masked_logits - np.max(masked_logits))  # Subtract max for stability
+        policy_probs_full = exp_logits / exp_logits.sum()
+
+        # Extract probabilities for legal actions in order
+        policy_probs = policy_probs_full[action_indices]
+
+        # Normalize to ensure probabilities sum to 1 (handle numerical errors)
         if policy_probs.sum() > 0:
             policy_probs = policy_probs / policy_probs.sum()
         else:
+            # Fallback: uniform distribution over legal actions
             policy_probs = np.ones(len(legal_actions)) / len(legal_actions)
 
         # Add Dirichlet noise if requested (root exploration)
