@@ -147,7 +147,7 @@ def test_training_container_healthy(docker_client, training_container_name):
                 # Successfully finished
                 healthy = True
                 break
-        except:
+        except Exception:
             pass
         time.sleep(2)
             
