@@ -75,6 +75,34 @@ def running_training_container(docker_client, training_container_name):
     except docker.errors.NotFound:
         pytest.skip(f"Container {training_container_name} not found. Please build and create it first.")
 
+
+def wait_for_container_healthy(
+    client: docker.DockerClient,
+    container_name: str,
+    timeout: int = 60,
+) -> bool:
+    """Wait for container to become healthy."""
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        try:
+            container = client.containers.get(container_name)
+            if container.status == "running":
+                # Check if health check is configured
+                health = container.attrs.get("State", {}).get("Health", {})
+                status = health.get("Status")
+                
+                # If healthy, or if running and no health check (status is None)
+                if status == "healthy" or status is None:
+                    return True
+        except docker.errors.NotFound:
+            pass
+
+        time.sleep(2)
+
+    return False
+
+
 def exec_in_container(
     client: docker.DockerClient,
     container_name: str,
@@ -372,7 +400,7 @@ def test_container_logs_accessible(docker_client, training_container_name):
     try:
         container = docker_client.containers.get(training_container_name)
         logs = container.logs(tail=10).decode("utf-8")
-        assert len(logs) >= 0, "Container logs should be accessible"
+        assert len(logs) > 0, "Container logs should not be empty"
     except docker.errors.NotFound:
         pytest.skip(f"Container {training_container_name} not found")
 

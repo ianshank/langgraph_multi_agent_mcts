@@ -9,6 +9,7 @@ Handles dataset loading, preprocessing, and data orchestration for:
 
 import json
 import logging
+import hashlib
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -160,9 +161,17 @@ class DABStepLoader:
                         sample = self._convert_synthetic_to_task_sample(item)
                         if sample:
                             synthetic_samples.append(sample)
+                elif isinstance(data, dict):
+                    sample = self._convert_synthetic_to_task_sample(data)
+                    if sample:
+                        synthetic_samples.append(sample)
+                else:
+                    logger.warning(f"Unexpected data type in {json_file}: {type(data).__name__}. Skipping file.")
                             
-            except Exception as e:
+            except (json.JSONDecodeError, IOError) as e:
                 logger.warning(f"Failed to load synthetic data file {json_file}: {e}")
+            except Exception as e:
+                logger.warning(f"Unexpected error loading {json_file}: {e}")
 
         if synthetic_samples:
             logger.info(
@@ -189,8 +198,8 @@ class DABStepLoader:
             if not steps:
                 steps = [answer]
             
-            # Generate ID
-            task_id = f"synth_{hash(question) % 10000000}"
+            # Generate deterministic ID
+            task_id = hashlib.md5(question.encode()).hexdigest()[:16]
             
             return TaskSample(
                 task_id=task_id,
@@ -201,8 +210,11 @@ class DABStepLoader:
                 expected_output=answer,
                 metadata={**metadata, "is_synthetic": True}
             )
-        except Exception as e:
+        except (KeyError, TypeError) as e:
             logger.debug(f"Failed to convert synthetic item: {e}")
+            return None
+        except Exception as e:
+            logger.debug(f"Unexpected error converting synthetic item: {e}")
             return None
 
 

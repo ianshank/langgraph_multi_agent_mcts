@@ -62,7 +62,7 @@ else
     WANDB_ENV="-e WANDB_API_KEY=${WANDB_API_KEY}"
 fi
 
-docker run --name mcts-training-prod \
+docker run --name mcts-training-prod -d \
     --rm \
     --gpus all \
     -v "$(pwd)/training:/app/training" \
@@ -75,6 +75,10 @@ docker run --name mcts-training-prod \
     -e OPENAI_API_KEY=${OPENAI_API_KEY} \
     langgraph-mcts-train:prod \
     python -m training.cli train --config training/config.yaml
+
+if [ -z "$PINECONE_API_KEY" ] || [ -z "$GITHUB_TOKEN" ]; then
+    echo -e "${YELLOW}WARNING: Missing PINECONE_API_KEY or GITHUB_TOKEN. Training might fail or have limited functionality.${NC}"
+fi
 
 echo -e "${GREEN}Production Training started! Check logs with: docker logs -f mcts-training-prod${NC}"
 

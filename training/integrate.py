@@ -17,6 +17,7 @@ import yaml
 
 try:
     import torch
+    from training.utils.checkpoint_loader import load_checkpoint_safe
 
     HAS_TORCH = True
 except ImportError:
@@ -63,28 +64,8 @@ class ModelIntegrator:
             logger.warning("PyTorch not available, loading model metadata only")
             return {"type": model_type, "path": checkpoint_path}
 
-        # Load safe globals for PyTorch 2.6+
         try:
-            # Attempt to load with weights_only=True (safer, default in 2.6+)
-            # We need to whitelist numpy scalars if they appear in the checkpoint
-            # This handles the "WeightsUnpickler error: Unsupported global"
-            if hasattr(torch.serialization, "add_safe_globals"):
-                torch.serialization.add_safe_globals([
-                    np._core.multiarray.scalar, 
-                    np.dtype,
-                    np.dtypes.Float64DType
-                ])
-            
-            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
-        except (RuntimeError, ImportError, AttributeError):
-            # Fallback to standard load if safe globals fail or older torch version
-            # or if the specific numpy structure isn't compatible
-            logger.warning(f"Safe load failed for {checkpoint_path}, trying unsafe load")
-            try:
-                checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
-            except Exception as final_e:
-                logger.error(f"Final attempt to load checkpoint {checkpoint_path} failed: {final_e}")
-                return None
+            checkpoint = load_checkpoint_safe(checkpoint_path, map_location="cpu")
         except Exception as e:
             logger.error(f"Failed to load checkpoint {checkpoint_path}: {e}")
             # One last try with weights_only=False for compatibility

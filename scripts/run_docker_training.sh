@@ -51,7 +51,7 @@ echo "Monitoring logs for 'Loaded <N> samples from <M> synthetic data files'..."
 # Let's use docker run to be consistent and ensure volume mappings for cache are correct.
 # Note: config_local_demo.yaml expects ./cache/synthetic_data. Inside /app, that is /app/cache/synthetic_data.
 
-docker run --name mcts-training-demo --rm \
+docker run --name mcts-training-demo -d --rm \
     --gpus all \
     -v "$(pwd)/training:/app/training" \
     -v "$(pwd)/cache:/app/cache" \

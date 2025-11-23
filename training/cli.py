@@ -12,6 +12,7 @@ Usage:
 import argparse
 import logging
 import sys
+import dataclasses
 from pathlib import Path
 
 import yaml
@@ -251,7 +252,6 @@ def evaluate_command(args):
 
     # Run evaluation
     # Convert TaskSample objects to dictionaries for evaluation
-    import dataclasses
     formatted_test_data = []
     for sample in test_data:
         if hasattr(sample, "__dataclass_fields__"):
