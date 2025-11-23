@@ -65,7 +65,12 @@
       "Bash(test:*)",
       "Bash(bandit:*)",
       "Bash(if exist nul del /f nul)",
-      "Bash(if exist _ul del /f _ul)"
+      "Bash(if exist _ul del /f _ul)",
+      "Bash(timeout 60 echo:*)",
+      "Bash(timeout 30 echo:*)",
+      "Bash(timeout 120 echo:*)",
+      "Bash(timeout 180 echo:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [],
     "ask": []

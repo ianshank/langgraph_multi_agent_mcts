@@ -69,7 +69,11 @@ class ModelIntegrator:
             # This handles the "WeightsUnpickler error: Unsupported global"
             if hasattr(torch.serialization, "add_safe_globals"):
                 import numpy as np
-                torch.serialization.add_safe_globals([np._core.multiarray.scalar])
+                torch.serialization.add_safe_globals([
+                    np._core.multiarray.scalar, 
+                    np.dtype,
+                    np.dtypes.Float64DType
+                ])
             
             checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
         except (RuntimeError, ImportError, AttributeError):

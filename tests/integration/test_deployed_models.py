@@ -20,7 +20,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 
 try:
     from training.agent_trainer import HRMTrainer, TRMTrainer
-    from training.integrate import ModelIntegrator
+    # from training.integrate import ModelIntegrator # Removed unused import
 except ImportError:
     pytest.fail("Failed to import training modules")
 

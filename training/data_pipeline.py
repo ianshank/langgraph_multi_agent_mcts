@@ -148,7 +148,7 @@ class DABStepLoader:
         for json_file in json_files:
             try:
                 # Skip non-dataset files (like stats or checkpoints)
-                if "stats" in json_file.name or "checkpoint" in json_file.name:
+                if json_file.name.endswith("_stats.json") or json_file.name.endswith("_checkpoint.json"):
                     continue
                     
                 with open(json_file, "r") as f:

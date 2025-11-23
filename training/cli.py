@@ -251,11 +251,11 @@ def evaluate_command(args):
 
     # Run evaluation
     # Convert TaskSample objects to dictionaries for evaluation
+    import dataclasses
     formatted_test_data = []
     for sample in test_data:
         if hasattr(sample, "__dataclass_fields__"):
             # It's a dataclass
-            import dataclasses
             formatted_test_data.append(dataclasses.asdict(sample))
         elif hasattr(sample, "to_dict"):
             formatted_test_data.append(sample.to_dict())
