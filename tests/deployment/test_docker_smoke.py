@@ -391,21 +391,12 @@ def test_gpu_memory_available(docker_client, training_container_name):
 @pytest.mark.slow
 def test_training_cli_help(docker_client, training_container_name):
     """Test that training CLI is accessible."""
-    # We may need to restart for this command as previous tests might have left it in an odd state
-    # Or just run a new container instance briefly
-    
-    try:
-        # Use a fresh container run for this command to be safe
-        # This mimics how we'd run it in prod: docker run ... python -m ...
-        output = docker_client.containers.run(
-            "langgraph-mcts-train:demo", 
-            ["python", "-m", "training.cli", "--help"],
-            remove=True
-        ).decode("utf-8")
-        exit_code = 0
-    except Exception as e:
-        exit_code = 1
-        output = str(e)
+    # This test executes a command inside the running container to verify the CLI is functional.
+    exit_code, output = exec_in_container(
+        docker_client,
+        training_container_name,
+        ["python", "-m", "training.cli", "--help"],
+    )
 
     assert exit_code == 0, f"CLI help failed: {output}"
     assert "train" in output, "CLI help missing train command"
