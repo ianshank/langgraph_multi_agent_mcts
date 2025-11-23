@@ -233,14 +233,14 @@ def evaluate_command(args):
         if model_type == "hrm":
             from training.agent_trainer import HRMTrainer
 
-            trainer = HRMTrainer(config["agents"]["hrm"])
+            trainer = HRMTrainer(config)
             if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
                 trainer.model.load_state_dict(checkpoint["model_state_dict"])
             model = trainer.model
         elif model_type == "trm":
             from training.agent_trainer import TRMTrainer
 
-            trainer = TRMTrainer(config["agents"]["trm"])
+            trainer = TRMTrainer(config)
             if isinstance(checkpoint, dict) and "model_state_dict" in checkpoint:
                 trainer.model.load_state_dict(checkpoint["model_state_dict"])
             model = trainer.model
@@ -250,7 +250,20 @@ def evaluate_command(args):
             model = checkpoint
 
     # Run evaluation
-    report = benchmark.evaluate_model(model, test_data, verbose=True)
+    # Convert TaskSample objects to dictionaries for evaluation
+    formatted_test_data = []
+    for sample in test_data:
+        if hasattr(sample, "__dataclass_fields__"):
+            # It's a dataclass
+            import dataclasses
+            formatted_test_data.append(dataclasses.asdict(sample))
+        elif hasattr(sample, "to_dict"):
+            formatted_test_data.append(sample.to_dict())
+        else:
+            # Already a dict or unknown
+            formatted_test_data.append(sample)
+
+    report = benchmark.evaluate_model(model, formatted_test_data, verbose=True)
 
     logger.info("Evaluation Results:")
     logger.info(f"  Accuracy: {report.accuracy:.2%}")

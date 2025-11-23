@@ -1,225 +1,104 @@
----
-title: LangGraph Multi-Agent MCTS Demo
-emoji: 🌳
-colorFrom: blue
-colorTo: green
-sdk: gradio
-sdk_version: 4.44.0
-app_file: app.py
-pinned: false
-license: mit
-tags:
-  - multi-agent
-  - mcts
-  - reasoning
-  - langgraph
-  - ai-agents
-  - wandb
-  - experiment-tracking
-short_description: Multi-agent reasoning framework with Monte Carlo Tree Search
----
-
 # LangGraph Multi-Agent MCTS Framework
 
-**Production Demo with Trained Neural Models** - Experience real trained meta-controllers for intelligent agent routing
+**Production-Ready DeepMind-Style AI System with Neural MCTS and Hierarchical Reasoning**
 
-## What This Demo Shows
+![Architecture](docs/img/architecture_overview.png)
 
-This interactive demo showcases trained neural meta-controllers that dynamically route queries to specialized agents:
+This framework implements a state-of-the-art multi-agent system combining hierarchical reasoning (HRM), iterative refinement (TRM), and Monte Carlo Tree Search (MCTS) guided by neural networks. It features a complete training pipeline, synthetic data generation, and RAG integration.
 
-### 🤖 Trained Meta-Controllers
+## 🚀 Key Features
 
-1. **RNN Meta-Controller**
-   - GRU-based recurrent neural network
-   - Learns sequential patterns in agent performance
-   - Fast inference (~2ms latency)
-   - Trained on 1000+ synthetic routing examples
+### 🧠 Core Architecture
+- **HRM (Hierarchical Reasoning Module)**: DeBERTa-based agent for complex problem decomposition.
+- **TRM (Task Refinement Module)**: Iterative agent for refining and optimizing solutions.
+- **Neural MCTS**: AlphaZero-style tree search guided by policy/value networks.
+- **Meta-Controller**: Neural router (GRU/BERT) that dynamically assigns tasks to the best agent.
 
-2. **BERT Meta-Controller with LoRA**
-   - Transformer-based text understanding
-   - Parameter-efficient fine-tuning with LoRA adapters
-   - Context-aware routing decisions
-   - Better generalization to unseen query patterns
+### 🛠️ Training Pipeline
+- **End-to-End Orchestration**: Automated multi-stage training (Pre-training → Fine-tuning → Self-Play).
+- **Synthetic Data Generation**: LLM-powered generator for creating high-quality training datasets.
+- **Research Corpus Builder**: Automated fetching and indexing of arXiv papers for RAG.
+- **Docker Support**: Fully containerized training and inference environments.
 
-### 🧠 Three Specialized Agents
+### 📊 Observability & RAG
+- **RAG Integration**: Pinecone vector database for retrieving domain knowledge.
+- **Experiment Tracking**: Full integration with Weights & Biases.
+- **Production Monitoring**: Prometheus/Grafana metrics for latency, memory, and model performance.
 
-1. **HRM (Hierarchical Reasoning Module)**
-   - Best for: Complex decomposition, multi-level problems
-   - Technique: Hierarchical planning with adaptive computation
+## 📦 Installation
 
-2. **TRM (Tree Reasoning Module)**
-   - Best for: Iterative refinement, comparison tasks
-   - Technique: Recursive refinement with convergence detection
+### Prerequisites
+- Python 3.11+
+- Docker & Docker Compose (for containerized workflow)
+- NVIDIA GPU (recommended for training)
 
-3. **MCTS (Monte Carlo Tree Search)**
-   - Best for: Optimization, strategic planning
-   - Technique: UCB1 exploration with value backpropagation
+### Quick Start
 
-### 📊 Key Features
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/ianshank/langgraph_multi_agent_mcts.git
+   cd langgraph_multi_agent_mcts
+   ```
 
-- **Real Trained Models**: Production-ready neural meta-controllers
-- **Intelligent Routing**: Models learn optimal agent selection patterns
-- **Routing Visualization**: See confidence scores and probability distributions
-- **Feature Engineering**: Demonstrates query → features → routing pipeline
-- **Performance Metrics**: Track execution time and routing accuracy
+2. **Set up environment variables:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your API keys (OpenAI, Pinecone, W&B)
+   ```
 
-## How to Use
+3. **Run with Docker (Recommended):**
+   ```bash
+   # Run the demo pipeline (builds image, generates data, trains models)
+   bash scripts/run_docker_training.sh
+   ```
 
-1. **Enter a Query**: Type your question or select an example
-2. **Select Controller**: Choose RNN (fast) or BERT (context-aware)
-3. **Process Query**: Click "🚀 Process Query"
-4. **Review Results**:
-   - See which agent the controller selected
-   - View routing confidence and probabilities
-   - Examine features used for decision-making
-   - Check agent execution details
+## 🏗️ Training Workflow
 
-## Weights & Biases Integration
+The framework supports a comprehensive training lifecycle:
 
-Track your experiments with **Weights & Biases** for:
-- 📈 **Metrics Dashboard**: Visualize consensus scores, execution times, agent performance
-- 🔄 **Run Comparison**: Compare different configurations side-by-side
-- 📊 **Experiment History**: Track all your queries and results
-- 🌳 **MCTS Visualization**: Log tree exploration patterns
+1.  **Data Generation**:
+    ```bash
+    # Generate synthetic Q&A pairs
+    python -m scripts.generate_synthetic_training_data --num-samples 1000
+    ```
 
-### Setting Up W&B
+2.  **Corpus Building**:
+    ```bash
+    # Fetch and index arXiv papers
+    python -m training.examples.build_arxiv_corpus --mode keywords --max-papers 200
+    ```
 
-1. **Get API Key**: Sign up at [wandb.ai](https://wandb.ai) and get your API key
-2. **Configure Space Secret** (if deploying your own):
-   - Go to Space Settings → Repository secrets
-   - Add: `WANDB_API_KEY` = your API key
-3. **Enable in UI**:
-   - Expand "Weights & Biases Tracking" accordion
-   - Check "Enable W&B Tracking"
-   - Set project name (optional)
-   - Set run name (optional, auto-generated if empty)
-4. **View Results**: After processing, click the W&B run URL to see your dashboard
+3.  **Production Training**:
+    ```bash
+    # Run full training pipeline
+    bash scripts/run_production_training.sh
+    ```
 
-### Logged Metrics
+## 🧪 Testing
 
-- **Per Agent**: Confidence, execution time, response length, reasoning steps
-- **MCTS**: Best value, visits, tree depth, top actions with UCB1 scores
-- **Consensus**: Score, level (high/medium/low), number of agents
-- **Performance**: Total processing time
-- **Artifacts**: Full JSON results, tree visualizations
+Run the comprehensive test suite to verify system integrity:
 
-## Example Queries
+```bash
+# Run all tests
+pytest tests/
 
-- "What are the key factors to consider when choosing between microservices and monolithic architecture?"
-- "How can we optimize a Python application that processes 10GB of log files daily?"
-- "Should we use SQL or NoSQL database for a social media application with 1M users?"
-- "How to design a fault-tolerant message queue system?"
+# Run integration tests
+pytest tests/integration/
 
-## Technical Details
-
-### Architecture
-
-```
-Query Input
-    │
-    ├─→ HRM Agent (Hierarchical Decomposition)
-    │      ├─ Component Analysis
-    │      └─ Structured Synthesis
-    │
-    ├─→ TRM Agent (Iterative Refinement)
-    │      ├─ Initial Response
-    │      ├─ Clarity Enhancement
-    │      └─ Validation Check
-    │
-    └─→ MCTS Engine (Strategic Search)
-           ├─ Selection (UCB1)
-           ├─ Expansion
-           ├─ Simulation
-           └─ Backpropagation
-                    │
-                    ▼
-           Consensus Scoring
-                    │
-                    ▼
-           Final Synthesized Response
+# Run specific deployed model tests
+pytest tests/integration/test_deployed_models.py
 ```
 
-### MCTS Algorithm
+## 📚 Documentation
 
-The Monte Carlo Tree Search implementation uses:
+- **[Architecture Guide](docs/C4_ARCHITECTURE.md)**: Detailed C4 diagrams of system components.
+- **[Training Guide](docs/LOCAL_TRAINING_GUIDE.md)**: How to train models locally or in the cloud.
+- **[Synthetic Data](training/SYNTHETIC_DATA_GENERATION_GUIDE.md)**: Guide to generating training data.
 
-- **UCB1 Selection**: `Q(s,a) + C * sqrt(ln(N(s)) / N(s,a))`
-- **Progressive Widening**: Controls branching factor
-- **Domain-Aware Actions**: Contextual decision options
-- **Value Backpropagation**: Updates entire path statistics
+## 🤝 Contributing
 
-### Consensus Calculation
+Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md) for details on our code of conduct and development process.
 
-```
-consensus = average_confidence * agreement_factor
-agreement_factor = max(0, 1 - std_deviation * 2)
-```
+## 📜 License
 
-High consensus (>70%) indicates agents agree on approach.
-Low consensus (<40%) suggests uncertainty or conflicting strategies.
-
-## Demo Scope
-
-This demonstration focuses on **meta-controller training and routing**:
-
-- ✅ **Real Trained Models**: Production RNN and BERT controllers
-- ✅ **Actual Model Loading**: PyTorch and HuggingFace Transformers
-- ✅ **Feature Engineering**: Query analysis → feature vectors
-- ✅ **Routing Visualization**: See controller decision-making
-- ⚠️ **Simplified Agents**: Agent responses are mocked for demo purposes
-- ⚠️ **No Live LLM Calls**: Agents don't call actual LLMs (to reduce latency/cost)
-
-## Full Production Framework
-
-The complete repository includes all production features:
-
-- ✅ **Neural Meta-Controllers**: RNN and BERT with LoRA (deployed here!)
-- ✅ **Agent Implementations**: Full HRM, TRM, and MCTS with PyTorch
-- ✅ **Training Pipeline**: Data generation, training, evaluation
-- ✅ **LLM Integration**: OpenAI, Anthropic, LM Studio support
-- ✅ **RAG Systems**: ChromaDB, FAISS, Pinecone vector stores
-- ✅ **Observability**: OpenTelemetry tracing, Prometheus metrics
-- ✅ **Storage**: S3 artifact storage, experiment tracking
-- ✅ **CI/CD**: Automated testing, security scanning, deployment
-
-**GitHub Repository**: [ianshank/langgraph_multi_agent_mcts](https://github.com/ianshank/langgraph_multi_agent_mcts)
-
-## Technical Stack
-
-- **Python**: 3.11+
-- **UI**: Gradio 4.x
-- **ML Frameworks**: PyTorch 2.1+, Transformers, PEFT (LoRA)
-- **Models**: GRU-based RNN, BERT-mini with LoRA adapters
-- **Architecture**: Neural meta-controller + multi-agent system
-- **Experiment Tracking**: Weights & Biases (optional)
-- **Numerical**: NumPy
-
-## Research Applications
-
-This framework demonstrates concepts applicable to:
-
-- Complex decision-making systems
-- AI-assisted software architecture decisions
-- Multi-perspective problem analysis
-- Strategic planning with uncertainty
-
-## Citation
-
-If you use this framework in research, please cite:
-
-```bibtex
-@software{langgraph_mcts_2024,
-  title={LangGraph Multi-Agent MCTS Framework},
-  author={Your Name},
-  year={2024},
-  url={https://github.com/ianshank/langgraph_multi_agent_mcts}
-}
-```
-
-## License
-
-MIT License - See repository for details.
-
----
-
-**Built with** LangGraph, Gradio, and Python | **Demo Version**: 1.0.0
+MIT License - see the [LICENSE](LICENSE) file for details.
