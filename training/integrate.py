@@ -8,6 +8,7 @@ Handles model loading, hot-swapping, configuration management, and rollback.
 import json
 import logging
 import shutil
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -68,7 +69,6 @@ class ModelIntegrator:
             # We need to whitelist numpy scalars if they appear in the checkpoint
             # This handles the "WeightsUnpickler error: Unsupported global"
             if hasattr(torch.serialization, "add_safe_globals"):
-                import numpy as np
                 torch.serialization.add_safe_globals([
                     np._core.multiarray.scalar, 
                     np.dtype,
@@ -80,11 +80,19 @@ class ModelIntegrator:
             # Fallback to standard load if safe globals fail or older torch version
             # or if the specific numpy structure isn't compatible
             logger.warning(f"Safe load failed for {checkpoint_path}, trying unsafe load")
-            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            try:
+                checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            except Exception as final_e:
+                logger.error(f"Final attempt to load checkpoint {checkpoint_path} failed: {final_e}")
+                return None
         except Exception as e:
             logger.error(f"Failed to load checkpoint {checkpoint_path}: {e}")
             # One last try with weights_only=False for compatibility
-            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            try:
+                checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            except Exception as final_e:
+                logger.error(f"Final attempt to load checkpoint {checkpoint_path} failed: {final_e}")
+                return None
 
         # Extract model state
         model_state = checkpoint.get("model_state_dict", checkpoint)

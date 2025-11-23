@@ -25,6 +25,19 @@ except ImportError:
     pytest.fail("Failed to import training modules")
 
 
+@pytest.fixture(autouse=True)
+def safe_torch_load():
+    """Fixture to set up safe torch loading for all tests in the module."""
+    if hasattr(torch.serialization, "add_safe_globals"):
+        import numpy as np
+        # Add all needed numpy types
+        torch.serialization.add_safe_globals([
+            np._core.multiarray.scalar, 
+            np.dtype,
+            np.dtypes.Float64DType
+        ])
+
+
 @pytest.fixture
 def production_models_dir():
     """Path to production models."""
@@ -74,25 +87,17 @@ def test_hrm_model_loading_and_inference(production_models_dir, production_confi
     
     # Load checkpoint
     try:
-        # PyTorch 2.6+ safety
-        if hasattr(torch.serialization, "add_safe_globals"):
-            import numpy as np
-            # Add all needed numpy types
-            torch.serialization.add_safe_globals([
-                np._core.multiarray.scalar, 
-                np.dtype,
-                np.dtypes.Float64DType
-            ])
-        
         checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
         trainer.model.load_state_dict(checkpoint["model_state_dict"])
         trainer.model.eval()
+        # Ensure model is on the correct device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        trainer.model.to(device)
     except Exception as e:
         pytest.fail(f"Failed to load HRM model: {e}")
 
     # Run dummy inference
     # Ensure input is on correct device (cuda)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     input_ids = torch.randint(0, 1000, (1, 128)).to(device)
     
     with torch.no_grad():
@@ -119,21 +124,15 @@ def test_trm_model_loading_and_inference(production_models_dir, production_confi
     trainer = TRMTrainer(production_config)
     
     try:
-        if hasattr(torch.serialization, "add_safe_globals"):
-            import numpy as np
-            torch.serialization.add_safe_globals([
-                np._core.multiarray.scalar,
-                np.dtype,
-                np.dtypes.Float64DType
-            ])
-            
         checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
         trainer.model.load_state_dict(checkpoint["model_state_dict"])
         trainer.model.eval()
+        # Ensure model is on the correct device
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+        trainer.model.to(device)
     except Exception as e:
         pytest.fail(f"Failed to load TRM model: {e}")
 
-    device = "cuda" if torch.cuda.is_available() else "cpu"
     input_ids = torch.randint(0, 1000, (1, 128)).to(device)
     
     with torch.no_grad():
@@ -154,14 +153,6 @@ def test_meta_controller_loading(production_models_dir):
         pytest.skip("Meta-controller not deployed")
         
     try:
-        if hasattr(torch.serialization, "add_safe_globals"):
-            import numpy as np
-            torch.serialization.add_safe_globals([
-                np._core.multiarray.scalar,
-                np.dtype,
-                np.dtypes.Float64DType
-            ])
-            
         checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
         assert "model_state_dict" in checkpoint
         assert "config" in checkpoint
@@ -171,4 +162,3 @@ def test_meta_controller_loading(production_models_dir):
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
-
