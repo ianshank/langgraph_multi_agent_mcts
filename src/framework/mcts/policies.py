@@ -147,9 +147,9 @@ class RandomRolloutPolicy(RolloutPolicy):
 
     async def evaluate(
         self,
-        _state: MCTSState,
+        state: MCTSState,
         rng: np.random.Generator,
-        _max_depth: int = 10,
+        max_depth: int = 10,
     ) -> float:
         """Generate random evaluation with noise."""
         noise = rng.uniform(-self.noise_scale, self.noise_scale)
@@ -179,7 +179,7 @@ class GreedyRolloutPolicy(RolloutPolicy):
         self,
         state: MCTSState,
         rng: np.random.Generator,
-        _max_depth: int = 10,
+        max_depth: int = 10,
     ) -> float:
         """Evaluate using heuristic with small noise."""
         base_value = self.heuristic_fn(state)
@@ -225,7 +225,7 @@ class HybridRolloutPolicy(RolloutPolicy):
         self,
         state: MCTSState,
         rng: np.random.Generator,
-        _max_depth: int = 10,
+        max_depth: int = 10,
     ) -> float:
         """Combine heuristic and random evaluation."""
         # Random component
@@ -263,8 +263,8 @@ class LLMRolloutPolicy(RolloutPolicy):
     async def evaluate(
         self,
         state: MCTSState,
-        _rng: np.random.Generator,
-        _max_depth: int = 10,
+        rng: np.random.Generator,
+        max_depth: int = 10,
     ) -> float:
         """Evaluate state using LLM."""
         state_key = state.to_hash_key()

@@ -90,6 +90,10 @@ class TicTacToeState(GameState):
         tensor[:, :, 2] = torch.from_numpy((self.board == 0).astype(float))
         return tensor
 
+    def action_to_index(self, action: tuple[int, int]) -> int:
+        """Map (row, col) action to index 0-8."""
+        return action[0] * 3 + action[1]
+
     def get_hash(self):
         return str(self.board.tobytes())
 
@@ -194,8 +198,8 @@ class TestNeuralMCTSNode:
         root.children[(1, 1)].visit_count = 3
         root.children[(1, 1)].value_sum = 2.5
 
-        # Unvisited child should be selected
-        action, child = root.select_child(c_puct=1.0)
+        # Unvisited child should be selected (need high exploration to overcome value)
+        action, child = root.select_child(c_puct=5.0)
         assert child.visit_count == 0
 
     def test_update(self):
