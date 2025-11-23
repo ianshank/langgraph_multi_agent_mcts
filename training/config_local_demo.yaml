@@ -16,6 +16,7 @@ data:
   dabstep:
     path: "adyen/DABstep"
     cache_dir: "./cache/dabstep"
+    synthetic_data_dir: "./cache/synthetic_data"  # Load generated synthetic data
     max_samples: 100  # DEMO: Reduced from all samples (450+)
     streaming: false
     train_split: 0.8  # 80 samples for training

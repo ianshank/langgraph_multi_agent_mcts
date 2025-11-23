@@ -7,7 +7,9 @@ Handles dataset loading, preprocessing, and data orchestration for:
 - PRIMUS-Instruct instruction samples
 """
 
+import json
 import logging
+import hashlib
 from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -94,6 +96,7 @@ class DABStepLoader:
         self.val_split = config.get("val_split", 0.1)
         self.test_split = config.get("test_split", 0.1)
         self.seed = config.get("seed", 42)
+        self.synthetic_data_dir = Path(config.get("synthetic_data_dir", "training/synthetic_data"))
 
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self._dataset = None
@@ -124,6 +127,96 @@ class DABStepLoader:
             logger.error(f"Failed to load DABStep dataset: {e}")
             # Create synthetic dataset for testing/development
             self._create_synthetic_dataset()
+
+    def load_synthetic_data(self) -> list[TaskSample]:
+        """
+        Load synthetic training data from JSON files.
+
+        Returns:
+            List of TaskSample objects converted from synthetic data
+        """
+        synthetic_samples = []
+        
+        if not self.synthetic_data_dir.exists():
+            logger.info(f"Synthetic data directory not found: {self.synthetic_data_dir}")
+            return synthetic_samples
+
+        json_files = list(self.synthetic_data_dir.glob("*.json"))
+        if not json_files:
+            logger.info(f"No synthetic data files found in {self.synthetic_data_dir}")
+            return synthetic_samples
+
+        for json_file in json_files:
+            try:
+                # Skip non-dataset files (like stats or checkpoints)
+                if json_file.name.endswith("_stats.json") or json_file.name.endswith("_checkpoint.json"):
+                    continue
+                    
+                with open(json_file, "r") as f:
+                    data = json.load(f)
+                    
+                # Handle list of records
+                if isinstance(data, list):
+                    for item in data:
+                        sample = self._convert_synthetic_to_task_sample(item)
+                        if sample:
+                            synthetic_samples.append(sample)
+                elif isinstance(data, dict):
+                    sample = self._convert_synthetic_to_task_sample(data)
+                    if sample:
+                        synthetic_samples.append(sample)
+                else:
+                    logger.warning(f"Unexpected data type in {json_file}: {type(data).__name__}. Skipping file.")
+                            
+            except (json.JSONDecodeError, IOError) as e:
+                logger.warning(f"Failed to load synthetic data file {json_file}: {e}")
+            except Exception as e:
+                logger.warning(f"Unexpected error loading {json_file}: {e}")
+
+        if synthetic_samples:
+            logger.info(
+                f"Loaded {len(synthetic_samples)} samples from {len(json_files)} synthetic data files"
+            )
+            
+        return synthetic_samples
+
+    def _convert_synthetic_to_task_sample(self, item: dict[str, Any]) -> TaskSample | None:
+        """Convert synthetic Q&A item to TaskSample."""
+        try:
+            # Handle both LangSmith format and raw format
+            if "inputs" in item and "outputs" in item:  # LangSmith format
+                question = item["inputs"].get("question", "")
+                answer = item["outputs"].get("ground_truth", "")
+                metadata = item.get("metadata", {})
+            else:  # Raw format
+                question = item.get("question", "")
+                answer = item.get("answer", "")
+                metadata = item.get("metadata", {})
+            
+            # Extract reasoning steps if available, otherwise just answer
+            steps = item.get("reasoning_paths", [])
+            if not steps:
+                steps = [answer]
+            
+            # Generate deterministic ID
+            task_id = hashlib.md5(question.encode()).hexdigest()[:16]
+            
+            return TaskSample(
+                task_id=task_id,
+                task_text=question,
+                difficulty=metadata.get("difficulty", "medium"),
+                category=metadata.get("category", "general"),
+                steps=steps,
+                expected_output=answer,
+                metadata={**metadata, "is_synthetic": True}
+            )
+        except (KeyError, TypeError) as e:
+            logger.debug(f"Failed to convert synthetic item: {e}")
+            return None
+        except Exception as e:
+            logger.debug(f"Unexpected error converting synthetic item: {e}")
+            return None
+
 
     def _create_synthetic_dataset(self) -> None:
         """Create synthetic DABStep-like dataset for development."""
@@ -174,6 +267,12 @@ class DABStepLoader:
             sample = self._convert_to_task_sample(item)
             if sample:
                 all_samples.append(sample)
+
+        # Load and merge synthetic data
+        synthetic_samples = self.load_synthetic_data()
+        if synthetic_samples:
+            all_samples.extend(synthetic_samples)
+            logger.info(f"Merged {len(synthetic_samples)} synthetic samples into dataset")
 
         # If no samples were successfully converted, fall back to synthetic data
         if len(all_samples) == 0:

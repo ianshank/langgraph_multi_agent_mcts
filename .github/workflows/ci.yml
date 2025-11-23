@@ -269,6 +269,17 @@ jobs:
       contents: read
       packages: write
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+          docker-images: false # Keep docker images for buildx
+
       - name: Checkout code
         uses: actions/checkout@v4
 

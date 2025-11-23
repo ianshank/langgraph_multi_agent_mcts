@@ -220,6 +220,8 @@ class TestMCTSPerformance:
             _ = random.random()
 
         elapsed = time.time() - start_time
+        if elapsed == 0:
+            elapsed = 0.000001  # Prevent division by zero if too fast
         throughput = iterations / elapsed
 
         # Update trace

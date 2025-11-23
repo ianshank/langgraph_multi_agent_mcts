@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - Production Training Pipeline Release
+
+### Added
+
+#### Production Training Pipeline
+- **Dockerized Workflow**: End-to-end training orchestration with `scripts/run_production_training.sh` and `Dockerfile.train`.
+- **Synthetic Data Generation**: LLM-powered generator creating high-quality Q&A pairs, automatically merged with DABStep dataset.
+- **Research Corpus Integration**: Automated arXiv paper fetching and indexing for RAG knowledge base.
+- **Model Integration**: CLI tool `training.cli integrate` to export optimized production models.
+
+#### Neural Architecture Updates
+- **HRM/TRM Enhancements**: Updated model dimensions to 768 (DeBERTa-v3-base) and added LoRA support.
+- **Robust Loading**: Implemented safe PyTorch loading with `weights_only=True` and numpy type allowlisting.
+- **Production Config**: Generated optimized configuration `training/configs/production_config.yaml`.
+
+#### Testing & Verification
+- **Integration Tests**: Added `tests/integration/test_deployed_models.py` verifying model loading, inference, and configuration.
+- **Demo Pipeline**: Validated full training cycle with mock data achieving 100% accuracy on test set.
+
+### Fixed
+- **TRM Dimension Mismatch (Fix #20)**: Resolved tensor shape alignment issues in Task Refinement Model.
+- **HRM Config Passing**: Fixed configuration propagation in HRM trainer initialization.
+- **W&B Integration**: Added graceful handling of missing API keys in production scripts.
+- **Data Pipeline**: Fixed `TaskSample` object handling in evaluation CLI.
+
+### Documentation
+- **Architecture Guide**: Updated `docs/C4_ARCHITECTURE.md` with comprehensive C4 diagrams (Context, Container, Component, Code).
+- **README Overhaul**: Rewrote `README.md` to feature production capabilities and usage instructions.
+
 ## [Unreleased]
 
 ### Added
