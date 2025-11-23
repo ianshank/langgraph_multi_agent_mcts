@@ -3,6 +3,8 @@ Neural Meta-Controller package for Multi-Agent MCTS Framework.
 
 This package provides the base infrastructure for neural network-based
 meta-controllers that dynamically select which agent to route queries to.
+
+Includes Assembly Theory integration for hybrid neural+rule-based routing.
 """
 
 from src.agents.meta_controller.base import (
@@ -19,6 +21,16 @@ from src.agents.meta_controller.utils import (
     features_to_text,
     normalize_features,
     one_hot_encode_agent,
+)
+
+# Import Assembly Theory components
+from src.agents.meta_controller.assembly_router import (
+    AssemblyRouter,
+    RoutingDecision,
+)
+from src.agents.meta_controller.hybrid_controller import (
+    HybridMetaController,
+    HybridPrediction,
 )
 
 # Import BERT controller (may not be available if transformers/peft not installed)
@@ -39,6 +51,10 @@ __all__ = [
     "features_to_text",
     "RNNMetaController",
     "RNNMetaControllerModel",
+    "AssemblyRouter",
+    "RoutingDecision",
+    "HybridMetaController",
+    "HybridPrediction",
 ]
 
 if _bert_available:
