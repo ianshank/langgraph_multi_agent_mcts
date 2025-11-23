@@ -1,0 +1,92 @@
+# Assembly Theory Configuration
+# Configuration for assembly-based enhancements to the multi-agent framework
+
+assembly:
+  # MCTS Settings
+  mcts:
+    # Weight for assembly factor in UCB calculation (0.0-1.0)
+    ucb_weight: 0.2
+
+    # Maximum assembly index threshold for pruning
+    # Nodes with path_assembly_index > this value will be pruned
+    max_complexity_threshold: 15
+
+  # Meta-Controller Routing Thresholds
+  routing:
+    # Assembly index threshold for simple queries (route to TRM)
+    # Queries with assembly_index < this → TRM
+    simple_threshold: 3
+
+    # Assembly index threshold for medium complexity (route to HRM)
+    # Queries with assembly_index < this → HRM
+    medium_threshold: 7
+
+    # Queries with assembly_index >= medium_threshold → MCTS
+
+  # TRM (Thinking & Refining Model) Settings
+  trm:
+    # Lambda for complexity penalty in loss function
+    # loss = quality_loss + lambda * assembly_index
+    complexity_penalty: 0.1
+
+    # Convergence threshold for assembly-based stopping
+    # Stop if complexity_reduction < this value
+    convergence_threshold: 0.01
+
+  # Substructure Library Settings
+  substructure:
+    # Minimum similarity score for pattern reuse (0.0-1.0)
+    reuse_threshold: 0.7
+
+    # Maximum number of patterns to store in library
+    max_size: 10000
+
+  # Feature Flags
+  # Enable/disable assembly components independently
+  feature_flags:
+    # Enable assembly-based routing in meta-controller
+    routing: true
+
+    # Enable assembly enhancements in MCTS
+    mcts: true
+
+    # Enable assembly-based task decomposition in HRM
+    hrm: true
+
+    # Enable assembly convergence in TRM
+    trm: true
+
+    # Enable assembly-based consensus scoring
+    consensus: true
+
+  # Performance Settings
+  performance:
+    # Cache computed assembly indices for repeated queries
+    cache_indices: true
+
+    # Maximum number of cached assembly index calculations
+    max_cache_size: 10000
+
+  # Consensus Scoring Weights
+  consensus:
+    # Weight for pathway similarity in consensus (0.0-1.0)
+    # consensus = pathway_weight * similarity + complexity_weight * agreement
+    pathway_weight: 0.7
+
+    # Weight for complexity agreement in consensus (0.0-1.0)
+    complexity_weight: 0.3
+
+    # Weight for complexity in response selection (0.0-1.0)
+    # score = quality / (1 + selection_weight * assembly_index)
+    selection_weight: 0.1
+
+  # Concept Extraction Settings
+  concept_extraction:
+    # Minimum concept frequency to include
+    min_frequency: 1
+
+    # Maximum number of concepts to extract per query
+    max_concepts: 100
+
+    # Enable technical term detection
+    use_technical_terms: true
