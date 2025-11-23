@@ -387,6 +387,7 @@ def test_gpu_memory_available(docker_client, training_container_name):
 # ============================================================================
 
 
+@pytest.mark.smoke
 @pytest.mark.integration
 @pytest.mark.slow
 def test_training_cli_help(docker_client, training_container_name):
