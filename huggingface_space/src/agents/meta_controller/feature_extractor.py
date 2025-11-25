@@ -8,10 +8,20 @@ Uses sentence-transformers for local embedding generation or OpenAI if configure
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
-from sentence_transformers import SentenceTransformer, util
+
+# Try to import sentence_transformers with fallback
+try:
+    from sentence_transformers import SentenceTransformer, util
+    _SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError as e:
+    logger = logging.getLogger(__name__)
+    logger.warning(f"sentence_transformers not available: {e}. Using fallback heuristic extraction.")
+    _SENTENCE_TRANSFORMERS_AVAILABLE = False
+    SentenceTransformer = None  # type: ignore
+    util = None  # type: ignore
 
 from src.agents.meta_controller.base import MetaControllerFeatures
 
@@ -76,24 +86,29 @@ class FeatureExtractor:
         """
         if config is None:
             config = FeatureExtractorConfig()
-            
+
         self.config = config
-        
-        try:
-            logger.info(f"Loading embedding model: {config.model_name}")
-            self.model = SentenceTransformer(config.model_name, device=config.device)
-            self.embedding_dim = self.model.get_sentence_embedding_dimension()
-            
-            # Pre-compute prototype embeddings
-            self.prototype_embeddings = {}
-            for agent, descriptions in self.AGENT_PROTOTYPES.items():
-                self.prototype_embeddings[agent] = self.model.encode(descriptions)
-                
-            logger.info("FeatureExtractor initialized successfully")
-        except Exception as e:
-            logger.error(f"Failed to initialize FeatureExtractor: {e}")
-            # Fallback to simpler logic or raise
-            self.model = None
+        self.model = None
+        self.embedding_dim = None
+        self.prototype_embeddings = {}
+
+        if _SENTENCE_TRANSFORMERS_AVAILABLE:
+            try:
+                logger.info(f"Loading embedding model: {config.model_name}")
+                self.model = SentenceTransformer(config.model_name, device=config.device)
+                self.embedding_dim = self.model.get_sentence_embedding_dimension()
+
+                # Pre-compute prototype embeddings
+                for agent, descriptions in self.AGENT_PROTOTYPES.items():
+                    self.prototype_embeddings[agent] = self.model.encode(descriptions)
+
+                logger.info("FeatureExtractor initialized with sentence-transformers")
+            except Exception as e:
+                logger.warning(f"Failed to initialize sentence-transformers model: {e}")
+                logger.info("Falling back to heuristic feature extraction")
+                self.model = None
+        else:
+            logger.info("Using heuristic feature extraction (sentence-transformers not available)")
 
     def extract_features(self, query: str, iteration: int = 0, last_agent: str = "none") -> MetaControllerFeatures:
         """
@@ -121,9 +136,16 @@ class FeatureExtractor:
             scores = {}
             for agent, proto_embeddings in self.prototype_embeddings.items():
                 # Calculate cosine similarity between query and all prototypes for this agent
-                similarities = util.cos_sim(query_embedding, proto_embeddings)[0]
-                # Take the maximum similarity as the score for this agent
-                scores[agent] = float(similarities.max())
+                if _SENTENCE_TRANSFORMERS_AVAILABLE and util is not None:
+                    similarities = util.cos_sim(query_embedding, proto_embeddings)[0]
+                    # Take the maximum similarity as the score for this agent
+                    scores[agent] = float(similarities.max())
+                else:
+                    # Fallback to simple dot product similarity
+                    query_norm = query_embedding / (np.linalg.norm(query_embedding) + 1e-8)
+                    proto_norms = proto_embeddings / (np.linalg.norm(proto_embeddings, axis=1, keepdims=True) + 1e-8)
+                    similarities = np.dot(proto_norms, query_norm)
+                    scores[agent] = float(np.max(similarities))
 
             # Normalize scores to sum to 1 (roughly) or just scale them
             # Here we map [-1, 1] similarity to [0, 1] confidence roughly
