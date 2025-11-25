@@ -1,67 +1,152 @@
 # Multi-Agent MCTS Training Pipeline Requirements
+# Updated: 2025
+# Version pinning strategy: Use ~= for minor version updates to maintain compatibility
 
-# Core ML Libraries
-torch>=2.0.0
-transformers>=4.30.0
-datasets>=2.14.0
-peft>=0.4.0
-sentencepiece>=0.1.99  # Required for DeBERTa tokenizer
+# =============================================================================
+# Core ML & Deep Learning
+# =============================================================================
 
-# Sentence Embeddings and RAG
-sentence-transformers>=2.2.0
-pinecone>=5.0.0  # Serverless Pinecone vector database
-rank-bm25>=0.2.2
-# faiss-cpu>=1.7.4  # Legacy: use faiss-gpu for GPU support
+# PyTorch - Core deep learning framework
+# Pin to 2.0+ for stable API and performance improvements
+torch~=2.0.0
+
+# Hugging Face Transformers - Pre-trained models and training utilities
+# Pin to 4.30+ for latest model architectures and training improvements
+transformers~=4.30.0
+
+# Hugging Face Datasets - Efficient data loading and processing
+datasets~=2.14.0
+
+# PEFT - Parameter-efficient fine-tuning (LoRA, adapters)
+peft~=0.4.0
+
+# Tokenizers
+sentencepiece~=0.1.99  # Required for DeBERTa tokenizer
+tiktoken~=0.5.0  # Required for modern tokenizers (OpenAI models)
+
+
+# =============================================================================
+# Numerical Computing & Scientific Libraries
+# =============================================================================
+
+# NumPy - Core numerical computing
+numpy~=1.24.0
+
+# SciPy - Scientific computing and statistical functions
+# Required for drift detection (KS test) and A/B testing (t-test)
+scipy~=1.10.0
+
+# Scikit-learn - Machine learning utilities
+# Required for: DBSCAN clustering, PCA dimensionality reduction, TF-IDF vectorization
+# Used in failure pattern analysis and active learning
+scikit-learn~=1.3.0
+
+
+# =============================================================================
+# Embeddings & RAG (Retrieval-Augmented Generation)
+# =============================================================================
+
+# Sentence Transformers - Semantic similarity and embeddings
+sentence-transformers~=2.2.0
+
+# Vector Databases
+pinecone~=5.0.0  # Serverless Pinecone vector database
+
+# Search Algorithms
+rank-bm25~=0.2.2  # BM25 ranking algorithm
+
+
+# =============================================================================
+# Monitoring & Observability
+# =============================================================================
+
+# LangSmith - Production tracing and logging for LLM applications
+# Required for continual learning production interaction logging
+langsmith~=0.1.0
 
 # Experiment Tracking
-wandb>=0.15.0
-mlflow>=2.5.0
+wandb~=0.15.0  # Weights & Biases for experiment tracking
+mlflow~=2.5.0  # MLflow for model versioning and tracking
 
-# Configuration and Data
-pyyaml>=6.0
-omegaconf>=2.3.0
-pydantic>=2.0.0
+# System Monitoring
+psutil~=5.9.0  # System resource monitoring
+tensorboard~=2.13.0  # TensorBoard for training visualization
 
-# Numerical and Scientific
-numpy>=1.24.0
-scipy>=1.10.0
-scikit-learn>=1.3.0
 
-# Monitoring and Profiling
-psutil>=5.9.0
-tensorboard>=2.13.0
+# =============================================================================
+# Configuration & Data Management
+# =============================================================================
 
-# Visualization
-matplotlib>=3.7.0
-seaborn>=0.12.0
+# Configuration
+pyyaml~=6.0  # YAML configuration files
+omegaconf~=2.3.0  # Hierarchical configuration with variable interpolation
+pydantic~=2.0.0  # Data validation and settings management
+python-dotenv~=1.0.0  # Environment variable management
 
-# Testing
-pytest>=7.4.0
-pytest-cov>=4.1.0
-pytest-asyncio>=0.21.0
-hypothesis>=6.82.0
 
-# Utilities
-tqdm>=4.65.0
-colorlog>=6.7.0
-python-dotenv>=1.0.0
-rich>=13.0.0  # Terminal formatting and progress bars
-tiktoken>=0.5.0  # Required for DeBERTa and modern tokenizers
-tenacity>=8.2.0  # Retry logic for external services
+# =============================================================================
+# Visualization & UI
+# =============================================================================
 
-# Code corpus builder
-PyGithub>=2.1.1  # GitHub API access
+matplotlib~=3.7.0  # Plotting and visualization
+seaborn~=0.12.0  # Statistical data visualization
+rich~=13.0.0  # Terminal formatting and progress bars
 
-# Knowledge Graph
-networkx>=3.0  # Graph data structure and algorithms
-openai>=1.0.0  # LLM for knowledge extraction
-neo4j>=5.0.0  # Optional: Neo4j graph database driver
 
-# Research corpus builder
-arxiv>=2.0.0  # arXiv API client
-requests>=2.31.0  # HTTP requests
+# =============================================================================
+# Testing & Quality Assurance
+# =============================================================================
 
-# Optional: Advanced Features
-# chromadb>=0.4.0  # Alternative to FAISS
-langchain>=0.0.300  # For LangGraph integration
+pytest~=7.4.0  # Testing framework
+pytest-cov~=4.1.0  # Coverage reporting
+pytest-asyncio~=0.21.0  # Async test support
+hypothesis~=6.82.0  # Property-based testing
+
+
+# =============================================================================
+# Utilities & Dependencies
+# =============================================================================
+
+# Progress & Logging
+tqdm~=4.65.0  # Progress bars
+colorlog~=6.7.0  # Colored logging
+
+# Retry & Resilience
+tenacity~=8.2.0  # Retry logic for external services
+
+# HTTP & API
+requests~=2.31.0  # HTTP library
+PyGithub~=2.1.1  # GitHub API access for code corpus builder
+
+
+# =============================================================================
+# Knowledge Graph & Advanced Features
+# =============================================================================
+
+# Graph Processing
+networkx~=3.0  # Graph data structure and algorithms
+
+# LLM Integration
+openai~=1.0.0  # OpenAI API for knowledge extraction
+langchain~=0.0.300  # LangGraph integration
+
+# Graph Databases (Optional)
+neo4j~=5.0.0  # Neo4j graph database driver
+
+
+# =============================================================================
+# Research & Data Collection
+# =============================================================================
+
+# Academic Research
+arxiv~=2.0.0  # arXiv API client for research corpus
+
+
+# =============================================================================
+# Optional: Alternative Backends
+# =============================================================================
+
+# Uncomment if needed:
+# faiss-cpu>=1.7.4  # Legacy: use faiss-gpu for GPU support
+# chromadb>=0.4.0  # Alternative vector database
 # opentelemetry-api>=1.20.0  # Distributed tracing

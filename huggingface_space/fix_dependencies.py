@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Dependency Conflict Resolver for Hugging Face Spaces
 ====================================================
@@ -18,11 +17,9 @@ Usage:
 """
 
 import argparse
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 # Ensure UTF-8 output
 if sys.stdout.encoding != 'utf-8':

@@ -8,7 +8,6 @@ Uses sentence-transformers for local embedding generation or OpenAI if configure
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any, Optional
 
 import numpy as np
 
@@ -123,7 +122,7 @@ class FeatureExtractor:
             MetaControllerFeatures object populated with semantic scores
         """
         query_length = len(query)
-        
+
         if self.model is None:
             # Fallback to heuristics if model failed to load
             return self._heuristic_fallback(query, iteration, last_agent)
@@ -149,11 +148,11 @@ class FeatureExtractor:
 
             # Normalize scores to sum to 1 (roughly) or just scale them
             # Here we map [-1, 1] similarity to [0, 1] confidence roughly
-            
+
             hrm_conf = max(0.0, scores.get("hrm", 0.0))
             trm_conf = max(0.0, scores.get("trm", 0.0))
             mcts_conf = max(0.0, scores.get("mcts", 0.0))
-            
+
             # Apply softmax-like normalization for clearer distinction
             confs = np.array([hrm_conf, trm_conf, mcts_conf])
             # Simple normalization
@@ -173,7 +172,7 @@ class FeatureExtractor:
 
             # Additional features
             has_technical = any(w in query.lower() for w in ["code", "function", "api", "error", "bug"])
-            
+
             return MetaControllerFeatures(
                 hrm_confidence=hrm_confidence,
                 trm_confidence=trm_confidence,
@@ -210,7 +209,7 @@ class FeatureExtractor:
             hrm_confidence /= total
             trm_confidence /= total
             mcts_confidence /= total
-            
+
         max_conf = max(hrm_confidence, trm_confidence, mcts_confidence)
         consensus_score = min(hrm_confidence, trm_confidence, mcts_confidence) / max_conf if max_conf > 0 else 0.0
 

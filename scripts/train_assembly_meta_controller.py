@@ -27,14 +27,14 @@ import logging
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any
 
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim import AdamW
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils.data import DataLoader, Dataset, random_split
 
 # Add project root to path
 project_root = Path(__file__).parent.parent
@@ -94,7 +94,7 @@ class AssemblyMetaControllerDataset(Dataset):
 
         logger.info(f"Feature normalization: mean={self.feature_means.mean():.3f}, std={self.feature_stds.mean():.3f}")
 
-    def _extract_features(self, sample: Dict[str, Any], normalize: bool = True) -> np.ndarray:
+    def _extract_features(self, sample: dict[str, Any], normalize: bool = True) -> np.ndarray:
         """
         Extract feature vector from sample.
 
@@ -146,7 +146,7 @@ class AssemblyMetaControllerDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> Dict[str, torch.Tensor]:
+    def __getitem__(self, idx: int) -> dict[str, torch.Tensor]:
         sample = self.samples[idx]
 
         # Extract features
@@ -174,7 +174,7 @@ class AssemblyAwareRouter(nn.Module):
     def __init__(
         self,
         input_dim: int,
-        hidden_dims: List[int] = [128, 64, 32],
+        hidden_dims: list[int] = [128, 64, 32],
         num_agents: int = 3,
         dropout: float = 0.2,
     ):
@@ -222,7 +222,7 @@ class AssemblyAwareRouter(nn.Module):
 
         logger.info(f"AssemblyAwareRouter: {input_dim} -> {hidden_dims} -> {num_agents}")
 
-    def forward(self, x: torch.Tensor) -> Dict[str, torch.Tensor]:
+    def forward(self, x: torch.Tensor) -> dict[str, torch.Tensor]:
         """
         Forward pass.
 
@@ -301,7 +301,7 @@ class MetaControllerTrainer:
             "val_accuracy": [],
         }
 
-    def train_epoch(self, dataloader: DataLoader) -> Tuple[float, float]:
+    def train_epoch(self, dataloader: DataLoader) -> tuple[float, float]:
         """
         Train for one epoch.
 
@@ -352,7 +352,7 @@ class MetaControllerTrainer:
 
         return avg_loss, accuracy
 
-    def evaluate(self, dataloader: DataLoader) -> Dict[str, float]:
+    def evaluate(self, dataloader: DataLoader) -> dict[str, float]:
         """
         Evaluate model.
 
@@ -406,7 +406,7 @@ class MetaControllerTrainer:
         val_loader: DataLoader,
         num_epochs: int = 50,
         early_stopping_patience: int = 10,
-    ) -> Dict[str, List[float]]:
+    ) -> dict[str, list[float]]:
         """
         Train model with early stopping.
 
@@ -459,7 +459,7 @@ def compare_models(
     assembly_model: nn.Module,
     test_loader: DataLoader,
     device: str = "cpu",
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """
     Compare baseline and assembly-augmented models.
 
@@ -515,8 +515,8 @@ def compare_models(
 
 def analyze_feature_importance(
     model: AssemblyAwareRouter,
-    feature_names: List[str],
-) -> Dict[str, float]:
+    feature_names: list[str],
+) -> dict[str, float]:
     """
     Analyze feature importance.
 

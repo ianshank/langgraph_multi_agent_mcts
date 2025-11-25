@@ -65,7 +65,18 @@
       "Bash(test:*)",
       "Bash(bandit:*)",
       "Bash(if exist nul del /f nul)",
-      "Bash(if exist _ul del /f _ul)"
+      "Bash(if exist _ul del /f _ul)",
+      "Bash(LLM_PROVIDER=lmstudio python:*)",
+      "Bash(if not exist \"src\\utils\" mkdir \"src\\utils\")",
+      "Bash(git init:*)",
+      "Bash(git remote add:*)",
+      "Bash(requirements.txt)",
+      "Bash(git ls-tree:*)",
+      "Bash(README.md)",
+      "Bash(PYTHONPATH=. python:*)",
+      "Bash(env)",
+      "Bash(gcloud auth application-default print-access-token:*)",
+      "Bash(echo:*)"
     ],
     "deny": [],
     "ask": []

@@ -5,18 +5,18 @@ Provides a weighted ensemble of neural meta-controller predictions and
 assembly-based routing heuristics for improved decision-making.
 """
 
-from dataclasses import dataclass, field
-from typing import Optional, Dict, Any, Tuple
 import logging
-import numpy as np
+from dataclasses import dataclass
+from typing import Any
 
 from src.framework.assembly import AssemblyConfig, AssemblyFeatures
+
+from .assembly_router import AssemblyRouter, RoutingDecision
 from .base import (
     AbstractMetaController,
     MetaControllerFeatures,
     MetaControllerPrediction,
 )
-from .assembly_router import AssemblyRouter, RoutingDecision
 
 logger = logging.getLogger(__name__)
 
@@ -39,9 +39,9 @@ class HybridPrediction:
 
     agent: str
     confidence: float
-    probabilities: Dict[str, float]
-    neural_prediction: Optional[MetaControllerPrediction] = None
-    assembly_decision: Optional[RoutingDecision] = None
+    probabilities: dict[str, float]
+    neural_prediction: MetaControllerPrediction | None = None
+    assembly_decision: RoutingDecision | None = None
     neural_weight: float = 0.6
     assembly_weight: float = 0.4
     explanation: str = ""
@@ -65,8 +65,8 @@ class HybridMetaController(AbstractMetaController):
 
     def __init__(
         self,
-        neural_controller: Optional[AbstractMetaController] = None,
-        assembly_config: Optional[AssemblyConfig] = None,
+        neural_controller: AbstractMetaController | None = None,
+        assembly_config: AssemblyConfig | None = None,
         neural_weight: float = 0.6,
         assembly_weight: float = 0.4,
         name: str = "hybrid",
@@ -102,8 +102,8 @@ class HybridMetaController(AbstractMetaController):
         )
 
         # Track current query for assembly feature extraction
-        self._current_query: Optional[str] = None
-        self._current_assembly_features: Optional[AssemblyFeatures] = None
+        self._current_query: str | None = None
+        self._current_assembly_features: AssemblyFeatures | None = None
 
         # Statistics
         self._stats = {
@@ -136,7 +136,7 @@ class HybridMetaController(AbstractMetaController):
     def predict(
         self,
         features: MetaControllerFeatures,
-        query: Optional[str] = None,
+        query: str | None = None,
     ) -> HybridPrediction:
         """
         Predict agent using hybrid neural + assembly approach.
@@ -359,7 +359,7 @@ class HybridMetaController(AbstractMetaController):
 
         return "\n".join(lines)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get hybrid controller statistics.
 

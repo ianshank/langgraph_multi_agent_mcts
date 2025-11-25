@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..base import ADKAgentAdapter, ADKAgentRequest, ADKAgentResponse, ADKConfig
 
@@ -446,7 +446,7 @@ findings suggest [implications] and point toward [future considerations].
     async def create_research_plan(
         self,
         topic: str,
-        requirements: Optional[dict[str, Any]] = None,
+        requirements: dict[str, Any] | None = None,
     ) -> ADKAgentResponse:
         """
         Create research plan for human review.
@@ -471,7 +471,7 @@ findings suggest [implications] and point toward [future considerations].
     async def execute_research(
         self,
         research_id: str,
-        additional_instructions: Optional[str] = None,
+        additional_instructions: str | None = None,
     ) -> ADKAgentResponse:
         """
         Execute research based on approved plan.
@@ -496,7 +496,7 @@ findings suggest [implications] and point toward [future considerations].
     async def full_research(
         self,
         topic: str,
-        requirements: Optional[dict[str, Any]] = None,
+        requirements: dict[str, Any] | None = None,
     ) -> ADKAgentResponse:
         """
         Execute full research workflow (planning + execution).
@@ -518,7 +518,7 @@ findings suggest [implications] and point toward [future considerations].
 
         return await self.invoke(request)
 
-    def get_research_status(self, research_id: str) -> Optional[dict[str, Any]]:
+    def get_research_status(self, research_id: str) -> dict[str, Any] | None:
         """
         Get status of research session.
 

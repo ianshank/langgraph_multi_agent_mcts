@@ -5,11 +5,10 @@ Implements assembly index calculation for strings and graphs
 based on Assembly Theory principles.
 """
 
-from typing import Union, Tuple, Dict, List, Set
-import networkx as nx
-from collections import defaultdict
 import hashlib
-from functools import lru_cache
+from collections import defaultdict
+
+import networkx as nx
 
 
 class AssemblyIndexCalculator:
@@ -35,9 +34,9 @@ class AssemblyIndexCalculator:
         """
         self.cache_enabled = cache_enabled
         self.max_cache_size = max_cache_size
-        self._cache: Dict[str, Tuple[int, float]] = {}
+        self._cache: dict[str, tuple[int, float]] = {}
 
-    def calculate(self, input_data: Union[str, nx.DiGraph]) -> Tuple[int, float]:
+    def calculate(self, input_data: str | nx.DiGraph) -> tuple[int, float]:
         """
         Calculate assembly index and copy number.
 
@@ -57,7 +56,7 @@ class AssemblyIndexCalculator:
         else:
             raise ValueError(f"Unsupported input type: {type(input_data)}")
 
-    def _calculate_string_assembly(self, text: str) -> Tuple[int, float]:
+    def _calculate_string_assembly(self, text: str) -> tuple[int, float]:
         """
         Calculate assembly index for text strings.
 
@@ -100,7 +99,7 @@ class AssemblyIndexCalculator:
 
         return result
 
-    def _calculate_graph_assembly(self, graph: nx.DiGraph) -> Tuple[int, float]:
+    def _calculate_graph_assembly(self, graph: nx.DiGraph) -> tuple[int, float]:
         """
         Calculate assembly index for directed graphs.
 
@@ -203,7 +202,7 @@ class AssemblyIndexCalculator:
 
         return float(copy_number)
 
-    def _tokenize(self, text: str) -> List[str]:
+    def _tokenize(self, text: str) -> list[str]:
         """
         Tokenize text into meaningful units.
 
@@ -226,7 +225,7 @@ class AssemblyIndexCalculator:
 
         return tokens if tokens else [text]
 
-    def _build_token_graph(self, tokens: List[str]) -> nx.DiGraph:
+    def _build_token_graph(self, tokens: list[str]) -> nx.DiGraph:
         """
         Build dependency graph from tokens.
 
@@ -341,7 +340,7 @@ class AssemblyIndexCalculator:
         """Clear the calculation cache."""
         self._cache.clear()
 
-    def get_cache_stats(self) -> Dict[str, int]:
+    def get_cache_stats(self) -> dict[str, int]:
         """Get cache statistics."""
         return {
             'size': len(self._cache),

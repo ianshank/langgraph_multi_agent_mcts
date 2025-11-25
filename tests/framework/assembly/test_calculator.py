@@ -2,8 +2,9 @@
 Tests for Assembly Index Calculator (Story 1.1).
 """
 
-import pytest
 import networkx as nx
+import pytest
+
 from src.framework.assembly.calculator import AssemblyIndexCalculator
 
 

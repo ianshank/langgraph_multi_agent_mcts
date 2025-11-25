@@ -6,10 +6,9 @@ to train state-of-the-art models for machine learning tasks.
 """
 
 import asyncio
-from pathlib import Path
 
 from src.integrations.google_adk import MLEngineeringAgent
-from src.integrations.google_adk.base import ADKConfig, ADKBackend
+from src.integrations.google_adk.base import ADKBackend, ADKConfig
 
 
 async def example_basic_training():

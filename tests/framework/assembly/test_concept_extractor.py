@@ -2,9 +2,10 @@
 Tests for Concept Extractor (Story 1.2).
 """
 
-import pytest
 import networkx as nx
-from src.framework.assembly.concept_extractor import ConceptExtractor, Concept
+import pytest
+
+from src.framework.assembly.concept_extractor import ConceptExtractor
 
 
 class TestConceptExtractor:

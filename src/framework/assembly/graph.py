@@ -4,11 +4,12 @@ Assembly Graph Data Structure (Story 1.3).
 Specialized graph structure for representing and manipulating assembly pathways.
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple, Set
-import networkx as nx
 import json
+from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
+
+import networkx as nx
 
 
 @dataclass
@@ -27,10 +28,10 @@ class AssemblyNode:
     id: str
     label: str
     assembly_index: int = 0
-    components: List[str] = field(default_factory=list)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    components: list[str] = field(default_factory=list)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'id': self.id,
@@ -41,7 +42,7 @@ class AssemblyNode:
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'AssemblyNode':
+    def from_dict(cls, data: dict[str, Any]) -> 'AssemblyNode':
         """Create from dictionary."""
         return cls(
             id=data['id'],
@@ -67,14 +68,14 @@ class AssemblyGraph(nx.DiGraph):
     def __init__(self, *args, **kwargs):
         """Initialize assembly graph."""
         super().__init__(*args, **kwargs)
-        self._pathways: List[List[str]] = []  # Construction pathways
+        self._pathways: list[list[str]] = []  # Construction pathways
 
     def add_assembly_node(
         self,
         node_id: str,
         label: str,
         assembly_index: int = 0,
-        components: Optional[List[str]] = None,
+        components: list[str] | None = None,
         **metadata
     ) -> None:
         """
@@ -103,7 +104,7 @@ class AssemblyGraph(nx.DiGraph):
             **metadata
         )
 
-    def get_node_data(self, node_id: str) -> Optional[AssemblyNode]:
+    def get_node_data(self, node_id: str) -> AssemblyNode | None:
         """
         Get node as AssemblyNode object.
 
@@ -128,9 +129,9 @@ class AssemblyGraph(nx.DiGraph):
 
     def get_min_construction_pathway(
         self,
-        source: Optional[str] = None,
-        target: Optional[str] = None
-    ) -> List[str]:
+        source: str | None = None,
+        target: str | None = None
+    ) -> list[str]:
         """
         Return minimal assembly pathway from source to target.
 
@@ -171,10 +172,10 @@ class AssemblyGraph(nx.DiGraph):
 
     def get_all_pathways(
         self,
-        source: Optional[str] = None,
-        target: Optional[str] = None,
+        source: str | None = None,
+        target: str | None = None,
         max_pathways: int = 10
-    ) -> List[List[str]]:
+    ) -> list[list[str]]:
         """
         Get all construction pathways from source to target.
 
@@ -279,7 +280,7 @@ class AssemblyGraph(nx.DiGraph):
 
         return max(0.0, min(1.0, reuse))
 
-    def get_assembly_layers(self) -> List[Set[str]]:
+    def get_assembly_layers(self) -> list[set[str]]:
         """
         Get assembly layers (topological sorting by assembly depth).
 
@@ -330,7 +331,7 @@ class AssemblyGraph(nx.DiGraph):
 
         return dag
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """
         Serialize graph to dictionary.
 
@@ -357,7 +358,7 @@ class AssemblyGraph(nx.DiGraph):
         }
 
     @classmethod
-    def from_dict(cls, data: Dict[str, Any]) -> 'AssemblyGraph':
+    def from_dict(cls, data: dict[str, Any]) -> 'AssemblyGraph':
         """
         Deserialize graph from dictionary.
 
@@ -409,12 +410,12 @@ class AssemblyGraph(nx.DiGraph):
         Returns:
             AssemblyGraph instance
         """
-        with open(path, 'r') as f:
+        with open(path) as f:
             data = json.load(f)
 
         return cls.from_dict(data)
 
-    def compute_statistics(self) -> Dict[str, Any]:
+    def compute_statistics(self) -> dict[str, Any]:
         """
         Compute graph statistics.
 

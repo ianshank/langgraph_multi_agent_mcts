@@ -2,8 +2,9 @@
 Tests for Assembly Feature Extraction (Story 2.1).
 """
 
-import pytest
 import numpy as np
+import pytest
+
 from src.framework.assembly.features import AssemblyFeatureExtractor, AssemblyFeatures
 
 

@@ -23,6 +23,18 @@ from src.agents.meta_controller.utils import (
     one_hot_encode_agent,
 )
 
+# Import feature extractor
+try:
+    from src.agents.meta_controller.feature_extractor import (
+        EmbeddingBackend,
+        FeatureExtractor,
+        FeatureExtractorConfig,
+    )
+
+    _feature_extractor_available = True
+except ImportError:
+    _feature_extractor_available = False
+
 # Import Assembly Theory components
 from src.agents.meta_controller.assembly_router import (
     AssemblyRouter,
@@ -59,3 +71,6 @@ __all__ = [
 
 if _bert_available:
     __all__.append("BERTMetaController")
+
+if _feature_extractor_available:
+    __all__.extend(["FeatureExtractor", "FeatureExtractorConfig", "EmbeddingBackend"])

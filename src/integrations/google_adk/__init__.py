@@ -13,12 +13,12 @@ Available Agents:
 - DeepSearchAgent: Production-ready research with human-in-the-loop
 """
 
-from .base import ADKAgentAdapter, ADKConfig
-from .agents.ml_engineering import MLEngineeringAgent
-from .agents.data_science import DataScienceAgent
 from .agents.academic_research import AcademicResearchAgent
 from .agents.data_engineering import DataEngineeringAgent
+from .agents.data_science import DataScienceAgent
 from .agents.deep_search import DeepSearchAgent
+from .agents.ml_engineering import MLEngineeringAgent
+from .base import ADKAgentAdapter, ADKConfig
 
 __all__ = [
     "ADKAgentAdapter",

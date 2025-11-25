@@ -7,7 +7,6 @@ an authentic learning experience while remaining accessible for demonstrations.
 
 from __future__ import annotations
 
-import math
 from typing import Any
 
 from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState

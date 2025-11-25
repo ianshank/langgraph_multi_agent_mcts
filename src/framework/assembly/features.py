@@ -4,8 +4,8 @@ Assembly Feature Extraction (Story 2.1).
 Extract assembly-based features for ML models and decision-making.
 """
 
-from dataclasses import dataclass, asdict
-from typing import Dict, Any, Optional, List
+from dataclasses import asdict, dataclass
+
 import numpy as np
 
 from .calculator import AssemblyIndexCalculator
@@ -38,7 +38,7 @@ class AssemblyFeatures:
     technical_complexity: float
     normalized_assembly_index: float
 
-    def to_dict(self) -> Dict[str, float]:
+    def to_dict(self) -> dict[str, float]:
         """
         Convert to dictionary suitable for ML models.
 
@@ -66,7 +66,7 @@ class AssemblyFeatures:
         ], dtype=np.float32)
 
     @classmethod
-    def feature_names(cls) -> List[str]:
+    def feature_names(cls) -> list[str]:
         """Get list of feature names."""
         return [
             'assembly_index',
@@ -92,7 +92,7 @@ class AssemblyFeatureExtractor:
 
     def __init__(
         self,
-        config: Optional[AssemblyConfig] = None,
+        config: AssemblyConfig | None = None,
         domain: str = "general",
     ):
         """
@@ -182,7 +182,7 @@ class AssemblyFeatureExtractor:
             normalized_assembly_index=normalized_assembly_index,
         )
 
-    def extract_batch(self, queries: List[str], **context) -> List[AssemblyFeatures]:
+    def extract_batch(self, queries: list[str], **context) -> list[AssemblyFeatures]:
         """
         Extract features for multiple queries.
 
@@ -307,7 +307,7 @@ class AssemblyFeatureExtractor:
             normalized_assembly_index=0.0,
         )
 
-    def get_feature_importance(self, features: AssemblyFeatures) -> Dict[str, float]:
+    def get_feature_importance(self, features: AssemblyFeatures) -> dict[str, float]:
         """
         Analyze which features are most significant.
 

@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Cache-Busting Script for Hugging Face Spaces
 =============================================

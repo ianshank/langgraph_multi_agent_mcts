@@ -2,10 +2,11 @@
 Configuration for Assembly Theory components.
 """
 
-from dataclasses import dataclass, field
-from typing import Dict, Any
-import yaml
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 
 @dataclass
@@ -73,7 +74,7 @@ class AssemblyConfig:
         if not config_path.exists():
             return cls()  # Return defaults
 
-        with open(config_path, 'r') as f:
+        with open(config_path) as f:
             data = yaml.safe_load(f)
 
         assembly_config = data.get('assembly', {})
@@ -128,7 +129,7 @@ class AssemblyConfig:
 
         return cls(**config_dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary."""
         return {
             'mcts': {

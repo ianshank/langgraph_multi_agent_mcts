@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..base import ADKAgentAdapter, ADKAgentRequest, ADKAgentResponse, ADKConfig
 
@@ -281,7 +281,7 @@ class DataEngineeringAgent(ADKAgentAdapter):
         query: str,
         pipeline_name: str,
         source_tables: list[str],
-        target_table: Optional[str],
+        target_table: str | None,
     ) -> str:
         """Generate Dataform pipeline design."""
         return f"""
@@ -420,8 +420,8 @@ WHERE
     def _generate_troubleshooting_plan(
         self,
         query: str,
-        error_log: Optional[str],
-        compilation_log: Optional[str],
+        error_log: str | None,
+        compilation_log: str | None,
     ) -> str:
         """Generate troubleshooting plan."""
         return f"""
@@ -494,8 +494,8 @@ WHERE
     def _generate_optimization_plan(
         self,
         query: str,
-        pipeline_name: Optional[str],
-        current_performance: Optional[dict],
+        pipeline_name: str | None,
+        current_performance: dict | None,
     ) -> str:
         """Generate optimization plan."""
         return f"""
@@ -564,7 +564,7 @@ CLUSTER BY category, region
     def _generate_schema_design(
         self,
         query: str,
-        table_name: Optional[str],
+        table_name: str | None,
         data_requirements: dict[str, Any],
     ) -> dict[str, Any]:
         """Generate table schema design."""
@@ -609,7 +609,7 @@ CLUSTER BY category, region
         query: str,
         pipeline_name: str,
         source_tables: list[str],
-        target_table: Optional[str] = None,
+        target_table: str | None = None,
     ) -> ADKAgentResponse:
         """
         Design a Dataform pipeline.
@@ -666,8 +666,8 @@ CLUSTER BY category, region
     async def troubleshoot(
         self,
         query: str,
-        error_log: Optional[str] = None,
-        compilation_log: Optional[str] = None,
+        error_log: str | None = None,
+        compilation_log: str | None = None,
     ) -> ADKAgentResponse:
         """
         Troubleshoot pipeline issues.

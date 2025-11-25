@@ -5,14 +5,15 @@ Tests the factory classes that enable modular component creation
 with dependency injection and configuration management.
 """
 
-import pytest
 from unittest.mock import Mock, patch
 
-from src.framework.factories import (
-    LLMClientFactory,
-    ComponentFactory,
-)
+import pytest
+
 from src.config.settings import Settings
+from src.framework.factories import (
+    ComponentFactory,
+    LLMClientFactory,
+)
 
 
 class TestLLMClientFactory:

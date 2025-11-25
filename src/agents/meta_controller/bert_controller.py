@@ -39,16 +39,12 @@ try:
     from peft import LoraConfig, TaskType, get_peft_model
 
     _PEFT_AVAILABLE = True
-except ImportError as e:
-    # Only suppress if it's genuinely missing, not if it's broken
-    if "No module named 'peft'" in str(e):
-        _PEFT_AVAILABLE = False
-        LoraConfig = None  # type: ignore
-        TaskType = None  # type: ignore
-        get_peft_model = None  # type: ignore
-    else:
-        # Re-raise other import errors (e.g. missing dependencies like accelerate)
-        raise ImportError(f"Failed to import peft: {e}") from e
+except ImportError:
+    # Fallback if peft is missing or broken (e.g. version mismatch with transformers)
+    _PEFT_AVAILABLE = False
+    LoraConfig = None  # type: ignore
+    TaskType = None  # type: ignore
+    get_peft_model = None  # type: ignore
 
 
 class BERTMetaController(AbstractMetaController):

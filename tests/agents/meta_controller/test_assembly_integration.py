@@ -3,14 +3,15 @@ Tests for Assembly Theory integration in meta-controller (Stories 2.2, 2.3).
 """
 
 import pytest
+
 from src.agents.meta_controller import (
     AssemblyRouter,
     HybridMetaController,
+    HybridPrediction,
     MetaControllerFeatures,
     RoutingDecision,
-    HybridPrediction,
 )
-from src.framework.assembly import AssemblyConfig, AssemblyFeatures
+from src.framework.assembly import AssemblyFeatures
 
 
 class TestAssemblyRouter:

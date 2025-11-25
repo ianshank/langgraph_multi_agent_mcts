@@ -5,14 +5,13 @@ Tracks frequently used assembly patterns and enables reuse of successful
 reasoning subsequences.
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Any, Optional, Tuple, Set
 import hashlib
 import json
 import pickle
-from pathlib import Path
-from collections import defaultdict, Counter
 import time
+from dataclasses import dataclass, field
+from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -29,12 +28,12 @@ class Match:
     """
 
     pattern_id: str
-    sequence: List[Any]
+    sequence: list[Any]
     frequency: int
     similarity: float
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
             'pattern_id': self.pattern_id,
@@ -62,7 +61,7 @@ class SubstructureLibrary:
         max_size: int = 10000,
         similarity_threshold: float = 0.7,
         enable_persistence: bool = True,
-        persistence_path: Optional[str] = None,
+        persistence_path: str | None = None,
     ):
         """
         Initialize substructure library.
@@ -79,10 +78,10 @@ class SubstructureLibrary:
         self.persistence_path = persistence_path or "./workspace/assembly/substructure_library.pkl"
 
         # Pattern storage: pattern_id -> (sequence, frequency, last_used_timestamp, metadata)
-        self._patterns: Dict[str, Tuple[List[Any], int, float, Dict]] = {}
+        self._patterns: dict[str, tuple[list[Any], int, float, dict]] = {}
 
         # Index for fast lookup: sequence_hash -> pattern_id
-        self._hash_index: Dict[str, str] = {}
+        self._hash_index: dict[str, str] = {}
 
         # Statistics
         self._stats = {
@@ -98,7 +97,7 @@ class SubstructureLibrary:
 
     def add_pattern(
         self,
-        sequence: List[Any],
+        sequence: list[Any],
         frequency: int = 1,
         **metadata
     ) -> str:
@@ -147,10 +146,10 @@ class SubstructureLibrary:
 
     def find_reusable_patterns(
         self,
-        query_sequence: List[Any],
+        query_sequence: list[Any],
         max_matches: int = 10,
         min_frequency: int = 1,
-    ) -> List[Match]:
+    ) -> list[Match]:
         """
         Find similar patterns in library.
 
@@ -205,7 +204,7 @@ class SubstructureLibrary:
 
         return matches[:max_matches]
 
-    def get_pattern(self, pattern_id: str) -> Optional[Match]:
+    def get_pattern(self, pattern_id: str) -> Match | None:
         """
         Get pattern by ID.
 
@@ -227,7 +226,7 @@ class SubstructureLibrary:
             metadata=meta,
         )
 
-    def get_most_frequent_patterns(self, n: int = 10) -> List[Match]:
+    def get_most_frequent_patterns(self, n: int = 10) -> list[Match]:
         """
         Get N most frequently used patterns.
 
@@ -264,7 +263,7 @@ class SubstructureLibrary:
         total_freq = sum(freq for _, freq, _, _ in self._patterns.values())
         return total_freq / len(self._patterns)
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get library statistics.
 
@@ -285,7 +284,7 @@ class SubstructureLibrary:
         self._hash_index.clear()
         self._stats['evictions'] += len(self._patterns)
 
-    def _calculate_similarity(self, seq1: List[Any], seq2: List[Any]) -> float:
+    def _calculate_similarity(self, seq1: list[Any], seq2: list[Any]) -> float:
         """
         Calculate similarity between two sequences.
 
@@ -314,7 +313,7 @@ class SubstructureLibrary:
 
         return min(1.0, similarity)
 
-    def _lcs_length(self, seq1: List[str], seq2: List[str]) -> int:
+    def _lcs_length(self, seq1: list[str], seq2: list[str]) -> int:
         """
         Calculate Longest Common Subsequence length.
 
@@ -339,7 +338,7 @@ class SubstructureLibrary:
 
         return dp[m][n]
 
-    def _hash_sequence(self, sequence: List[Any]) -> str:
+    def _hash_sequence(self, sequence: list[Any]) -> str:
         """
         Generate hash for sequence.
 

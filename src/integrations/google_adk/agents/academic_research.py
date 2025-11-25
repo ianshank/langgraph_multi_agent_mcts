@@ -6,9 +6,8 @@ Based on: https://github.com/google/adk-samples/tree/main/python/agents/academic
 
 from __future__ import annotations
 
-import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..base import ADKAgentAdapter, ADKAgentRequest, ADKAgentResponse, ADKConfig
 
@@ -96,9 +95,9 @@ class AcademicResearchAgent(ADKAgentAdapter):
     async def _handle_full_analysis(
         self,
         request: ADKAgentRequest,
-        paper_path: Optional[str],
-        paper_title: Optional[str],
-        paper_url: Optional[str],
+        paper_path: str | None,
+        paper_title: str | None,
+        paper_url: str | None,
     ) -> ADKAgentResponse:
         """
         Perform full academic research analysis.
@@ -205,9 +204,9 @@ class AcademicResearchAgent(ADKAgentAdapter):
 
     def _generate_research_analysis(
         self,
-        paper_path: Optional[str],
-        paper_title: Optional[str],
-        paper_url: Optional[str],
+        paper_path: str | None,
+        paper_title: str | None,
+        paper_url: str | None,
         query: str,
     ) -> str:
         """Generate comprehensive research analysis."""
@@ -387,7 +386,7 @@ Top 20 citing papers
     def _generate_future_directions(
         self,
         query: str,
-        paper_title: Optional[str],
+        paper_title: str | None,
         context: dict[str, Any],
     ) -> str:
         """Generate future research directions."""
@@ -460,10 +459,10 @@ Top 20 citing papers
 
     async def analyze_paper(
         self,
-        paper_path: Optional[str] = None,
-        paper_title: Optional[str] = None,
-        paper_url: Optional[str] = None,
-        query: Optional[str] = None,
+        paper_path: str | None = None,
+        paper_title: str | None = None,
+        paper_url: str | None = None,
+        query: str | None = None,
     ) -> ADKAgentResponse:
         """
         Analyze an academic paper.
@@ -512,7 +511,7 @@ Top 20 citing papers
     async def suggest_future_research(
         self,
         paper_title: str,
-        query: Optional[str] = None,
+        query: str | None = None,
     ) -> ADKAgentResponse:
         """
         Suggest future research directions.

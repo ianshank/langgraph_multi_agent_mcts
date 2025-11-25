@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..base import ADKAgentAdapter, ADKAgentRequest, ADKAgentResponse, ADKConfig
 
@@ -265,7 +265,7 @@ class DataScienceAgent(ADKAgentAdapter):
         self,
         query: str,
         analysis_type: str,
-        data_source: Optional[str],
+        data_source: str | None,
     ) -> str:
         """Generate data analysis plan."""
         return f"""
@@ -328,7 +328,7 @@ import seaborn as sns
         self,
         query: str,
         model_type: str,
-        target_column: Optional[str],
+        target_column: str | None,
     ) -> str:
         """Generate BigQuery ML training plan."""
         return f"""
@@ -427,7 +427,7 @@ SELECT * FROM ML.FORECAST(
     async def analyze_data(
         self,
         query: str,
-        data_source: Optional[str] = None,
+        data_source: str | None = None,
         analysis_type: str = "exploratory",
     ) -> ADKAgentResponse:
         """
@@ -456,7 +456,7 @@ SELECT * FROM ML.FORECAST(
         self,
         query: str,
         model_type: str = "arima",
-        target_column: Optional[str] = None,
+        target_column: str | None = None,
     ) -> ADKAgentResponse:
         """
         Train BigQuery ML model.

@@ -12,7 +12,7 @@ import os
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -44,7 +44,7 @@ class ADKConfig:
         env_vars: Additional environment variables
     """
 
-    project_id: Optional[str] = None
+    project_id: str | None = None
     location: str = "us-central1"
     model_name: str = "gemini-2.0-flash-001"
     backend: ADKBackend = ADKBackend.LOCAL
@@ -87,7 +87,7 @@ class ADKAgentRequest(BaseModel):
 
     query: str = Field(description="User query or task description")
     context: dict[str, Any] = Field(default_factory=dict, description="Additional context for the agent")
-    session_id: Optional[str] = Field(default=None, description="Session ID for conversation continuity")
+    session_id: str | None = Field(default=None, description="Session ID for conversation continuity")
     parameters: dict[str, Any] = Field(default_factory=dict, description="Agent-specific parameters")
 
 
@@ -98,8 +98,8 @@ class ADKAgentResponse(BaseModel):
     metadata: dict[str, Any] = Field(default_factory=dict, description="Execution metadata")
     artifacts: list[str] = Field(default_factory=list, description="Generated artifacts (files, reports, etc.)")
     status: str = Field(default="success", description="Execution status")
-    error: Optional[str] = Field(default=None, description="Error message if status is 'error'")
-    session_id: Optional[str] = Field(default=None, description="Session ID for tracking")
+    error: str | None = Field(default=None, description="Error message if status is 'error'")
+    session_id: str | None = Field(default=None, description="Session ID for tracking")
 
 
 class ADKAgentAdapter(ABC):
@@ -214,7 +214,7 @@ class ADKAgentAdapter(ABC):
             )
             return response
 
-        except asyncio.TimeoutError:
+        except TimeoutError:
             return ADKAgentResponse(
                 result="",
                 status="error",

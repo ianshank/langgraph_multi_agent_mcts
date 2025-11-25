@@ -18,6 +18,9 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from pydantic import BaseModel, Field, field_validator
 
+# Import centralized validation from framework
+from src.models.validation import QueryInput
+
 # MCP Protocol imports (simplified implementation)
 # In production, use the official MCP SDK
 
@@ -55,8 +58,13 @@ class RunMCTSInput(BaseModel):
     @field_validator("query")
     @classmethod
     def sanitize_query(cls, v: str) -> str:
-        """Sanitize input query."""
-        return v.strip().replace("\x00", "")
+        """
+        Sanitize input query using centralized validation.
+
+        Delegates to QueryInput.sanitize_query for consistent security checks.
+        """
+        # Use the centralized sanitization from QueryInput
+        return QueryInput.sanitize_query(v)
 
 
 class QueryAgentInput(BaseModel):
@@ -66,6 +74,17 @@ class QueryAgentInput(BaseModel):
     query: str = Field(..., min_length=1, max_length=10000)
     temperature: float = Field(default=0.7, ge=0.0, le=2.0)
     max_tokens: int | None = Field(default=None, ge=1, le=100000)
+
+    @field_validator("query")
+    @classmethod
+    def sanitize_query(cls, v: str) -> str:
+        """
+        Sanitize input query using centralized validation.
+
+        Delegates to QueryInput.sanitize_query for consistent security checks.
+        """
+        # Use the centralized sanitization from QueryInput
+        return QueryInput.sanitize_query(v)
 
 
 class GetArtifactInput(BaseModel):

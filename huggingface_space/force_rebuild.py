@@ -6,13 +6,14 @@ import datetime
 import subprocess
 import sys
 
+
 def force_rebuild():
     """Force rebuild by adding timestamp to requirements.txt"""
 
     print("[REBUILD] Forcing Hugging Face Space rebuild...")
 
     # Read current requirements
-    with open("requirements.txt", "r", encoding="utf-8") as f:
+    with open("requirements.txt", encoding="utf-8") as f:
         content = f.read()
 
     # Remove old timestamp comments

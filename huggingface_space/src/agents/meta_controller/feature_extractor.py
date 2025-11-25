@@ -8,9 +8,6 @@ any dependency issues with sentence-transformers.
 import logging
 import os
 from dataclasses import dataclass
-from typing import Any
-
-import numpy as np
 
 from src.agents.meta_controller.base import MetaControllerFeatures
 

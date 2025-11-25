@@ -43,6 +43,12 @@ class MetaControllerFeatures:
     has_rag_context: bool
     """Whether RAG (Retrieval-Augmented Generation) context is available."""
 
+    rag_relevance_score: float = 0.0
+    """Relevance score of RAG context to the query (0.0 to 1.0)."""
+
+    is_technical_query: bool = False
+    """Whether the query is technical in nature."""
+
 
 @dataclass
 class MetaControllerPrediction:

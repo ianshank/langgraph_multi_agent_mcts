@@ -10,9 +10,8 @@ Based on: https://github.com/google/adk-samples/tree/main/python/agents/machine-
 from __future__ import annotations
 
 import json
-import os
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from ..base import ADKAgentAdapter, ADKAgentRequest, ADKAgentResponse, ADKConfig
 
@@ -221,7 +220,7 @@ To execute this plan, the MLE agent will:
         task_type: str = "Tabular Regression",
         metric: str = "rmse",
         lower_is_better: bool = True,
-        query: Optional[str] = None,
+        query: str | None = None,
     ) -> ADKAgentResponse:
         """
         Convenience method for model training.

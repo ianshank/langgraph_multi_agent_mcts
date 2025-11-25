@@ -66,6 +66,7 @@ neural = [
     "peft>=0.7.0",
     "datasets>=2.14.0",
     "PyYAML>=6.0.0",
+    "sentence-transformers>=2.2.0",
 ]
 experiment = [
     "braintrust>=0.0.100",

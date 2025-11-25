@@ -7,7 +7,7 @@ This example demonstrates paper analysis, citation discovery, and research synth
 import asyncio
 
 from src.integrations.google_adk import AcademicResearchAgent
-from src.integrations.google_adk.base import ADKConfig, ADKBackend
+from src.integrations.google_adk.base import ADKBackend, ADKConfig
 
 
 async def example_paper_analysis():

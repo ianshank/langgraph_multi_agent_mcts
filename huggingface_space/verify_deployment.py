@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Deployment Verification Script for Hugging Face Spaces
 =======================================================
@@ -19,11 +18,9 @@ The script implements backpropagation principles:
 
 import argparse
 import importlib.metadata
-import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 # Ensure UTF-8 output
 if sys.stdout.encoding != 'utf-8':
@@ -37,9 +34,9 @@ class DependencyCheck:
 
     name: str
     required_version: str
-    installed_version: Optional[str]
+    installed_version: str | None
     compatible: bool
-    error_message: Optional[str] = None
+    error_message: str | None = None
 
 
 @dataclass
@@ -106,7 +103,7 @@ class DeploymentVerifier:
         self.log(f"Python {version.major}.{version.minor}.{version.micro}", "SUCCESS")
         return True
 
-    def get_installed_version(self, package: str) -> Optional[str]:
+    def get_installed_version(self, package: str) -> str | None:
         """Get installed version of a package."""
         try:
             version = importlib.metadata.version(package)

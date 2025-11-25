@@ -7,7 +7,7 @@ This example demonstrates NL2SQL, data analysis, and BigQuery ML capabilities.
 import asyncio
 
 from src.integrations.google_adk import DataScienceAgent
-from src.integrations.google_adk.base import ADKConfig, ADKBackend
+from src.integrations.google_adk.base import ADKBackend, ADKConfig
 
 
 async def example_nl2sql():

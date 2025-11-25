@@ -19,7 +19,6 @@ VERSION: MINIMAL-FALLBACK-v1.0
 """
 
 import asyncio
-import random
 import time
 from dataclasses import dataclass
 from datetime import datetime

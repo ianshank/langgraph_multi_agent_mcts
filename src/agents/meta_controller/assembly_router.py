@@ -5,15 +5,16 @@ Provides rule-based routing decisions based on assembly theory features,
 complementing neural meta-controllers with interpretable heuristics.
 """
 
-from dataclasses import dataclass
-from typing import Dict, Any, Optional, Tuple
 import logging
+from dataclasses import dataclass
+from typing import Any
 
 from src.framework.assembly import (
+    AssemblyConfig,
     AssemblyFeatureExtractor,
     AssemblyFeatures,
-    AssemblyConfig,
 )
+
 from .base import MetaControllerPrediction
 
 logger = logging.getLogger(__name__)
@@ -54,7 +55,7 @@ class AssemblyRouter:
 
     def __init__(
         self,
-        config: Optional[AssemblyConfig] = None,
+        config: AssemblyConfig | None = None,
         domain: str = "general",
     ):
         """
@@ -88,7 +89,7 @@ class AssemblyRouter:
     def route(
         self,
         query: str,
-        features: Optional[AssemblyFeatures] = None,
+        features: AssemblyFeatures | None = None,
     ) -> RoutingDecision:
         """
         Route query to appropriate agent based on assembly features.
@@ -132,7 +133,7 @@ class AssemblyRouter:
     def _apply_routing_rules(
         self,
         features: AssemblyFeatures,
-    ) -> Tuple[str, float, str]:
+    ) -> tuple[str, float, str]:
         """
         Apply routing heuristics based on assembly features.
 
@@ -250,7 +251,7 @@ class AssemblyRouter:
             probabilities=probabilities,
         )
 
-    def get_statistics(self) -> Dict[str, Any]:
+    def get_statistics(self) -> dict[str, Any]:
         """
         Get routing statistics.
 

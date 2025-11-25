@@ -5,11 +5,10 @@ Extracts key concepts from text and builds dependency graphs showing
 prerequisite relationships between concepts.
 """
 
-from dataclasses import dataclass, field
-from typing import List, Dict, Set, Optional, Tuple
-import networkx as nx
 import re
-from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+
+import networkx as nx
 
 
 @dataclass
@@ -29,9 +28,9 @@ class Concept:
     term: str
     type: str = "noun"
     frequency: int = 1
-    dependencies: List[str] = field(default_factory=list)
+    dependencies: list[str] = field(default_factory=list)
     importance: float = 0.0
-    context: List[str] = field(default_factory=list)
+    context: list[str] = field(default_factory=list)
 
     def __hash__(self):
         return hash(self.term)
@@ -76,7 +75,7 @@ class ConceptExtractor:
         # Load domain-specific concept libraries
         self._load_domain_library()
 
-    def extract_concepts(self, text: str) -> List[Concept]:
+    def extract_concepts(self, text: str) -> list[Concept]:
         """
         Extract key concepts from text.
 
@@ -106,7 +105,7 @@ class ConceptExtractor:
 
         return concepts
 
-    def build_dependency_graph(self, concepts: List[Concept]) -> nx.DiGraph:
+    def build_dependency_graph(self, concepts: list[Concept]) -> nx.DiGraph:
         """
         Build concept dependency DAG.
 
@@ -168,7 +167,7 @@ class ConceptExtractor:
 
         return graph
 
-    def visualize_graph(self, graph: nx.DiGraph, output_path: Optional[str] = None) -> None:
+    def visualize_graph(self, graph: nx.DiGraph, output_path: str | None = None) -> None:
         """
         Visualize concept dependency graph.
 
@@ -227,7 +226,7 @@ class ConceptExtractor:
         except ImportError:
             print("Matplotlib not available. Skipping visualization.")
 
-    def _extract_candidates(self, text: str) -> Dict[str, Concept]:
+    def _extract_candidates(self, text: str) -> dict[str, Concept]:
         """Extract candidate concepts from text."""
         candidates = {}
 
@@ -263,7 +262,7 @@ class ConceptExtractor:
 
         return candidates
 
-    def _extract_nouns(self, text: str) -> List[str]:
+    def _extract_nouns(self, text: str) -> list[str]:
         """Extract nouns using simple patterns."""
         # Common noun patterns
         words = re.findall(r'\b[a-z]+\b', text.lower())
@@ -271,14 +270,12 @@ class ConceptExtractor:
         # Filter using noun indicators (can be enhanced with POS tagging)
         nouns = []
         for word in words:
-            if len(word) > 2 and word in self.domain_library.get('nouns', set()):
-                nouns.append(word)
-            elif len(word) > 3:  # Include longer unknown words
+            if len(word) > 2 and word in self.domain_library.get('nouns', set()) or len(word) > 3:
                 nouns.append(word)
 
         return nouns
 
-    def _extract_verbs(self, text: str) -> List[str]:
+    def _extract_verbs(self, text: str) -> list[str]:
         """Extract verbs using simple patterns."""
         # Common verb endings
         verb_patterns = [
@@ -293,7 +290,7 @@ class ConceptExtractor:
 
         return list(verbs)
 
-    def _extract_technical_terms(self, text: str) -> List[str]:
+    def _extract_technical_terms(self, text: str) -> list[str]:
         """Extract technical/domain-specific terms."""
         tech_terms = set()
 
@@ -314,7 +311,7 @@ class ConceptExtractor:
 
         return list(tech_terms)
 
-    def _extract_entities(self, text: str) -> List[str]:
+    def _extract_entities(self, text: str) -> list[str]:
         """Extract named entities (basic)."""
         # Capitalized words (basic NER)
         entities = re.findall(r'\b[A-Z][a-z]+\b', text)
@@ -323,7 +320,7 @@ class ConceptExtractor:
         entities = [e for e in entities if e not in common_starts]
         return entities
 
-    def _filter_and_score(self, candidates: Dict[str, Concept], text: str) -> List[Concept]:
+    def _filter_and_score(self, candidates: dict[str, Concept], text: str) -> list[Concept]:
         """Filter and score concepts."""
         concepts = []
 
@@ -381,7 +378,7 @@ class ConceptExtractor:
 
         return min(score, 1.0)
 
-    def _extract_context(self, term: str, text: str, window: int = 5) -> List[str]:
+    def _extract_context(self, term: str, text: str, window: int = 5) -> list[str]:
         """Extract surrounding context for a term."""
         words = text.lower().split()
         contexts = []
@@ -395,7 +392,7 @@ class ConceptExtractor:
 
         return contexts
 
-    def _infer_prerequisites(self, term: str) -> List[str]:
+    def _infer_prerequisites(self, term: str) -> list[str]:
         """Infer prerequisite concepts based on domain knowledge."""
         prerequisites = []
 

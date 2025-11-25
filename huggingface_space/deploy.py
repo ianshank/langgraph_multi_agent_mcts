@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Master Deployment Script for Hugging Face Spaces
 ================================================
@@ -20,7 +19,6 @@ import argparse
 import subprocess
 import sys
 from pathlib import Path
-from typing import Optional
 
 # Ensure UTF-8 output
 if sys.stdout.encoding != 'utf-8':
@@ -205,7 +203,7 @@ class DeploymentOrchestrator:
 
     def run_deployment(
         self,
-        strategy: Optional[str] = None,
+        strategy: str | None = None,
         verify_only: bool = False,
         push: bool = False,
         auto: bool = False,
