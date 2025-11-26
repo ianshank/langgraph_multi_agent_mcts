@@ -8,6 +8,7 @@ Handles model loading, hot-swapping, configuration management, and rollback.
 import json
 import logging
 import shutil
+import numpy as np
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -16,6 +17,7 @@ import yaml
 
 try:
     import torch
+    from training.utils.checkpoint_loader import load_checkpoint_safe
 
     HAS_TORCH = True
 except ImportError:
@@ -62,7 +64,16 @@ class ModelIntegrator:
             logger.warning("PyTorch not available, loading model metadata only")
             return {"type": model_type, "path": checkpoint_path}
 
-        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        try:
+            checkpoint = load_checkpoint_safe(checkpoint_path, map_location="cpu")
+        except Exception as e:
+            logger.error(f"Failed to load checkpoint {checkpoint_path}: {e}")
+            # One last try with weights_only=False for compatibility
+            try:
+                checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+            except Exception as final_e:
+                logger.error(f"Final attempt to load checkpoint {checkpoint_path} failed: {final_e}")
+                return None
 
         # Extract model state
         model_state = checkpoint.get("model_state_dict", checkpoint)

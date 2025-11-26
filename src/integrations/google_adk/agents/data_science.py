@@ -7,6 +7,7 @@ Based on: https://github.com/google/adk-samples/tree/main/python/agents/data-sci
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -505,6 +506,3 @@ SELECT * FROM ML.FORECAST(
             ],
         })
         return base_caps
-
-
-import os

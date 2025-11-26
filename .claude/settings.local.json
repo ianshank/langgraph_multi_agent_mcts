@@ -79,7 +79,12 @@
       "Bash(echo:*)",
       "Bash(git lfs push:*)",
       "Bash(git lfs track:*)",
-      "Bash(git lfs migrate:*)"
+      "Bash(git lfs migrate:*)",
+      "Bash(timeout 60 echo:*)",
+      "Bash(timeout 30 echo:*)",
+      "Bash(timeout 120 echo:*)",
+      "Bash(timeout 180 echo:*)",
+      "Bash(docker-compose:*)"
     ],
     "deny": [],
     "ask": []
