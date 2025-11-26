@@ -78,7 +78,7 @@ class ADKConfig:
     def validate(self) -> None:
         """Validate configuration."""
         if self.backend in (ADKBackend.ML_DEV, ADKBackend.VERTEX_AI) and not self.project_id:
-            raise ValueError(f"{self.backend} backend requires GOOGLE_CLOUD_PROJECT to be set")
+                raise ValueError(f"{self.backend} backend requires GOOGLE_CLOUD_PROJECT to be set")
 
 
 class ADKAgentRequest(BaseModel):
