@@ -334,7 +334,7 @@ class AssemblyIndexCalculator:
 
     def _hash_string(self, text: str) -> str:
         """Generate cache key for string."""
-        return hashlib.md5(text.encode()).hexdigest()
+        return hashlib.sha256(text.encode()).hexdigest()
 
     def clear_cache(self) -> None:
         """Clear the calculation cache."""

@@ -7,6 +7,7 @@ Based on: https://github.com/google/adk-samples/tree/main/python/agents/deep-sea
 from __future__ import annotations
 
 import json
+import secrets
 from pathlib import Path
 from typing import Any
 
@@ -209,11 +210,9 @@ class DeepSearchAgent(ADKAgentAdapter):
         )
 
     def _generate_research_id(self, topic: str) -> str:
-        """Generate unique research ID."""
-        import hashlib
-        import time
-        unique_str = f"{topic}_{time.time()}"
-        return hashlib.md5(unique_str.encode()).hexdigest()[:12]
+        """Generate unique, non-guessable research ID."""
+        safe_topic = "".join(ch for ch in topic.lower() if ch.isalnum())[:8] or "research"
+        return f"{safe_topic}-{secrets.token_hex(4)}"
 
     def _generate_research_plan(
         self,

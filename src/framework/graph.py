@@ -476,9 +476,9 @@ class GraphBuilder:
             for name in self.adk_agents:
                 # Check if we haven't run this ADK agent yet
                 adk_results = state.get("adk_results", {})
-                if name not in adk_results:
-                    # Define triggers based on agent name
-                    if (
+                if (
+                    name not in adk_results
+                    and (
                         (
                             name == "deep_search"
                             and ("research" in query_lower or "investigate" in query_lower)
@@ -491,8 +491,9 @@ class GraphBuilder:
                             name == "data_science"
                             and ("analyze" in query_lower or "data" in query_lower)
                         )
-                    ):
-                        return f"adk_{name}"
+                    )
+                ):
+                    return f"adk_{name}"
 
             if self.enable_parallel_agents:
                 if "hrm_results" not in state and "trm_results" not in state:

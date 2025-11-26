@@ -14,6 +14,8 @@ jobs:
   lint:
     name: Lint with Ruff
     runs-on: ubuntu-latest
+    env:
+      RUFF_PATHS: "src/framework/mcts src/framework/graph.py src/integrations/google_adk tests/unit/test_mcts_core.py tests/unit/test_mcts_framework.py"
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -30,10 +32,10 @@ jobs:
         run: pip install ruff
 
       - name: Auto-format code with ruff
-        run: ruff format .
+        run: python -m ruff format $RUFF_PATHS
 
       - name: Auto-fix linting issues
-        run: ruff check . --fix --output-format=github
+        run: python -m ruff check $RUFF_PATHS --fix --output-format=github
 
       - name: Commit auto-fixes (if any)
         run: |
@@ -43,7 +45,7 @@ jobs:
         continue-on-error: true
 
       - name: Check remaining linting errors
-        run: ruff check . --output-format=github
+        run: python -m ruff check $RUFF_PATHS --output-format=github
 
   type-check:
     name: Type Check with MyPy

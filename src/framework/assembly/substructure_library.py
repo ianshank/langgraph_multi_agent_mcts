@@ -350,7 +350,7 @@ class SubstructureLibrary:
         """
         # Convert sequence to string representation
         seq_str = '|'.join(str(s) for s in sequence)
-        return hashlib.md5(seq_str.encode()).hexdigest()
+        return hashlib.sha256(seq_str.encode()).hexdigest()
 
     def _evict_lru(self) -> None:
         """Evict least recently used pattern."""
