@@ -27,6 +27,7 @@ from src.agents.hrm_agent import (
     HRMLoss,
     HRMOutput,
     LModule,
+    PonderNet,
     SubProblem,
     create_hrm_agent,
 )
@@ -485,7 +486,7 @@ class TestHRMAgent:
 
         Validates:
         - Config is stored correctly
-        - All submodules exist (H-module, L-module, ACT)
+        - All submodules exist (H-module, L-module, PonderNet)
         - Model is on correct device
         """
         agent = HRMAgent(default_config, device="cpu")
@@ -493,7 +494,8 @@ class TestHRMAgent:
         assert agent.config == default_config
         assert len(agent.h_module) == default_config.num_h_layers
         assert isinstance(agent.l_module, LModule)
-        assert isinstance(agent.act, AdaptiveComputationTime)
+        # HRM now uses PonderNet instead of AdaptiveComputationTime
+        assert isinstance(agent.ponder_net, PonderNet) or agent.ponder_net is None
         assert isinstance(agent.input_proj, nn.Linear)
         assert isinstance(agent.integrate, nn.Sequential)
 
@@ -1194,13 +1196,15 @@ class TestHRMIntegration:
         agent = HRMAgent(default_config, device="cpu")
         loss_fn = HRMLoss()
         optimizer = torch.optim.Adam(agent.parameters(), lr=0.001)
+        agent.train()
 
-        # Forward pass
-        x = torch.randn(4, 5, default_config.h_dim)
-        output = agent(x)
+        # Forward pass with requires_grad input
+        x = torch.randn(4, 5, default_config.h_dim, requires_grad=True)
+        output = agent(x, return_decomposition=True)
 
-        # Compute predictions (simple linear layer for testing)
-        predictions = torch.randn(4, 10)
+        # Compute predictions from final state (requires grad)
+        pred_layer = nn.Linear(default_config.h_dim, 10)
+        predictions = pred_layer(output.final_state.mean(dim=1))
         targets = torch.randint(0, 10, (4,))
 
         task_loss_fn = nn.CrossEntropyLoss()

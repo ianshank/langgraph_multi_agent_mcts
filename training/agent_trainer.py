@@ -719,27 +719,80 @@ class AgentTrainingOrchestrator:
         self.hrm_trainer = None
         self.trm_trainer = None
         self.mcts_trainer = None
+        self.neuro_symbolic_trainer = None
 
         self.checkpoint_dir = Path("training/models/checkpoints")
         self.checkpoint_dir.mkdir(parents=True, exist_ok=True)
 
         logger.info(f"Initialized AgentTrainingOrchestrator on {self.device}")
 
-    def initialize_trainers(self) -> None:
-        """Initialize all agent trainers."""
+    def initialize_trainers(self, include_neuro_symbolic: bool = False) -> None:
+        """
+        Initialize all agent trainers.
+        
+        Args:
+            include_neuro_symbolic: Whether to initialize neuro-symbolic trainer
+        """
         logger.info("Initializing agent trainers...")
 
         self.hrm_trainer = HRMTrainer(self.config, self.device)
         self.trm_trainer = TRMTrainer(self.config, self.device)
         self.mcts_trainer = MCTSTrainer(self.config, self.device)
 
+        # Initialize Neuro-Symbolic trainer if requested
+        if include_neuro_symbolic:
+            self._initialize_neuro_symbolic_trainer()
+
         logger.info("All trainers initialized")
+
+    def _initialize_neuro_symbolic_trainer(self) -> None:
+        """Initialize the Neuro-Symbolic trainer for PonderNet and Neural Planner."""
+        try:
+            from src.training.neuro_symbolic_trainer import (
+                NeuroSymbolicConfig,
+                NeuroSymbolicTrainer,
+            )
+            from src.training.system_config import HRMConfig
+
+            # Get neuro-symbolic config from main config if available
+            ns_config_dict = self.config.get("neuro_symbolic", {})
+            
+            ns_config = NeuroSymbolicConfig(
+                ponder_lambda=ns_config_dict.get("ponder_net", {}).get("lambda_p", 0.01),
+                geometric_prior_p=ns_config_dict.get("ponder_net", {}).get("geometric_prior_p", 0.5),
+                max_ponder_steps=ns_config_dict.get("ponder_net", {}).get("max_ponder_steps", 16),
+                planner_hidden_dim=ns_config_dict.get("neural_planner", {}).get("hidden_dim", 512),
+                planner_num_strategies=ns_config_dict.get("neural_planner", {}).get("num_strategies", 5),
+                learning_rate=ns_config_dict.get("neural_planner", {}).get("learning_rate", 1e-4),
+                epochs=self.config["training"]["epochs"],
+                batch_size=self.config["training"]["batch_size"],
+            )
+
+            # Get HRM config
+            hrm_config = HRMConfig(
+                h_dim=self.config["agents"]["hrm"].get("hidden_size", 768),
+                max_ponder_steps=ns_config.max_ponder_steps,
+            )
+
+            self.neuro_symbolic_trainer = NeuroSymbolicTrainer(
+                config=ns_config,
+                hrm_config=hrm_config,
+                device=self.device,
+            )
+            self.neuro_symbolic_trainer.build_models()
+
+            logger.info("Neuro-Symbolic trainer initialized")
+
+        except ImportError as e:
+            logger.warning(f"Could not initialize Neuro-Symbolic trainer: {e}")
+            self.neuro_symbolic_trainer = None
 
     def train_phase(
         self,
         phase_name: str,
         hrm_dataloader: DataLoader | None = None,
         trm_dataloader: DataLoader | None = None,
+        neuro_symbolic_dataloader: DataLoader | None = None,
         val_dataloaders: dict[str, DataLoader] | None = None,
     ) -> dict[str, Any]:
         """
@@ -749,6 +802,7 @@ class AgentTrainingOrchestrator:
             phase_name: Name of the training phase
             hrm_dataloader: HRM training data
             trm_dataloader: TRM training data
+            neuro_symbolic_dataloader: Neuro-symbolic training data
             val_dataloaders: Validation data loaders
 
         Returns:
@@ -756,7 +810,13 @@ class AgentTrainingOrchestrator:
         """
         logger.info(f"Starting training phase: {phase_name}")
 
-        results = {"phase": phase_name, "hrm_metrics": [], "trm_metrics": [], "mcts_metrics": []}
+        results = {
+            "phase": phase_name,
+            "hrm_metrics": [],
+            "trm_metrics": [],
+            "mcts_metrics": [],
+            "neuro_symbolic_metrics": [],
+        }
 
         num_epochs = self.config["training"]["epochs"]
 
@@ -779,6 +839,19 @@ class AgentTrainingOrchestrator:
             if self.mcts_trainer:
                 self.mcts_trainer.generate_self_play_data(
                     num_games=self.config["agents"]["mcts"]["self_play"]["games_per_iteration"]
+                )
+
+            # Train Neuro-Symbolic (PonderNet + Neural Planner)
+            if self.neuro_symbolic_trainer and neuro_symbolic_dataloader:
+                ns_metrics = self.neuro_symbolic_trainer.train_epoch(neuro_symbolic_dataloader)
+                self.neuro_symbolic_trainer.current_epoch = epoch
+                results["neuro_symbolic_metrics"].append({
+                    "epoch": epoch,
+                    **ns_metrics,
+                })
+                logger.info(
+                    f"Neuro-Symbolic: loss={ns_metrics['loss']:.4f}, "
+                    f"strategy_acc={ns_metrics['strategy_accuracy']:.4f}"
                 )
 
             # Validation
@@ -805,6 +878,11 @@ class AgentTrainingOrchestrator:
         if self.mcts_trainer and "mcts" in dataloaders:
             val_results["mcts"] = self.mcts_trainer.evaluate(dataloaders["mcts"])
 
+        if self.neuro_symbolic_trainer and "neuro_symbolic" in dataloaders:
+            val_results["neuro_symbolic"] = self.neuro_symbolic_trainer.evaluate(
+                dataloaders["neuro_symbolic"]
+            )
+
         return val_results
 
     def _save_all_checkpoints(self, epoch: int) -> None:
@@ -820,6 +898,9 @@ class AgentTrainingOrchestrator:
         if self.mcts_trainer:
             path = self.checkpoint_dir / f"mcts_epoch_{epoch}.pt"
             self.mcts_trainer.save_checkpoint(str(path))
+
+        if self.neuro_symbolic_trainer:
+            self.neuro_symbolic_trainer.save_checkpoint(f"epoch_{epoch}")
 
     def load_all_checkpoints(self, epoch: int) -> None:
         """Load checkpoints for all agents."""
@@ -837,6 +918,11 @@ class AgentTrainingOrchestrator:
             path = self.checkpoint_dir / f"mcts_epoch_{epoch}.pt"
             if path.exists():
                 self.mcts_trainer.load_checkpoint(str(path))
+
+        if self.neuro_symbolic_trainer:
+            ns_path = self.neuro_symbolic_trainer.checkpoint_dir / f"epoch_{epoch}.pt"
+            if ns_path.exists():
+                self.neuro_symbolic_trainer.load_checkpoint(str(ns_path))
 
 
 # Model Architectures
