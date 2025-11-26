@@ -398,7 +398,7 @@ def process_query_sync(
         framework = IntegratedFramework()
 
     if not query.strip():
-        return ("Please enter a query.", {}, "", {}, "", "")
+        return ("Please enter a query.", {}, "", "", "", "")
 
     # Run async function
     agent_result, controller_decision = asyncio.run(
