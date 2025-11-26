@@ -1,0 +1,119 @@
+# Google Cloud Deployment Configuration
+# LangGraph Multi-Agent MCTS Framework
+
+# Project settings
+project:
+  id: ${GOOGLE_CLOUD_PROJECT}
+  location: ${GOOGLE_CLOUD_LOCATION:us-central1}
+  service_name: langgraph-mcts
+
+# Vertex AI Configuration
+vertex_ai:
+  # Agent Engine settings
+  agent_engine:
+    enabled: true
+    display_name: langgraph-mcts-agent
+    # Timeout for agent execution (seconds)
+    timeout: 300
+    # Maximum iterations per request
+    max_iterations: 10
+
+  # Gemini model configuration
+  model:
+    name: gemini-2.0-flash-001
+    temperature: 0.7
+    max_output_tokens: 4096
+    # Safety settings
+    safety_settings:
+      harassment: BLOCK_MEDIUM_AND_ABOVE
+      hate_speech: BLOCK_MEDIUM_AND_ABOVE
+      sexually_explicit: BLOCK_MEDIUM_AND_ABOVE
+      dangerous_content: BLOCK_MEDIUM_AND_ABOVE
+
+# Cloud Run Configuration
+cloud_run:
+  # Container settings
+  container:
+    image_name: langgraph-mcts-api
+    port: 8080
+    # Resource allocation
+    memory: 4Gi
+    cpu: 2
+    # Concurrency
+    max_concurrency: 80
+
+  # Scaling settings
+  scaling:
+    min_instances: 0
+    max_instances: 10
+    # Scale to zero after inactivity
+    scale_to_zero: true
+
+  # Timeout (seconds)
+  timeout: 300
+
+  # Authentication
+  auth:
+    # Allow unauthenticated for demo; set to false for production
+    allow_unauthenticated: true
+
+# Artifact Registry
+artifact_registry:
+  repository: langgraph-mcts
+  format: DOCKER
+
+# Secret Manager
+secrets:
+  # List of secrets to be created/used
+  # These should be configured in Google Cloud Console
+  - name: openai-api-key
+    env_var: OPENAI_API_KEY
+  - name: anthropic-api-key
+    env_var: ANTHROPIC_API_KEY
+  - name: wandb-api-key
+    env_var: WANDB_API_KEY
+  - name: pinecone-api-key
+    env_var: PINECONE_API_KEY
+
+# IAM Configuration
+iam:
+  # Service account for Cloud Run
+  service_account: langgraph-mcts-sa
+  # Required roles
+  roles:
+    - roles/aiplatform.user
+    - roles/secretmanager.secretAccessor
+    - roles/logging.logWriter
+    - roles/cloudtrace.agent
+
+# Monitoring
+monitoring:
+  # Cloud Logging
+  logging:
+    enabled: true
+    log_level: INFO
+
+  # Cloud Trace
+  tracing:
+    enabled: true
+    sampling_rate: 0.1
+
+  # Cloud Monitoring
+  metrics:
+    enabled: true
+    # Custom metrics prefix
+    prefix: custom.googleapis.com/langgraph_mcts
+
+# Network Configuration
+network:
+  # VPC connector for private networking (optional)
+  vpc_connector: null
+  # Egress settings
+  egress: all-traffic
+
+# Build Configuration
+build:
+  # Cloud Build timeout
+  timeout: 1800s
+  # Build machine type
+  machine_type: E2_HIGHCPU_8
