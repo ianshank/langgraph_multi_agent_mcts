@@ -1,29 +1,17 @@
-"""
-Comprehensive Demonstration of LangGraph Multi-Agent MCTS System.
-
-This script demonstrates the full capabilities of the application, including:
-1.  Multi-Agent Collaboration (HRM & TRM Agents)
-2.  Personality-Driven Behavior (High Performer vs. Explorer profiles)
-3.  Monte Carlo Tree Search (MCTS) for decision making
-4.  Google ADK Agent Integration (Simulated)
-5.  LangGraph State Management
-
-The demo runs with a simulated LLM adapter to require no API keys.
-"""
-
-import asyncio
+import os
 import logging
 import sys
 import time
+import asyncio
 from datetime import datetime, timezone
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 # Force UTF-8 for Windows consoles
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
 
 import numpy as np
-from langchain_core.language_models.fake import FakeListLLM
+from dotenv import load_dotenv
 
 # Import framework components
 from src.framework.graph import GraphBuilder, AgentState
@@ -31,6 +19,9 @@ from src.framework.personality.agent import PersonalityDrivenAgent
 from src.framework.personality.profiles import PersonalityProfile
 from src.framework.mcts.config import MCTSConfig, ConfigPreset
 from src.integrations.google_adk.base import ADKAgentAdapter, ADKConfig, ADKAgentRequest, ADKAgentResponse
+from src.adapters.llm.base import LLMClient, LLMResponse
+from src.adapters.llm.openai_client import OpenAIClient
+from src.adapters.llm.anthropic_client import AnthropicClient
 
 # Configure logging
 logging.basicConfig(
@@ -39,6 +30,9 @@ logging.basicConfig(
     handlers=[logging.StreamHandler(sys.stdout)]
 )
 logger = logging.getLogger("Demo")
+
+# Load environment variables
+load_dotenv()
 
 # --- Custom Graph Builder to Fix Iteration Logic ---
 
@@ -59,32 +53,29 @@ class DemoGraphBuilder(GraphBuilder):
 
 # --- Mocks for Independence ---
 
-class MockResponse:
-    def __init__(self, text):
-        self.text = text
-
 class MockModelAdapter:
     """Simulates LLM responses for the demo."""
     
-    async def generate(self, prompt: str, **kwargs) -> MockResponse:
+    async def generate(self, prompt: str, **kwargs) -> LLMResponse:
         """Generate simulated text based on prompt keywords."""
         prompt_lower = prompt.lower()
         
+        text = "Simulated LLM response."
         if "plan" in prompt_lower or "hrm" in prompt_lower:
-            return MockResponse("""
+            text = """
             1. Analyze current security landscape.
             2. Identify quantum threats.
             3. Develop counter-measures.
             4. Validate with simulation.
-            """)
+            """
         elif "refine" in prompt_lower or "trm" in prompt_lower:
-            return MockResponse("Refined step: Focus on lattice-based cryptography as a primary defense.")
+            text = "Refined step: Focus on lattice-based cryptography as a primary defense."
         elif "critique" in prompt_lower:
-            return MockResponse("The plan is solid but lacks a timeline. Score: 0.85")
+            text = "The plan is solid but lacks a timeline. Score: 0.85"
         elif "synthesize" in prompt_lower:
-            return MockResponse("Final Report: Quantum computing poses significant risks to RSA. Immediate transition to post-quantum cryptography (PQC) is recommended.")
-        else:
-            return MockResponse("Simulated LLM response.")
+            text = "Final Report: Quantum computing poses significant risks to RSA. Immediate transition to post-quantum cryptography (PQC) is recommended."
+            
+        return LLMResponse(text=text)
 
     async def get_embedding(self, text: str) -> List[float]:
         """Return deterministic embedding."""
@@ -94,39 +85,82 @@ class MockModelAdapter:
         rng = np.random.RandomState(seed)
         return rng.rand(1536).tolist()
 
-class MockHRMAgent:
-    """Simulates Hierarchical Reasoning Agent."""
-    def __init__(self, name="HRM"):
+# --- Agents Implementation ---
+
+class DemoAgentBase:
+    """Base class for demo agents to handle model adapter interaction."""
+    def __init__(self, model_adapter: Any, name: str):
+        self.model_adapter = model_adapter
         self.name = name
+        self.logger = logging.getLogger(name)
+
+    async def initialize(self): 
+        self.logger.info(f"[{self.name}] Initializing...")
+
+    async def shutdown(self): 
+        self.logger.info(f"[{self.name}] Shutting down...")
+
+    async def _call_model(self, prompt: str) -> str:
+        """Helper to call model adapter."""
+        try:
+            # Check if adapter is real LLMClient (has generate method)
+            if hasattr(self.model_adapter, "generate"):
+                # Call generate
+                response = await self.model_adapter.generate(prompt=prompt)
+                # Extract text from response object
+                if hasattr(response, "text"):
+                    return response.text
+                return str(response)
+            else:
+                # Fallback for simple mocks
+                return await self.model_adapter.generate(prompt)
+        except Exception as e:
+            self.logger.error(f"Model call failed: {e}")
+            return f"Error generating response: {e}"
+
+class DemoHRMAgent(DemoAgentBase):
+    """Hierarchical Reasoning Agent implementation for Demo."""
     
     async def process(self, context: Any) -> Any:
-        logger.info(f"[{self.name}] Processing high-level plan...")
-        await asyncio.sleep(0.5)
+        # Extract query from context (Context object or dict)
+        query = getattr(context, "query", None) or context.get("query") if isinstance(context, dict) else str(context)
+        
+        self.logger.info(f"[{self.name}] Processing high-level plan for: {query[:50]}...")
+        
+        prompt = (
+            f"You are a Strategic Director (HRM). Create a high-level strategic plan for: {query}.\n"
+            "Format as a numbered list of phases."
+        )
+        
+        response_text = await self._call_model(prompt)
+        
         return type('obj', (object,), {
-            'response': "Strategic Plan: 1. Assessment, 2. Mitigation, 3. Deployment",
+            'response': response_text,
             'confidence': 0.9,
-            'metadata': {'role': 'strategist'}
+            'metadata': {'role': 'strategist', 'model_response': True}
         })
 
-    async def initialize(self): pass
-    async def shutdown(self): pass
-
-class MockTRMAgent:
-    """Simulates Tactical Refinement Agent."""
-    def __init__(self, name="TRM"):
-        self.name = name
+class DemoTRMAgent(DemoAgentBase):
+    """Tactical Refinement Agent implementation for Demo."""
     
     async def process(self, context: Any) -> Any:
-        logger.info(f"[{self.name}] Refining tactical details...")
-        await asyncio.sleep(0.5)
+        query = getattr(context, "query", None) or context.get("query") if isinstance(context, dict) else str(context)
+        
+        self.logger.info(f"[{self.name}] Refining tactical details for: {query[:50]}...")
+        
+        prompt = (
+            f"You are a Tactical Researcher (TRM). Provide specific technical details and implementation steps for: {query}.\n"
+            "Focus on specific technologies and methodologies."
+        )
+        
+        response_text = await self._call_model(prompt)
+        
         return type('obj', (object,), {
-            'response': "Tactical Detail: Use Kyber-1024 for key encapsulation.",
+            'response': response_text,
             'confidence': 0.85,
-            'metadata': {'role': 'tactician'}
+            'metadata': {'role': 'tactician', 'model_response': True}
         })
 
-    async def initialize(self): pass
-    async def shutdown(self): pass
 
 class MockADKAgent(ADKAgentAdapter):
     """Simulates a Google ADK Agent (e.g., a specialist tool)."""
@@ -141,6 +175,42 @@ class MockADKAgent(ADKAgentAdapter):
             status="success"
         )
 
+# --- Real Adapter Factories ---
+
+def get_model_adapter() -> Any:
+    """Get appropriate model adapter based on environment."""
+    openai_key = os.getenv("OPENAI_API_KEY")
+    anthropic_key = os.getenv("ANTHROPIC_API_KEY")
+    
+    if openai_key:
+        logger.info("Using OpenAI API")
+        client = OpenAIClient(api_key=openai_key)
+        # Patch get_embedding if missing (OpenAIClient usually handles text generation)
+        if not hasattr(client, "get_embedding"):
+             # Add a simple mock embedding or implement real OpenAI embedding call if needed
+             # For now, using deterministic mock for embeddings to save cost/complexity
+             async def mock_get_embedding(text: str) -> List[float]:
+                 seed = sum(ord(c) for c in text[:20]) % 10000
+                 rng = np.random.RandomState(seed)
+                 return rng.rand(1536).tolist()
+             client.get_embedding = mock_get_embedding
+        return client
+        
+    elif anthropic_key:
+        logger.info("Using Anthropic API")
+        client = AnthropicClient(api_key=anthropic_key)
+        # Anthropic doesn't support embeddings natively in the same way
+        async def mock_get_embedding(text: str) -> List[float]:
+             seed = sum(ord(c) for c in text[:20]) % 10000
+             rng = np.random.RandomState(seed)
+             return rng.rand(1536).tolist()
+        client.get_embedding = mock_get_embedding
+        return client
+        
+    else:
+        logger.warning("No API keys found. Using Mock Adapter.")
+        return MockModelAdapter()
+
 # --- Main Demo Flow ---
 
 async def run_demo():
@@ -149,7 +219,7 @@ async def run_demo():
     print("="*80 + "\n")
 
     # 1. Setup Dependencies
-    model_adapter = MockModelAdapter()
+    model_adapter = get_model_adapter()
     
     # 2. Configure Personalities
     print(" Configuring Personality Profiles...")
@@ -165,16 +235,23 @@ async def run_demo():
     # 3. Initialize Agents
     print("\n Initializing Agents...")
     
-    base_hrm = MockHRMAgent(name="Director-HRM")
-    base_trm = MockTRMAgent(name="Analyst-TRM")
+    # Use Demo Agents which wrap the model adapter
+    base_hrm = DemoHRMAgent(model_adapter=model_adapter, name="Director-HRM")
+    base_trm = DemoTRMAgent(model_adapter=model_adapter, name="Analyst-TRM")
     
     # Wrap with Personality
     hrm_agent = PersonalityDrivenAgent(base_hrm, director_profile)
     trm_agent = PersonalityDrivenAgent(base_trm, researcher_profile)
     
     # Initialize ADK Agent
-    adk_config = ADKConfig(project_id="demo-project", backend="local")
-    adk_agent = MockADKAgent(adk_config, agent_name="Google-Quantum-Specialist")
+    # If GOOGLE_APPLICATION_CREDENTIALS exists, try real ADK
+    if os.getenv("GOOGLE_APPLICATION_CREDENTIALS") or os.getenv("GOOGLE_API_KEY"):
+         adk_config = ADKConfig.from_env()
+         # Assuming factory exists or we use mock if strictly needed
+         adk_agent = MockADKAgent(adk_config, agent_name="Google-Quantum-Specialist") 
+    else:
+         adk_config = ADKConfig(project_id="demo-project", backend="local")
+         adk_agent = MockADKAgent(adk_config, agent_name="Google-Quantum-Specialist")
 
     # 4. Build Integrated Graph
     print("\n  Building LangGraph with MCTS...")
@@ -237,4 +314,3 @@ async def run_demo():
 
 if __name__ == "__main__":
     asyncio.run(run_demo())
-
