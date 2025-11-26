@@ -132,23 +132,64 @@ class PersonalityDrivenAgent:
 
     async def process(
         self,
-        context: AgentContext,
-    ) -> AgentResult:
+        query: str | None = None,
+        context: AgentContext | None = None,
+        *,
+        rag_context: str | None = None,
+        **kwargs: Any,
+    ) -> dict:
         """Process query with personality influence.
-
-        Args:
-            context: Agent context
-
-        Returns:
-            AgentResult with personality influence
+        
+        Matches AsyncAgentBase.process signature for compatibility.
         """
+        # Import AgentContext locally to avoid circular imports if defined in base
+        # But here we use type hint so we need it. 
+        # Assuming AgentContext is available from imports.
+        from src.framework.agents.base import AgentContext
+
+        # Build context if not provided (same logic as AsyncAgentBase)
+        if context is None:
+            if query is None:
+                # Try to get query from kwargs if present (some callers might pass it as kwarg)
+                query = kwargs.get("query")
+            
+            if query is None:
+                 raise ValueError("Either 'query' or 'context' must be provided")
+            
+            context = AgentContext(
+                query=query,
+                rag_context=rag_context,
+                additional_context=kwargs,
+            )
+
         start_time = datetime.now(timezone.utc)
 
         # Apply pre-processing hooks
         modified_context = await self._apply_pre_process_hooks(context)
 
         # Process with base agent
-        result = await self.base_agent.process(modified_context)
+        # We call base_agent.process with the context object directly to ensure it uses the modified one
+        # However, base_agent.process returns a dict (backward compat) or AgentResult depending on implementation.
+        # If base_agent is AsyncAgentBase, .process() returns dict.
+        
+        # We need to handle the return type. 
+        # AsyncAgentBase.process returns dict. _process_impl returns AgentResult.
+        # But we are wrapping the public API.
+        
+        result_raw = await self.base_agent.process(context=modified_context)
+        
+        # If result is dict, convert to AgentResult for internal processing
+        from src.framework.agents.base import AgentResult
+        if isinstance(result_raw, dict):
+             result = AgentResult(
+                 response=result_raw.get("response", ""),
+                 confidence=result_raw.get("metadata", {}).get("confidence", 0.0),
+                 metadata=result_raw.get("metadata", {}),
+                 success=result_raw.get("metadata", {}).get("success", True),
+                 error=result_raw.get("metadata", {}).get("error"),
+             )
+        else:
+             result = result_raw
 
         # Apply post-processing hooks
         modified_result = await self._apply_post_process_hooks(
@@ -162,7 +203,16 @@ class PersonalityDrivenAgent:
 
         self._record_decision(modified_context, modified_result, duration_ms)
 
-        return modified_result
+        # Return dict if that's what the caller expects (matching AsyncAgentBase signature return type)
+        return {
+            "response": modified_result.response,
+            "metadata": {
+                **modified_result.metadata,
+                "agent_name": self.name,
+                "confidence": modified_result.confidence,
+                "personality_influence": True
+            }
+        }
 
     async def pre_process(
         self,
