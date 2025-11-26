@@ -72,6 +72,7 @@ class AgentState(TypedDict):
     # Agent results
     hrm_results: NotRequired[dict]
     trm_results: NotRequired[dict]
+    adk_results: NotRequired[dict[str, Any]]
     agent_outputs: Annotated[list[dict], operator.add]
 
     # MCTS simulation (updated for new core)
@@ -120,6 +121,7 @@ class GraphBuilder:
         consensus_threshold: float = 0.75,
         enable_parallel_agents: bool = True,
         meta_controller_config: Any | None = None,
+        adk_agents: dict[str, Any] | None = None,
     ):
         """
         Initialize graph builder.
@@ -136,6 +138,7 @@ class GraphBuilder:
             consensus_threshold: Threshold for consensus
             enable_parallel_agents: Run HRM/TRM in parallel
             meta_controller_config: Optional neural meta-controller configuration
+            adk_agents: Dictionary of ADK agent instances
         """
         self.hrm_agent = hrm_agent
         self.trm_agent = trm_agent
@@ -146,6 +149,7 @@ class GraphBuilder:
         self.max_iterations = max_iterations
         self.consensus_threshold = consensus_threshold
         self.enable_parallel_agents = enable_parallel_agents
+        self.adk_agents = adk_agents or {}
 
         # MCTS configuration
         self.mcts_config = mcts_config or create_preset_config(ConfigPreset.BALANCED)
@@ -191,6 +195,12 @@ class GraphBuilder:
         workflow.add_node("hrm_agent", self._hrm_agent_node)
         workflow.add_node("trm_agent", self._trm_agent_node)
         workflow.add_node("mcts_simulator", self._mcts_simulator_node)
+
+        # Add ADK agent nodes
+        for name, agent in self.adk_agents.items():
+            node_name = f"adk_{name}"
+            workflow.add_node(node_name, self._create_adk_node_handler(name, agent))
+
         workflow.add_node("aggregate_results", self._aggregate_results_node)
         workflow.add_node("evaluate_consensus", self._evaluate_consensus_node)
         workflow.add_node("synthesize", self._synthesize_node)
@@ -201,16 +211,22 @@ class GraphBuilder:
         workflow.add_edge("retrieve_context", "route_decision")
 
         # Conditional routing
+        routing_map = {
+            "parallel": "parallel_agents",
+            "hrm": "hrm_agent",
+            "trm": "trm_agent",
+            "mcts": "mcts_simulator",
+            "aggregate": "aggregate_results",
+        }
+
+        # Add ADK routing entries
+        for name in self.adk_agents:
+            routing_map[f"adk_{name}"] = f"adk_{name}"
+
         workflow.add_conditional_edges(
             "route_decision",
             self._route_to_agents,
-            {
-                "parallel": "parallel_agents",
-                "hrm": "hrm_agent",
-                "trm": "trm_agent",
-                "mcts": "mcts_simulator",
-                "aggregate": "aggregate_results",
-            },
+            routing_map,
         )
 
         # Parallel agents to aggregation
@@ -220,6 +236,10 @@ class GraphBuilder:
         workflow.add_edge("hrm_agent", "aggregate_results")
         workflow.add_edge("trm_agent", "aggregate_results")
         workflow.add_edge("mcts_simulator", "aggregate_results")
+
+        # ADK agents to aggregation
+        for name in self.adk_agents:
+            workflow.add_edge(f"adk_{name}", "aggregate_results")
 
         # Aggregation to evaluation
         workflow.add_edge("aggregate_results", "evaluate_consensus")
@@ -449,6 +469,32 @@ class GraphBuilder:
 
         # First iteration: run HRM and TRM
         if iteration == 0:
+            # Check for ADK triggers
+            query_lower = state["query"].lower()
+
+            # Simple keyword matching for demo purposes
+            for name in self.adk_agents:
+                # Check if we haven't run this ADK agent yet
+                adk_results = state.get("adk_results", {})
+                if (
+                    name not in adk_results
+                    and (
+                        (
+                            name == "deep_search"
+                            and ("research" in query_lower or "investigate" in query_lower)
+                        )
+                        or (
+                            name == "ml_engineering"
+                            and ("train" in query_lower or "model" in query_lower)
+                        )
+                        or (
+                            name == "data_science"
+                            and ("analyze" in query_lower or "data" in query_lower)
+                        )
+                    )
+                ):
+                    return f"adk_{name}"
+
             if self.enable_parallel_agents:
                 if "hrm_results" not in state and "trm_results" not in state:
                     return "parallel"
@@ -694,6 +740,70 @@ class GraphBuilder:
             ],
         }
 
+    def _create_adk_node_handler(self, name: str, agent: Any):
+        """Create a handler function for an ADK agent node."""
+
+        async def handler(state: AgentState) -> dict:
+            self.logger.info(f"Executing ADK agent: {name}")
+
+            # Initialize if needed (assuming agent has initialize method)
+            if hasattr(agent, "initialize"):
+                await agent.initialize()
+
+            # Prepare inputs - ADK agents might expect different signatures
+            # We'll assume they implement a standard ADKAgentAdapter interface
+            # or we pass the query directly
+            try:
+                # Check if it's a mock or real agent
+                if hasattr(agent, "process_query"): # Assuming custom method
+                     response = await agent.process_query(state["query"])
+                elif hasattr(agent, "run"): # Standard LangChain-like
+                     response = await agent.run(state["query"])
+                elif hasattr(agent, "process"): # Framework standard
+                     response = await agent.process(state["query"])
+                else:
+                     # Fallback for demonstration/mock objects
+                     response = {"response": f"Processed by {name}", "confidence": 0.8}
+
+                # Extract content based on response type
+                if isinstance(response, dict):
+                    content = response.get("response", str(response))
+                    confidence = response.get("confidence", 0.8)
+                    metadata = response.get("metadata", {})
+                else:
+                    content = str(response)
+                    confidence = 0.8
+                    metadata = {}
+
+                return {
+                    "adk_results": {
+                        name: {
+                            "response": content,
+                            "metadata": metadata
+                        }
+                    },
+                    "agent_outputs": [
+                        {
+                            "agent": f"adk_{name}",
+                            "response": content,
+                            "confidence": confidence,
+                        }
+                    ]
+                }
+            except Exception as e:
+                self.logger.error(f"ADK agent {name} failed: {e}")
+                return {
+                    "agent_outputs": [
+                        {
+                            "agent": f"adk_{name}",
+                            "response": f"Error executing {name}: {e}",
+                            "confidence": 0.0,
+                        }
+                    ]
+                }
+
+        return handler
+
     def _aggregate_results_node(self, state: AgentState) -> dict:
         """Aggregate results from all agents."""
         self.logger.info("Aggregating agent results")
@@ -807,6 +917,7 @@ class IntegratedFramework:
         max_iterations: int = 3,
         consensus_threshold: float = 0.75,
         enable_parallel_agents: bool = True,
+        adk_agents: dict[str, Any] | None = None,
     ):
         """
         Initialize integrated framework.
@@ -816,6 +927,7 @@ class IntegratedFramework:
         self.model_adapter = model_adapter
         self.logger = logger
         self.vector_store = vector_store
+        self.adk_agents = adk_agents or {}
 
         # Import agents (would be real imports in production)
         try:
@@ -849,6 +961,7 @@ class IntegratedFramework:
             max_iterations=max_iterations,
             consensus_threshold=consensus_threshold,
             enable_parallel_agents=enable_parallel_agents,
+            adk_agents=self.adk_agents,
         )
 
         # Compile graph

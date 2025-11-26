@@ -21,9 +21,22 @@ from src.agents.meta_controller.utils import (
     one_hot_encode_agent,
 )
 
+# Import feature extractor (may not be available if sentence-transformers not installed)
+try:
+    from src.agents.meta_controller.feature_extractor import (
+        FeatureExtractor,
+        FeatureExtractorConfig,
+    )
+
+    _feature_extractor_available = True
+except ImportError:
+    _feature_extractor_available = False
+    FeatureExtractor = None  # type: ignore
+    FeatureExtractorConfig = None  # type: ignore
+
 # Import BERT controller (may not be available if transformers/peft not installed)
 try:
-    from src.agents.meta_controller.bert_controller import BERTMetaController  # noqa: F401
+    from src.agents.meta_controller.bert_controller_v2 import BERTMetaController  # noqa: F401
 
     _bert_available = True
 except ImportError:
@@ -40,6 +53,9 @@ __all__ = [
     "RNNMetaController",
     "RNNMetaControllerModel",
 ]
+
+if _feature_extractor_available:
+    __all__.extend(["FeatureExtractor", "FeatureExtractorConfig"])
 
 if _bert_available:
     __all__.append("BERTMetaController")

@@ -12,60 +12,25 @@ Based on 2025 research in multi-agent systems, MCTS, and LangGraph architecture.
 """
 
 import asyncio
-import math
 import operator
 import random
-from typing import Annotated, NotRequired, Optional, TypedDict
+from typing import Annotated, NotRequired, TypedDict
 
 from langchain_openai import OpenAIEmbeddings
 from langgraph.checkpoint.memory import MemorySaver
 from langgraph.graph import END, StateGraph
 
+# Import core MCTS components
+from src.framework.mcts.core import MCTSNode, MCTSState
+
 # Import our enhanced agents
 try:
-    from improved_hrm_agent import HRMAgent
-    from improved_trm_agent import TRMAgent
+    from src.agents.hrm_agent import HRMAgent
+    from src.agents.trm_agent import TRMAgent
 except ImportError:
-    pass
-
-
-class MCTSNode:
-    """Monte Carlo Tree Search node for tactical simulation."""
-
-    def __init__(
-        self,
-        state_id: str,
-        parent: Optional["MCTSNode"] = None,
-        action: str | None = None,
-    ):
-        self.state_id = state_id
-        self.parent = parent
-        self.action = action
-        self.children: list[MCTSNode] = []
-        self.visits = 0
-        self.value = 0.0
-        self.terminal = False
-
-    def ucb1(self, exploration_weight: float = 1.414) -> float:
-        """Upper Confidence Bound for tree selection."""
-        if self.visits == 0:
-            return float("inf")
-
-        exploitation = self.value / self.visits
-        exploration = exploration_weight * math.sqrt(math.log(self.parent.visits) / self.visits)
-        return exploitation + exploration
-
-    def best_child(self) -> Optional["MCTSNode"]:
-        """Select best child using UCB1."""
-        if not self.children:
-            return None
-        return max(self.children, key=lambda c: c.ucb1())
-
-    def add_child(self, action: str, state_id: str) -> "MCTSNode":
-        """Add child node."""
-        child = MCTSNode(state_id=state_id, parent=self, action=action)
-        self.children.append(child)
-        return child
+    # Fallback for when running from different directory
+    from agents.hrm_agent import HRMAgent
+    from agents.trm_agent import TRMAgent
 
 
 class AgentState(TypedDict):
@@ -337,7 +302,7 @@ class LangGraphMultiAgentFramework:
         self.logger.info("Executing MCTS simulation")
 
         # Initialize MCTS tree
-        root = MCTSNode(state_id="root_state")
+        root = MCTSNode(state=MCTSState("root_state"))
 
         # Run MCTS iterations
         for _i in range(self.mcts_iterations):
@@ -354,8 +319,8 @@ class LangGraphMultiAgentFramework:
             # Backpropagation: update ancestors
             self._mcts_backpropagate(node, value)
 
-        # Select best action
-        best_child = root.best_child()
+        # Select best action (using max visits - most robust selection)
+        best_child = max(root.children, key=lambda c: c.visits) if root.children else None
         best_action = best_child.action if best_child else "no_action"
 
         # Compute statistics
@@ -386,7 +351,7 @@ class LangGraphMultiAgentFramework:
     def _mcts_select(self, node: MCTSNode) -> MCTSNode:
         """MCTS selection phase: traverse to leaf using UCB1."""
         while node.children and not node.terminal:
-            node = node.best_child()
+            node = node.select_child(self.mcts_exploration_weight)
         return node
 
     def _mcts_expand(self, node: MCTSNode, state: AgentState) -> MCTSNode:
@@ -401,8 +366,8 @@ class LangGraphMultiAgentFramework:
 
         # Add one child (expand one action at a time)
         action = random.choice(actions)
-        child_id = f"{node.state_id}_{action}"
-        child = node.add_child(action=action, state_id=child_id)
+        child_id = f"{node.state.state_id}_{action}"
+        child = node.add_child(action=action, child_state=MCTSState(child_id))
 
         return child
 
@@ -411,9 +376,9 @@ class LangGraphMultiAgentFramework:
 
         # Simplified action generation
         # In production, this would use domain knowledge or LLM
-        if node.state_id == "root_state":
+        if node.state.state_id == "root_state":
             return ["action_A", "action_B", "action_C"]
-        elif len(node.state_id.split("_")) < 3:  # Depth limit
+        elif len(node.state.state_id.split("_")) < 3:  # Depth limit
             return ["continue_A", "continue_B", "fallback"]
         else:
             return []  # Terminal
@@ -442,7 +407,7 @@ class LangGraphMultiAgentFramework:
         """MCTS backpropagation phase: update ancestors."""
         while node:
             node.visits += 1
-            node.value += value
+            node.value_sum += value
             node = node.parent
 
     def aggregate_results_node(self, state: AgentState) -> dict:

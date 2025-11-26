@@ -1,0 +1,3 @@
+"""
+Assembly Theory test suite.
+"""

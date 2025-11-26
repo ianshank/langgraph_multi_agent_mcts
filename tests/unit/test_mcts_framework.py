@@ -1135,7 +1135,7 @@ class TestMCTSEdgeCases:
     def test_ucb1_single_visit(self):
         """Test UCB1 with single visit."""
         score = ucb1(0.5, 1, 10, c=1.414)
-        expected = 0.5 + 1.414 * math.sqrt(10)
+        expected = 0.5 + 1.414 * math.sqrt(math.log(10))
         assert score == pytest.approx(expected)
 
     def test_very_deep_tree(self):

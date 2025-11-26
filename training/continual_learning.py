@@ -36,31 +36,20 @@ from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
+
+# Training dependencies (required)
+import torch
+import torch.nn.functional as F  # noqa: N812
 import yaml
+from langsmith import Client as LangSmithClient
+from sklearn.cluster import DBSCAN
+from sklearn.decomposition import PCA
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-try:
-    import torch
-    import torch.nn.functional as F  # noqa: N812
-
-    HAS_TORCH = True
-except ImportError:
-    HAS_TORCH = False
-
-try:
-    from sklearn.cluster import DBSCAN
-    from sklearn.decomposition import PCA
-    from sklearn.feature_extraction.text import TfidfVectorizer
-
-    HAS_SKLEARN = True
-except ImportError:
-    HAS_SKLEARN = False
-
-try:
-    from langsmith import Client as LangSmithClient
-
-    HAS_LANGSMITH = True
-except ImportError:
-    HAS_LANGSMITH = False
+# Define capability flags (dependencies are now hard requirements)
+HAS_TORCH = True
+HAS_SKLEARN = True
+HAS_LANGSMITH = True
 
 logger = logging.getLogger(__name__)
 
@@ -337,7 +326,7 @@ class ProductionInteractionLogger:
             self._init_database()
 
         # LangSmith integration
-        self.use_langsmith = config.get("use_langsmith", False) and HAS_LANGSMITH
+        self.use_langsmith = config.get("use_langsmith", False)
         if self.use_langsmith:
             self.langsmith_client = LangSmithClient()
             self.langsmith_project = config.get("langsmith_project", "production-feedback")
@@ -679,7 +668,7 @@ class FailurePatternAnalyzer:
         patterns.extend(self._identify_slow_responses(interactions))
 
         # Cluster similar failures
-        if HAS_SKLEARN and len(interactions) > 10:
+        if len(interactions) > 10:
             patterns.extend(self._cluster_failures(interactions))
 
         self.identified_patterns = patterns
@@ -970,7 +959,7 @@ class ActiveLearningSelector:
 
     def _diversity_sampling(self, interactions: list[dict[str, Any]], budget: int) -> list[ActiveLearningCandidate]:
         """Select diverse samples to cover feature space."""
-        if not HAS_SKLEARN or len(interactions) < budget:
+        if len(interactions) < budget:
             return self._uncertainty_sampling(interactions, budget)
 
         try:
@@ -1469,10 +1458,6 @@ class IncrementalTrainer:
         Returns:
             Fisher information for each parameter
         """
-        if not HAS_TORCH:
-            logger.warning("PyTorch not available, skipping Fisher computation")
-            return {}
-
         fisher_info = {}
 
         # Set model to evaluation mode
@@ -1544,7 +1529,7 @@ class IncrementalTrainer:
         Returns:
             EWC loss value
         """
-        if not HAS_TORCH or not self.fisher_information:
+        if not self.fisher_information:
             return 0.0
 
         ewc_loss = 0.0
@@ -1573,10 +1558,6 @@ class IncrementalTrainer:
         Returns:
             Training metrics
         """
-        if not HAS_TORCH:
-            logger.warning("PyTorch not available, skipping incremental update")
-            return {}
-
         logger.info("Performing incremental model update")
 
         # Compute Fisher Information from old task

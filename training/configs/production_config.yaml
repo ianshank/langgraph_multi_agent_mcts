@@ -1,0 +1,556 @@
+agents:
+  hrm:
+    hidden_size: 768
+    learning_rate: 2e-5
+    lora_rank: 16
+    max_decomposition_depth: 5
+    max_subtasks: 10
+    min_subtasks: 2
+    model_name: microsoft/deberta-v3-base
+    num_labels: 3
+  mcts:
+    discount_factor: 0.99
+    exploration_constant: 1.414
+    policy_network:
+      hidden_layers:
+      - 256
+      - 128
+      learning_rate: 1e-3
+      temperature: 1.0
+    self_play:
+      buffer_size: 10000
+      games_per_iteration: 100
+      update_frequency: 10
+    simulations: 200
+    value_network:
+      activation: relu
+      hidden_layers:
+      - 256
+      - 128
+      - 64
+      learning_rate: 1e-3
+  trm:
+    convergence_threshold: 0.95
+    hidden_size: 768
+    improvement_threshold: 0.01
+    learning_rate: 2e-5
+    lora_rank: 16
+    max_refinement_iterations: 3
+    model_name: microsoft/deberta-v3-base
+code_corpus:
+  auto_index: false
+  batch_size: 100
+  cache_dir: ./cache/code_repos
+  extract_examples: true
+  extract_tests: true
+  find_tests: true
+  github_token: null
+  include_tests: false
+  max_function_lines: 200
+  min_function_lines: 3
+  min_quality_score: 0.5
+  output_dir: ./cache/code_corpus
+  pinecone_namespace: code-corpus
+  repositories:
+    high_priority:
+    - deepmind/mctx
+    - langchain-ai/langgraph
+    - openai/gym
+    - karpathy/nanoGPT
+    low_priority:
+    - huggingface/transformers
+    medium_priority:
+    - facebookresearch/ReAgent
+    - google-deepmind/alphatensor
+    - microsoft/DeepSpeed
+  shallow_clone: true
+  use_github_api: true
+continual_learning:
+  ab_testing:
+    confidence_level: 0.95
+    enabled: true
+    min_samples: 1000
+    traffic_split: 0.1
+  active_learning:
+    budget_per_cycle: 50
+    diversity_weight: 0.3
+    enabled: true
+    selection_strategy: hybrid
+  drift_detection:
+    detection_method: kolmogorov_smirnov
+    enabled: true
+    threshold: 0.1
+    window_size: 1000
+  failure_analysis:
+    analyze_frequency: daily
+    enabled: true
+    min_cluster_size: 5
+    similarity_threshold: 0.7
+  feedback:
+    buffer_size: 100000
+    enabled: true
+    sample_rate: 0.1
+  incremental:
+    ewc_lambda: 1000.0
+    forgetting_prevention: elastic_weight_consolidation
+    retrain_threshold: 1000
+  logging:
+    blocked_patterns: []
+    buffer_size: 1000
+    enabled: true
+    langsmith_project: production-feedback
+    max_query_length: 5000
+    max_response_length: 10000
+    min_query_length: 3
+    min_response_length: 1
+    sanitize_pii: true
+    storage: ./cache/production_logs
+    use_compression: true
+    use_langsmith: false
+    use_sqlite: true
+  metrics_tracking:
+    enabled: true
+    long_term_window: 720
+    medium_term_window: 168
+    short_term_window: 24
+    track_agent_accuracy: true
+    track_failure_rate: true
+    track_latency: true
+    track_retrieval_quality: true
+    track_satisfaction: true
+  privacy:
+    anonymize_user_ids: true
+    hash_session_ids: true
+    redact_sensitive_fields: true
+    retention_days: 90
+  retraining:
+    enable_ab_test: true
+    min_new_samples: 100
+    schedule: weekly
+    update_benchmarks: true
+    update_meta_controller: true
+    update_rag_index: true
+    validation_split: 0.2
+  storage:
+    archive_threshold_days: 30
+    compress_old_logs: true
+    max_db_size_gb: 10
+data:
+  augmentation:
+    difficulty_scaling: true
+    enabled: true
+    paraphrase_probability: 0.3
+    task_permutations: 3
+  dabstep:
+    cache_dir: ./cache/dabstep
+    max_samples: null
+    path: adyen/DABstep
+    seed: 42
+    streaming: false
+    synthetic_data_dir: ./cache/synthetic_data
+    test_split: 0.1
+    train_split: 0.8
+    val_split: 0.1
+  primus_instruct:
+    cache_dir: ./cache/primus_instruct
+    max_samples: null
+    path: trendmicro-ailab/Primus-Instruct
+  primus_seed:
+    cache_dir: ./cache/primus_seed
+    categories:
+    - mitre
+    - cyber_companies
+    - wikipedia
+    max_documents: null
+    path: trendmicro-ailab/Primus-Seed
+    streaming: true
+evaluation:
+  adversarial:
+    attack_types:
+    - prompt_injection
+    - input_perturbation
+    - edge_cases
+    enabled: true
+  benchmarks:
+    dabstep:
+      enabled: true
+      report_path: ./reports/dabstep_benchmark.json
+  metrics:
+  - accuracy
+  - f1_score
+  - precision
+  - recall
+  - latency_ms
+  - memory_mb
+  - consensus_rate
+  - decomposition_depth
+  - refinement_iterations
+  success_criteria:
+    hrm_accuracy: 0.85
+    mcts_win_rate: 0.75
+    rag_precision_at_10: 0.9
+    router_accuracy: 0.8
+    trm_avg_iterations: 3.0
+  test_size: 0.1
+  validation_frequency: 100
+knowledge_graph:
+  backend: networkx
+  building:
+    auto_merge_duplicates: true
+    enable_validation: true
+    max_concepts_per_paper: 20
+    min_confidence: 0.5
+  concept_types:
+  - algorithm
+  - technique
+  - architecture
+  - metric
+  - framework
+  - dataset
+  - model
+  - method
+  - approach
+  export:
+    auto_export: false
+    export_dir: ./cache/knowledge_graph/exports
+    export_formats:
+    - json
+    - graphml
+  extraction:
+    api_key: null
+    batch_size: 10
+    confidence_threshold: 0.7
+    extract_algorithms: true
+    extract_architectures: true
+    extract_from_code: true
+    extract_from_papers: true
+    extract_metrics: true
+    extract_techniques: true
+    llm_model: gpt-4-turbo-preview
+    rate_limit_delay: 1.0
+  hybrid_retrieval:
+    enabled: true
+    expansion_depth: 2
+    graph_weight: 0.4
+    max_expanded_concepts: 50
+    vector_weight: 0.6
+  integration:
+    pinecone_namespace: knowledge_graph
+    sync_with_rag: true
+    update_frequency: daily
+  monitoring:
+    alert_on_errors: true
+    log_low_confidence: true
+    track_extraction_quality: true
+  neo4j:
+    password: null
+    uri: bolt://localhost:7687
+    user: neo4j
+  performance:
+    cache_size: 1000
+    max_workers: 4
+    memory_limit_gb: 8
+    parallel_extraction: true
+  qa:
+    confidence_threshold: 0.7
+    enabled: true
+    max_context_concepts: 10
+    use_llm_generation: false
+  query:
+    cache_queries: true
+    enable_inference: false
+    max_path_length: 5
+    max_related_depth: 3
+  relationship_types:
+  - is_a
+  - uses
+  - improves
+  - extends
+  - implemented_in
+  - compared_to
+  - requires
+  - part_of
+  - related_to
+  - influences
+  - precedes
+  storage: ./cache/knowledge_graph
+meta_controller:
+  aggregator:
+    confidence_threshold: 0.7
+    fallback_strategy: consensus
+    method: weighted_voting
+  router:
+    dropout: 0.2
+    hidden_layers:
+    - 128
+    - 64
+    - 32
+    input_features: 12
+    learning_rate: 1e-3
+    model_type: mlp
+    num_agents: 3
+  trace_collection:
+    buffer_size: 50000
+    features:
+    - task_complexity
+    - agent_confidence
+    - iteration_count
+    - consensus_score
+    - latency
+    - memory_usage
+    sample_rate: 1.0
+monitoring:
+  alerts:
+    gradient_explosion_threshold: 100.0
+    loss_spike_threshold: 2.0
+    oom_warning_threshold: 0.9
+  experiment_tracking:
+    platform: wandb
+    project_name: multi-agent-mcts-training
+    run_name: null
+    tags:
+    - training
+    - multi-agent
+    - mcts
+  logging:
+    backup_count: 5
+    format: json
+    level: INFO
+    log_dir: ./logs
+    max_bytes: 10485760
+  profiling:
+    cpu_profiling: false
+    enabled: false
+    memory_profiling: true
+    profile_steps:
+    - 10
+    - 100
+    - 1000
+multimodal:
+  classification:
+    auto_classify: true
+    types:
+    - architecture
+    - flowchart
+    - plot
+    - table
+    - tree
+    - neural_network
+    - algorithm
+    - equation
+  code_extractor:
+    context_window: 200
+    extract_pseudocode: true
+    min_code_lines: 3
+    supported_languages:
+    - python
+    - javascript
+    - java
+    - cpp
+    - pseudocode
+  code_namespace: multimodal_code
+  embeddings:
+    cache_dir: ./cache/clip_models
+    clip_model: openai/clip-vit-large-patch14
+    text_model: sentence-transformers/all-MiniLM-L6-v2
+    use_clip: true
+  image_namespace: images
+  image_processor:
+    backend: pymupdf
+    formats:
+    - png
+    - jpg
+    - jpeg
+    images_dir: ./cache/images
+    max_size:
+    - 4096
+    - 4096
+    min_size:
+    - 100
+    - 100
+  ocr:
+    enabled: false
+    engine: pytesseract
+    languages:
+    - eng
+  processing:
+    cache_descriptions: true
+    cache_embeddings: true
+    concurrent_images: 5
+    skip_large_images: true
+  text_namespace: multimodal_text
+  vision_model:
+    max_tokens: 1024
+    model: claude-3-5-sonnet-20241022
+    provider: anthropic
+    temperature: 0.3
+  visual_index:
+    api_key: null
+    batch_size: 100
+    index_name: multi-agent-mcts-rag
+    namespace: images
+rag:
+  chunk_overlap: 50
+  chunk_size: 512
+  chunk_strategy: semantic
+  domain_indices:
+  - categories:
+    - mitre
+    - cyber_companies
+    name: cybersecurity
+    namespace: cybersecurity
+  - categories:
+    - wikipedia
+    name: tactical
+    namespace: tactical
+  - categories:
+    - all
+    name: general
+    namespace: general
+  embedding_dim: 384
+  embedding_model: sentence-transformers/all-MiniLM-L6-v2
+  embeddings:
+    batch_size: 32
+    cache_dir: ./cache/embeddings
+    cache_enabled: true
+    cohere:
+      embedding_types:
+      - float
+      input_type: search_document
+      truncate: END
+    dimension: 1024
+    ensemble:
+      combination_method: mean
+      enabled: false
+      models:
+      - voyage-large-2-instruct
+      - embed-english-v3.0
+      weights: null
+    fallback_models:
+    - dimension: 1024
+      model: embed-english-v3.0
+      provider: cohere
+    - dimension: 1024
+      model: text-embedding-3-large
+      provider: openai
+    - dimension: 1024
+      model: BAAI/bge-large-en-v1.5
+      provider: huggingface
+    - dimension: 384
+      model: sentence-transformers/all-MiniLM-L6-v2
+      provider: huggingface
+    matryoshka:
+      default_dimension: 1024
+      dimensions:
+      - 1024
+      - 512
+      - 256
+      - 128
+      enabled: true
+    model: voyage-large-2-instruct
+    openai:
+      model: text-embedding-3-large
+    provider: voyage
+    voyage:
+      input_type: document
+      truncate: true
+  hybrid_search:
+    bm25_weight: 0.3
+    dense_weight: 0.7
+    enabled: true
+  index_path: ./cache/rag_index
+  index_type: pinecone
+  num_neighbors: 10
+  pinecone:
+    api_key: null
+    batch_size: 100
+    cloud: aws
+    environment: us-east-1
+    index_name: multi-agent-mcts-rag
+    metric: cosine
+    namespace: training
+  similarity_metric: cosine
+research_corpus:
+  auto_index: false
+  batch_size: 100
+  cache_dir: ./cache/research_corpus
+  categories:
+  - cs.AI
+  - cs.LG
+  - cs.CL
+  - cs.NE
+  chunk_overlap: 50
+  chunk_size: 512
+  date_end: '2025-12-31'
+  date_start: '2020-01-01'
+  enable_caching: true
+  extract_sections: true
+  include_citations: true
+  keywords:
+  - MCTS
+  - Monte Carlo Tree Search
+  - AlphaZero
+  - MuZero
+  - reinforcement learning
+  - multi-agent
+  - multi-agent systems
+  - LLM reasoning
+  - chain-of-thought
+  - tree-of-thought
+  - self-improvement
+  - Constitutional AI
+  - RLHF
+  - reinforcement learning from human feedback
+  - DPO
+  - direct preference optimization
+  - tree search
+  - policy gradient
+  - actor-critic
+  max_per_category: 500
+  max_per_keyword: 100
+  max_results: 1000
+  pinecone_namespace: arxiv_research
+  rate_limit_delay: 3.0
+  retry_attempts: 3
+resources:
+  max_cpu_workers: 8
+  max_gpu_memory: null
+  pin_memory: true
+  prefetch_factor: 2
+training:
+  batch_size: 32
+  checkpointing:
+    resume_from_checkpoint: null
+    save_steps: 1000
+    save_strategy: steps
+    save_total_limit: 5
+  curriculum:
+    enabled: true
+    phases:
+    - difficulty: easy
+      epochs: 3
+    - difficulty: medium
+      epochs: 4
+    - difficulty: hard
+      epochs: 3
+  distributed:
+    backend: nccl
+    enabled: false
+    world_size: null
+  epochs: 10
+  fp16: true
+  gradient_accumulation_steps: 1
+  gradient_clip_norm: 1.0
+  learning_rate: 2e-5
+  lora:
+    alpha: 32
+    dropout: 0.1
+    rank: 16
+    target_modules:
+    - query
+    - key
+    - value
+    - dense
+  max_steps: null
+  warmup_ratio: 0.1
+  weight_decay: 0.01

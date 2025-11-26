@@ -1,0 +1,149 @@
+# Assembly Theory Configuration
+# Configuration for assembly-based enhancements to the multi-agent framework
+
+assembly:
+  # MCTS Settings
+  mcts:
+    # Weight for assembly factor in UCB calculation (0.0-1.0)
+    ucb_weight: 0.2
+
+    # Maximum assembly index threshold for pruning
+    # Nodes with path_assembly_index > this value will be pruned
+    max_complexity_threshold: 15
+
+  # Meta-Controller Routing Thresholds
+  routing:
+    # Assembly index threshold for simple queries (route to TRM)
+    # Queries with assembly_index < this → TRM
+    simple_threshold: 3
+
+    # Assembly index threshold for medium complexity (route to HRM)
+    # Queries with assembly_index < this → HRM
+    medium_threshold: 7
+
+    # Queries with assembly_index >= medium_threshold → MCTS
+
+  # TRM (Thinking & Refining Model) Settings
+  trm:
+    # Lambda for complexity penalty in loss function
+    # loss = quality_loss + lambda * assembly_index
+    complexity_penalty: 0.1
+
+    # Convergence threshold for assembly-based stopping
+    # Stop if complexity_reduction < this value
+    convergence_threshold: 0.01
+
+  # Substructure Library Settings
+  substructure:
+    # Minimum similarity score for pattern reuse (0.0-1.0)
+    reuse_threshold: 0.7
+
+    # Maximum number of patterns to store in library
+    max_size: 10000
+
+  # Feature Flags
+  # Enable/disable assembly components independently
+  feature_flags:
+    # Enable assembly-based routing in meta-controller
+    routing: true
+
+    # Enable assembly enhancements in MCTS
+    mcts: true
+
+    # Enable assembly-based task decomposition in HRM
+    hrm: true
+
+    # Enable assembly convergence in TRM
+    trm: true
+
+    # Enable assembly-based consensus scoring
+    consensus: true
+
+  # Performance Settings
+  performance:
+    # Cache computed assembly indices for repeated queries
+    cache_indices: true
+
+    # Maximum number of cached assembly index calculations
+    max_cache_size: 10000
+
+  # Meta-Controller Training Settings (Story 2.5)
+  meta_controller:
+    # Training data configuration
+    training:
+      # Curriculum ratios for complexity distribution
+      simple_ratio: 0.10  # Low assembly index (1-3)
+      medium_ratio: 0.30  # Medium assembly index (4-6)
+      complex_ratio: 0.60  # High assembly index (7-10)
+
+      # Number of training samples to generate
+      num_samples: 1200
+
+      # Random seed for reproducibility
+      seed: 42
+
+    # Neural router configuration
+    router:
+      # Input dimension (10 base features + 8 assembly features)
+      input_dim: 18
+
+      # Hidden layer dimensions
+      hidden_dims: [128, 64, 32]
+
+      # Number of output agents
+      num_agents: 3
+
+      # Dropout rate
+      dropout: 0.2
+
+      # Learning rate
+      learning_rate: 0.001
+
+      # Weight decay for regularization
+      weight_decay: 0.0001
+
+      # Batch size
+      batch_size: 64
+
+      # Number of training epochs
+      epochs: 50
+
+      # Early stopping patience
+      early_stopping_patience: 10
+
+      # Train/val/test split
+      train_split: 0.7
+      val_split: 0.15
+      test_split: 0.15
+
+    # Hybrid controller configuration (Story 2.3)
+    hybrid:
+      # Weight for neural predictions
+      neural_weight: 0.6
+
+      # Weight for assembly routing
+      assembly_weight: 0.4
+
+  # Consensus Scoring Weights
+  consensus:
+    # Weight for pathway similarity in consensus (0.0-1.0)
+    # consensus = pathway_weight * similarity + complexity_weight * agreement
+    pathway_weight: 0.7
+
+    # Weight for complexity agreement in consensus (0.0-1.0)
+    complexity_weight: 0.3
+
+    # Weight for complexity in response selection (0.0-1.0)
+    # score = quality / (1 + selection_weight * assembly_index)
+    selection_weight: 0.1
+
+  # Concept Extraction Settings
+  concept_extraction:
+    # Minimum concept frequency to include
+    min_frequency: 1
+
+    # Maximum number of concepts to extract per query
+    max_concepts: 100
+
+    # Enable technical term detection
+    use_technical_terms: true

@@ -223,3 +223,7 @@ MIT License - See repository for details.
 ---
 
 **Built with** LangGraph, Gradio, and Python | **Demo Version**: 1.0.0
+
+---
+## Rebuild Trigger: Tue, Nov 25, 2025  8:26:43 AM
+Latest update includes feature_extractor.py module.

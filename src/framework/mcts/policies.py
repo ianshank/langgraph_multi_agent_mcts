@@ -43,10 +43,15 @@ def ucb1(
         UCB1 score for node selection
     """
     if visits == 0:
+        # Encourage exploring unvisited nodes.
+        return float("inf")
+
+    if parent_visits <= 0:
+        # Should not happen in standard flow. Avoid ln(0) by treating as no parent info.
         return float("inf")
 
     exploitation = value_sum / visits
-    exploration = c * ((parent_visits) ** 0.5 / (visits) ** 0.5)
+    exploration = c * math.sqrt(math.log(parent_visits) / visits)
 
     return exploitation + exploration
 

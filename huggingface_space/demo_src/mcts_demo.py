@@ -1,70 +1,124 @@
 """
-Simplified MCTS implementation for Hugging Face Spaces demo.
+Educational MCTS demonstration using the production framework.
+
+This demo uses the real MCTSEngine from src.framework.mcts.core to provide
+an authentic learning experience while remaining accessible for demonstrations.
 """
 
-import math
-import random
-from dataclasses import dataclass, field
+from __future__ import annotations
+
 from typing import Any
 
+from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
+from src.framework.mcts.policies import RolloutPolicy, SelectionPolicy
 
-@dataclass
-class MCTSNode:
-    """A node in the MCTS tree."""
 
-    state: str
-    parent: "MCTSNode | None" = None
-    children: list["MCTSNode"] = field(default_factory=list)
-    visits: int = 0
-    value_sum: float = 0.0
-    action: str = ""
-    depth: int = 0
+class DemoRolloutPolicy(RolloutPolicy):
+    """
+    Educational rollout policy for demo purposes.
 
-    @property
-    def value(self) -> float:
-        """Average value of this node."""
-        if self.visits == 0:
-            return 0.0
-        return self.value_sum / self.visits
+    Evaluates states based on:
+    - Depth of exploration (deeper = more thorough)
+    - Action quality (domain-specific heuristics)
+    - Exploration randomness
+    """
 
-    def ucb1_score(self, exploration_weight: float = 1.414) -> float:
-        """Calculate UCB1 score for node selection."""
-        if self.visits == 0:
-            return float("inf")
+    def __init__(self, category: str, action_templates: dict[str, list[str]]):
+        """
+        Initialize demo rollout policy.
 
-        if self.parent is None or self.parent.visits == 0:
-            return self.value
+        Args:
+            category: Query category for heuristic evaluation
+            action_templates: Available action templates for scoring
+        """
+        self.category = category
+        self.action_templates = action_templates
 
-        exploitation = self.value
-        exploration = exploration_weight * math.sqrt(math.log(self.parent.visits) / self.visits)
-        return exploitation + exploration
+        # Define key terms that indicate quality actions per category
+        self.quality_indicators = {
+            "architecture": ["scalability", "consistency", "requirements"],
+            "optimization": ["profile", "caching", "parallel"],
+            "database": ["patterns", "relationships", "scaling"],
+            "distributed": ["circuit", "retry", "bulkhead"],
+            "default": ["decompose", "constraints", "trade-offs"],
+        }
 
-    def best_child(self, exploration_weight: float = 1.414) -> "MCTSNode":
-        """Select best child based on UCB1."""
-        if not self.children:
-            raise ValueError("No children to select from")
+    async def evaluate(
+        self,
+        state: MCTSState,
+        rng,
+        max_depth: int = 10,
+    ) -> float:
+        """
+        Evaluate a state through heuristic analysis.
 
-        return max(self.children, key=lambda c: c.ucb1_score(exploration_weight))
+        This combines:
+        - Depth bonus: rewards thorough exploration
+        - Action quality: rewards domain-appropriate actions
+        - Noise: adds exploration randomness
 
-    def add_child(self, state: str, action: str) -> "MCTSNode":
-        """Add a child node."""
-        child = MCTSNode(state=state, parent=self, action=action, depth=self.depth + 1)
-        self.children.append(child)
-        return child
+        Args:
+            state: State to evaluate
+            rng: Random number generator
+            max_depth: Maximum depth (unused in heuristic)
+
+        Returns:
+            Estimated value in [0, 1] range
+        """
+        # Base value
+        base_value = 0.5
+
+        # Depth bonus: deeper exploration = more value (up to 0.3)
+        depth = state.features.get("depth", 0)
+        depth_bonus = min(depth * 0.1, 0.3)
+
+        # Action quality bonus
+        action_bonus = 0.0
+        last_action = state.features.get("last_action", "")
+
+        if last_action:
+            # Check if action contains quality indicators for this category
+            indicators = self.quality_indicators.get(self.category, self.quality_indicators["default"])
+            for term in indicators:
+                if term in last_action.lower():
+                    action_bonus = 0.15
+                    break
+
+        # Add exploration noise
+        noise = rng.uniform(-0.1, 0.1)
+
+        # Combine components
+        value = base_value + depth_bonus + action_bonus + noise
+
+        # Clamp to [0, 1]
+        return max(0.0, min(1.0, value))
 
 
 class MCTSDemo:
-    """Simplified MCTS for demonstration purposes."""
+    """
+    Educational MCTS demonstration using the production framework.
+
+    This class wraps the production MCTSEngine to provide:
+    - Simple, educational interface for demos
+    - Category-based action selection
+    - Tree visualization for learning
+    - Deterministic behavior with seeds
+
+    Unlike the old mock implementation, this uses the real MCTS algorithm
+    with all its features: UCB1 selection, progressive widening, caching, etc.
+    """
 
     def __init__(self, max_depth: int = 5):
-        """Initialize MCTS demo.
+        """
+        Initialize MCTS demo.
 
         Args:
-            max_depth: Maximum tree depth
+            max_depth: Maximum tree depth for exploration
         """
         self.max_depth = max_depth
 
         # Action templates for different query types
+        # These provide domain-specific reasoning paths
         self.action_templates = {
             "architecture": [
                 "Consider microservices for scalability",
@@ -104,7 +158,15 @@ class MCTSDemo:
         }
 
     def _categorize_query(self, query: str) -> str:
-        """Categorize query for action selection."""
+        """
+        Categorize query to select appropriate action templates.
+
+        Args:
+            query: User's input query
+
+        Returns:
+            Category name for action selection
+        """
         query_lower = query.lower()
         if "architecture" in query_lower or "microservice" in query_lower:
             return "architecture"
@@ -116,56 +178,88 @@ class MCTSDemo:
             return "distributed"
         return "default"
 
-    def _get_possible_actions(self, state: str, category: str) -> list[str]:
-        """Get possible actions from current state."""
-        # Use category-specific actions
-        actions = self.action_templates.get(category, self.action_templates["default"])
+    def _create_action_generator(self, category: str):
+        """
+        Create action generator function for this query category.
 
-        # Filter out actions already taken (simplified state tracking)
-        used_actions = set(state.split(" -> ")[1:]) if " -> " in state else set()
-        available = [a for a in actions if a not in used_actions]
+        Args:
+            category: Query category
 
-        return available if available else actions[:2]
+        Returns:
+            Function that generates actions for a given state
+        """
+        def action_generator(state: MCTSState) -> list[str]:
+            """Generate available actions from current state."""
+            # Get category-specific actions
+            actions = self.action_templates.get(category, self.action_templates["default"])
 
-    def _simulate(self, node: MCTSNode, category: str) -> float:
-        """Simulate random playout from node and return value."""
-        # Simple heuristic: deeper exploration with good actions = higher value
-        base_value = 0.5
+            # Filter out already-used actions (track via state features)
+            used_actions = state.features.get("used_actions", set())
+            available = [a for a in actions if a not in used_actions]
 
-        # Bonus for depth (exploring more options)
-        depth_bonus = min(node.depth * 0.1, 0.3)
+            # If all actions used, allow re-exploring top 2
+            if not available:
+                return actions[:2]
 
-        # Bonus for action quality (simplified)
-        action_bonus = 0.0
-        if node.action:
-            # Some actions are "better" for certain categories
-            key_terms = {
-                "architecture": ["scalability", "consistency", "requirements"],
-                "optimization": ["profile", "caching", "parallel"],
-                "database": ["patterns", "relationships", "scaling"],
-                "distributed": ["circuit", "retry", "bulkhead"],
-            }
-            for term in key_terms.get(category, []):
-                if term in node.action.lower():
-                    action_bonus = 0.15
-                    break
+            return available
 
-        # Add randomness for exploration
-        noise = random.uniform(-0.1, 0.1)
+        return action_generator
 
-        value = base_value + depth_bonus + action_bonus + noise
-        return max(0.0, min(1.0, value))
+    def _create_state_transition(self, category: str):
+        """
+        Create state transition function for this query category.
 
-    def _backpropagate(self, node: MCTSNode, value: float):
-        """Backpropagate value up the tree."""
-        current = node
-        while current is not None:
-            current.visits += 1
-            current.value_sum += value
-            current = current.parent
+        Args:
+            category: Query category
+
+        Returns:
+            Function that computes next state from current state + action
+        """
+        def state_transition(state: MCTSState, action: str) -> MCTSState:
+            """Compute next state by applying action."""
+            # Track action history
+            action_history = list(state.features.get("action_history", []))
+            action_history.append(action)
+
+            # Track used actions
+            used_actions = set(state.features.get("used_actions", set()))
+            used_actions.add(action)
+
+            # Increment depth
+            depth = state.features.get("depth", 0) + 1
+
+            # Create new state ID from action history
+            state_id = " -> ".join(action_history)
+
+            # Build new state
+            new_state = MCTSState(
+                state_id=state_id,
+                features={
+                    "action_history": action_history,
+                    "used_actions": used_actions,
+                    "depth": depth,
+                    "last_action": action,
+                    "category": category,
+                },
+            )
+
+            return new_state
+
+        return state_transition
 
     def _generate_tree_visualization(self, root: MCTSNode, max_nodes: int = 20) -> str:
-        """Generate ASCII visualization of the tree."""
+        """
+        Generate ASCII visualization of the MCTS tree.
+
+        This provides educational insight into the search process.
+
+        Args:
+            root: Root node of the tree
+            max_nodes: Maximum nodes to display
+
+        Returns:
+            ASCII art representation of the tree
+        """
         max_nodes = max(1, max_nodes)
         lines = []
         lines.append("MCTS Tree Visualization")
@@ -186,7 +280,8 @@ class MCTSDemo:
 
             nodes_rendered += 1
 
-            node_str = f"{node.state[:30]}..."
+            # Display action or state
+            node_str = f"{node.state.state_id[:30]}..."
             if node.action:
                 node_str = f"{node.action[:25]}..."
 
@@ -209,7 +304,7 @@ class MCTSDemo:
             return result
 
         # Start with root
-        lines.append(f"Root: {root.state[:40]}... [V:{root.visits}, Q:{root.value:.3f}]")
+        lines.append(f"Root: {root.state.state_id[:40]}... [V:{root.visits}, Q:{root.value:.3f}]")
         nodes_rendered += 1
 
         for i, child in enumerate(root.children[:5]):
@@ -221,96 +316,120 @@ class MCTSDemo:
 
         return "\n".join(lines)
 
-    def search(
-        self, query: str, iterations: int = 25, exploration_weight: float = 1.414, seed: int | None = None
+    async def search(
+        self,
+        query: str,
+        iterations: int = 25,
+        exploration_weight: float = 1.414,
+        seed: int | None = None,
     ) -> dict[str, Any]:
-        """Run MCTS search on the query.
+        """
+        Run MCTS search on the query using the production framework.
+
+        This method demonstrates the full MCTS algorithm:
+        1. Selection: UCB1-based tree traversal
+        2. Expansion: Progressive widening of nodes
+        3. Simulation: Heuristic evaluation (rollout)
+        4. Backpropagation: Value updates up the tree
 
         Args:
-            query: The input query
-            iterations: Number of MCTS iterations
-            exploration_weight: UCB1 exploration parameter
-            seed: Random seed for reproducibility
+            query: The input query to analyze
+            iterations: Number of MCTS iterations (more = better but slower)
+            exploration_weight: UCB1 exploration constant (higher = more exploration)
+            seed: Random seed for deterministic results
 
         Returns:
-            Dictionary with search results
+            Dictionary with:
+            - best_action: Recommended next step
+            - best_value: Confidence in recommendation
+            - statistics: Search metrics and performance data
+            - tree_visualization: ASCII art of search tree
         """
-        # Set seed for reproducibility
-        if seed is not None:
-            random.seed(seed)
-
-        # Initialize root
-        root = MCTSNode(state=f"Query: {query[:50]}")
+        # Determine query category
         category = self._categorize_query(query)
 
-        # Track statistics
-        total_nodes = 1
-        max_depth_reached = 0
+        # Initialize MCTS engine with production features
+        engine = MCTSEngine(
+            seed=seed if seed is not None else 42,
+            exploration_weight=exploration_weight,
+            progressive_widening_k=1.0,  # Moderate expansion
+            progressive_widening_alpha=0.5,
+            max_parallel_rollouts=4,
+            cache_size_limit=10000,
+        )
 
-        # MCTS iterations
-        for _ in range(iterations):
-            # Selection - traverse tree using UCB1
-            node = root
-            path = [node]
+        # Create root state
+        root_state = MCTSState(
+            state_id=f"Query: {query[:50]}",
+            features={
+                "query": query,
+                "category": category,
+                "action_history": [],
+                "used_actions": set(),
+                "depth": 0,
+                "last_action": "",
+            },
+        )
 
-            while node.children and node.depth < self.max_depth:
-                node = node.best_child(exploration_weight)
-                path.append(node)
+        # Create root node
+        root = MCTSNode(state=root_state, rng=engine.rng)
 
-            # Expansion - add new child if not at max depth
-            if node.depth < self.max_depth and node.visits > 0:
-                actions = self._get_possible_actions(node.state, category)
-                if actions:
-                    action = random.choice(actions)
-                    new_state = f"{node.state} -> {action}"
-                    node = node.add_child(new_state, action)
-                    path.append(node)
-                    total_nodes += 1
+        # Create domain-specific functions
+        action_generator = self._create_action_generator(category)
+        state_transition = self._create_state_transition(category)
+        rollout_policy = DemoRolloutPolicy(category, self.action_templates)
 
-            # Simulation - evaluate the node
-            value = self._simulate(node, category)
+        # Run MCTS search with production engine
+        best_action, stats = await engine.search(
+            root=root,
+            num_iterations=iterations,
+            action_generator=action_generator,
+            state_transition=state_transition,
+            rollout_policy=rollout_policy,
+            max_rollout_depth=self.max_depth,
+            selection_policy=SelectionPolicy.MAX_VISITS,  # Most robust
+        )
 
-            # Backpropagation - update statistics
-            self._backpropagate(node, value)
-
-            # Track max depth
-            max_depth_reached = max(max_depth_reached, node.depth)
-
-        # Find best action from root
+        # Extract best child info
         best_child = None
-        best_action = "No action found"
-        best_value = 0.0
-
         if root.children:
-            # Select by visit count (more robust than value)
             best_child = max(root.children, key=lambda c: c.visits)
-            best_action = best_child.action
-            best_value = best_child.value
 
-        # Compile results
+        # Compile results for demo interface
         result = {
-            "best_action": best_action,
-            "best_value": round(best_value, 4),
+            "best_action": best_action or "No action found",
+            "best_value": round(best_child.value, 4) if best_child else 0.0,
             "root_visits": root.visits,
-            "total_nodes": total_nodes,
-            "max_depth_reached": max_depth_reached,
+            "total_nodes": engine.get_cached_node_count(),
+            "max_depth_reached": engine.get_cached_tree_depth(),
             "iterations_completed": iterations,
             "exploration_weight": exploration_weight,
             "seed": seed,
+            "category": category,
+
+            # Top actions sorted by visits
             "top_actions": [
                 {
                     "action": child.action,
                     "visits": child.visits,
                     "value": round(child.value, 4),
-                    "ucb1": round(child.ucb1_score(exploration_weight), 4),
+                    "ucb1": round(
+                        child.visits / root.visits if root.visits > 0 else 0.0, 4
+                    ),  # Simplified UCB display
                 }
                 for child in sorted(root.children, key=lambda c: -c.visits)[:5]
             ],
+
+            # Framework statistics
+            "framework_stats": {
+                "cache_hits": stats.get("cache_hits", 0),
+                "cache_misses": stats.get("cache_misses", 0),
+                "cache_hit_rate": round(stats.get("cache_hit_rate", 0.0), 4),
+                "total_simulations": stats.get("total_simulations", 0),
+            },
+
+            # Educational visualization
             "tree_visualization": self._generate_tree_visualization(root),
         }
-
-        # Reset random seed
-        if seed is not None:
-            random.seed()
 
         return result
