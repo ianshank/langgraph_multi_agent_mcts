@@ -76,7 +76,10 @@
       "Bash(PYTHONPATH=. python:*)",
       "Bash(env)",
       "Bash(gcloud auth application-default print-access-token:*)",
-      "Bash(echo:*)"
+      "Bash(echo:*)",
+      "Bash(git lfs push:*)",
+      "Bash(git lfs track:*)",
+      "Bash(git lfs migrate:*)"
     ],
     "deny": [],
     "ask": []
