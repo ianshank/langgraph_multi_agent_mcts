@@ -33,6 +33,29 @@ from .mcts.policies import (
     HybridRolloutPolicy,
 )
 
+# Import action configuration
+from .actions import (
+    ActionType,
+    AgentType,
+    RouteDecision,
+    GraphConfig,
+    DEFAULT_GRAPH_CONFIG,
+)
+
+# Import neural MCTS integration (optional)
+try:
+    from .mcts.neural_integration import (
+        NeuralMCTSAdapter,
+        NeuralMCTSConfig,
+        NeuralRolloutPolicy,
+    )
+    _NEURAL_MCTS_AVAILABLE = True
+except ImportError:
+    _NEURAL_MCTS_AVAILABLE = False
+    NeuralMCTSAdapter = None  # type: ignore
+    NeuralMCTSConfig = None  # type: ignore
+    NeuralRolloutPolicy = None  # type: ignore
+
 # Neural Meta-Controller imports (optional)
 try:
     from src.agents.meta_controller.base import (
@@ -116,12 +139,15 @@ class GraphBuilder:
         logger,
         vector_store=None,
         mcts_config: MCTSConfig | None = None,
-        top_k_retrieval: int = 5,
-        max_iterations: int = 3,
-        consensus_threshold: float = 0.75,
-        enable_parallel_agents: bool = True,
+        graph_config: GraphConfig | None = None,
+        top_k_retrieval: int | None = None,
+        max_iterations: int | None = None,
+        consensus_threshold: float | None = None,
+        enable_parallel_agents: bool | None = None,
         meta_controller_config: Any | None = None,
         adk_agents: dict[str, Any] | None = None,
+        neural_mcts_config: Any | None = None,
+        policy_value_network: Any | None = None,
     ):
         """
         Initialize graph builder.
@@ -133,23 +159,43 @@ class GraphBuilder:
             logger: Logger instance
             vector_store: Optional vector store for RAG
             mcts_config: MCTS configuration (uses balanced preset if None)
-            top_k_retrieval: Number of documents for RAG
-            max_iterations: Maximum agent iterations
-            consensus_threshold: Threshold for consensus
-            enable_parallel_agents: Run HRM/TRM in parallel
+            graph_config: Graph workflow configuration (uses defaults if None)
+            top_k_retrieval: Number of documents for RAG (overrides graph_config)
+            max_iterations: Maximum agent iterations (overrides graph_config)
+            consensus_threshold: Threshold for consensus (overrides graph_config)
+            enable_parallel_agents: Run HRM/TRM in parallel (overrides graph_config)
             meta_controller_config: Optional neural meta-controller configuration
             adk_agents: Dictionary of ADK agent instances
+            neural_mcts_config: Optional NeuralMCTSConfig for neural-guided search
+            policy_value_network: Optional policy-value network for neural MCTS
         """
         self.hrm_agent = hrm_agent
         self.trm_agent = trm_agent
         self.model_adapter = model_adapter
         self.logger = logger
         self.vector_store = vector_store
-        self.top_k_retrieval = top_k_retrieval
-        self.max_iterations = max_iterations
-        self.consensus_threshold = consensus_threshold
-        self.enable_parallel_agents = enable_parallel_agents
         self.adk_agents = adk_agents or {}
+
+        # Use GraphConfig for centralized configuration (no hardcoded values)
+        self.graph_config = graph_config or DEFAULT_GRAPH_CONFIG
+
+        # Allow parameter overrides for backward compatibility
+        self.top_k_retrieval = (
+            top_k_retrieval if top_k_retrieval is not None
+            else self.graph_config.top_k_retrieval
+        )
+        self.max_iterations = (
+            max_iterations if max_iterations is not None
+            else self.graph_config.max_iterations
+        )
+        self.consensus_threshold = (
+            consensus_threshold if consensus_threshold is not None
+            else self.graph_config.confidence.consensus_threshold
+        )
+        self.enable_parallel_agents = (
+            enable_parallel_agents if enable_parallel_agents is not None
+            else self.graph_config.enable_parallel_agents
+        )
 
         # MCTS configuration
         self.mcts_config = mcts_config or create_preset_config(ConfigPreset.BALANCED)
@@ -167,6 +213,13 @@ class GraphBuilder:
         # Experiment tracking
         self.experiment_tracker = ExperimentTracker(name="langgraph_mcts")
 
+        # Neural MCTS integration (optional - bridges neural_mcts.py with graph)
+        self.neural_mcts_adapter: Any | None = None
+        self.use_neural_mcts = False
+
+        if neural_mcts_config is not None and _NEURAL_MCTS_AVAILABLE:
+            self._init_neural_mcts(neural_mcts_config, policy_value_network)
+
         # Neural Meta-Controller (optional)
         self.meta_controller: Any | None = None
         self.meta_controller_config = meta_controller_config
@@ -174,6 +227,37 @@ class GraphBuilder:
 
         if meta_controller_config is not None:
             self._init_meta_controller(meta_controller_config)
+
+    def _init_neural_mcts(
+        self,
+        config: Any,
+        policy_value_network: Any | None = None,
+    ) -> None:
+        """
+        Initialize Neural MCTS adapter for intelligent rollouts.
+
+        Args:
+            config: NeuralMCTSConfig instance
+            policy_value_network: Optional pre-trained network
+        """
+        if not _NEURAL_MCTS_AVAILABLE:
+            self.logger.warning("Neural MCTS not available - missing dependencies")
+            return
+
+        try:
+            self.neural_mcts_adapter = NeuralMCTSAdapter(
+                config=config,
+                policy_value_network=policy_value_network,
+            )
+            self.neural_mcts_adapter.initialize()
+            self.use_neural_mcts = True
+            self.logger.info(
+                f"Neural MCTS initialized with {config.num_simulations} simulations, "
+                f"c_puct={config.c_puct}"
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to initialize Neural MCTS: {e}")
+            self.use_neural_mcts = False
 
     def build_graph(self) -> StateGraph:
         """
@@ -210,14 +294,8 @@ class GraphBuilder:
         workflow.add_edge("entry", "retrieve_context")
         workflow.add_edge("retrieve_context", "route_decision")
 
-        # Conditional routing
-        routing_map = {
-            "parallel": "parallel_agents",
-            "hrm": "hrm_agent",
-            "trm": "trm_agent",
-            "mcts": "mcts_simulator",
-            "aggregate": "aggregate_results",
-        }
+        # Conditional routing using GraphConfig (no hardcoded strings)
+        routing_map = self.graph_config.get_route_mapping()
 
         # Add ADK routing entries
         for name in self.adk_agents:
@@ -635,17 +713,22 @@ class GraphBuilder:
             rng=self.mcts_engine.rng,
         )
 
+        # Get configured actions from GraphConfig (no hardcoded strings)
+        root_actions = self.graph_config.root_actions
+        continuation_actions = self.graph_config.continuation_actions
+        confidence_config = self.graph_config.confidence
+
         # Define action generator based on domain
         def action_generator(mcts_state: MCTSState) -> list[str]:
             """Generate available actions for state."""
             depth = len(mcts_state.state_id.split("_")) - 1
 
             if depth == 0:
-                # Root level actions
-                return ["action_A", "action_B", "action_C", "action_D"]
+                # Root level actions from config
+                return root_actions
             elif depth < self.mcts_config.max_tree_depth:
-                # Subsequent actions
-                return ["continue", "refine", "fallback", "escalate"]
+                # Continuation actions from config
+                return continuation_actions
             else:
                 return []  # Terminal
 
@@ -658,27 +741,42 @@ class GraphBuilder:
             new_features["depth"] = len(new_id.split("_")) - 1
             return MCTSState(state_id=new_id, features=new_features)
 
-        # Create rollout policy using agent results
+        # Create rollout policy using agent results (with configurable values)
         def heuristic_fn(mcts_state: MCTSState) -> float:
             """Evaluate state using agent confidence."""
-            base = 0.5
+            base = confidence_config.heuristic_base_value
 
-            # Bias based on agent confidence
+            # Bias based on agent confidence (from config)
             if state.get("hrm_results"):
-                hrm_conf = state["hrm_results"]["metadata"].get("decomposition_quality_score", 0.5)
-                base += hrm_conf * 0.2
+                hrm_conf = state["hrm_results"]["metadata"].get(
+                    "decomposition_quality_score",
+                    confidence_config.default_hrm_confidence
+                )
+                base += hrm_conf * confidence_config.confidence_weight_multiplier
 
             if state.get("trm_results"):
-                trm_conf = state["trm_results"]["metadata"].get("final_quality_score", 0.5)
-                base += trm_conf * 0.2
+                trm_conf = state["trm_results"]["metadata"].get(
+                    "final_quality_score",
+                    confidence_config.default_trm_confidence
+                )
+                base += trm_conf * confidence_config.confidence_weight_multiplier
 
             return min(base, 1.0)
 
-        rollout_policy = HybridRolloutPolicy(
-            heuristic_fn=heuristic_fn,
-            heuristic_weight=0.7,
-            random_weight=0.3,
-        )
+        # Select rollout policy - use Neural MCTS if available, else hybrid
+        rollout_weights = self.graph_config.rollout_weights
+
+        if self.use_neural_mcts and self.neural_mcts_adapter is not None:
+            # Use neural network-guided rollout
+            rollout_policy = self.neural_mcts_adapter.rollout_policy
+            self.logger.debug("Using Neural MCTS rollout policy")
+        else:
+            # Use hybrid heuristic/random rollout with configured weights
+            rollout_policy = HybridRolloutPolicy(
+                heuristic_fn=heuristic_fn,
+                heuristic_weight=rollout_weights.heuristic_weight,
+                random_weight=rollout_weights.random_weight,
+            )
 
         # Run MCTS search
         best_action, stats = await self.mcts_engine.search(

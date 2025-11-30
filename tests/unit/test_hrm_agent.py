@@ -14,23 +14,52 @@ Tests cover:
 All tests use deterministic seeding for reproducibility.
 """
 
+from __future__ import annotations
+
 import math
 
 import pytest
-import torch
-import torch.nn as nn
 
-from src.agents.hrm_agent import (
-    AdaptiveComputationTime,
-    HModule,
-    HRMAgent,
-    HRMLoss,
-    HRMOutput,
-    LModule,
-    SubProblem,
-    create_hrm_agent,
+# Guard torch imports for test collection
+try:
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None  # type: ignore
+    nn = None  # type: ignore
+
+# Skip entire module if torch not available
+pytestmark = pytest.mark.skipif(
+    not TORCH_AVAILABLE,
+    reason="PyTorch required for HRM agent tests"
 )
-from src.training.system_config import HRMConfig
+
+# Only import HRM modules if torch is available
+if TORCH_AVAILABLE:
+    from src.agents.hrm_agent import (
+        AdaptiveComputationTime,
+        HModule,
+        HRMAgent,
+        HRMLoss,
+        HRMOutput,
+        LModule,
+        SubProblem,
+        create_hrm_agent,
+    )
+    from src.training.system_config import HRMConfig
+else:
+    # Provide stubs for type checking
+    AdaptiveComputationTime = None  # type: ignore
+    HModule = None  # type: ignore
+    HRMAgent = None  # type: ignore
+    HRMLoss = None  # type: ignore
+    HRMOutput = None  # type: ignore
+    LModule = None  # type: ignore
+    SubProblem = None  # type: ignore
+    create_hrm_agent = None  # type: ignore
+    HRMConfig = None  # type: ignore
 
 # ============================================================================
 # Fixtures

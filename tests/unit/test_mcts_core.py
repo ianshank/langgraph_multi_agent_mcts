@@ -8,15 +8,30 @@ Tests:
 - Edge cases and error conditions
 """
 
+from __future__ import annotations
+
 import math
 import random
+import sys
 
 # Import the MCTS classes from the framework
-from unittest.mock import AsyncMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch, MagicMock
 
 import pytest
 
-from examples.langgraph_multi_agent_mcts import LangGraphMultiAgentFramework
+# Mock external dependencies before importing
+sys.modules.setdefault("langchain_openai", MagicMock())
+sys.modules.setdefault("langchain_core", MagicMock())
+sys.modules.setdefault("langchain_core.documents", MagicMock())
+
+# Try to import the framework, skip tests if not possible
+try:
+    from examples.langgraph_multi_agent_mcts import LangGraphMultiAgentFramework
+    FRAMEWORK_AVAILABLE = True
+except ImportError:
+    FRAMEWORK_AVAILABLE = False
+    LangGraphMultiAgentFramework = None  # type: ignore
+
 from src.framework.mcts.core import MCTSNode, MCTSState
 
 
