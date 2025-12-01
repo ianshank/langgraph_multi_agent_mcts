@@ -14,22 +14,50 @@ Tests cover:
 All tests use deterministic seeding for reproducibility.
 """
 
+from __future__ import annotations
+
 import math
 
 import pytest
-import torch
-import torch.nn as nn
 
-from src.agents.trm_agent import (
-    DeepSupervisionHead,
-    RecursiveBlock,
-    TRMAgent,
-    TRMLoss,
-    TRMOutput,
-    TRMRefinementWrapper,
-    create_trm_agent,
+# Guard torch imports for test collection
+try:
+    import torch
+    import torch.nn as nn
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+    torch = None  # type: ignore
+    nn = None  # type: ignore
+
+# Skip entire module if torch not available
+pytestmark = pytest.mark.skipif(
+    not TORCH_AVAILABLE,
+    reason="PyTorch required for TRM agent tests"
 )
-from src.training.system_config import TRMConfig
+
+# Only import TRM modules if torch is available
+if TORCH_AVAILABLE:
+    from src.agents.trm_agent import (
+        DeepSupervisionHead,
+        RecursiveBlock,
+        TRMAgent,
+        TRMLoss,
+        TRMOutput,
+        TRMRefinementWrapper,
+        create_trm_agent,
+    )
+    from src.training.system_config import TRMConfig
+else:
+    # Provide stubs for type checking
+    DeepSupervisionHead = None  # type: ignore
+    RecursiveBlock = None  # type: ignore
+    TRMAgent = None  # type: ignore
+    TRMLoss = None  # type: ignore
+    TRMOutput = None  # type: ignore
+    TRMRefinementWrapper = None  # type: ignore
+    create_trm_agent = None  # type: ignore
+    TRMConfig = None  # type: ignore
 
 # ============================================================================
 # Fixtures

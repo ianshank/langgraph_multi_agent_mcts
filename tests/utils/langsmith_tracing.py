@@ -23,8 +23,17 @@ from contextlib import contextmanager
 from datetime import datetime
 from typing import Any
 
-from langsmith import Client, traceable
-from langsmith.run_helpers import get_current_run_tree, tracing_context
+# Optional langsmith import
+try:
+    from langsmith import Client, traceable
+    from langsmith.run_helpers import get_current_run_tree, tracing_context
+    LANGSMITH_AVAILABLE = True
+except ImportError:
+    LANGSMITH_AVAILABLE = False
+    Client = None
+    traceable = None
+    get_current_run_tree = None
+    tracing_context = None
 
 
 def get_test_metadata() -> dict[str, Any]:
@@ -106,6 +115,11 @@ def _build_trace_metadata(
     return run_metadata, run_tags
 
 
+def _noop_decorator(func: Callable) -> Callable:
+    """No-op decorator when langsmith is not available."""
+    return func
+
+
 def trace_e2e_test(
     test_name: str,
     *,
@@ -145,6 +159,9 @@ def trace_e2e_test(
             # Test implementation
             pass
     """
+    # Return no-op decorator if langsmith is not available
+    if not LANGSMITH_AVAILABLE:
+        return _noop_decorator
 
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
@@ -224,6 +241,11 @@ def trace_e2e_workflow(
         with trace_e2e_workflow("multi_provider_test", tags=["openai", "anthropic"]):
             results = run_multi_provider_test()
     """
+    # No-op if langsmith is not available
+    if not LANGSMITH_AVAILABLE:
+        yield
+        return
+
     run_metadata = get_test_metadata()
     if metadata:
         run_metadata.update(metadata)
@@ -358,6 +380,8 @@ def update_run_metadata(additional_metadata: dict[str, Any]) -> None:
             "consensus_score": 0.85,
         })
     """
+    if not LANGSMITH_AVAILABLE:
+        return
     try:
         current_run = get_current_run_tree()
         if current_run:
@@ -378,6 +402,8 @@ def add_run_tag(tag: str) -> None:
         if error_occurred:
             add_run_tag("error")
     """
+    if not LANGSMITH_AVAILABLE:
+        return
     try:
         current_run = get_current_run_tree()
         if current_run:
@@ -390,17 +416,20 @@ def add_run_tag(tag: str) -> None:
         pass
 
 
-def get_langsmith_client() -> Client:
+def get_langsmith_client() -> "Client | None":
     """
     Get configured LangSmith client.
 
     Returns:
-        LangSmith Client instance
+        LangSmith Client instance or None if langsmith is not available
 
     Example:
         client = get_langsmith_client()
-        runs = client.list_runs(project_name="langgraph-multi-agent-mcts")
+        if client:
+            runs = client.list_runs(project_name="langgraph-multi-agent-mcts")
     """
+    if not LANGSMITH_AVAILABLE:
+        return None
     return Client(
         api_key=os.getenv("LANGSMITH_API_KEY"),
         api_url=os.getenv("LANGSMITH_ENDPOINT", "https://api.smith.langchain.com"),
@@ -411,7 +440,7 @@ def create_test_dataset(
     dataset_name: str,
     examples: list[dict[str, Any]],
     description: str | None = None,
-) -> str:
+) -> str | None:
     """
     Create a dataset in LangSmith for evaluation.
 
@@ -421,7 +450,7 @@ def create_test_dataset(
         description: Dataset description
 
     Returns:
-        Dataset ID
+        Dataset ID or None if langsmith is not available
 
     Example:
         examples = [
@@ -432,7 +461,11 @@ def create_test_dataset(
         ]
         dataset_id = create_test_dataset("tactical_scenarios", examples)
     """
+    if not LANGSMITH_AVAILABLE:
+        return None
     client = get_langsmith_client()
+    if client is None:
+        return None
     dataset = client.create_dataset(
         dataset_name=dataset_name,
         description=description or f"E2E test dataset: {dataset_name}",
