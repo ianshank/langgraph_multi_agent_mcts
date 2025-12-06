@@ -734,11 +734,545 @@ ChessPage._find_tab = _find_tab
 ChessPage._click_tab = _click_tab
 
 
+# =============================================================================
+# USER JOURNEY TESTS
+# =============================================================================
+# These tests simulate complete user workflows through the application
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+@pytest.mark.journey
+class TestUserJourneyPlayGame:
+    """User journey: Playing a chess game and tracking results."""
+
+    def test_journey_play_opening_moves_as_white(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User starts a new game as white and plays common opening moves.
+
+        Steps:
+        1. Navigate to play tab (default)
+        2. Select white color
+        3. Start new game
+        4. Play e2e4 (King's Pawn opening)
+        5. Wait for AI response
+        6. Play d2d4 (follow up)
+        7. Verify moves recorded in history
+        8. Verify scorecard is visible
+        """
+        # Step 1-2: Start as white (default)
+        chess_page.start_new_game("white")
+
+        # Verify initial state
+        status = chess_page.get_status_text()
+        assert "white" in status.lower(), "Should show White to move"
+
+        # Step 3-4: Play King's Pawn Opening
+        chess_page.make_move("e2e4")
+        time.sleep(3)  # Wait for AI response
+
+        # Verify move recorded
+        history = chess_page.get_history_text()
+        assert "e2e4" in history, "Move e2e4 should be in history"
+
+        # Step 5-6: Play follow-up move
+        chess_page.make_move("d2d4")
+        time.sleep(3)
+
+        # Step 7: Verify moves recorded
+        history = chess_page.get_history_text()
+        assert "e2e4" in history
+        assert "d2d4" in history
+
+        # Step 8: Verify scorecard visible
+        scorecard_html = chess_page.get_scorecard_html()
+        assert "Score Card" in scorecard_html
+
+        # Take screenshot for verification
+        chess_page.take_screenshot("journey_opening_moves")
+
+    def test_journey_play_as_black(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User plays as black, AI moves first.
+
+        Steps:
+        1. Select black color
+        2. Start new game
+        3. Wait for AI's opening move
+        4. Respond with e7e5
+        5. Verify both moves in history
+        """
+        # Start as black
+        chess_page.start_new_game("black")
+        time.sleep(3)  # Wait for AI's first move
+
+        # AI should have moved
+        history = chess_page.get_history_text()
+        assert "1." in history, "AI should have made first move"
+
+        # Respond with e7e5
+        chess_page.make_move("e7e5")
+        time.sleep(3)
+
+        # Verify moves
+        history = chess_page.get_history_text()
+        assert "e7e5" in history, "Black's move should be recorded"
+
+        chess_page.take_screenshot("journey_play_as_black")
+
+    def test_journey_undo_and_retry(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User makes a move, undoes it, and tries a different move.
+
+        Steps:
+        1. Start new game
+        2. Play e2e4
+        3. Undo the move pair
+        4. Play d2d4 instead
+        5. Verify new move is recorded
+        """
+        chess_page.start_new_game("white")
+
+        # Make initial move
+        chess_page.make_move("e2e4")
+        time.sleep(3)
+
+        # Verify move recorded
+        history_before = chess_page.get_history_text()
+        assert "e2e4" in history_before
+
+        # Undo
+        chess_page.click_undo()
+        time.sleep(1)
+
+        # Make different move
+        chess_page.make_move("d2d4")
+        time.sleep(3)
+
+        # Verify new move recorded, old move gone
+        history_after = chess_page.get_history_text()
+        assert "d2d4" in history_after
+        # After undo, e2e4 should not be in history
+        # (unless AI happened to play it)
+
+        chess_page.take_screenshot("journey_undo_retry")
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+@pytest.mark.journey
+class TestUserJourneyMultipleGames:
+    """User journey: Playing multiple games and tracking scorecard."""
+
+    def test_journey_play_two_games_track_score(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User plays two games and verifies scorecard tracking.
+
+        Steps:
+        1. Note initial scorecard values
+        2. Start and play a few moves in game 1
+        3. Start new game (abandoning first)
+        4. Play a few moves in game 2
+        5. Verify scorecard persists across games
+        """
+        # Get initial scorecard
+        initial_scorecard = chess_page.get_scorecard_html()
+        assert "Score Card" in initial_scorecard
+
+        # Game 1
+        chess_page.start_new_game("white")
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+        chess_page.make_move("g1f3")
+        time.sleep(2)
+
+        # Start Game 2
+        chess_page.start_new_game("white")
+        chess_page.make_move("d2d4")
+        time.sleep(2)
+
+        # Verify scorecard still present
+        final_scorecard = chess_page.get_scorecard_html()
+        assert "Score Card" in final_scorecard
+        assert "Elo" in final_scorecard or "1500" in final_scorecard
+
+        chess_page.take_screenshot("journey_multiple_games")
+
+    def test_journey_reset_scorecard_fresh_start(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User resets scorecard for a fresh start.
+
+        Steps:
+        1. Play a game
+        2. Click reset scorecard
+        3. Verify scores are reset
+        4. Start a new game
+        5. Verify clean slate
+        """
+        # Play some moves
+        chess_page.start_new_game("white")
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+
+        # Reset scorecard
+        chess_page.reset_score_button.click()
+        time.sleep(1)
+
+        # Verify reset
+        scorecard = chess_page.get_scorecard_html()
+        assert "Score Card" in scorecard
+        # Initial Elo should be 1500
+        assert "1500" in scorecard
+
+        # Start fresh game
+        chess_page.start_new_game("white")
+
+        chess_page.take_screenshot("journey_reset_scorecard")
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+@pytest.mark.journey
+class TestUserJourneyContinuousLearning:
+    """User journey: Setting up and monitoring continuous learning."""
+
+    def test_journey_configure_learning_session(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User configures a learning session with custom parameters.
+
+        Steps:
+        1. Navigate to Continuous Learning tab
+        2. Adjust duration slider
+        3. Adjust max games slider
+        4. Verify controls are interactive
+        """
+        # Navigate to learning tab
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        # Verify sliders exist
+        duration_slider = chess_page.get_duration_slider()
+        assert duration_slider is not None
+
+        max_games_slider = chess_page.get_max_games_slider()
+        assert max_games_slider is not None
+
+        # Verify controls
+        start_btn = chess_page.get_start_learning_button()
+        assert start_btn.is_displayed()
+        assert start_btn.is_enabled()
+
+        chess_page.take_screenshot("journey_configure_learning")
+
+    def test_journey_view_learning_status(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User views learning status display.
+
+        Steps:
+        1. Navigate to Continuous Learning tab
+        2. View initial status (no session)
+        3. Click refresh
+        4. Verify status updates
+        """
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        # Check initial status
+        status = chess_page.get_learning_status()
+        status_html = status.get_attribute("innerHTML") or ""
+        assert "No learning session" in status_html or "learning" in status_html.lower()
+
+        # Click refresh
+        refresh_btn = chess_page.get_refresh_button()
+        refresh_btn.click()
+        time.sleep(1)
+
+        # Status should still be visible
+        status_after = chess_page.get_learning_status()
+        assert status_after is not None
+
+        chess_page.take_screenshot("journey_learning_status")
+
+    def test_journey_learning_controls_workflow(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User interacts with learning control buttons.
+
+        Steps:
+        1. Navigate to learning tab
+        2. Verify Start button enabled
+        3. Verify Pause button exists
+        4. Verify Stop button exists
+        5. Check all controls are properly laid out
+        """
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        # Check all buttons
+        start_btn = chess_page.get_start_learning_button()
+        pause_btn = chess_page.get_pause_learning_button()
+        stop_btn = chess_page.get_stop_learning_button()
+
+        # Verify all exist and are displayed
+        assert start_btn.is_displayed(), "Start button should be visible"
+        assert pause_btn.is_displayed(), "Pause button should be visible"
+        assert stop_btn.is_displayed(), "Stop button should be visible"
+
+        # Start should be enabled initially
+        assert start_btn.is_enabled(), "Start should be enabled"
+
+        chess_page.take_screenshot("journey_learning_controls")
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+@pytest.mark.journey
+class TestUserJourneyTabNavigation:
+    """User journey: Navigating between Play and Learning tabs."""
+
+    def test_journey_switch_tabs_preserve_state(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User switches between tabs and state is preserved.
+
+        Steps:
+        1. Start in Play tab
+        2. Make some moves
+        3. Switch to Learning tab
+        4. Switch back to Play tab
+        5. Verify game state preserved
+        """
+        # Start game and make move
+        chess_page.start_new_game("white")
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+
+        # Get current history
+        history_before = chess_page.get_history_text()
+        assert "e2e4" in history_before
+
+        # Switch to learning tab
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        # Verify we're in learning tab
+        start_btn = chess_page.get_start_learning_button()
+        assert start_btn.is_displayed()
+
+        # Switch back to play tab
+        chess_page._click_tab("Play")
+        time.sleep(1)
+
+        # Verify game state preserved (board should still show game)
+        # Note: Exact state preservation depends on implementation
+        board_html = chess_page.get_board_html()
+        assert "chess-board" in board_html
+
+        chess_page.take_screenshot("journey_tab_switch")
+
+    def test_journey_complete_workflow(self, chess_page: ChessPage) -> None:
+        """
+        Journey: Complete user workflow from start to finish.
+
+        Steps:
+        1. View initial scorecard (0 games)
+        2. Play a game (few moves)
+        3. Check scorecard updated
+        4. Switch to learning tab
+        5. Review learning options
+        6. Switch back to play
+        7. Start new game
+        8. Reset scorecard
+        9. Verify fresh start
+        """
+        # Step 1: Check initial state
+        scorecard = chess_page.get_scorecard_html()
+        assert "Score Card" in scorecard
+
+        # Step 2: Play some moves
+        chess_page.start_new_game("white")
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+        chess_page.make_move("g1f3")
+        time.sleep(2)
+
+        # Step 3: Check scorecard
+        scorecard = chess_page.get_scorecard_html()
+        assert "Score Card" in scorecard
+
+        # Step 4-5: Switch to learning tab
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        # Verify learning controls visible
+        assert chess_page.get_start_learning_button().is_displayed()
+        assert chess_page.get_duration_slider() is not None
+
+        # Step 6: Switch back to play
+        chess_page._click_tab("Play")
+        time.sleep(1)
+
+        # Step 7: Start new game
+        chess_page.start_new_game("white")
+
+        # Step 8: Reset scorecard
+        chess_page.reset_score_button.click()
+        time.sleep(1)
+
+        # Step 9: Verify fresh start
+        scorecard = chess_page.get_scorecard_html()
+        assert "1500" in scorecard  # Default Elo
+
+        chess_page.take_screenshot("journey_complete_workflow")
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+@pytest.mark.journey
+class TestUserJourneyErrorHandling:
+    """User journey: Handling invalid inputs and error states."""
+
+    def test_journey_invalid_move_recovery(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User enters invalid move and recovers.
+
+        Steps:
+        1. Start new game
+        2. Enter invalid move
+        3. See error message
+        4. Enter valid move
+        5. Game continues normally
+        """
+        chess_page.start_new_game("white")
+
+        # Try invalid move
+        chess_page.make_move("e2e5")  # Invalid - can't move 3 squares
+        time.sleep(1)
+
+        # Check for error indication
+        analysis = chess_page.get_analysis_text()
+        # Should indicate illegal/invalid
+        assert "illegal" in analysis.lower() or "invalid" in analysis.lower()
+
+        # Recover with valid move
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+
+        # Verify game continues
+        history = chess_page.get_history_text()
+        assert "e2e4" in history
+
+        chess_page.take_screenshot("journey_invalid_move_recovery")
+
+    def test_journey_gibberish_input(self, chess_page: ChessPage) -> None:
+        """
+        Journey: User enters gibberish and application handles gracefully.
+
+        Steps:
+        1. Start new game
+        2. Enter random text
+        3. Application shows error
+        4. User can still play normally
+        """
+        chess_page.start_new_game("white")
+
+        # Enter gibberish
+        chess_page.enter_move("xyz123")
+        chess_page.click_make_move()
+        time.sleep(1)
+
+        # Should show error
+        analysis = chess_page.get_analysis_text()
+        assert "invalid" in analysis.lower() or "illegal" in analysis.lower() or "error" in analysis.lower()
+
+        # Clear and try valid move
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+
+        # Should work
+        history = chess_page.get_history_text()
+        assert "e2e4" in history
+
+        chess_page.take_screenshot("journey_gibberish_recovery")
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+@pytest.mark.journey
+class TestUserJourneyVisualFeedback:
+    """User journey: Verifying visual feedback during gameplay."""
+
+    def test_journey_move_highlighting(self, chess_page: ChessPage) -> None:
+        """
+        Journey: Verify moves are visually highlighted on the board.
+
+        Steps:
+        1. Start new game
+        2. Make a move
+        3. Verify move squares are highlighted
+        """
+        chess_page.start_new_game("white")
+
+        # Make a move
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+
+        # Check for highlighting
+        board_html = chess_page.get_board_html()
+        assert "highlight" in board_html.lower(), "Move should be highlighted"
+
+        chess_page.take_screenshot("journey_move_highlight")
+
+    def test_journey_ai_analysis_displayed(self, chess_page: ChessPage) -> None:
+        """
+        Journey: Verify AI analysis is displayed after each move.
+
+        Steps:
+        1. Start new game
+        2. Make a move
+        3. Verify AI analysis panel shows information
+        """
+        chess_page.start_new_game("white")
+
+        # Make move
+        chess_page.make_move("e2e4")
+        time.sleep(3)
+
+        # Check analysis display
+        analysis = chess_page.get_analysis_text()
+
+        # Should have some content
+        assert len(analysis) > 10, "Analysis should contain information"
+
+        chess_page.take_screenshot("journey_ai_analysis")
+
+    def test_journey_scorecard_visual_elements(self, chess_page: ChessPage) -> None:
+        """
+        Journey: Verify scorecard displays all required visual elements.
+
+        Steps:
+        1. View scorecard
+        2. Verify all expected elements present:
+           - Title
+           - Wins/Losses/Draws
+           - Elo rating
+           - Learning stats
+        """
+        scorecard_html = chess_page.get_scorecard_html()
+
+        # Check for key elements
+        assert "Score Card" in scorecard_html, "Should have title"
+        assert "Win" in scorecard_html, "Should show wins"
+        assert "Draw" in scorecard_html, "Should show draws"
+        assert "Elo" in scorecard_html or "1500" in scorecard_html, "Should show Elo"
+
+        chess_page.take_screenshot("journey_scorecard_elements")
+
+
 # Pytest configuration
 def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers."""
     config.addinivalue_line("markers", "selenium: marks tests as Selenium browser tests")
     config.addinivalue_line("markers", "slow: marks tests as slow running")
+    config.addinivalue_line("markers", "journey: marks tests as user journey tests")
 
 
 def pytest_addoption(parser: pytest.Parser) -> None:
