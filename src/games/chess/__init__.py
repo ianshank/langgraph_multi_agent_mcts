@@ -66,6 +66,11 @@ from src.games.chess.training import (
     SelfPlayGame,
     create_chess_orchestrator,
 )
+from src.games.chess.ui import (
+    GameSession,
+    create_chess_ui,
+    render_board_html,
+)
 
 __all__ = [
     # Config
@@ -109,4 +114,8 @@ __all__ = [
     "ChessTrainingOrchestrator",
     "SelfPlayGame",
     "create_chess_orchestrator",
+    # UI
+    "GameSession",
+    "create_chess_ui",
+    "render_board_html",
 ]

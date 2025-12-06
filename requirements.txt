@@ -35,6 +35,10 @@ pytest-asyncio>=0.21.0
 # Chess support
 python-chess>=1.10.0
 
+# Selenium testing (optional - for UI tests)
+selenium>=4.15.0
+webdriver-manager>=4.0.0
+
 # Note: This demo now uses REAL trained models:
 # - RNN Meta-Controller (models/rnn_meta_controller.pt)
 # - BERT with LoRA adapters (models/bert_lora/final_model/)
