@@ -5,9 +5,11 @@ This module provides a complete chess implementation including:
 - ChessConfig: Comprehensive configuration for all chess parameters
 - ChessGameState: Game state implementation following GameState interface
 - ChessActionEncoder: Move encoding/decoding for neural network action space
-- ChessBoardRepresentation: 19-plane tensor representation
+- ChessBoardRepresentation: 22-plane tensor representation
 - ChessEnsembleAgent: HRM + TRM + MCTS ensemble with meta-controller routing
 - ChessTrainingOrchestrator: Self-play training pipeline
+- ContinuousLearningSession: Real-time self-play learning with scorecard tracking
+- Web UI: Gradio-based interface for playing and watching AI learn
 
 Example usage:
     ```python
@@ -24,6 +26,11 @@ Example usage:
 
     # Get best move
     move = await agent.get_best_move(state)
+
+    # Or start a continuous learning session
+    from src.games.chess import create_learning_session
+    session = create_learning_session(preset="small", max_minutes=30)
+    scorecard = await session.run_session()
     ```
 """
 
@@ -70,6 +77,15 @@ from src.games.chess.ui import (
     GameSession,
     create_chess_ui,
     render_board_html,
+)
+from src.games.chess.continuous_learning import (
+    ContinuousLearningConfig,
+    ContinuousLearningSession,
+    GameRecord,
+    GameResult,
+    OnlineLearner,
+    ScoreCard,
+    create_learning_session,
 )
 
 __all__ = [
@@ -118,4 +134,12 @@ __all__ = [
     "GameSession",
     "create_chess_ui",
     "render_board_html",
+    # Continuous Learning
+    "ContinuousLearningConfig",
+    "ContinuousLearningSession",
+    "GameRecord",
+    "GameResult",
+    "OnlineLearner",
+    "ScoreCard",
+    "create_learning_session",
 ]

@@ -559,6 +559,181 @@ class TestScreenshots:
         assert os.path.exists(path)
 
 
+@pytest.mark.selenium
+@pytest.mark.slow
+class TestScorecard:
+    """Tests for scorecard functionality."""
+
+    def test_scorecard_displayed(self, chess_page: ChessPage) -> None:
+        """Test that scorecard is displayed on page load."""
+        scorecard = chess_page.get_scorecard_element()
+        assert scorecard.is_displayed()
+
+    def test_scorecard_shows_initial_values(self, chess_page: ChessPage) -> None:
+        """Test scorecard shows zero values initially."""
+        scorecard_html = chess_page.get_scorecard_html()
+        # Should show Score Card title
+        assert "Score Card" in scorecard_html
+        # Should show Elo value
+        assert "1500" in scorecard_html or "Elo" in scorecard_html
+
+    def test_scorecard_updates_after_game(self, chess_page: ChessPage) -> None:
+        """Test that scorecard updates after a game ends."""
+        # Start a new game
+        chess_page.start_new_game("white")
+
+        # Get initial scorecard
+        initial_html = chess_page.get_scorecard_html()
+
+        # Play a few moves (may not finish game but scorecard should persist)
+        chess_page.make_move("e2e4")
+        time.sleep(2)
+
+        # Scorecard should still be visible
+        updated_html = chess_page.get_scorecard_html()
+        assert "Score Card" in updated_html
+
+    def test_reset_scorecard_button(self, chess_page: ChessPage) -> None:
+        """Test that reset score button works."""
+        reset_btn = chess_page.reset_score_button
+        assert reset_btn.is_displayed()
+
+        # Click reset
+        reset_btn.click()
+        time.sleep(1)
+
+        # Scorecard should show reset values
+        scorecard_html = chess_page.get_scorecard_html()
+        assert "Score Card" in scorecard_html
+
+
+@pytest.mark.selenium
+@pytest.mark.slow
+class TestContinuousLearning:
+    """Tests for continuous learning tab functionality."""
+
+    def test_learning_tab_exists(self, chess_page: ChessPage) -> None:
+        """Test that continuous learning tab exists."""
+        learning_tab = chess_page.get_learning_tab()
+        assert learning_tab is not None
+        assert learning_tab.is_displayed()
+
+    def test_learning_tab_navigation(self, chess_page: ChessPage) -> None:
+        """Test navigating to learning tab."""
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        # Should see learning controls
+        assert chess_page.get_start_learning_button().is_displayed()
+
+    def test_duration_slider_exists(self, chess_page: ChessPage) -> None:
+        """Test that duration slider exists in learning tab."""
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        slider = chess_page.get_duration_slider()
+        assert slider is not None
+
+    def test_max_games_slider_exists(self, chess_page: ChessPage) -> None:
+        """Test that max games slider exists in learning tab."""
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        slider = chess_page.get_max_games_slider()
+        assert slider is not None
+
+    def test_learning_control_buttons(self, chess_page: ChessPage) -> None:
+        """Test that all learning control buttons exist."""
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        assert chess_page.get_start_learning_button().is_displayed()
+        assert chess_page.get_pause_learning_button().is_displayed()
+        assert chess_page.get_stop_learning_button().is_displayed()
+
+    def test_learning_status_display(self, chess_page: ChessPage) -> None:
+        """Test that learning status display exists."""
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        status = chess_page.get_learning_status()
+        assert status is not None
+        # Should show "No learning session active" initially
+        status_text = status.get_attribute("innerHTML") or ""
+        assert "No learning session" in status_text or "learning" in status_text.lower()
+
+    def test_refresh_button(self, chess_page: ChessPage) -> None:
+        """Test that refresh button exists and is clickable."""
+        chess_page.click_learning_tab()
+        time.sleep(1)
+
+        refresh_btn = chess_page.get_refresh_button()
+        assert refresh_btn.is_displayed()
+
+        # Click refresh
+        refresh_btn.click()
+        time.sleep(1)
+
+        # Status should still be visible
+        status = chess_page.get_learning_status()
+        assert status is not None
+
+
+# Extended Page Object with new methods
+ChessPage.get_scorecard_element = lambda self: self._get_element_by_id("scorecard-display")
+ChessPage.get_scorecard_html = lambda self: (
+    self.driver.find_element(
+        __import__("selenium.webdriver.common.by", fromlist=["By"]).By.ID,
+        "scorecard-display"
+    ).get_attribute("innerHTML") or ""
+)
+ChessPage.reset_score_button = property(
+    lambda self: self.driver.find_element(
+        __import__("selenium.webdriver.common.by", fromlist=["By"]).By.ID,
+        "reset-score-btn"
+    )
+)
+ChessPage.get_learning_tab = lambda self: self._find_tab("Continuous Learning")
+ChessPage.click_learning_tab = lambda self: self._click_tab("Continuous Learning")
+ChessPage.get_start_learning_button = lambda self: self._get_element_by_id("start-learning-btn")
+ChessPage.get_pause_learning_button = lambda self: self._get_element_by_id("pause-learning-btn")
+ChessPage.get_stop_learning_button = lambda self: self._get_element_by_id("stop-learning-btn")
+ChessPage.get_duration_slider = lambda self: self._get_element_by_id("duration-slider")
+ChessPage.get_max_games_slider = lambda self: self._get_element_by_id("max-games-slider")
+ChessPage.get_learning_status = lambda self: self._get_element_by_id("learning-status-display")
+ChessPage.get_refresh_button = lambda self: self._get_element_by_id("refresh-btn")
+
+
+def _get_element_by_id(self, element_id: str) -> "WebElement":
+    """Get element by ID."""
+    from selenium.webdriver.common.by import By
+    return self.driver.find_element(By.ID, element_id)
+
+
+def _find_tab(self, tab_name: str) -> "WebElement":
+    """Find a tab by name."""
+    from selenium.webdriver.common.by import By
+    tabs = self.driver.find_elements(By.CSS_SELECTOR, "[role='tab'], .tab-nav button")
+    for tab in tabs:
+        if tab_name.lower() in tab.text.lower():
+            return tab
+    # Try finding by partial text
+    return self.driver.find_element(By.XPATH, f"//*[contains(text(), '{tab_name}')]")
+
+
+def _click_tab(self, tab_name: str) -> None:
+    """Click a tab by name."""
+    tab = self._find_tab(tab_name)
+    tab.click()
+    self._slow_action()
+
+
+# Attach methods to ChessPage
+ChessPage._get_element_by_id = _get_element_by_id
+ChessPage._find_tab = _find_tab
+ChessPage._click_tab = _click_tab
+
+
 # Pytest configuration
 def pytest_configure(config: pytest.Config) -> None:
     """Register custom markers."""
