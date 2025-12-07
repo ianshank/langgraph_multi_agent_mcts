@@ -16,14 +16,12 @@ Best Practices 2025:
 
 from __future__ import annotations
 
-import asyncio
 import time
-from collections.abc import Callable
 from dataclasses import dataclass, field
 from typing import Any
 
 from .config import ConstraintConfig, NeuroSymbolicConfig
-from .constraints import ConstraintSystem, ConstraintValidator
+from .constraints import ConstraintSystem
 from .reasoning import SymbolicReasoningAgent
 from .state import Fact, NeuroSymbolicState, SymbolicFactType
 
@@ -75,9 +73,7 @@ class NeuroSymbolicMCTSIntegration:
         logger: Any | None = None,
     ):
         self.config = config
-        self.constraint_system = constraint_system or ConstraintSystem(
-            ConstraintConfig()
-        )
+        self.constraint_system = constraint_system or ConstraintSystem(ConstraintConfig())
         self.reasoning_agent = reasoning_agent
         self.logger = logger
 
@@ -187,8 +183,7 @@ class NeuroSymbolicMCTSIntegration:
 
         if self.logger and pruned_count > 0:
             self.logger.debug(
-                f"Constraint pruning: {pruned_count}/{len(candidate_actions)} "
-                f"actions pruned in {elapsed_ms:.2f}ms"
+                f"Constraint pruning: {pruned_count}/{len(candidate_actions)} actions pruned in {elapsed_ms:.2f}ms"
             )
 
         return valid_actions
@@ -261,22 +256,15 @@ class NeuroSymbolicMCTSIntegration:
         """
         symbolic_value = self.get_symbolic_heuristic(mcts_state, action_history)
 
-        return (
-            self.config.neural_weight * neural_value
-            + self.config.symbolic_weight * symbolic_value
-        )
+        return self.config.neural_weight * neural_value + self.config.symbolic_weight * symbolic_value
 
     def get_statistics(self) -> dict[str, Any]:
         """Get integration statistics."""
         return {
             "expansions_checked": self._expansions_checked,
             "actions_pruned": self._actions_pruned,
-            "prune_rate": (
-                self._actions_pruned / max(self._expansions_checked, 1)
-            ),
-            "avg_constraint_check_time_ms": (
-                self._constraint_check_time_ms / max(self._expansions_checked, 1)
-            ),
+            "prune_rate": (self._actions_pruned / max(self._expansions_checked, 1)),
+            "avg_constraint_check_time_ms": (self._constraint_check_time_ms / max(self._expansions_checked, 1)),
             "constraint_stats": self.constraint_system.get_statistics(),
         }
 
@@ -293,9 +281,7 @@ class SymbolicAgentNodeConfig:
 
     enabled: bool = True
     priority: int = 0  # Higher = checked first for routing
-    keywords: list[str] = field(
-        default_factory=lambda: ["prove", "logic", "rule", "constraint", "why"]
-    )
+    keywords: list[str] = field(default_factory=lambda: ["prove", "logic", "rule", "constraint", "why"])
     min_confidence_for_routing: float = 0.5
 
 
@@ -347,13 +333,10 @@ class SymbolicAgentGraphExtension:
             if keyword in query_lower:
                 return True
 
-        # Check for formal query patterns
+        # Check for formal query patterns (Prolog-style)
         import re
 
-        if re.search(r"\w+\([^)]+\)\??", query):
-            return True  # Prolog-style query
-
-        return False
+        return bool(re.search(r"\w+\([^)]+\)\??", query))
 
     async def handle_symbolic_node(
         self,

@@ -16,17 +16,15 @@ Best Practices 2025:
 from __future__ import annotations
 
 import hashlib
-import re
 from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
-from functools import lru_cache
 from typing import Any, TypeVar
 
 from .config import ConstraintConfig, ConstraintEnforcement
-from .state import Fact, NeuroSymbolicState
+from .state import NeuroSymbolicState
 
 
 class ConstraintSatisfactionLevel(Enum):
@@ -91,7 +89,7 @@ class Constraint(ABC):
         self.enforcement = enforcement
         self.priority = priority  # Higher = more important
         self._compiled: bool = False
-        self._created_at = datetime.now(timezone.utc)
+        self._created_at = datetime.now(UTC)
 
     @abstractmethod
     def evaluate(
@@ -158,12 +156,8 @@ class PredicateConstraint(Constraint):
 
     def compile(self) -> None:
         """Compile fact patterns for fast lookup."""
-        self._required_fact_set = {
-            f"{name}:{args}" for name, args in self.required_facts
-        }
-        self._forbidden_fact_set = {
-            f"{name}:{args}" for name, args in self.forbidden_facts
-        }
+        self._required_fact_set = {f"{name}:{args}" for name, args in self.required_facts}
+        self._forbidden_fact_set = {f"{name}:{args}" for name, args in self.forbidden_facts}
         self._compiled = True
 
     def evaluate(
@@ -285,9 +279,7 @@ class TemporalConstraint(Constraint):
                     before_idx = action_history.index(before)
                     after_idx = action_history.index(after)
                     if before_idx > after_idx:
-                        violations.append(
-                            f"{before} must precede {after} (found in wrong order)"
-                        )
+                        violations.append(f"{before} must precede {after} (found in wrong order)")
                 except ValueError:
                     pass
 
@@ -364,9 +356,7 @@ class ExpressionConstraint(Constraint):
         """
         super().__init__(constraint_id, name, enforcement=enforcement, **kwargs)
         self.expressions = expressions or []
-        self._compiled_expressions: list[
-            tuple[list[str], Callable[[Any, Any], bool], Any]
-        ] = []
+        self._compiled_expressions: list[tuple[list[str], Callable[[Any, Any], bool], Any]] = []
 
     def compile(self) -> None:
         """Compile expressions for efficient evaluation."""
@@ -543,9 +533,7 @@ class ConstraintValidator:
     def add_constraint(self, constraint: Constraint) -> None:
         """Add a constraint to the validator."""
         if len(self.constraints) >= self.config.max_constraints_per_state:
-            raise ValueError(
-                f"Maximum constraints exceeded: {self.config.max_constraints_per_state}"
-            )
+            raise ValueError(f"Maximum constraints exceeded: {self.config.max_constraints_per_state}")
         self.constraints[constraint.constraint_id] = constraint
         if self.config.precompile_constraints:
             constraint.compile()
@@ -605,11 +593,10 @@ class ConstraintValidator:
 
             results.append(result)
 
-            if result.is_violated:
-                if constraint.enforcement == ConstraintEnforcement.HARD:
-                    all_satisfied = False
-                    # Early exit for hard constraint violation
-                    break
+            if result.is_violated and constraint.enforcement == ConstraintEnforcement.HARD:
+                all_satisfied = False
+                # Early exit for hard constraint violation
+                break
 
             total_penalty += result.penalty
 
@@ -771,14 +758,14 @@ class ConstraintSystem:
             else:
                 # Log conflict for analysis
                 if self.config.enable_conflict_analysis:
-                    self._conflict_log.append({
-                        "parent_state_id": parent_state.state_id,
-                        "action": action,
-                        "violations": [
-                            r.message for r in results if r.is_violated
-                        ],
-                        "timestamp": datetime.now(timezone.utc).isoformat(),
-                    })
+                    self._conflict_log.append(
+                        {
+                            "parent_state_id": parent_state.state_id,
+                            "action": action,
+                            "violations": [r.message for r in results if r.is_violated],
+                            "timestamp": datetime.now(UTC).isoformat(),
+                        }
+                    )
 
         return valid_actions
 

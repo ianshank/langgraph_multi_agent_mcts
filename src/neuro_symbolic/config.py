@@ -24,6 +24,7 @@ from typing import Any
 # Optional torch import for environments without GPU support
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -66,12 +67,8 @@ class LogicEngineConfig:
     fallback_backend: SolverBackend | None = SolverBackend.SYMPY
 
     # Timeout and limits
-    solver_timeout_ms: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_SOLVER_TIMEOUT_MS", "5000"))
-    )
-    max_proof_depth: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_PROOF_DEPTH", "50"))
-    )
+    solver_timeout_ms: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_SOLVER_TIMEOUT_MS", "5000")))
+    max_proof_depth: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_PROOF_DEPTH", "50")))
     max_unification_attempts: int = field(
         default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_UNIFICATION", "1000"))
     )
@@ -79,15 +76,11 @@ class LogicEngineConfig:
     # Proof strategy
     proof_strategy: ProofStrategy = ProofStrategy.BIDIRECTIONAL
     enable_memoization: bool = True
-    cache_size: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_CACHE_SIZE", "10000"))
-    )
+    cache_size: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_CACHE_SIZE", "10000")))
 
     # Parallelization
     parallel_proof_search: bool = True
-    max_parallel_proofs: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_PARALLEL_PROOFS", "4"))
-    )
+    max_parallel_proofs: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_PARALLEL_PROOFS", "4")))
 
     # Debug and tracing
     trace_proofs: bool = False
@@ -103,14 +96,10 @@ class ConstraintConfig:
 
     # Validation thresholds
     soft_constraint_penalty_weight: float = field(
-        default_factory=lambda: float(
-            os.getenv("NEURO_SYMBOLIC_SOFT_PENALTY_WEIGHT", "0.5")
-        )
+        default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_SOFT_PENALTY_WEIGHT", "0.5"))
     )
     min_satisfaction_ratio: float = field(
-        default_factory=lambda: float(
-            os.getenv("NEURO_SYMBOLIC_MIN_SATISFACTION", "0.8")
-        )
+        default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_MIN_SATISFACTION", "0.8"))
     )
 
     # Constraint compilation
@@ -123,9 +112,7 @@ class ConstraintConfig:
     max_constraints_per_state: int = field(
         default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_CONSTRAINTS", "100"))
     )
-    max_constraint_variables: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_VARS", "50"))
-    )
+    max_constraint_variables: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_VARS", "50")))
 
     # Conflict resolution
     enable_conflict_analysis: bool = True
@@ -140,9 +127,7 @@ class ProofConfig:
 
     # Proof tree generation
     generate_proof_trees: bool = True
-    max_proof_tree_nodes: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_PROOF_NODES", "500"))
-    )
+    max_proof_tree_nodes: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_PROOF_NODES", "500")))
 
     # Explanation generation
     generate_natural_language_explanations: bool = True
@@ -158,9 +143,7 @@ class ProofConfig:
 
     # Caching
     cache_proof_trees: bool = True
-    proof_cache_max_size: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_PROOF_CACHE_SIZE", "1000"))
-    )
+    proof_cache_max_size: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_PROOF_CACHE_SIZE", "1000")))
 
 
 @dataclass
@@ -170,15 +153,11 @@ class SymbolicAgentConfig:
     # Agent behavior
     fallback_to_neural: bool = True
     neural_fallback_confidence_threshold: float = field(
-        default_factory=lambda: float(
-            os.getenv("NEURO_SYMBOLIC_NEURAL_FALLBACK_THRESHOLD", "0.6")
-        )
+        default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_NEURAL_FALLBACK_THRESHOLD", "0.6"))
     )
 
     # Knowledge base
-    max_facts: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_FACTS", "10000"))
-    )
+    max_facts: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_MAX_FACTS", "10000")))
     fact_expiry_seconds: int | None = None  # None = never expire
 
     # Query processing
@@ -190,14 +169,10 @@ class SymbolicAgentConfig:
     # Integration with neural components
     use_neural_for_ambiguity_resolution: bool = True
     neural_confidence_weight: float = field(
-        default_factory=lambda: float(
-            os.getenv("NEURO_SYMBOLIC_NEURAL_WEIGHT", "0.3")
-        )
+        default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_NEURAL_WEIGHT", "0.3"))
     )
     symbolic_confidence_weight: float = field(
-        default_factory=lambda: float(
-            os.getenv("NEURO_SYMBOLIC_SYMBOLIC_WEIGHT", "0.7")
-        )
+        default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_SYMBOLIC_WEIGHT", "0.7"))
     )
 
     def __post_init__(self):
@@ -214,29 +189,17 @@ class NeuralEmbeddingConfig:
     """Configuration for neural embeddings in neuro-symbolic system."""
 
     # Embedding dimensions
-    fact_embedding_dim: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_FACT_DIM", "256"))
-    )
-    state_embedding_dim: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_STATE_DIM", "512"))
-    )
+    fact_embedding_dim: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_FACT_DIM", "256")))
+    state_embedding_dim: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_STATE_DIM", "512")))
 
     # Encoder architecture
     encoder_type: str = "transformer"  # transformer, lstm, mlp
-    num_encoder_layers: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_ENCODER_LAYERS", "4"))
-    )
-    encoder_hidden_dim: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_ENCODER_HIDDEN", "512"))
-    )
-    num_attention_heads: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_ATTENTION_HEADS", "8"))
-    )
+    num_encoder_layers: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_ENCODER_LAYERS", "4")))
+    encoder_hidden_dim: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_ENCODER_HIDDEN", "512")))
+    num_attention_heads: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_ATTENTION_HEADS", "8")))
 
     # Regularization
-    dropout: float = field(
-        default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_DROPOUT", "0.1"))
-    )
+    dropout: float = field(default_factory=lambda: float(os.getenv("NEURO_SYMBOLIC_DROPOUT", "0.1")))
     use_layer_norm: bool = True
 
 
@@ -257,24 +220,16 @@ class NeuroSymbolicConfig:
     embedding: NeuralEmbeddingConfig = field(default_factory=NeuralEmbeddingConfig)
 
     # System settings
-    device: str = field(
-        default_factory=lambda: "cuda" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu"
-    )
-    seed: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_SEED", "42"))
-    )
+    device: str = field(default_factory=lambda: "cuda" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu")
+    seed: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_SEED", "42")))
 
     # Performance settings
     enable_async: bool = True
     batch_symbolic_queries: bool = True
-    max_batch_size: int = field(
-        default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_BATCH_SIZE", "32"))
-    )
+    max_batch_size: int = field(default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_BATCH_SIZE", "32")))
 
     # Logging and monitoring
-    log_level: str = field(
-        default_factory=lambda: os.getenv("NEURO_SYMBOLIC_LOG_LEVEL", "INFO")
-    )
+    log_level: str = field(default_factory=lambda: os.getenv("NEURO_SYMBOLIC_LOG_LEVEL", "INFO"))
     enable_metrics: bool = True
     metrics_export_interval_seconds: int = field(
         default_factory=lambda: int(os.getenv("NEURO_SYMBOLIC_METRICS_INTERVAL", "60"))
@@ -282,18 +237,15 @@ class NeuroSymbolicConfig:
 
     # Persistence
     checkpoint_dir: str = field(
-        default_factory=lambda: os.getenv(
-            "NEURO_SYMBOLIC_CHECKPOINT_DIR", "./checkpoints/neuro_symbolic"
-        )
+        default_factory=lambda: os.getenv("NEURO_SYMBOLIC_CHECKPOINT_DIR", "./checkpoints/neuro_symbolic")
     )
     knowledge_base_path: str | None = None
 
     def __post_init__(self):
         """Validate configuration after initialization."""
         # Ensure device is valid
-        if self.device.startswith("cuda"):
-            if not TORCH_AVAILABLE or not torch.cuda.is_available():
-                self.device = "cpu"
+        if self.device.startswith("cuda") and (not TORCH_AVAILABLE or not torch.cuda.is_available()):
+            self.device = "cpu"
 
     def to_dict(self) -> dict[str, Any]:
         """Convert configuration to dictionary for logging/serialization."""

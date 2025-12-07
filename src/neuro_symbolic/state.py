@@ -22,7 +22,7 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
 from typing import Any, Protocol, runtime_checkable
 
@@ -31,6 +31,7 @@ import numpy as np
 # Optional torch import for environments without GPU support
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -61,7 +62,7 @@ class Fact:
     fact_type: SymbolicFactType = SymbolicFactType.PREDICATE
     confidence: float = 1.0
     source: str = "unknown"
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     def __post_init__(self):
         """Validate fact after initialization."""
@@ -401,10 +402,7 @@ class StateTransition:
 
     def is_valid(self) -> bool:
         """Check if transition preconditions are satisfied."""
-        for precondition in self.preconditions:
-            if not any(f.matches(precondition) for f in self.from_state.facts):
-                return False
-        return True
+        return all(any(f.matches(precondition) for f in self.from_state.facts) for precondition in self.preconditions)
 
     def apply(self) -> NeuroSymbolicState:
         """Apply transition to create new state."""

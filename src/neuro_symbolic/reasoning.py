@@ -19,21 +19,14 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import time
-from abc import ABC, abstractmethod
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
 from enum import Enum, auto
-from functools import lru_cache
 from typing import Any, Protocol, runtime_checkable
 
 from .config import (
     LogicEngineConfig,
     NeuroSymbolicConfig,
-    ProofConfig,
-    ProofStrategy,
-    SolverBackend,
-    SymbolicAgentConfig,
 )
 from .state import Fact, NeuroSymbolicState, SymbolicFactType
 
@@ -72,9 +65,7 @@ class Predicate:
 
     def to_fact(self) -> Fact:
         """Convert to Fact (only for ground predicates)."""
-        if any(
-            isinstance(a, str) and a.startswith("?") for a in self.arguments
-        ):
+        if any(isinstance(a, str) and a.startswith("?") for a in self.arguments):
             raise ValueError("Cannot convert predicate with variables to fact")
         return Fact(
             name=self.name,
@@ -84,15 +75,11 @@ class Predicate:
 
     def is_ground(self) -> bool:
         """Check if predicate has no variables."""
-        return not any(
-            isinstance(a, str) and a.startswith("?") for a in self.arguments
-        )
+        return not any(isinstance(a, str) and a.startswith("?") for a in self.arguments)
 
     def get_variables(self) -> set[str]:
         """Get all variable names in this predicate."""
-        return {
-            a[1:] for a in self.arguments if isinstance(a, str) and a.startswith("?")
-        }
+        return {a[1:] for a in self.arguments if isinstance(a, str) and a.startswith("?")}
 
     def substitute(self, bindings: dict[str, Any]) -> Predicate:
         """Apply variable bindings."""
@@ -234,10 +221,7 @@ class ProofTree:
         """Recursively explain proof steps."""
         prefix = "  " * indent
         if step.rule_applied:
-            lines.append(
-                f"{prefix}Used rule '{step.rule_applied.rule_id}' to prove "
-                f"{step.predicate.to_string()}"
-            )
+            lines.append(f"{prefix}Used rule '{step.rule_applied.rule_id}' to prove {step.predicate.to_string()}")
         else:
             lines.append(f"{prefix}Fact: {step.predicate.to_string()}")
 
@@ -433,7 +417,6 @@ class LogicEngine:
 
         for rule in self._rules:
             # Rename rule variables to avoid conflicts
-            rule_bindings: dict[str, Any] = {}
             renamed_head = self._rename_variables(rule.head, depth)
             renamed_body = [self._rename_variables(p, depth) for p in rule.body]
 
@@ -577,9 +560,8 @@ class LogicEngine:
         )
 
         # Cache result
-        if self.config.enable_memoization:
-            if len(self._cache) < self.config.cache_size:
-                self._cache[cache_key] = proof_tree
+        if self.config.enable_memoization and len(self._cache) < self.config.cache_size:
+            self._cache[cache_key] = proof_tree
 
         return proof_tree
 
@@ -649,9 +631,7 @@ class SymbolicReasoner:
         proof_tree = await self.logic_engine.query(goal_pred, state)
 
         if proof_tree.status == ProofStatus.SUCCESS:
-            explanation = proof_tree.generate_explanation(
-                self.config.proof.explanation_verbosity_level
-            )
+            explanation = proof_tree.generate_explanation(self.config.proof.explanation_verbosity_level)
             # Calculate confidence from rule confidences
             confidence = self._calculate_proof_confidence(proof_tree)
             return Proof(
@@ -970,9 +950,7 @@ class SymbolicReasoningAgent:
     def _format_response(self, query: str, proof: Proof) -> str:
         """Format proof result as response."""
         if proof.bindings:
-            bindings_str = ", ".join(
-                f"{k}={v}" for k, v in proof.bindings.items()
-            )
+            bindings_str = ", ".join(f"{k}={v}" for k, v in proof.bindings.items())
             return f"Yes. {proof.explanation}\nBindings: {bindings_str}"
         return f"Yes. {proof.explanation}"
 
@@ -982,16 +960,8 @@ class SymbolicReasoningAgent:
             "total_queries": self._query_count,
             "successful_proofs": self._success_count,
             "neural_fallbacks": self._fallback_count,
-            "success_rate": (
-                self._success_count / self._query_count
-                if self._query_count > 0
-                else 0.0
-            ),
-            "fallback_rate": (
-                self._fallback_count / self._query_count
-                if self._query_count > 0
-                else 0.0
-            ),
+            "success_rate": (self._success_count / self._query_count if self._query_count > 0 else 0.0),
+            "fallback_rate": (self._fallback_count / self._query_count if self._query_count > 0 else 0.0),
         }
 
     def add_knowledge(
