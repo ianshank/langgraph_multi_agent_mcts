@@ -197,7 +197,10 @@ class ChessPage:
         from selenium.webdriver.common.by import By
         # Gradio wraps inputs, find by parent ID
         container = self.driver.find_element(By.ID, "move-input")
-        return container.find_element(By.TAG_NAME, "input")
+        try:
+            return container.find_element(By.TAG_NAME, "textarea")
+        except:
+            return container.find_element(By.TAG_NAME, "input")
 
     @property
     def move_button(self) -> "WebElement":
@@ -485,6 +488,12 @@ class TestGameControls:
         history_after = chess_page.get_history_text()
         # Either empty or doesn't contain the move we made
         assert "no moves" in history_after.lower() or "e2e4" not in history_after
+
+    def test_export_pgn_button_exists(self, chess_page: ChessPage) -> None:
+        """Test that Export PGN button exists."""
+        from selenium.webdriver.common.by import By
+        btn = chess_page.driver.find_element(By.ID, "export-pgn-btn")
+        assert btn.is_displayed()
 
     def test_play_as_black(self, chess_page: ChessPage) -> None:
         """Test playing as black (AI moves first)."""

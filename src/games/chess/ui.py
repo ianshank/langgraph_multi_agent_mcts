@@ -17,6 +17,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 import gradio as gr
+import tempfile
+import chess.pgn
 
 from src.games.chess.continuous_learning import (
     ContinuousLearningConfig,
@@ -648,6 +650,45 @@ def reset_scorecard() -> str:
     return render_scorecard_html(_session.scorecard)
 
 
+def export_game_pgn() -> str | None:
+    """Export the current game to a PGN file."""
+    global _session
+
+    if not _session.move_history:
+        return None
+
+    try:
+        # Create PGN game
+        game = chess.pgn.Game()
+        game.headers["Event"] = "Chess vs AlphaZero AI"
+        game.headers["Site"] = "Local"
+        game.headers["Date"] = datetime.now().strftime("%Y.%m.%d")
+        game.headers["Round"] = "1"
+        game.headers["White"] = "Player" if _session.player_color == "white" else "AI"
+        game.headers["Black"] = "AI" if _session.player_color == "white" else "Player"
+        game.headers["Result"] = _session.result if _session.game_over else "*"
+
+        # Replay moves
+        node = game
+        board = chess.Board()
+        for move_uci in _session.move_history:
+            move = chess.Move.from_uci(move_uci)
+            if move in board.legal_moves:
+                node = node.add_variation(move)
+                board.push(move)
+            else:
+                break
+        
+        # Write to temp file
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.pgn', delete=False) as tmp:
+            print(game, file=tmp, end="\n\n")
+            return tmp.name
+
+    except Exception as e:
+        logger.error(f"Error exporting PGN: {e}")
+        return None
+
+
 # Continuous learning functions
 _learning_session: ContinuousLearningSession | None = None
 _learning_stop_event = threading.Event()
@@ -940,6 +981,10 @@ def create_chess_ui() -> gr.Blocks:
                             elem_id="history-display",
                         )
 
+                        with gr.Row():
+                            export_pgn_btn = gr.Button("Export PGN", size="sm", elem_id="export-pgn-btn")
+                            pgn_file = gr.File(label="Download PGN", file_count="single", type="filepath", interactive=False, elem_id="pgn-file-output", height=80)
+
                         analysis_display = gr.Markdown(
                             value="*AI analysis will appear here*",
                             label="AI Analysis",
@@ -1048,6 +1093,11 @@ def create_chess_ui() -> gr.Blocks:
         reset_score_btn.click(
             fn=reset_scorecard,
             outputs=[scorecard_display],
+        )
+
+        export_pgn_btn.click(
+            fn=export_game_pgn,
+            outputs=[pgn_file],
         )
 
         # Event handlers for Learning mode
