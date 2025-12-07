@@ -220,7 +220,7 @@ class ContinuousLearningConfig:
     # Session time limits
     max_session_minutes: int = 60
     max_games: int = 100
-    max_moves_per_game: int = 500
+    max_moves_per_game: int = 150
 
     # Learning parameters
     learn_every_n_games: int = 5
@@ -419,6 +419,11 @@ class ContinuousLearningSession:
         # Agents (lazy loaded)
         self._agent: ChessEnsembleAgent | None = None
 
+        # Live state for UI
+        self.current_fen: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+        self.current_last_move: str | None = None
+        self.current_game_id_display: str = ""
+
     @property
     def agent(self) -> "ChessEnsembleAgent":
         """Lazy load the ensemble agent."""
@@ -490,6 +495,16 @@ class ContinuousLearningSession:
             if not self.is_running:
                 break
 
+            # Repetition check (simple string based)
+            # Efficiently track position occurrences
+            pos_key = state.fen.split(' ')[0]  # Just board state
+            # In a real heavy implementation, we'd use a transposition table or similar
+            # For now, we rely on the positions list but this is O(N) checking per move which is slow for long games
+            # Optimization: Use a localized counter if needed, but for < 150 moves list scan is acceptable for now
+            # Actually, let's implement a proper counter
+            
+            # (Note: This is just a placeholder comment for the thought process, implementing below)
+
             move_start = time.time()
 
             # Get move from agent
@@ -522,7 +537,20 @@ class ContinuousLearningSession:
             positions.append(state.fen)
             position_tensors.append(state.to_tensor())
 
+            # Update live state
+            self.current_fen = state.fen
+            self.current_last_move = move
+            self.current_game_id_display = game_id
+
             move_count += 1
+
+            # Check for 3-fold repetition
+            # A correct implementation would require full FEN matching including castling rights/en passant
+            # Here we do a simpler check on the full FEN string for exact state repetition
+            count = positions.count(state.fen)
+            if count >= 3:
+                # Force draw
+                break
 
         end_time = datetime.now()
         total_time = (end_time - start_time).total_seconds() * 1000
@@ -542,6 +570,9 @@ class ContinuousLearningSession:
         elif move_count >= self.learning_config.max_moves_per_game:
             result = GameResult.DRAW
             termination = "max_moves"
+        elif positions.count(state.fen) >= 3:
+            result = GameResult.DRAW
+            termination = "repetition"
         else:
             result = GameResult.IN_PROGRESS
             termination = "interrupted"

@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 # Test configuration
 @dataclass
-class TestConfig:
+class SeleniumTestConfig:
     """Configuration for Selenium tests."""
 
     base_url: str = "http://localhost:7861"
@@ -47,9 +47,9 @@ class TestConfig:
 
 
 # Get config from environment or use defaults
-def get_config() -> TestConfig:
+def get_config() -> SeleniumTestConfig:
     """Get test configuration from environment."""
-    return TestConfig(
+    return SeleniumTestConfig(
         base_url=os.getenv("CHESS_UI_URL", "http://localhost:7861"),
         headless=os.getenv("HEADED", "").lower() not in ("1", "true", "yes"),
         slow_mo=float(os.getenv("SLOW_MO", "0.5")),
@@ -59,13 +59,13 @@ def get_config() -> TestConfig:
 
 # Fixtures
 @pytest.fixture(scope="module")
-def config() -> TestConfig:
+def config() -> SeleniumTestConfig:
     """Provide test configuration."""
     return get_config()
 
 
 @pytest.fixture(scope="module")
-def ui_server(config: TestConfig) -> Generator[subprocess.Popen, None, None]:
+def ui_server(config: SeleniumTestConfig) -> Generator[subprocess.Popen, None, None]:
     """Start the UI server for testing."""
     # Start the UI server
     server_process = subprocess.Popen(
@@ -95,7 +95,7 @@ def ui_server(config: TestConfig) -> Generator[subprocess.Popen, None, None]:
 
 
 @pytest.fixture(scope="function")
-def driver(config: TestConfig) -> Generator["WebDriver", None, None]:
+def driver(config: SeleniumTestConfig) -> Generator["WebDriver", None, None]:
     """Create and configure WebDriver."""
     try:
         from selenium import webdriver
@@ -148,7 +148,7 @@ def driver(config: TestConfig) -> Generator["WebDriver", None, None]:
 
 
 @pytest.fixture(scope="function")
-def chess_page(driver: "WebDriver", config: TestConfig, ui_server: subprocess.Popen) -> "ChessPage":
+def chess_page(driver: "WebDriver", config: SeleniumTestConfig, ui_server: subprocess.Popen) -> "ChessPage":
     """Navigate to chess page and return page object."""
     page = ChessPage(driver, config)
     page.navigate()
@@ -159,7 +159,7 @@ def chess_page(driver: "WebDriver", config: TestConfig, ui_server: subprocess.Po
 class ChessPage:
     """Page object for the chess UI."""
 
-    def __init__(self, driver: "WebDriver", config: TestConfig) -> None:
+    def __init__(self, driver: "WebDriver", config: SeleniumTestConfig) -> None:
         """Initialize the page object."""
         self.driver = driver
         self.config = config

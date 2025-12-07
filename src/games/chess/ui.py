@@ -849,6 +849,23 @@ def render_learning_status() -> str:
     """
 
 
+
+def render_learning_board_html() -> str:
+    """Render the live learning board."""
+    global _learning_session
+
+    if _learning_session is None or not _learning_session.is_running:
+        return "<div style='text-align:center; padding:50px; color:#666;'>Waiting for session to start...</div>"
+
+    game_info = f"<div style='text-align:center; margin-bottom:10px; font-weight:bold; color:#00d9ff;'>Playing: {_learning_session.current_game_id_display}</div>"
+
+    return game_info + render_board_html(
+        _learning_session.current_fen,
+        _learning_session.current_last_move,
+        flipped=False
+    )
+
+
 def create_chess_ui() -> gr.Blocks:
     """Create the Gradio chess UI with scorecard and learning mode."""
     with gr.Blocks(
@@ -991,10 +1008,18 @@ def create_chess_ui() -> gr.Blocks:
                             elem_id="learning-status-display",
                         )
 
-                        refresh_btn = gr.Button(
-                            "🔄 Refresh Status",
-                            elem_id="refresh-btn",
-                        )
+                # Live Board Display
+                with gr.Row():
+                    learning_board_display = gr.HTML(
+                        value=render_learning_board_html(),
+                        label="Live Training Games",
+                        elem_id="learning-board-display",
+                    )
+
+                    refresh_btn = gr.Button(
+                        "🔄 Refresh Status",
+                        elem_id="refresh-btn",
+                    )
 
         # Event handlers for Play mode
         move_btn.click(
@@ -1042,12 +1067,19 @@ def create_chess_ui() -> gr.Blocks:
             outputs=[learning_message, learning_status_display],
         )
 
+        # Auto-refresh learning tab (status + board) every 1 second
+        demo.load(
+            fn=lambda: (render_learning_status(), render_learning_board_html()),
+            outputs=[learning_status_display, learning_board_display],
+            every=1.0,
+        )
+
         refresh_btn.click(
             fn=get_learning_status,
             outputs=[learning_status_display],
         )
 
-        # Auto-refresh learning status every 2 seconds
+        # Initialize Play tab state on load
         demo.load(
             fn=lambda: (
                 render_board_html(_session.fen),
