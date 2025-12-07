@@ -13,19 +13,16 @@ Best Practices 2025:
 from __future__ import annotations
 
 import asyncio
-import json
-import os
 import uuid
-from datetime import datetime, timezone
-from typing import Any
 
-from flask import Flask, jsonify, render_template, request, Response
+from flask import Flask, Response, jsonify, render_template, request
 from flask_cors import CORS
 
+from .chess_ensemble import ChessEnsemble
+
 # Local imports
-from .chess_state import ChessState, ChessConfig, CHESS_AVAILABLE
-from .chess_ensemble import ChessEnsemble, EnsembleConfig
-from .learning_dashboard import LearningDashboard, DashboardConfig
+from .chess_state import CHESS_AVAILABLE, ChessState
+from .learning_dashboard import LearningDashboard
 
 # Create Flask app
 app = Flask(__name__)
@@ -76,14 +73,16 @@ def new_game():
     except Exception as e:
         return jsonify({"error": f"Invalid FEN: {e}"}), 400
 
-    return jsonify({
-        "game_id": game_id,
-        "fen": state.get_fen(),
-        "turn": "white" if state.board.turn else "black",
-        "legal_moves": state.get_legal_actions(),
-        "phase": state.get_phase(),
-        "evaluation": state.evaluate(),
-    })
+    return jsonify(
+        {
+            "game_id": game_id,
+            "fen": state.get_fen(),
+            "turn": "white" if state.board.turn else "black",
+            "legal_moves": state.get_legal_actions(),
+            "phase": state.get_phase(),
+            "evaluation": state.evaluate(),
+        }
+    )
 
 
 @app.route("/api/move", methods=["POST"])
@@ -113,19 +112,21 @@ def make_move():
 
             state = state.apply_action(move)
 
-        return jsonify({
-            "game_id": game_id,
-            "fen": state.get_fen(),
-            "turn": "white" if state.board.turn else "black",
-            "legal_moves": state.get_legal_actions(),
-            "is_check": state.board.is_check(),
-            "is_checkmate": state.board.is_checkmate(),
-            "is_stalemate": state.board.is_stalemate(),
-            "is_game_over": state.is_terminal(),
-            "phase": state.get_phase(),
-            "evaluation": state.evaluate(),
-            "result": state.board.result() if state.is_terminal() else None,
-        })
+        return jsonify(
+            {
+                "game_id": game_id,
+                "fen": state.get_fen(),
+                "turn": "white" if state.board.turn else "black",
+                "legal_moves": state.get_legal_actions(),
+                "is_check": state.board.is_check(),
+                "is_checkmate": state.board.is_checkmate(),
+                "is_stalemate": state.board.is_stalemate(),
+                "is_game_over": state.is_terminal(),
+                "phase": state.get_phase(),
+                "evaluation": state.evaluate(),
+                "result": state.board.result() if state.is_terminal() else None,
+            }
+        )
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
@@ -153,18 +154,18 @@ def ai_move():
         state = ChessState.from_fen(fen)
 
         if state.is_terminal():
-            return jsonify({
-                "error": "Game is over",
-                "result": state.board.result(),
-            }), 400
+            return jsonify(
+                {
+                    "error": "Game is over",
+                    "result": state.board.result(),
+                }
+            ), 400
 
         # Run ensemble asynchronously
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
         try:
-            selected_move, metadata = loop.run_until_complete(
-                ensemble.select_move(state, time_limit)
-            )
+            selected_move, metadata = loop.run_until_complete(ensemble.select_move(state, time_limit))
         finally:
             loop.close()
 
@@ -174,23 +175,26 @@ def ai_move():
         # Apply the move
         new_state = state.apply_action(selected_move)
 
-        return jsonify({
-            "game_id": game_id,
-            "move": selected_move,
-            "fen": new_state.get_fen(),
-            "turn": "white" if new_state.board.turn else "black",
-            "legal_moves": new_state.get_legal_actions(),
-            "is_check": new_state.board.is_check(),
-            "is_checkmate": new_state.board.is_checkmate(),
-            "is_stalemate": new_state.board.is_stalemate(),
-            "is_game_over": new_state.is_terminal(),
-            "phase": new_state.get_phase(),
-            "evaluation": new_state.evaluate(),
-            "result": new_state.board.result() if new_state.is_terminal() else None,
-            "ai_analysis": metadata,
-        })
+        return jsonify(
+            {
+                "game_id": game_id,
+                "move": selected_move,
+                "fen": new_state.get_fen(),
+                "turn": "white" if new_state.board.turn else "black",
+                "legal_moves": new_state.get_legal_actions(),
+                "is_check": new_state.board.is_check(),
+                "is_checkmate": new_state.board.is_checkmate(),
+                "is_stalemate": new_state.board.is_stalemate(),
+                "is_game_over": new_state.is_terminal(),
+                "phase": new_state.get_phase(),
+                "evaluation": new_state.evaluate(),
+                "result": new_state.board.result() if new_state.is_terminal() else None,
+                "ai_analysis": metadata,
+            }
+        )
     except Exception as e:
         import traceback
+
         traceback.print_exc()
         return jsonify({"error": str(e)}), 500
 
@@ -268,7 +272,7 @@ def dashboard_export():
 def dashboard_html():
     """Get HTML dashboard report."""
     html = _dashboard.generate_html_report()
-    return Response(html, mimetype='text/html')
+    return Response(html, mimetype="text/html")
 
 
 @app.route("/api/game/<game_id>/learning")

@@ -18,14 +18,17 @@ Best Practices 2025:
 from __future__ import annotations
 
 import asyncio
+import importlib.util
+import json
+import logging
 import os
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import Enum, auto
-from typing import Any, Callable
-import json
-import logging
+from typing import Any
+
+from .chess_state import ChessState
 
 # Setup logging
 logging.basicConfig(level=logging.INFO)
@@ -34,31 +37,29 @@ logger = logging.getLogger(__name__)
 # Optional imports
 try:
     import chess
+
     CHESS_AVAILABLE = True
 except ImportError:
     CHESS_AVAILABLE = False
 
-try:
-    import torch
-    TORCH_AVAILABLE = True
-except ImportError:
-    TORCH_AVAILABLE = False
-
-from .chess_state import ChessState, ChessConfig
+# Check torch availability without importing
+TORCH_AVAILABLE = importlib.util.find_spec("torch") is not None
 
 
 class AgentType(Enum):
     """Available agent types for chess."""
-    HRM = auto()       # Hierarchical Reasoning Module
-    TRM = auto()       # Tiny Recursive Model
-    MCTS = auto()      # Monte Carlo Tree Search
+
+    HRM = auto()  # Hierarchical Reasoning Module
+    TRM = auto()  # Tiny Recursive Model
+    MCTS = auto()  # Monte Carlo Tree Search
     SYMBOLIC = auto()  # Neuro-Symbolic reasoning
-    HYBRID = auto()    # LLM + Neural hybrid
+    HYBRID = auto()  # LLM + Neural hybrid
 
 
 @dataclass
 class AgentResult:
     """Result from an individual agent."""
+
     agent_type: AgentType
     recommended_move: str
     confidence: float
@@ -73,44 +74,24 @@ class EnsembleConfig:
     """Configuration for the chess ensemble."""
 
     # Agent weights (sum to 1.0)
-    hrm_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_HRM_WEIGHT", "0.25"))
-    )
-    trm_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_TRM_WEIGHT", "0.25"))
-    )
-    mcts_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_MCTS_WEIGHT", "0.35"))
-    )
-    symbolic_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_SYMBOLIC_WEIGHT", "0.15"))
-    )
+    hrm_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_HRM_WEIGHT", "0.25")))
+    trm_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_TRM_WEIGHT", "0.25")))
+    mcts_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_MCTS_WEIGHT", "0.35")))
+    symbolic_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_SYMBOLIC_WEIGHT", "0.15")))
 
     # MCTS parameters
-    mcts_simulations: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_MCTS_SIMULATIONS", "100"))
-    )
-    mcts_exploration: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_MCTS_EXPLORATION", "1.4"))
-    )
+    mcts_simulations: int = field(default_factory=lambda: int(os.getenv("CHESS_MCTS_SIMULATIONS", "100")))
+    mcts_exploration: float = field(default_factory=lambda: float(os.getenv("CHESS_MCTS_EXPLORATION", "1.4")))
 
     # Timeout settings
-    agent_timeout_ms: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_AGENT_TIMEOUT_MS", "5000"))
-    )
+    agent_timeout_ms: int = field(default_factory=lambda: int(os.getenv("CHESS_AGENT_TIMEOUT_MS", "5000")))
 
     # Consensus threshold
-    consensus_threshold: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_CONSENSUS_THRESHOLD", "0.6"))
-    )
+    consensus_threshold: float = field(default_factory=lambda: float(os.getenv("CHESS_CONSENSUS_THRESHOLD", "0.6")))
 
     # Learning capture
     capture_learning: bool = True
-    learning_db_path: str = field(
-        default_factory=lambda: os.getenv(
-            "CHESS_LEARNING_DB", "./chess_learning.jsonl"
-        )
-    )
+    learning_db_path: str = field(default_factory=lambda: os.getenv("CHESS_LEARNING_DB", "./chess_learning.jsonl"))
 
     def __post_init__(self):
         """Normalize weights."""
@@ -125,6 +106,7 @@ class EnsembleConfig:
 @dataclass
 class LearningRecord:
     """Record of a single move decision for learning."""
+
     timestamp: str
     game_id: str
     move_number: int
@@ -174,7 +156,7 @@ class ChessEnsemble:
         game_id: str | None = None,
     ):
         self.config = config or EnsembleConfig()
-        self.game_id = game_id or datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+        self.game_id = game_id or datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
         self.learning_records: list[LearningRecord] = []
         self.move_count = 0
 
@@ -229,19 +211,14 @@ class ChessEnsemble:
                 logger.warning(f"Agent failed: {result}")
 
         # Aggregate votes
-        selected_move, confidence, consensus = self._aggregate_votes(
-            agent_results, legal_moves
-        )
+        selected_move, confidence, consensus = self._aggregate_votes(agent_results, legal_moves)
 
         # Calculate timing
         total_time_ms = (time.perf_counter() - start_time) * 1000
 
         # Capture learning if enabled
         if self.config.capture_learning:
-            self._capture_learning(
-                state, selected_move, agent_results,
-                confidence, consensus, total_time_ms
-            )
+            self._capture_learning(state, selected_move, agent_results, confidence, consensus, total_time_ms)
 
         self.move_count += 1
 
@@ -304,7 +281,7 @@ class ChessEnsemble:
         phase = state.get_phase()
 
         best_move = legal_moves[0]
-        best_score = -float('inf')
+        best_score = -float("inf")
         reasoning = ""
 
         for move_uci in legal_moves:
@@ -334,10 +311,14 @@ class ChessEnsemble:
                     reasons.append("center control")
 
                 # Castle early
-                if state.board.has_castling_rights(piece.color):
-                    if move.uci() in ["e1g1", "e1c1", "e8g8", "e8c8"]:
-                        score += 0.5
-                        reasons.append("castling")
+                if state.board.has_castling_rights(piece.color) and move.uci() in [
+                    "e1g1",
+                    "e1c1",
+                    "e8g8",
+                    "e8c8",
+                ]:
+                    score += 0.5
+                    reasons.append("castling")
 
             # Middlegame principles
             elif phase == "middlegame":
@@ -373,6 +354,7 @@ class ChessEnsemble:
                 captured = state.board.piece_at(move.to_square)
                 if captured:
                     from .chess_state import PIECE_VALUES
+
                     score += PIECE_VALUES.get(captured.piece_type, 0) / 1000.0
                     reasons.append("capture")
 
@@ -420,7 +402,7 @@ class ChessEnsemble:
         legal_moves = state.get_legal_actions()
 
         best_move = legal_moves[0]
-        best_score = -float('inf')
+        best_score = -float("inf")
         reasoning = ""
 
         for move_uci in legal_moves:
@@ -447,10 +429,8 @@ class ChessEnsemble:
                 attacker = state.board.piece_at(move.from_square)
                 if captured and attacker:
                     from .chess_state import PIECE_VALUES
-                    material_gain = (
-                        PIECE_VALUES.get(captured.piece_type, 0) -
-                        PIECE_VALUES.get(attacker.piece_type, 0)
-                    )
+
+                    material_gain = PIECE_VALUES.get(captured.piece_type, 0) - PIECE_VALUES.get(attacker.piece_type, 0)
                     if material_gain > 0:
                         score += material_gain / 500.0
                         reasons.append(f"winning capture (+{material_gain})")
@@ -478,11 +458,10 @@ class ChessEnsemble:
                 state.board.push(move)
                 for sq in chess.SQUARES:
                     target = state.board.piece_at(sq)
-                    if target and target.color != state.board.turn:
-                        if state.board.is_pinned(not state.board.turn, sq):
-                            score += 0.2
-                            reasons.append("creates pin")
-                            break
+                    if target and target.color != state.board.turn and state.board.is_pinned(not state.board.turn, sq):
+                        score += 0.2
+                        reasons.append("creates pin")
+                        break
                 state.board.pop()
 
             if score > best_score:
@@ -529,8 +508,8 @@ class ChessEnsemble:
             return legal_moves[0], 1.0, 1
 
         # Statistics for each move
-        visits = {move: 0 for move in legal_moves}
-        wins = {move: 0.0 for move in legal_moves}
+        visits = dict.fromkeys(legal_moves, 0)
+        wins = dict.fromkeys(legal_moves, 0.0)
 
         num_simulations = self.config.mcts_simulations
 
@@ -538,17 +517,17 @@ class ChessEnsemble:
             # Selection: UCB1
             total_visits = sum(visits.values()) + 1
 
-            best_ucb = -float('inf')
+            best_ucb = -float("inf")
             selected_move = legal_moves[0]
 
             for move in legal_moves:
                 if visits[move] == 0:
-                    ucb = float('inf')
+                    ucb = float("inf")
                 else:
                     exploitation = wins[move] / visits[move]
-                    exploration = self.config.mcts_exploration * (
-                        (2 * (total_visits) ** 0.5) / (visits[move] + 1)
-                    ) ** 0.5
+                    exploration = (
+                        self.config.mcts_exploration * ((2 * (total_visits) ** 0.5) / (visits[move] + 1)) ** 0.5
+                    )
                     ucb = exploitation + exploration
 
                 if ucb > best_ucb:
@@ -582,6 +561,7 @@ class ChessEnsemble:
 
             # Semi-random: bias toward captures
             import random
+
             captures = [m for m in legal if current.board.is_capture(chess.Move.from_uci(m))]
             if captures and random.random() < 0.3:
                 move = random.choice(captures)
@@ -627,7 +607,7 @@ class ChessEnsemble:
 
         # Apply rule-based constraints
         rules_applied = []
-        move_scores = {move: 0.0 for move in legal_moves}
+        move_scores = dict.fromkeys(legal_moves, 0.0)
 
         for move_uci in legal_moves:
             move = chess.Move.from_uci(move_uci)
@@ -637,20 +617,18 @@ class ChessEnsemble:
                 continue
 
             # Rule: Don't move the same piece twice in opening
-            if phase == "opening" and len(state.move_history) < 10:
-                if len(state.move_history) >= 2:
-                    last_move = chess.Move.from_uci(state.move_history[-2])
-                    if last_move.to_square == move.from_square:
-                        move_scores[move_uci] -= 0.2
-                        if "avoid repetition" not in rules_applied:
-                            rules_applied.append("avoid repetition")
+            if phase == "opening" and len(state.move_history) < 10 and len(state.move_history) >= 2:
+                last_move = chess.Move.from_uci(state.move_history[-2])
+                if last_move.to_square == move.from_square:
+                    move_scores[move_uci] -= 0.2
+                    if "avoid repetition" not in rules_applied:
+                        rules_applied.append("avoid repetition")
 
             # Rule: Don't bring queen out early
-            if phase == "opening" and piece.piece_type == chess.QUEEN:
-                if len(state.move_history) < 6:
-                    move_scores[move_uci] -= 0.3
-                    if "queen out early" not in rules_applied:
-                        rules_applied.append("queen out early")
+            if phase == "opening" and piece.piece_type == chess.QUEEN and len(state.move_history) < 6:
+                move_scores[move_uci] -= 0.3
+                if "queen out early" not in rules_applied:
+                    rules_applied.append("queen out early")
 
             # Rule: Castle when possible
             if move_uci in ["e1g1", "e1c1", "e8g8", "e8c8"]:
@@ -658,28 +636,26 @@ class ChessEnsemble:
                 rules_applied.append("castling available")
 
             # Rule: Don't move king unless necessary (before castling)
-            if piece.piece_type == chess.KING and phase != "endgame":
-                if state.board.has_castling_rights(piece.color):
-                    move_scores[move_uci] -= 0.2
-                    if "preserve castling" not in rules_applied:
-                        rules_applied.append("preserve castling")
+            if piece.piece_type == chess.KING and phase != "endgame" and state.board.has_castling_rights(piece.color):
+                move_scores[move_uci] -= 0.2
+                if "preserve castling" not in rules_applied:
+                    rules_applied.append("preserve castling")
 
             # Rule: Prioritize development in opening
-            if phase == "opening":
-                if piece.piece_type in [chess.KNIGHT, chess.BISHOP]:
-                    home_rank = 0 if piece.color else 7
-                    if move.from_square // 8 == home_rank:
-                        move_scores[move_uci] += 0.2
-                        if "develop pieces" not in rules_applied:
-                            rules_applied.append("develop pieces")
+            if phase == "opening" and piece.piece_type in [chess.KNIGHT, chess.BISHOP]:
+                home_rank = 0 if piece.color else 7
+                if move.from_square // 8 == home_rank:
+                    move_scores[move_uci] += 0.2
+                    if "develop pieces" not in rules_applied:
+                        rules_applied.append("develop pieces")
 
             # Rule: Trade when ahead in material
             material = self._count_material(state.board)
-            if state.board.is_capture(move):
-                if (state.board.turn and material > 200) or (not state.board.turn and material < -200):
-                    move_scores[move_uci] += 0.15
-                    if "trade when ahead" not in rules_applied:
-                        rules_applied.append("trade when ahead")
+            is_winning = (state.board.turn and material > 200) or (not state.board.turn and material < -200)
+            if state.board.is_capture(move) and is_winning:
+                move_scores[move_uci] += 0.15
+                if "trade when ahead" not in rules_applied:
+                    rules_applied.append("trade when ahead")
 
         # Select best move by rule score
         best_move = max(legal_moves, key=lambda m: move_scores[m])
@@ -693,6 +669,7 @@ class ChessEnsemble:
     def _count_material(self, board: Any) -> int:
         """Count material balance."""
         from .chess_state import PIECE_VALUES
+
         total = 0
         for piece_type in [chess.PAWN, chess.KNIGHT, chess.BISHOP, chess.ROOK, chess.QUEEN]:
             white = len(board.pieces(piece_type, chess.WHITE))
@@ -761,7 +738,7 @@ class ChessEnsemble:
         new_state = state.apply_action(selected_move)
 
         record = LearningRecord(
-            timestamp=datetime.now(timezone.utc).isoformat(),
+            timestamp=datetime.now(UTC).isoformat(),
             game_id=self.game_id,
             move_number=self.move_count + 1,
             fen_before=state.get_fen(),
@@ -828,15 +805,16 @@ class ChessEnsemble:
             "game_id": self.game_id,
             "total_moves": len(self.learning_records),
             "avg_confidence": sum(r.ensemble_confidence for r in self.learning_records) / len(self.learning_records),
-            "consensus_rate": sum(1 for r in self.learning_records if r.consensus_achieved) / len(self.learning_records),
-            "avg_decision_time_ms": sum(r.time_to_decide_ms for r in self.learning_records) / len(self.learning_records),
+            "consensus_rate": sum(1 for r in self.learning_records if r.consensus_achieved)
+            / len(self.learning_records),
+            "avg_decision_time_ms": sum(r.time_to_decide_ms for r in self.learning_records)
+            / len(self.learning_records),
             "agent_agreement_rate": {
                 agent: data["agreed"] / data["total"] if data["total"] > 0 else 0
                 for agent, data in agent_agreement.items()
             },
             "agent_avg_time_ms": {
-                agent: sum(times) / len(times) if times else 0
-                for agent, times in agent_times.items()
+                agent: sum(times) / len(times) if times else 0 for agent, times in agent_times.items()
             },
             "phase_distribution": phase_distribution,
             "evaluation_trend": [r.evaluation_after for r in self.learning_records],

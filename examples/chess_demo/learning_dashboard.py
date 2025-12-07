@@ -18,17 +18,17 @@ from __future__ import annotations
 
 import json
 import os
-from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from pathlib import Path
-from typing import Any
 import statistics
+from dataclasses import dataclass, field
+from datetime import UTC, datetime
+from typing import Any
 
 # Optional imports
 try:
-    import matplotlib.pyplot as plt
     import matplotlib
-    matplotlib.use('Agg')  # Non-interactive backend
+    import matplotlib.pyplot as plt
+
+    matplotlib.use("Agg")  # Non-interactive backend
     MATPLOTLIB_AVAILABLE = True
 except ImportError:
     MATPLOTLIB_AVAILABLE = False
@@ -37,22 +37,16 @@ except ImportError:
 @dataclass
 class DashboardConfig:
     """Dashboard configuration."""
-    learning_db_path: str = field(
-        default_factory=lambda: os.getenv(
-            "CHESS_LEARNING_DB", "./chess_learning.jsonl"
-        )
-    )
-    output_dir: str = field(
-        default_factory=lambda: os.getenv(
-            "CHESS_DASHBOARD_OUTPUT", "./chess_dashboard"
-        )
-    )
+
+    learning_db_path: str = field(default_factory=lambda: os.getenv("CHESS_LEARNING_DB", "./chess_learning.jsonl"))
+    output_dir: str = field(default_factory=lambda: os.getenv("CHESS_DASHBOARD_OUTPUT", "./chess_dashboard"))
     max_records_in_memory: int = 10000
 
 
 @dataclass
 class AgentStats:
     """Statistics for a single agent."""
+
     name: str
     total_decisions: int = 0
     times_selected: int = 0
@@ -66,6 +60,7 @@ class AgentStats:
 @dataclass
 class GameStats:
     """Statistics for a single game."""
+
     game_id: str
     total_moves: int = 0
     avg_confidence: float = 0.0
@@ -101,7 +96,7 @@ class LearningDashboard:
             return
 
         try:
-            with open(self.config.learning_db_path, 'r') as f:
+            with open(self.config.learning_db_path) as f:
                 for line in f:
                     if line.strip():
                         record = json.loads(line)
@@ -109,7 +104,7 @@ class LearningDashboard:
 
                         # Limit records in memory
                         if len(self._records) > self.config.max_records_in_memory:
-                            self._records = self._records[-self.config.max_records_in_memory:]
+                            self._records = self._records[-self.config.max_records_in_memory :]
 
             self._compute_statistics()
         except Exception as e:
@@ -136,14 +131,10 @@ class LearningDashboard:
             game = self._game_stats[game_id]
             game.total_moves += 1
             game.avg_confidence = (
-                (game.avg_confidence * (game.total_moves - 1) +
-                 record.get("ensemble_confidence", 0)) / game.total_moves
-            )
+                game.avg_confidence * (game.total_moves - 1) + record.get("ensemble_confidence", 0)
+            ) / game.total_moves
             if record.get("consensus_achieved"):
-                game.consensus_rate = (
-                    (game.consensus_rate * (game.total_moves - 1) + 1) /
-                    game.total_moves
-                )
+                game.consensus_rate = (game.consensus_rate * (game.total_moves - 1) + 1) / game.total_moves
 
             phase = record.get("game_phase", "unknown")
             game.phase_breakdown[phase] = game.phase_breakdown.get(phase, 0) + 1
@@ -166,13 +157,9 @@ class LearningDashboard:
                 time_ms = agent_result.get("time_ms", 0)
 
                 agent.avg_confidence = (
-                    (agent.avg_confidence * (agent.total_decisions - 1) + conf) /
-                    agent.total_decisions
-                )
-                agent.avg_time_ms = (
-                    (agent.avg_time_ms * (agent.total_decisions - 1) + time_ms) /
-                    agent.total_decisions
-                )
+                    agent.avg_confidence * (agent.total_decisions - 1) + conf
+                ) / agent.total_decisions
+                agent.avg_time_ms = (agent.avg_time_ms * (agent.total_decisions - 1) + time_ms) / agent.total_decisions
 
                 agent.confidence_trend.append(conf)
                 agent.time_trend.append(time_ms)
@@ -196,17 +183,13 @@ class LearningDashboard:
         total_games = len(self._game_stats)
         total_moves = len(self._records)
 
-        avg_confidence = statistics.mean(
-            r.get("ensemble_confidence", 0) for r in self._records
-        ) if self._records else 0
+        avg_confidence = statistics.mean(r.get("ensemble_confidence", 0) for r in self._records) if self._records else 0
 
-        consensus_rate = sum(
-            1 for r in self._records if r.get("consensus_achieved")
-        ) / total_moves if total_moves > 0 else 0
+        consensus_rate = (
+            sum(1 for r in self._records if r.get("consensus_achieved")) / total_moves if total_moves > 0 else 0
+        )
 
-        avg_time = statistics.mean(
-            r.get("time_to_decide_ms", 0) for r in self._records
-        ) if self._records else 0
+        avg_time = statistics.mean(r.get("time_to_decide_ms", 0) for r in self._records) if self._records else 0
 
         # Agent breakdown
         agent_summary = {}
@@ -228,17 +211,19 @@ class LearningDashboard:
         # Recent games
         recent_games = []
         for game_id, stats in list(self._game_stats.items())[-5:]:
-            recent_games.append({
-                "game_id": game_id,
-                "moves": stats.total_moves,
-                "avg_confidence": round(stats.avg_confidence, 3),
-                "consensus_rate": round(stats.consensus_rate, 3),
-                "final_eval": round(stats.final_evaluation, 3),
-            })
+            recent_games.append(
+                {
+                    "game_id": game_id,
+                    "moves": stats.total_moves,
+                    "avg_confidence": round(stats.avg_confidence, 3),
+                    "consensus_rate": round(stats.consensus_rate, 3),
+                    "final_eval": round(stats.final_evaluation, 3),
+                }
+            )
 
         return {
             "status": "ok",
-            "generated_at": datetime.now(timezone.utc).isoformat(),
+            "generated_at": datetime.now(UTC).isoformat(),
             "overall": {
                 "total_games": total_games,
                 "total_moves": total_moves,
@@ -259,13 +244,15 @@ class LearningDashboard:
         }
 
         for name, stats in self._agent_stats.items():
-            comparison["agents"].append({
-                "name": name,
-                "selection_rate": round(stats.agreement_rate, 3),
-                "avg_confidence": round(stats.avg_confidence, 3),
-                "avg_time_ms": round(stats.avg_time_ms, 2),
-                "total_decisions": stats.total_decisions,
-            })
+            comparison["agents"].append(
+                {
+                    "name": name,
+                    "selection_rate": round(stats.agreement_rate, 3),
+                    "avg_confidence": round(stats.avg_confidence, 3),
+                    "avg_time_ms": round(stats.avg_time_ms, 2),
+                    "total_decisions": stats.total_decisions,
+                }
+            )
 
         return comparison
 
@@ -279,19 +266,17 @@ class LearningDashboard:
         trend = []
 
         for i in range(0, len(recent), max(1, len(recent) // 20)):
-            window_records = recent[i:i+window]
+            window_records = recent[i : i + window]
             if window_records:
-                avg_conf = statistics.mean(
-                    r.get("ensemble_confidence", 0) for r in window_records
+                avg_conf = statistics.mean(r.get("ensemble_confidence", 0) for r in window_records)
+                avg_time = statistics.mean(r.get("time_to_decide_ms", 0) for r in window_records)
+                trend.append(
+                    {
+                        "index": i,
+                        "avg_confidence": round(avg_conf, 3),
+                        "avg_time_ms": round(avg_time, 2),
+                    }
                 )
-                avg_time = statistics.mean(
-                    r.get("time_to_decide_ms", 0) for r in window_records
-                )
-                trend.append({
-                    "index": i,
-                    "avg_confidence": round(avg_conf, 3),
-                    "avg_time_ms": round(avg_time, 2),
-                })
 
         return trend
 
@@ -313,16 +298,18 @@ class LearningDashboard:
                     "confidence": ar.get("confidence", 0),
                 }
 
-            moves.append({
-                "move_number": record.get("move_number"),
-                "selected_move": record.get("selected_move"),
-                "fen": record.get("fen_after"),
-                "confidence": record.get("ensemble_confidence"),
-                "consensus": record.get("consensus_achieved"),
-                "phase": record.get("game_phase"),
-                "evaluation": record.get("evaluation_after"),
-                "agent_votes": agent_votes,
-            })
+            moves.append(
+                {
+                    "move_number": record.get("move_number"),
+                    "selected_move": record.get("selected_move"),
+                    "fen": record.get("fen_after"),
+                    "confidence": record.get("ensemble_confidence"),
+                    "consensus": record.get("consensus_achieved"),
+                    "phase": record.get("game_phase"),
+                    "evaluation": record.get("evaluation_after"),
+                    "agent_votes": agent_votes,
+                }
+            )
 
         # Evaluation progression
         eval_progression = [r.get("evaluation_after", 0) for r in game_records]
@@ -344,7 +331,8 @@ class LearningDashboard:
         comparison = self.get_agent_comparison()
         trend = self.get_confidence_trend()
 
-        html = """
+        html = (
+            """
 <!DOCTYPE html>
 <html>
 <head>
@@ -369,28 +357,40 @@ class LearningDashboard:
 <body>
     <div class="container">
         <h1>Chess Ensemble Learning Dashboard</h1>
-        <p class="timestamp">Generated: """ + summary.get("generated_at", "N/A") + """</p>
+        <p class="timestamp">Generated: """
+            + summary.get("generated_at", "N/A")
+            + """</p>
 
         <div class="card">
             <h2>Overall Metrics</h2>
             <div class="metric">
-                <div class="metric-value">""" + str(summary.get("overall", {}).get("total_games", 0)) + """</div>
+                <div class="metric-value">"""
+            + str(summary.get("overall", {}).get("total_games", 0))
+            + """</div>
                 <div class="metric-label">Total Games</div>
             </div>
             <div class="metric">
-                <div class="metric-value">""" + str(summary.get("overall", {}).get("total_moves", 0)) + """</div>
+                <div class="metric-value">"""
+            + str(summary.get("overall", {}).get("total_moves", 0))
+            + """</div>
                 <div class="metric-label">Total Moves</div>
             </div>
             <div class="metric">
-                <div class="metric-value">""" + str(round(summary.get("overall", {}).get("avg_confidence", 0) * 100, 1)) + """%</div>
+                <div class="metric-value">"""
+            + str(round(summary.get("overall", {}).get("avg_confidence", 0) * 100, 1))
+            + """%</div>
                 <div class="metric-label">Avg Confidence</div>
             </div>
             <div class="metric">
-                <div class="metric-value">""" + str(round(summary.get("overall", {}).get("consensus_rate", 0) * 100, 1)) + """%</div>
+                <div class="metric-value">"""
+            + str(round(summary.get("overall", {}).get("consensus_rate", 0) * 100, 1))
+            + """%</div>
                 <div class="metric-label">Consensus Rate</div>
             </div>
             <div class="metric">
-                <div class="metric-value">""" + str(round(summary.get("overall", {}).get("avg_decision_time_ms", 0), 0)) + """ms</div>
+                <div class="metric-value">"""
+            + str(round(summary.get("overall", {}).get("avg_decision_time_ms", 0), 0))
+            + """ms</div>
                 <div class="metric-label">Avg Decision Time</div>
             </div>
         </div>
@@ -406,6 +406,7 @@ class LearningDashboard:
                     <th>Total Decisions</th>
                 </tr>
 """
+        )
         for agent in comparison.get("agents", []):
             selection_pct = round(agent.get("selection_rate", 0) * 100, 1)
             html += f"""
@@ -488,7 +489,7 @@ class LearningDashboard:
         for point in trend[-20:]:  # Last 20 data points
             height = int(point.get("avg_confidence", 0) * 100)
             html += f"""
-                <div style="width: 20px; height: {height}px; background: #4CAF50; border-radius: 2px 2px 0 0;" title="Confidence: {point.get('avg_confidence', 0)}"></div>
+                <div style="width: 20px; height: {height}px; background: #4CAF50; border-radius: 2px 2px 0 0;" title="Confidence: {point.get("avg_confidence", 0)}"></div>
 """
         html += """
             </div>
@@ -508,7 +509,7 @@ class LearningDashboard:
         os.makedirs(os.path.dirname(path) or ".", exist_ok=True)
 
         html = self.generate_html_report()
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             f.write(html)
 
         return path
@@ -529,12 +530,13 @@ class LearningDashboard:
             },
         }
 
-        with open(path, 'w') as f:
+        with open(path, "w") as f:
             json.dump(data, f, indent=2)
 
         return path
 
     if MATPLOTLIB_AVAILABLE:
+
         def generate_charts(self, output_dir: str | None = None) -> list[str]:
             """Generate matplotlib charts for the dashboard."""
             out_dir = output_dir or self.config.output_dir
@@ -553,18 +555,18 @@ class LearningDashboard:
                 x = range(len(agents))
                 width = 0.35
 
-                ax.bar([i - width/2 for i in x], selection_rates, width, label='Selection Rate %', color='#4CAF50')
-                ax.bar([i + width/2 for i in x], confidences, width, label='Avg Confidence %', color='#2196F3')
+                ax.bar([i - width / 2 for i in x], selection_rates, width, label="Selection Rate %", color="#4CAF50")
+                ax.bar([i + width / 2 for i in x], confidences, width, label="Avg Confidence %", color="#2196F3")
 
-                ax.set_ylabel('Percentage')
-                ax.set_title('Agent Performance Comparison')
+                ax.set_ylabel("Percentage")
+                ax.set_title("Agent Performance Comparison")
                 ax.set_xticks(x)
                 ax.set_xticklabels(agents)
                 ax.legend()
                 ax.set_ylim(0, 100)
 
-                chart_path = os.path.join(out_dir, 'agent_comparison.png')
-                plt.savefig(chart_path, dpi=150, bbox_inches='tight')
+                chart_path = os.path.join(out_dir, "agent_comparison.png")
+                plt.savefig(chart_path, dpi=150, bbox_inches="tight")
                 plt.close()
                 charts.append(chart_path)
 
@@ -576,16 +578,16 @@ class LearningDashboard:
                 indices = [t["index"] for t in trend]
                 confidences = [t["avg_confidence"] * 100 for t in trend]
 
-                ax.plot(indices, confidences, 'g-', linewidth=2, marker='o')
-                ax.fill_between(indices, confidences, alpha=0.3, color='green')
-                ax.set_xlabel('Move Index')
-                ax.set_ylabel('Confidence %')
-                ax.set_title('Ensemble Confidence Trend')
+                ax.plot(indices, confidences, "g-", linewidth=2, marker="o")
+                ax.fill_between(indices, confidences, alpha=0.3, color="green")
+                ax.set_xlabel("Move Index")
+                ax.set_ylabel("Confidence %")
+                ax.set_title("Ensemble Confidence Trend")
                 ax.set_ylim(0, 100)
                 ax.grid(True, alpha=0.3)
 
-                chart_path = os.path.join(out_dir, 'confidence_trend.png')
-                plt.savefig(chart_path, dpi=150, bbox_inches='tight')
+                chart_path = os.path.join(out_dir, "confidence_trend.png")
+                plt.savefig(chart_path, dpi=150, bbox_inches="tight")
                 plt.close()
                 charts.append(chart_path)
 

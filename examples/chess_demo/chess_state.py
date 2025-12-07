@@ -24,6 +24,7 @@ try:
     import chess
     import chess.pgn
     import chess.svg
+
     CHESS_AVAILABLE = True
 except ImportError:
     CHESS_AVAILABLE = False
@@ -32,6 +33,7 @@ except ImportError:
 # Optional torch import
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -47,7 +49,7 @@ class GameState(Protocol):
         """Return list of legal actions."""
         ...
 
-    def apply_action(self, action: str) -> "GameState":
+    def apply_action(self, action: str) -> GameState:
         """Apply action and return new state."""
         ...
 
@@ -80,14 +82,70 @@ PIECE_VALUES = {
 
 # Position tables for piece-square evaluation (simplified)
 PAWN_TABLE = [
-    0,  0,  0,  0,  0,  0,  0,  0,
-    50, 50, 50, 50, 50, 50, 50, 50,
-    10, 10, 20, 30, 30, 20, 10, 10,
-    5,  5, 10, 25, 25, 10,  5,  5,
-    0,  0,  0, 20, 20,  0,  0,  0,
-    5, -5,-10,  0,  0,-10, -5,  5,
-    5, 10, 10,-20,-20, 10, 10,  5,
-    0,  0,  0,  0,  0,  0,  0,  0
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    50,
+    10,
+    10,
+    20,
+    30,
+    30,
+    20,
+    10,
+    10,
+    5,
+    5,
+    10,
+    25,
+    25,
+    10,
+    5,
+    5,
+    0,
+    0,
+    0,
+    20,
+    20,
+    0,
+    0,
+    0,
+    5,
+    -5,
+    -10,
+    0,
+    0,
+    -10,
+    -5,
+    5,
+    5,
+    10,
+    10,
+    -20,
+    -20,
+    10,
+    10,
+    5,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 ]
 
 
@@ -101,20 +159,12 @@ class ChessConfig:
     board_size: int = 8
 
     # Evaluation parameters
-    material_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_MATERIAL_WEIGHT", "0.6"))
-    )
-    position_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_POSITION_WEIGHT", "0.2"))
-    )
-    mobility_weight: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_MOBILITY_WEIGHT", "0.2"))
-    )
+    material_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_MATERIAL_WEIGHT", "0.6")))
+    position_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_POSITION_WEIGHT", "0.2")))
+    mobility_weight: float = field(default_factory=lambda: float(os.getenv("CHESS_MOBILITY_WEIGHT", "0.2")))
 
     # MCTS parameters
-    max_moves: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_MAX_MOVES", "500"))
-    )
+    max_moves: int = field(default_factory=lambda: int(os.getenv("CHESS_MAX_MOVES", "500")))
 
     def __post_init__(self):
         """Normalize weights."""
@@ -153,9 +203,7 @@ class ChessState(GameState):
     def get_legal_actions(self) -> list[str]:
         """Return list of legal moves in UCI format."""
         if self._legal_moves_cache is None:
-            self._legal_moves_cache = [
-                move.uci() for move in self.board.legal_moves
-            ]
+            self._legal_moves_cache = [move.uci() for move in self.board.legal_moves]
         return self._legal_moves_cache
 
     def apply_action(self, action: str) -> ChessState:
@@ -172,10 +220,7 @@ class ChessState(GameState):
 
     def is_terminal(self) -> bool:
         """Check if game is over."""
-        return (
-            self.board.is_game_over() or
-            len(self.move_history) >= self.config.max_moves
-        )
+        return self.board.is_game_over() or len(self.move_history) >= self.config.max_moves
 
     def get_reward(self, player: int = 1) -> float:
         """
@@ -308,9 +353,9 @@ class ChessState(GameState):
 
         # Combine with weights
         total = (
-            self.config.material_weight * material_score +
-            self.config.mobility_weight * mobility_score +
-            self.config.position_weight * position_score
+            self.config.material_weight * material_score
+            + self.config.mobility_weight * mobility_score
+            + self.config.position_weight * position_score
         )
 
         # Normalize to [-1, 1]
@@ -424,6 +469,7 @@ class ChessState(GameState):
     def from_pgn(cls, pgn_str: str, config: ChessConfig | None = None) -> ChessState:
         """Create state from PGN string."""
         import io
+
         pgn = io.StringIO(pgn_str)
         game = chess.pgn.read_game(pgn)
 
@@ -461,6 +507,7 @@ class ChessState(GameState):
 
 
 # Utility functions for move encoding/decoding
+
 
 def uci_to_index(uci: str) -> int:
     """

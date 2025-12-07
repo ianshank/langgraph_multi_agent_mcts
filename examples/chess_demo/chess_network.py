@@ -23,6 +23,7 @@ try:
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
+
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -39,36 +40,22 @@ class ChessNetworkConfig:
     board_size: int = 8
 
     # Network architecture
-    num_residual_blocks: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_RESIDUAL_BLOCKS", "6"))
-    )
-    num_filters: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_NUM_FILTERS", "128"))
-    )
+    num_residual_blocks: int = field(default_factory=lambda: int(os.getenv("CHESS_RESIDUAL_BLOCKS", "6")))
+    num_filters: int = field(default_factory=lambda: int(os.getenv("CHESS_NUM_FILTERS", "128")))
 
     # Policy head
-    policy_filters: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_POLICY_FILTERS", "32"))
-    )
+    policy_filters: int = field(default_factory=lambda: int(os.getenv("CHESS_POLICY_FILTERS", "32")))
     num_actions: int = 4672  # Approximate number of possible chess moves
 
     # Value head
-    value_filters: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_VALUE_FILTERS", "32"))
-    )
-    value_hidden: int = field(
-        default_factory=lambda: int(os.getenv("CHESS_VALUE_HIDDEN", "256"))
-    )
+    value_filters: int = field(default_factory=lambda: int(os.getenv("CHESS_VALUE_FILTERS", "32")))
+    value_hidden: int = field(default_factory=lambda: int(os.getenv("CHESS_VALUE_HIDDEN", "256")))
 
     # Training
-    dropout: float = field(
-        default_factory=lambda: float(os.getenv("CHESS_DROPOUT", "0.1"))
-    )
+    dropout: float = field(default_factory=lambda: float(os.getenv("CHESS_DROPOUT", "0.1")))
 
     # Device
-    device: str = field(
-        default_factory=lambda: "cuda" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu"
-    )
+    device: str = field(default_factory=lambda: "cuda" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu")
 
 
 if TORCH_AVAILABLE:
@@ -105,46 +92,23 @@ if TORCH_AVAILABLE:
             self.config = config or ChessNetworkConfig()
 
             # Initial convolution
-            self.initial_conv = nn.Conv2d(
-                self.config.input_channels,
-                self.config.num_filters,
-                3,
-                padding=1,
-                bias=False
-            )
+            self.initial_conv = nn.Conv2d(self.config.input_channels, self.config.num_filters, 3, padding=1, bias=False)
             self.initial_bn = nn.BatchNorm2d(self.config.num_filters)
 
             # Residual tower
-            self.residual_blocks = nn.ModuleList([
-                ResidualBlock(self.config.num_filters)
-                for _ in range(self.config.num_residual_blocks)
-            ])
+            self.residual_blocks = nn.ModuleList(
+                [ResidualBlock(self.config.num_filters) for _ in range(self.config.num_residual_blocks)]
+            )
 
             # Policy head
-            self.policy_conv = nn.Conv2d(
-                self.config.num_filters,
-                self.config.policy_filters,
-                1,
-                bias=False
-            )
+            self.policy_conv = nn.Conv2d(self.config.num_filters, self.config.policy_filters, 1, bias=False)
             self.policy_bn = nn.BatchNorm2d(self.config.policy_filters)
-            self.policy_fc = nn.Linear(
-                self.config.policy_filters * 64,
-                self.config.num_actions
-            )
+            self.policy_fc = nn.Linear(self.config.policy_filters * 64, self.config.num_actions)
 
             # Value head
-            self.value_conv = nn.Conv2d(
-                self.config.num_filters,
-                self.config.value_filters,
-                1,
-                bias=False
-            )
+            self.value_conv = nn.Conv2d(self.config.num_filters, self.config.value_filters, 1, bias=False)
             self.value_bn = nn.BatchNorm2d(self.config.value_filters)
-            self.value_fc1 = nn.Linear(
-                self.config.value_filters * 64,
-                self.config.value_hidden
-            )
+            self.value_fc1 = nn.Linear(self.config.value_filters * 64, self.config.value_hidden)
             self.value_fc2 = nn.Linear(self.config.value_hidden, 1)
 
             # Dropout for regularization
@@ -181,7 +145,7 @@ if TORCH_AVAILABLE:
             # Apply legal move mask if provided
             if legal_mask is not None:
                 # Mask illegal moves with large negative value
-                policy = policy.masked_fill(~legal_mask, float('-inf'))
+                policy = policy.masked_fill(~legal_mask, float("-inf"))
 
             policy = F.log_softmax(policy, dim=1)
 
@@ -232,18 +196,21 @@ if TORCH_AVAILABLE:
 
         def save(self, path: str) -> None:
             """Save model weights."""
-            torch.save({
-                'model_state_dict': self.state_dict(),
-                'config': self.config,
-            }, path)
+            torch.save(
+                {
+                    "model_state_dict": self.state_dict(),
+                    "config": self.config,
+                },
+                path,
+            )
 
         @classmethod
         def load(cls, path: str) -> ChessNetwork:
             """Load model from checkpoint."""
-            checkpoint = torch.load(path, map_location='cpu')
-            config = checkpoint.get('config', ChessNetworkConfig())
+            checkpoint = torch.load(path, map_location="cpu")
+            config = checkpoint.get("config", ChessNetworkConfig())
             model = cls(config)
-            model.load_state_dict(checkpoint['model_state_dict'])
+            model.load_state_dict(checkpoint["model_state_dict"])
             return model
 
 else:
@@ -269,12 +236,12 @@ class SimpleChessEvaluator:
     def __init__(self):
         # Piece values in centipawns
         self.piece_values = {
-            1: 100,   # Pawn
-            2: 320,   # Knight
-            3: 330,   # Bishop
-            4: 500,   # Rook
-            5: 900,   # Queen
-            6: 20000, # King
+            1: 100,  # Pawn
+            2: 320,  # Knight
+            3: 330,  # Bishop
+            4: 500,  # Rook
+            5: 900,  # Queen
+            6: 20000,  # King
         }
 
     def evaluate(self, board: Any) -> float:

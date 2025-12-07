@@ -11,17 +11,17 @@ Components:
 - app: Flask web application with chessboard.js frontend
 """
 
-from .chess_state import ChessState, ChessConfig, CHESS_AVAILABLE
 from .chess_ensemble import (
+    AgentResult,
+    AgentType,
     ChessEnsemble,
     EnsembleConfig,
-    AgentType,
-    AgentResult,
     LearningRecord,
 )
+from .chess_state import CHESS_AVAILABLE, ChessConfig, ChessState
 from .learning_dashboard import (
-    LearningDashboard,
     DashboardConfig,
+    LearningDashboard,
     create_dashboard,
 )
 
