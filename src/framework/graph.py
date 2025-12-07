@@ -56,6 +56,31 @@ except ImportError:
     MetaControllerConfig = None  # type: ignore
     MetaControllerConfigLoader = None  # type: ignore
 
+# Neuro-Symbolic imports (optional)
+try:
+    from src.neuro_symbolic import (
+        NeuroSymbolicConfig,
+        SymbolicReasoningAgent,
+        SymbolicAgentGraphExtension,
+        SymbolicAgentNodeConfig,
+        NeuroSymbolicMCTSIntegration,
+        NeuroSymbolicMCTSConfig,
+        ConstraintSystem,
+    )
+    from src.neuro_symbolic.config import ConstraintConfig
+
+    _NEURO_SYMBOLIC_AVAILABLE = True
+except ImportError:
+    _NEURO_SYMBOLIC_AVAILABLE = False
+    NeuroSymbolicConfig = None  # type: ignore
+    SymbolicReasoningAgent = None  # type: ignore
+    SymbolicAgentGraphExtension = None  # type: ignore
+    SymbolicAgentNodeConfig = None  # type: ignore
+    NeuroSymbolicMCTSIntegration = None  # type: ignore
+    NeuroSymbolicMCTSConfig = None  # type: ignore
+    ConstraintSystem = None  # type: ignore
+    ConstraintConfig = None  # type: ignore
+
 
 class AgentState(TypedDict):
     """Shared state for LangGraph agent framework."""
@@ -96,6 +121,10 @@ class AgentState(TypedDict):
     meta_controller_predictions: NotRequired[list[dict]]
     last_routed_agent: NotRequired[str]
 
+    # Neuro-Symbolic Agent (optional)
+    symbolic_results: NotRequired[dict]
+    symbolic_proof_tree: NotRequired[dict]
+
     # Output
     final_response: NotRequired[str]
     metadata: NotRequired[dict]
@@ -122,6 +151,7 @@ class GraphBuilder:
         enable_parallel_agents: bool = True,
         meta_controller_config: Any | None = None,
         adk_agents: dict[str, Any] | None = None,
+        neuro_symbolic_config: Any | None = None,
     ):
         """
         Initialize graph builder.
@@ -139,6 +169,7 @@ class GraphBuilder:
             enable_parallel_agents: Run HRM/TRM in parallel
             meta_controller_config: Optional neural meta-controller configuration
             adk_agents: Dictionary of ADK agent instances
+            neuro_symbolic_config: Optional neuro-symbolic configuration
         """
         self.hrm_agent = hrm_agent
         self.trm_agent = trm_agent
@@ -175,6 +206,15 @@ class GraphBuilder:
         if meta_controller_config is not None:
             self._init_meta_controller(meta_controller_config)
 
+        # Neuro-Symbolic Agent (optional)
+        self.symbolic_agent: Any | None = None
+        self.symbolic_extension: Any | None = None
+        self.neuro_symbolic_mcts: Any | None = None
+        self.use_symbolic_reasoning = False
+
+        if neuro_symbolic_config is not None:
+            self._init_neuro_symbolic(neuro_symbolic_config)
+
     def build_graph(self) -> StateGraph:
         """
         Build LangGraph state machine.
@@ -201,6 +241,10 @@ class GraphBuilder:
             node_name = f"adk_{name}"
             workflow.add_node(node_name, self._create_adk_node_handler(name, agent))
 
+        # Add symbolic reasoning agent node if enabled
+        if self.use_symbolic_reasoning and self.symbolic_extension:
+            workflow.add_node("symbolic_agent", self._symbolic_agent_node)
+
         workflow.add_node("aggregate_results", self._aggregate_results_node)
         workflow.add_node("evaluate_consensus", self._evaluate_consensus_node)
         workflow.add_node("synthesize", self._synthesize_node)
@@ -219,6 +263,10 @@ class GraphBuilder:
             "aggregate": "aggregate_results",
         }
 
+        # Add symbolic agent routing if enabled
+        if self.use_symbolic_reasoning:
+            routing_map["symbolic"] = "symbolic_agent"
+
         # Add ADK routing entries
         for name in self.adk_agents:
             routing_map[f"adk_{name}"] = f"adk_{name}"
@@ -236,6 +284,10 @@ class GraphBuilder:
         workflow.add_edge("hrm_agent", "aggregate_results")
         workflow.add_edge("trm_agent", "aggregate_results")
         workflow.add_edge("mcts_simulator", "aggregate_results")
+
+        # Symbolic agent to aggregation
+        if self.use_symbolic_reasoning:
+            workflow.add_edge("symbolic_agent", "aggregate_results")
 
         # ADK agents to aggregation
         for name in self.adk_agents:
@@ -354,6 +406,68 @@ class GraphBuilder:
             else:
                 raise
 
+    def _init_neuro_symbolic(self, config: Any) -> None:
+        """
+        Initialize neuro-symbolic reasoning components.
+
+        Args:
+            config: NeuroSymbolicConfig or dict with configuration
+        """
+        if not _NEURO_SYMBOLIC_AVAILABLE:
+            self.logger.warning("Neuro-symbolic modules not available. Skipping initialization.")
+            return
+
+        try:
+            # Handle both config object and dict
+            if isinstance(config, dict):
+                ns_config = NeuroSymbolicConfig.from_dict(config)
+            else:
+                ns_config = config
+
+            # Create symbolic reasoning agent
+            self.symbolic_agent = SymbolicReasoningAgent(
+                config=ns_config,
+                neural_fallback=self._neural_fallback_for_symbolic,
+                logger=self.logger,
+            )
+
+            # Create graph extension for routing
+            self.symbolic_extension = SymbolicAgentGraphExtension(
+                reasoning_agent=self.symbolic_agent,
+                config=SymbolicAgentNodeConfig(),
+                logger=self.logger,
+            )
+
+            # Create MCTS integration for constraint pruning
+            mcts_ns_config = NeuroSymbolicMCTSConfig(
+                neural_weight=ns_config.agent.neural_confidence_weight,
+                symbolic_weight=ns_config.agent.symbolic_confidence_weight,
+            )
+            self.neuro_symbolic_mcts = NeuroSymbolicMCTSIntegration(
+                config=mcts_ns_config,
+                reasoning_agent=self.symbolic_agent,
+                logger=self.logger,
+            )
+
+            self.use_symbolic_reasoning = True
+            self.logger.info("Initialized neuro-symbolic reasoning components")
+
+        except Exception as e:
+            self.logger.error(f"Failed to initialize neuro-symbolic components: {e}")
+            self.use_symbolic_reasoning = False
+
+    async def _neural_fallback_for_symbolic(self, query: str, state: Any) -> str:
+        """Neural fallback when symbolic reasoning fails."""
+        try:
+            response = await self.model_adapter.generate(
+                prompt=f"Answer this question: {query}",
+                temperature=0.5,
+            )
+            return response.text
+        except Exception as e:
+            self.logger.error(f"Neural fallback failed: {e}")
+            return f"Could not determine answer for: {query}"
+
     def _extract_meta_controller_features(self, state: AgentState) -> Any:
         """
         Extract features from AgentState for meta-controller prediction.
@@ -466,6 +580,16 @@ class GraphBuilder:
             Route decision string
         """
         iteration = state.get("iteration", 0)
+
+        # Check for symbolic reasoning triggers first
+        if self.use_symbolic_reasoning and self.symbolic_extension:
+            if (
+                "symbolic_results" not in state
+                and self.symbolic_extension.should_route_to_symbolic(
+                    state.get("query", ""), state
+                )
+            ):
+                return "symbolic"
 
         # First iteration: run HRM and TRM
         if iteration == 0:
@@ -609,6 +733,35 @@ class GraphBuilder:
                     "confidence": result["metadata"].get("final_quality_score", 0.7),
                 }
             ],
+        }
+
+    async def _symbolic_agent_node(self, state: AgentState) -> dict:
+        """Execute symbolic reasoning agent."""
+        self.logger.info("Executing symbolic reasoning agent")
+
+        if not self.symbolic_extension:
+            return {
+                "agent_outputs": [
+                    {
+                        "agent": "symbolic",
+                        "response": "Symbolic reasoning not available",
+                        "confidence": 0.0,
+                    }
+                ],
+            }
+
+        result = await self.symbolic_extension.handle_symbolic_node(state)
+
+        # Store proof tree if available
+        proof_tree = None
+        if "symbolic_results" in result:
+            metadata = result["symbolic_results"].get("metadata", {})
+            proof_tree = metadata.get("proof_tree")
+
+        return {
+            "symbolic_results": result.get("symbolic_results", {}),
+            "symbolic_proof_tree": proof_tree,
+            "agent_outputs": result.get("agent_outputs", []),
         }
 
     async def _mcts_simulator_node(self, state: AgentState) -> dict:
