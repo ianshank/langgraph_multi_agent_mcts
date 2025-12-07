@@ -211,7 +211,36 @@
                 <select id="playerColor">
                     <option value="white">Play as White</option>
                     <option value="black">Play as Black</option>
+                    <option value="autoplay">AI vs AI (Auto Play)</option>
                 </select>
+            </div>
+
+            <!-- Auto Play Controls -->
+            <div id="autoPlayControls" style="display: none; background: rgba(0,0,0,0.2); padding: 15px; border-radius: 8px; margin: 10px 0;">
+                <h3 style="margin: 0 0 10px 0; color: #ff9800;">🤖 Autonomous Game Mode</h3>
+                <div style="display: flex; gap: 15px; flex-wrap: wrap; align-items: center;">
+                    <div>
+                        <label style="font-size: 0.9em;">Time/Move (sec):</label><br>
+                        <input type="number" id="autoPlayTime" value="2" min="1" max="30"
+                               style="width: 60px; padding: 5px; border-radius: 4px; border: 1px solid #666; background: #333; color: white;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.9em;">Games:</label><br>
+                        <input type="number" id="autoPlayGames" value="1" min="1" max="100"
+                               style="width: 60px; padding: 5px; border-radius: 4px; border: 1px solid #666; background: #333; color: white;">
+                    </div>
+                    <div>
+                        <label style="font-size: 0.9em;">Max Moves:</label><br>
+                        <input type="number" id="autoPlayMaxMoves" value="100" min="10" max="500"
+                               style="width: 70px; padding: 5px; border-radius: 4px; border: 1px solid #666; background: #333; color: white;">
+                    </div>
+                    <div style="flex-grow: 1;">
+                        <button id="autoPlayBtn" onclick="toggleAutoPlay()" style="width: 100%;">▶ Start Auto Play</button>
+                    </div>
+                </div>
+                <div id="autoPlayStatus" style="margin-top: 10px; font-size: 0.9em; color: #aaa;">
+                    Ready to start autonomous game play
+                </div>
             </div>
 
             <div id="status" class="status white">White to move</div>
@@ -287,6 +316,15 @@
         let currentFen = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
         let moveHistory = [];
         let playerColor = 'white';
+
+        // Auto-play state
+        let autoPlayActive = false;
+        let autoPlayGamesPlayed = 0;
+        let autoPlayGamesTotal = 1;
+        let autoPlayMoveCount = 0;
+        let autoPlayMaxMoves = 100;
+        let autoPlayTimeMs = 2000;
+        let autoPlayResults = { white: 0, black: 0, draw: 0 };
 
         // Initialize board
         function initBoard() {
@@ -536,8 +574,193 @@
 
         // Player color change
         document.getElementById('playerColor').addEventListener('change', function() {
+            const mode = this.value;
+            const autoPlayControls = document.getElementById('autoPlayControls');
+
+            if (mode === 'autoplay') {
+                autoPlayControls.style.display = 'block';
+                playerColor = 'autoplay';
+            } else {
+                autoPlayControls.style.display = 'none';
+                playerColor = mode;
+                stopAutoPlay();
+            }
             newGame();
         });
+
+        // Toggle auto-play
+        function toggleAutoPlay() {
+            if (autoPlayActive) {
+                stopAutoPlay();
+            } else {
+                startAutoPlay();
+            }
+        }
+
+        // Start autonomous game play
+        function startAutoPlay() {
+            autoPlayActive = true;
+            autoPlayGamesPlayed = 0;
+            autoPlayGamesTotal = parseInt(document.getElementById('autoPlayGames').value) || 1;
+            autoPlayMaxMoves = parseInt(document.getElementById('autoPlayMaxMoves').value) || 100;
+            autoPlayTimeMs = (parseFloat(document.getElementById('autoPlayTime').value) || 2) * 1000;
+            autoPlayResults = { white: 0, black: 0, draw: 0 };
+
+            document.getElementById('autoPlayBtn').textContent = '⏹ Stop Auto Play';
+            document.getElementById('autoPlayBtn').classList.add('danger');
+
+            updateAutoPlayStatus(`Starting game 1 of ${autoPlayGamesTotal}...`);
+
+            // Start first game
+            startAutoPlayGame();
+        }
+
+        // Stop auto-play
+        function stopAutoPlay() {
+            autoPlayActive = false;
+            document.getElementById('autoPlayBtn').textContent = '▶ Start Auto Play';
+            document.getElementById('autoPlayBtn').classList.remove('danger');
+
+            if (autoPlayGamesPlayed > 0) {
+                updateAutoPlayStatus(`Stopped. Games: ${autoPlayGamesPlayed}/${autoPlayGamesTotal} | W: ${autoPlayResults.white} B: ${autoPlayResults.black} D: ${autoPlayResults.draw}`);
+            } else {
+                updateAutoPlayStatus('Ready to start autonomous game play');
+            }
+        }
+
+        // Start a single auto-play game
+        function startAutoPlayGame() {
+            if (!autoPlayActive) return;
+
+            autoPlayMoveCount = 0;
+
+            fetch('/api/new_game', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                gameId = data.game_id;
+                currentFen = data.fen;
+                moveHistory = [];
+
+                board.position('start');
+                updateStatus(data);
+                renderMoveList();
+
+                document.getElementById('aiAnalysis').innerHTML = '<p style="color: #888;">Auto-play in progress...</p>';
+                document.getElementById('moveCount').textContent = '0';
+
+                updateAutoPlayStatus(`Game ${autoPlayGamesPlayed + 1}/${autoPlayGamesTotal} | Move ${autoPlayMoveCount}`);
+
+                // Start the autonomous game loop
+                setTimeout(autoPlayMove, 500);
+            });
+        }
+
+        // Execute one auto-play move
+        function autoPlayMove() {
+            if (!autoPlayActive) return;
+
+            document.getElementById('thinking').classList.add('active');
+
+            fetch('/api/ai_move', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    game_id: gameId,
+                    fen: currentFen,
+                    time_limit_ms: autoPlayTimeMs
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('thinking').classList.remove('active');
+
+                if (!autoPlayActive) return;
+
+                if (data.error) {
+                    console.error(data.error);
+                    handleAutoPlayGameEnd('error');
+                    return;
+                }
+
+                // Animate the move
+                board.position(data.fen.split(' ')[0], true);
+                currentFen = data.fen;
+                autoPlayMoveCount++;
+
+                updateStatus(data);
+                addMove(data.move, data.turn === 'white');
+                displayAIAnalysis(data.ai_analysis);
+
+                updateAutoPlayStatus(`Game ${autoPlayGamesPlayed + 1}/${autoPlayGamesTotal} | Move ${autoPlayMoveCount} | ${data.turn}'s turn`);
+
+                // Check if game is over
+                if (data.is_game_over) {
+                    let result = 'draw';
+                    if (data.is_checkmate) {
+                        result = data.turn === 'white' ? 'black' : 'white';
+                    }
+                    handleAutoPlayGameEnd(result);
+                    return;
+                }
+
+                // Check move limit
+                if (autoPlayMoveCount >= autoPlayMaxMoves) {
+                    handleAutoPlayGameEnd('draw');
+                    return;
+                }
+
+                // Schedule next move
+                const delay = Math.max(300, autoPlayTimeMs / 3);
+                setTimeout(autoPlayMove, delay);
+            })
+            .catch(err => {
+                document.getElementById('thinking').classList.remove('active');
+                console.error(err);
+                handleAutoPlayGameEnd('error');
+            });
+        }
+
+        // Handle end of auto-play game
+        function handleAutoPlayGameEnd(result) {
+            autoPlayGamesPlayed++;
+
+            if (result === 'white') {
+                autoPlayResults.white++;
+            } else if (result === 'black') {
+                autoPlayResults.black++;
+            } else {
+                autoPlayResults.draw++;
+            }
+
+            const resultText = result === 'white' ? 'White wins!' :
+                              result === 'black' ? 'Black wins!' : 'Draw!';
+
+            updateAutoPlayStatus(`Game ${autoPlayGamesPlayed} complete: ${resultText} | W: ${autoPlayResults.white} B: ${autoPlayResults.black} D: ${autoPlayResults.draw}`);
+
+            // Check if more games to play
+            if (autoPlayActive && autoPlayGamesPlayed < autoPlayGamesTotal) {
+                setTimeout(() => {
+                    updateAutoPlayStatus(`Starting game ${autoPlayGamesPlayed + 1} of ${autoPlayGamesTotal}...`);
+                    setTimeout(startAutoPlayGame, 1000);
+                }, 2000);
+            } else {
+                // All games complete
+                autoPlayActive = false;
+                document.getElementById('autoPlayBtn').textContent = '▶ Start Auto Play';
+                document.getElementById('autoPlayBtn').classList.remove('danger');
+
+                updateAutoPlayStatus(`Complete! ${autoPlayGamesPlayed} games | White: ${autoPlayResults.white} Black: ${autoPlayResults.black} Draw: ${autoPlayResults.draw}`);
+            }
+        }
+
+        // Update auto-play status display
+        function updateAutoPlayStatus(message) {
+            document.getElementById('autoPlayStatus').textContent = message;
+        }
 
         // Initialize
         $(document).ready(function() {
