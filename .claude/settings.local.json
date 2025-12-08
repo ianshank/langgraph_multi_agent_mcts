@@ -84,7 +84,15 @@
       "Bash(timeout 30 echo:*)",
       "Bash(timeout 120 echo:*)",
       "Bash(timeout 180 echo:*)",
-      "Bash(docker-compose:*)"
+      "Bash(docker-compose:*)",
+      "Bash(PYTHONPATH=. pytest:*)",
+      "Bash(C:UsersianshAppDataLocalProgramsPythonPython312python.exe -m pip install pyyaml gradio langsmith docker httpx pydantic)",
+      "Bash(py -3.12 -m pip install:*)",
+      "Bash(py -3.12 -m pytest tests/ -v --tb=short)",
+      "Bash(py -3.11 -m pytest tests/ -v --tb=short)",
+      "Bash(py -3.11 -c:*)",
+      "Bash(py -3.11 -m pytest:*)",
+      "Bash(timeout 300 echo:*)"
     ],
     "deny": [],
     "ask": []
