@@ -73,7 +73,7 @@ class ChessOpeningBook:
 
     def load(self) -> None:
         """Load opening book from file."""
-        if self.book_path is None or self._loaded:
+        if self._loaded:
             return
 
         # Polyglot format parsing would go here
@@ -114,14 +114,14 @@ class ChessOpeningBook:
             return None
 
         # Weight by frequency
-        moves, weights = zip(*entries, strict=False)
-        weights = np.array(weights, dtype=np.float32)
+        moves, weights_tuple = zip(*entries, strict=False)
+        weights = np.array(weights_tuple, dtype=np.float32)
 
         if temperature > 0:
             weights = np.power(weights, 1.0 / temperature)
 
         weights = weights / weights.sum()
-        return np.random.choice(moves, p=weights)
+        return str(np.random.choice(moves, p=weights))
 
 
 class ChessDataAugmentation:
@@ -350,7 +350,7 @@ class ChessTrainingOrchestrator:
         draws = sum(1 for g in games if -0.5 <= g.outcome <= 0.5)
         total_games = len(games)
 
-        avg_game_length = np.mean([g.game_length for g in games]) if games else 0
+        avg_game_length = float(np.mean([g.game_length for g in games])) if games else 0.0
 
         elapsed = time.time() - start_time
 
@@ -461,7 +461,7 @@ class ChessTrainingOrchestrator:
                     idx = self.ensemble_agent.action_encoder.encode_move(m, from_black)
                     policy_vector[idx] = p
                 except ValueError:
-                    pass
+                    pass  # Ignore moves that cannot be encoded
             policies.append(policy_vector)
 
             values.append(response.value_estimate)
@@ -607,7 +607,7 @@ class ChessTrainingOrchestrator:
         self,
         num_games: int = 100,
         stockfish_elo: int | None = None,
-    ) -> dict[str, float]:
+    ) -> dict[str, Any]:
         """Evaluate the model against Stockfish.
 
         Args:

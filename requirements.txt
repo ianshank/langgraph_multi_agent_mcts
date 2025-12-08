@@ -26,7 +26,7 @@ wandb>=0.16.0
 huggingface_hub>=0.20.0,<0.30.0
 
 # LangSmith tracing (used across smoke/component tests)
-langsmith>=0.0.77,<0.1.0
+langsmith>=0.1.0
 
 # Testing
 pytest>=7.4.0

@@ -199,7 +199,7 @@ class ChessPage:
         container = self.driver.find_element(By.ID, "move-input")
         try:
             return container.find_element(By.TAG_NAME, "textarea")
-        except:
+        except Exception:
             return container.find_element(By.TAG_NAME, "input")
 
     @property

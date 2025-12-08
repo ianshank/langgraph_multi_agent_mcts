@@ -497,7 +497,9 @@ class ContinuousLearningSession:
 
             # Repetition check (simple string based)
             # Efficiently track position occurrences
-            pos_key = state.fen.split(' ')[0]  # Just board state
+            # Repetition check (simple string based)
+            # Efficiently track position occurrences
+            # pos_key = state.fen.split(' ')[0]  # Just board state (unused)
             # In a real heavy implementation, we'd use a transposition table or similar
             # For now, we rely on the positions list but this is O(N) checking per move which is slow for long games
             # Optimization: Use a localized counter if needed, but for < 150 moves list scan is acceptable for now
@@ -623,7 +625,7 @@ class ContinuousLearningSession:
                 idx = self.agent.action_encoder.encode_move(move, from_black)
                 policy[idx] = prob
             except ValueError:
-                pass
+                pass  # Ignore invalid moves in response
 
         # Normalize
         if policy.sum() > 0:

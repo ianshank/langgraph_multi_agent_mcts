@@ -252,7 +252,9 @@ class ChessActionEncoder:
             to_rank = 7 - to_rank
 
         from_square = from_rank * 8 + from_file
-        to_square = to_rank * 8 + to_file
+        from_square = from_rank * 8 + from_file
+        # to_square unused
+
 
         # Calculate move delta
         file_delta = to_file - from_file

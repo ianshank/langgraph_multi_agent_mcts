@@ -60,7 +60,7 @@ class TestMetaControllerIntegration:
         controller = ChessMetaController(config.ensemble, device="cpu")
         state = ChessGameState.initial()
 
-        decision_normal = controller.route(state, time_pressure=False)
+        controller.route(state, time_pressure=False)
         decision_pressure = controller.route(state, time_pressure=True)
 
         # Time pressure should affect routing weights

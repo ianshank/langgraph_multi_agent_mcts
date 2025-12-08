@@ -29,7 +29,7 @@ class RoutingDecision:
     primary_agent: AgentType
     agent_weights: dict[str, float]
     confidence: float
-    features: dict[str, float]
+    features: dict[str, Any]
     reasoning: str
 
 
@@ -196,7 +196,7 @@ class ChessFeatureExtractor:
         """
         import chess
 
-        score = 0
+        score = 0.0
         max_score = len(center_squares) * 2  # Max 2 points per square
 
         for square in center_squares:
@@ -461,7 +461,7 @@ class ChessMetaController:
 
         # Select primary agent
         primary = max(weights.items(), key=lambda x: x[1])
-        primary_agent = AgentType(primary[0].upper())
+        primary_agent = AgentType(primary[0])
 
         # Calculate confidence based on how dominant the primary agent is
         sorted_weights = sorted(weights.values(), reverse=True)
@@ -513,7 +513,7 @@ class ChessMetaController:
 
         # Select primary agent
         primary_idx = torch.argmax(agent_probs).item()
-        primary_agent = AgentType(self.AGENT_NAMES[primary_idx].upper())
+        primary_agent = AgentType(self.AGENT_NAMES[primary_idx])
 
         # Generate reasoning
         reasoning = self._generate_reasoning(features, primary_agent)

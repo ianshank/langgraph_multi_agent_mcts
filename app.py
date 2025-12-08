@@ -556,6 +556,7 @@ with gr.Blocks(
             controller_type,
         ],
         outputs=[final_response_output, agent_details_output, routing_viz, features_viz, metrics_output, personality_output],
+        api_name="process_query"
     )
 
     gr.Markdown(

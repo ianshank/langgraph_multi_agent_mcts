@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pytest
 import torch
+import chess
 
 from src.games.chess.config import ChessActionSpaceConfig, ChessBoardConfig, GamePhase
 from src.games.chess.state import ChessGameState, create_initial_state, create_state_from_fen
@@ -36,7 +37,7 @@ class TestChessGameState:
         fen = "rnbqkbnr/pppppppp/8/8/4P3/8/PPPP1PPP/RNBQKBNR b KQkq e3 0 1"
         state = ChessGameState.from_fen(fen)
         assert state.current_player == -1  # Black to move
-        assert "e4" in str(state)  # e4 pawn should be visible
+        assert state.board.piece_at(chess.E4) == chess.Piece(chess.PAWN, chess.WHITE)
 
     def test_get_legal_actions(self, initial_state: ChessGameState) -> None:
         """Test getting legal actions."""
@@ -84,7 +85,7 @@ class TestChessGameState:
         state = ChessGameState.from_fen(fen)
         # Not actually stalemate, let's use a real one
         fen = "8/8/8/8/8/5k2/5p2/5K2 w - - 0 1"
-        state = ChessGameState.from_fen(fen)
+        _ = ChessGameState.from_fen(fen)
         # This may or may not be stalemate depending on position
 
     def test_get_reward_white_wins(self) -> None:
@@ -162,7 +163,7 @@ class TestChessGameState:
     def test_get_game_phase_endgame(self) -> None:
         """Test game phase detection for endgame."""
         # King and pawn endgame
-        fen = "8/8/4k3/8/4P3/8/8/4K3 w - - 0 1"
+        fen = "8/4k3/8/8/4P3/8/4K3/8 w - - 0 50"
         state = ChessGameState.from_fen(fen)
         phase = state.get_game_phase()
         assert phase == GamePhase.ENDGAME

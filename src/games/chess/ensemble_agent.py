@@ -364,7 +364,7 @@ class ChessEnsembleAgent:
         hrm_confidence = hrm_output.convergence_path[-1] if hrm_output.convergence_path else 0.5
 
         # Get move probabilities
-        legal_moves = state.get_legal_actions()
+        # legal_moves = state.get_legal_actions()  # Unused
         from_black = state.current_player == -1
 
         move_probs = self.action_encoder.filter_policy_to_legal(
@@ -486,7 +486,7 @@ class ChessEnsembleAgent:
         )
 
         # Get value estimate from root
-        value_estimate = root.value() if root else 0.0
+        value_estimate = root.value if root else 0.0
 
         # Select best move
         if temperature == 0:
@@ -561,7 +561,7 @@ class ChessEnsembleAgent:
             (best_move, combined_probabilities, combined_value)
         """
         # Collect all moves
-        all_moves = set()
+        all_moves: set[str] = set()
         for response in responses.values():
             all_moves.update(response.move_probabilities.keys())
 
