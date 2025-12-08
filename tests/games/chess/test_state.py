@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
+import chess
 import pytest
 import torch
-import chess
 
 from src.games.chess.config import ChessActionSpaceConfig, ChessBoardConfig, GamePhase
 from src.games.chess.state import ChessGameState, create_initial_state, create_state_from_fen
@@ -82,7 +82,7 @@ class TestChessGameState:
         """Test terminal detection for stalemate."""
         # Stalemate position
         fen = "k7/8/1K6/8/8/8/8/8 b - - 0 1"
-        state = ChessGameState.from_fen(fen)
+        _ = ChessGameState.from_fen(fen)
         # Not actually stalemate, let's use a real one
         fen = "8/8/8/8/8/5k2/5p2/5K2 w - - 0 1"
         _ = ChessGameState.from_fen(fen)

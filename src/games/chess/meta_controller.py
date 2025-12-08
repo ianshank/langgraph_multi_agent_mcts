@@ -182,7 +182,7 @@ class ChessFeatureExtractor:
 
     def _calculate_center_control(
         self,
-        board: "chess.Board",
+        board: chess.Board,
         center_squares: list[int],
     ) -> float:
         """Calculate center control score.
@@ -201,9 +201,8 @@ class ChessFeatureExtractor:
 
         for square in center_squares:
             piece = board.piece_at(square)
-            if piece is not None:
-                if piece.color == board.turn:
-                    score += 1
+            if piece is not None and piece.color == board.turn:
+                score += 1
 
             # Count attackers
             white_attackers = len(board.attackers(chess.WHITE, square))
@@ -216,7 +215,7 @@ class ChessFeatureExtractor:
 
         return max(0, min(1, score / max_score))
 
-    def _calculate_king_safety(self, board: "chess.Board") -> float:
+    def _calculate_king_safety(self, board: chess.Board) -> float:
         """Calculate king safety score.
 
         Args:
@@ -261,7 +260,6 @@ class ChessFeatureExtractor:
         Returns:
             List of pawn shield square indices
         """
-        import chess
 
         file = king_square % 8
         rank = king_square // 8
@@ -277,7 +275,7 @@ class ChessFeatureExtractor:
 
         return squares
 
-    def _calculate_pawn_complexity(self, board: "chess.Board") -> float:
+    def _calculate_pawn_complexity(self, board: chess.Board) -> float:
         """Calculate pawn structure complexity.
 
         Args:
@@ -296,7 +294,7 @@ class ChessFeatureExtractor:
             if not pawns:
                 continue
 
-            files_with_pawns = set(sq % 8 for sq in pawns)
+            files_with_pawns = {sq % 8 for sq in pawns}
 
             # Pawn islands (groups of adjacent files with pawns)
             islands = 0
