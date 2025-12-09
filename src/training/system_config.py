@@ -32,6 +32,10 @@ class HRMConfig:
     ponder_epsilon: float = 0.01  # Small constant for numerical stability
     max_ponder_steps: int = 16  # Maximum pondering steps
 
+    # Loss weights (for training)
+    ponder_weight: float = 0.01  # Weight for ponder cost in loss
+    consistency_weight: float = 0.1  # Weight for convergence consistency
+
 
 @dataclass
 class TRMConfig:
@@ -134,9 +138,16 @@ class TrainingConfig:
     epochs_per_iteration: int = 1
     checkpoint_interval: int = 10  # Save every N iterations
 
+    # Agent-specific training
+    hrm_train_batches: int = 10  # Batches per iteration for HRM
+    trm_train_batches: int = 10  # Batches per iteration for TRM
+    gradient_clip_norm: float = 1.0  # Max gradient norm for clipping
+
     # Evaluation
     evaluation_games: int = 400  # Games to evaluate new model
     win_rate_threshold: float = 0.55  # Required win rate to replace best model
+    win_threshold: float = 0.55  # Alias for compatibility
+    eval_temperature: float = 0.0  # Temperature for evaluation (0 = deterministic)
 
     # Early stopping
     patience: int = 20  # Iterations without improvement

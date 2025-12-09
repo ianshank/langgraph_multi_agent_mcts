@@ -8,18 +8,31 @@ Provides:
 - Health and readiness endpoints
 - Request validation with Pydantic
 - Prometheus metrics exposure
+- Full framework integration
+
+Best Practices 2025:
+- Configuration-driven (no hardcoded values)
+- Dependency injection via service layer
+- Async-first design
+- Comprehensive error handling
+- Type-safe interfaces
 """
 
-import asyncio
+import logging
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
+
+from src.config.settings import get_settings
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 # Import framework components
 try:
@@ -38,12 +51,20 @@ try:
         RateLimitError,
         ValidationError,  # noqa: F401
     )
+    from src.api.framework_service import (
+        FrameworkConfig,
+        FrameworkService,
+        FrameworkState,
+    )
     from src.models.validation import MCTSConfig, QueryInput  # noqa: F401
 
     IMPORTS_AVAILABLE = True
+    FRAMEWORK_SERVICE_AVAILABLE = True
 except ImportError as e:
     IMPORTS_AVAILABLE = False
+    FRAMEWORK_SERVICE_AVAILABLE = False
     import_error = str(e)
+    logger.warning(f"Import error: {e}")
 
 # Prometheus metrics (optional)
 try:
@@ -131,37 +152,73 @@ class ErrorResponse(BaseModel):
 
 # Application startup
 start_time = time.time()
-framework_instance = None
+framework_service: FrameworkService | None = None
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Application lifespan manager."""
-    global framework_instance
+    """Application lifespan manager with framework initialization."""
+    global framework_service
 
     # Startup
-    print("Starting MCTS Framework API server...")
+    logger.info("Starting MCTS Framework API server...")
 
-    # Initialize authenticator with demo key (replace in production)
+    # Load settings for configuration
+    settings = get_settings()
+
+    # Initialize authenticator from settings (no hardcoded values)
+    import os
+
+    api_keys_env = os.environ.get("API_KEYS", "")
+    api_keys = [k.strip() for k in api_keys_env.split(",") if k.strip()]
+    if not api_keys:
+        # Fallback for development - generate a random key
+        import secrets
+
+        dev_key = f"dev-{secrets.token_hex(16)}"
+        api_keys = [dev_key]
+        logger.warning(f"No API_KEYS configured. Using development key: {dev_key}")
+
     authenticator = APIKeyAuthenticator(
-        valid_keys=["demo-api-key-replace-in-production"],
+        valid_keys=api_keys,
         rate_limit_config=RateLimitConfig(
-            requests_per_minute=60,
-            requests_per_hour=1000,
-            requests_per_day=10000,
+            requests_per_minute=settings.RATE_LIMIT_REQUESTS_PER_MINUTE,
+            requests_per_hour=settings.RATE_LIMIT_REQUESTS_PER_MINUTE * 60,
+            requests_per_day=settings.RATE_LIMIT_REQUESTS_PER_MINUTE * 60 * 24,
         ),
     )
     set_authenticator(authenticator)
 
-    # Initialize framework (lazy loading)
-    # framework_instance = create_framework()
+    # Initialize framework service
+    if FRAMEWORK_SERVICE_AVAILABLE:
+        try:
+            framework_config = FrameworkConfig.from_settings(settings)
+            framework_service = await FrameworkService.get_instance(
+                config=framework_config,
+                settings=settings,
+            )
+            # Initialize the framework (lazy - will happen on first request if not here)
+            init_success = await framework_service.initialize()
+            if init_success:
+                logger.info("Framework service initialized successfully")
+            else:
+                logger.warning("Framework service initialization deferred")
+        except Exception as e:
+            logger.error(f"Failed to initialize framework service: {e}")
+            framework_service = None
+    else:
+        logger.warning("Framework service not available due to import errors")
 
-    print("API server started successfully")
+    logger.info("API server started successfully")
 
     yield
 
     # Shutdown
-    print("Shutting down API server...")
+    logger.info("Shutting down API server...")
+    if framework_service is not None:
+        await framework_service.shutdown()
+        await FrameworkService.reset_instance()
+    logger.info("API server shutdown complete")
 
 
 # Create FastAPI app
@@ -284,9 +341,17 @@ async def health_check():
 
     Returns basic service health status. Use this for load balancer health checks.
     """
+    # Determine health status based on framework state
+    status = "healthy"
+    if framework_service is not None:
+        if framework_service.state == FrameworkState.ERROR:
+            status = "degraded"
+        elif framework_service.state == FrameworkState.UNINITIALIZED:
+            status = "initializing"
+
     return HealthResponse(
-        status="healthy",
-        timestamp=datetime.utcnow().isoformat(),
+        status=status,
+        timestamp=datetime.now(UTC).isoformat(),
         version="1.0.0",
         uptime_seconds=time.time() - start_time,
     )
@@ -299,10 +364,16 @@ async def readiness_check():
 
     Verifies all dependencies are available. Use this for Kubernetes readiness probes.
     """
+    # Check framework service status
+    framework_ready = False
+    if framework_service is not None:
+        framework_ready = framework_service.is_ready
+
     checks = {
         "imports_available": IMPORTS_AVAILABLE,
         "authenticator_configured": True,
-        "llm_client_available": True,  # Would check actual client
+        "framework_service_available": FRAMEWORK_SERVICE_AVAILABLE,
+        "framework_ready": framework_ready,
         "prometheus_available": PROMETHEUS_AVAILABLE,
     }
 
@@ -311,6 +382,7 @@ async def readiness_check():
         [
             checks["imports_available"],
             checks["authenticator_configured"],
+            # Framework readiness is optional - can still serve basic requests
         ]
     )
 
@@ -342,6 +414,8 @@ async def prometheus_metrics():
         429: {"model": ErrorResponse, "description": "Rate limit exceeded"},
         400: {"model": ErrorResponse, "description": "Invalid input"},
         500: {"model": ErrorResponse, "description": "Internal server error"},
+        503: {"model": ErrorResponse, "description": "Service unavailable"},
+        504: {"model": ErrorResponse, "description": "Request timeout"},
     },
 )
 async def process_query(request: QueryRequest, client_info: ClientInfo = Depends(verify_api_key)):
@@ -359,7 +433,7 @@ async def process_query(request: QueryRequest, client_info: ClientInfo = Depends
 
     **Rate Limiting**: Subject to rate limits per client.
     """
-    start_time = time.perf_counter()
+    request_start = time.perf_counter()
 
     # Validate input using validation models
     if IMPORTS_AVAILABLE:
@@ -375,33 +449,68 @@ async def process_query(request: QueryRequest, client_info: ClientInfo = Depends
                 ERROR_COUNT.labels(error_type="validation").inc()
             raise HTTPException(status_code=400, detail=f"Validation failed: {str(e)}") from e
 
-    # Process query (mock implementation for demo)
-    # In production, this would call the actual framework
-    await asyncio.sleep(0.1)  # Simulate processing
+    # Check framework service availability
+    if framework_service is None:
+        if PROMETHEUS_AVAILABLE:
+            ERROR_COUNT.labels(error_type="service_unavailable").inc()
+        raise HTTPException(
+            status_code=503,
+            detail="Framework service not available. Please try again later.",
+        )
 
-    processing_time = (time.perf_counter() - start_time) * 1000
+    # Process query through the actual framework
+    try:
+        result = await framework_service.process_query(
+            query=request.query,
+            use_mcts=request.use_mcts,
+            use_rag=request.use_rag,
+            thread_id=request.thread_id,
+            mcts_iterations=request.mcts_iterations,
+        )
 
-    # Mock response
-    return QueryResponse(
-        response=f"Processed query: {request.query[:100]}...",
-        confidence=0.85,
-        agents_used=["hrm", "trm"] + (["mcts"] if request.use_mcts else []),
-        mcts_stats=(
-            {
-                "iterations": request.mcts_iterations or 100,
-                "best_action": "recommended_action",
-                "root_visits": request.mcts_iterations or 100,
-            }
-            if request.use_mcts
-            else None
-        ),
-        processing_time_ms=processing_time,
-        metadata={
-            "client_id": client_info.client_id,
-            "thread_id": request.thread_id,
-            "rag_enabled": request.use_rag,
-        },
-    )
+        # Add client info to metadata
+        result.metadata["client_id"] = client_info.client_id
+
+        return QueryResponse(
+            response=result.response,
+            confidence=result.confidence,
+            agents_used=result.agents_used,
+            mcts_stats=result.mcts_stats,
+            processing_time_ms=result.processing_time_ms,
+            metadata=result.metadata,
+        )
+
+    except TimeoutError as e:
+        if PROMETHEUS_AVAILABLE:
+            ERROR_COUNT.labels(error_type="timeout").inc()
+        processing_time = (time.perf_counter() - request_start) * 1000
+        raise HTTPException(
+            status_code=504,
+            detail=f"Request timed out after {processing_time:.0f}ms: {str(e)}",
+        ) from e
+
+    except ValueError as e:
+        if PROMETHEUS_AVAILABLE:
+            ERROR_COUNT.labels(error_type="validation").inc()
+        raise HTTPException(status_code=400, detail=str(e)) from e
+
+    except RuntimeError as e:
+        if PROMETHEUS_AVAILABLE:
+            ERROR_COUNT.labels(error_type="runtime").inc()
+        logger.error(f"Runtime error processing query: {e}")
+        raise HTTPException(
+            status_code=503,
+            detail="Framework temporarily unavailable. Please try again.",
+        ) from e
+
+    except Exception as e:
+        if PROMETHEUS_AVAILABLE:
+            ERROR_COUNT.labels(error_type="internal").inc()
+        logger.exception(f"Unexpected error processing query: {e}")
+        raise HTTPException(
+            status_code=500,
+            detail="An unexpected error occurred. Please try again.",
+        ) from e
 
 
 @app.get("/stats", tags=["metrics"])
