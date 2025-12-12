@@ -19,6 +19,8 @@ Best Practices 2025:
 """
 
 import logging
+import os
+import secrets
 import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -167,18 +169,16 @@ async def lifespan(app: FastAPI):
     settings = get_settings()
 
     # Initialize authenticator from settings (no hardcoded values)
-    import os
-
     api_keys_env = os.environ.get("API_KEYS", "")
     api_keys = [k.strip() for k in api_keys_env.split(",") if k.strip()]
     if not api_keys:
         # Fallback for development - generate a random key
-        import secrets
-
         dev_key = f"dev-{secrets.token_hex(16)}"
         api_keys = [dev_key]
-        logger.warning(f"No API_KEYS configured. Using development key: {dev_key}")
+        # Log generic message without exposing the actual key value
+        logger.warning("No API_KEYS configured. Generated temporary development key.")
 
+    # Rate limits scale from per-minute base (theoretical max if sustained)
     authenticator = APIKeyAuthenticator(
         valid_keys=api_keys,
         rate_limit_config=RateLimitConfig(

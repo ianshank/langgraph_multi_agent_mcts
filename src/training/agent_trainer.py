@@ -630,6 +630,9 @@ class DummyDataLoader:
     Used when replay buffer is not ready or for testing.
     """
 
+    # Default sequence length for synthetic data generation
+    DEFAULT_SEQUENCE_LENGTH: int = 16
+
     def __init__(
         self,
         batch_size: int,
@@ -637,12 +640,14 @@ class DummyDataLoader:
         output_dim: int,
         num_batches: int = 10,
         device: str = "cpu",
+        sequence_length: int | None = None,
     ):
         self.batch_size = batch_size
         self.input_dim = input_dim
         self.output_dim = output_dim
         self.num_batches = num_batches
         self.device = device
+        self.sequence_length = sequence_length or self.DEFAULT_SEQUENCE_LENGTH
         self._current = 0
 
     def __iter__(self):
@@ -655,9 +660,9 @@ class DummyDataLoader:
 
         self._current += 1
 
-        # Generate synthetic data
-        inputs = torch.randn(self.batch_size, 16, self.input_dim)
-        targets = torch.randn(self.batch_size, 16, self.output_dim)
+        # Generate synthetic data and move to configured device
+        inputs = torch.randn(self.batch_size, self.sequence_length, self.input_dim).to(self.device)
+        targets = torch.randn(self.batch_size, self.sequence_length, self.output_dim).to(self.device)
 
         return inputs, targets
 

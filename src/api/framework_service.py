@@ -62,10 +62,10 @@ class FrameworkConfig:
             mcts_iterations=settings.MCTS_ITERATIONS,
             mcts_exploration_weight=settings.MCTS_C,
             seed=settings.SEED,
-            max_iterations=3,  # From Settings if extended
-            consensus_threshold=0.75,  # From Settings if extended
-            top_k_retrieval=5,  # From Settings if extended
-            enable_parallel_agents=True,
+            max_iterations=settings.FRAMEWORK_MAX_ITERATIONS,
+            consensus_threshold=settings.FRAMEWORK_CONSENSUS_THRESHOLD,
+            top_k_retrieval=settings.FRAMEWORK_TOP_K_RETRIEVAL,
+            enable_parallel_agents=settings.FRAMEWORK_ENABLE_PARALLEL_AGENTS,
             timeout_seconds=float(settings.HTTP_TIMEOUT_SECONDS),
         )
 
@@ -208,7 +208,7 @@ class FrameworkService:
             mcts_config = MCTSConfig(
                 num_iterations=self._config.mcts_iterations,
                 exploration_weight=self._config.mcts_exploration_weight,
-                seed=self._config.seed,
+                seed=self._config.seed or 42,
             )
 
             # Try to create full framework, fall back to mock agents
@@ -283,12 +283,13 @@ class FrameworkService:
 
         try:
             # Build config for this request
-            config = {"configurable": {"thread_id": thread_id or "default"}}
+            config: dict[str, Any] = {"configurable": {"thread_id": thread_id or "default"}}
 
             if mcts_iterations is not None:
                 config["mcts_iterations"] = mcts_iterations
 
             # Process with timeout
+            assert self._framework is not None
             result = await asyncio.wait_for(
                 self._framework.process(
                     query=query,

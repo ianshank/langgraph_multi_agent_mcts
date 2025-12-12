@@ -9,15 +9,14 @@ Tests:
 - Error handling
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 # Skip if pydantic_settings not available (required for Settings)
 pydantic_settings = pytest.importorskip("pydantic_settings")
 
-from src.api.framework_service import (
+from src.api.framework_service import (  # noqa: E402
     FrameworkConfig,
     FrameworkService,
     FrameworkState,
@@ -40,6 +39,10 @@ class TestFrameworkConfig:
                 MCTS_C=1.414,
                 SEED=42,
                 HTTP_TIMEOUT_SECONDS=30,
+                FRAMEWORK_MAX_ITERATIONS=3,
+                FRAMEWORK_CONSENSUS_THRESHOLD=0.75,
+                FRAMEWORK_TOP_K_RETRIEVAL=5,
+                FRAMEWORK_ENABLE_PARALLEL_AGENTS=True,
             )
 
             config = FrameworkConfig.from_settings()
@@ -64,8 +67,8 @@ class TestFrameworkConfig:
             timeout_seconds=30.0,
         )
 
-        with pytest.raises(Exception):  # FrozenInstanceError or AttributeError
-            config.mcts_enabled = False
+        with pytest.raises((AttributeError, TypeError)):  # Frozen dataclass raises on modification
+            config.mcts_enabled = False  # type: ignore
 
 
 class TestQueryResult:
@@ -295,6 +298,7 @@ class TestFrameworkService:
             )
             return True
 
+
         service.initialize = mock_init
 
         result = await service.process_query("Test query")
@@ -360,6 +364,10 @@ class TestGetFrameworkService:
                 MCTS_C=1.414,
                 SEED=42,
                 HTTP_TIMEOUT_SECONDS=30,
+                FRAMEWORK_MAX_ITERATIONS=3,
+                FRAMEWORK_CONSENSUS_THRESHOLD=0.75,
+                FRAMEWORK_TOP_K_RETRIEVAL=5,
+                FRAMEWORK_ENABLE_PARALLEL_AGENTS=True,
             )
 
             service = await get_framework_service()
