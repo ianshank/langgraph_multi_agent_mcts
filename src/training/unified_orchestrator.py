@@ -356,27 +356,176 @@ class UnifiedTrainingOrchestrator:
         return {"policy_loss": avg_policy_loss, "value_loss": avg_value_loss}
 
     async def _train_hrm_agent(self) -> dict[str, float]:
-        """Train HRM agent (placeholder for domain-specific implementation)."""
-        # This would require domain-specific data and tasks
-        # For now, return dummy metrics
-        return {"hrm_halt_step": 5.0, "hrm_ponder_cost": 0.1}
+        """
+        Train HRM agent with proper loss computation.
+
+        Uses:
+        - Adaptive Computation Time loss
+        - Ponder cost regularization
+        - Convergence consistency loss
+        """
+        from .agent_trainer import (
+            HRMTrainer,
+            HRMTrainingConfig,
+            create_data_loader_from_buffer,
+        )
+
+        # Create training config from system config
+        hrm_train_config = HRMTrainingConfig(
+            batch_size=self.config.training.batch_size,
+            num_batches=self.config.training.hrm_train_batches,
+            gradient_clip_norm=self.config.training.gradient_clip_norm,
+            ponder_weight=self.config.hrm.ponder_weight,
+            use_mixed_precision=self.config.use_mixed_precision,
+        )
+
+        # Create trainer
+        trainer = HRMTrainer(
+            agent=self.hrm_agent,
+            optimizer=self.hrm_optimizer,
+            loss_fn=self.hrm_loss_fn,
+            config=hrm_train_config,
+            device=self.device,
+            scaler=self.scaler,
+        )
+
+        # Create data loader from replay buffer
+        data_loader = create_data_loader_from_buffer(
+            replay_buffer=self.replay_buffer,
+            batch_size=hrm_train_config.batch_size,
+            input_dim=self.config.hrm.h_dim,
+            output_dim=self.config.hrm.h_dim,
+            device=self.device,
+        )
+
+        # Train for epoch
+        metrics = await trainer.train_epoch(data_loader)
+
+        # Extract key metrics for logging
+        result = {
+            "hrm_loss": metrics.get("loss", 0.0),
+            "hrm_halt_step": metrics.get("hrm_halt_step", 0.0),
+            "hrm_ponder_cost": metrics.get("hrm_ponder_cost", 0.0),
+            "hrm_gradient_norm": metrics.get("gradient_norm", 0.0),
+        }
+
+        print(f"  HRM Loss: {result['hrm_loss']:.4f}, Halt Step: {result['hrm_halt_step']:.1f}")
+
+        return result
 
     async def _train_trm_agent(self) -> dict[str, float]:
-        """Train TRM agent (placeholder for domain-specific implementation)."""
-        # This would require domain-specific data and tasks
-        # For now, return dummy metrics
-        return {"trm_convergence_step": 8.0, "trm_final_residual": 0.01}
+        """
+        Train TRM agent with deep supervision.
+
+        Uses:
+        - Supervision at all recursion levels
+        - Convergence monitoring
+        - Residual norm tracking
+        """
+        from .agent_trainer import (
+            TRMTrainer,
+            TRMTrainingConfig,
+            create_data_loader_from_buffer,
+        )
+
+        # Create training config from system config
+        trm_train_config = TRMTrainingConfig(
+            batch_size=self.config.training.batch_size,
+            num_batches=self.config.training.trm_train_batches,
+            gradient_clip_norm=self.config.training.gradient_clip_norm,
+            supervision_weight_decay=self.config.trm.supervision_weight_decay,
+            use_mixed_precision=self.config.use_mixed_precision,
+        )
+
+        # Create trainer
+        trainer = TRMTrainer(
+            agent=self.trm_agent,
+            optimizer=self.trm_optimizer,
+            loss_fn=self.trm_loss_fn,
+            config=trm_train_config,
+            device=self.device,
+            scaler=self.scaler,
+        )
+
+        # Create data loader from replay buffer
+        data_loader = create_data_loader_from_buffer(
+            replay_buffer=self.replay_buffer,
+            batch_size=trm_train_config.batch_size,
+            input_dim=self.config.trm.latent_dim,
+            output_dim=self.config.neural_net.action_size,
+            device=self.device,
+        )
+
+        # Train for epoch
+        metrics = await trainer.train_epoch(data_loader)
+
+        # Extract key metrics for logging
+        result = {
+            "trm_loss": metrics.get("loss", 0.0),
+            "trm_convergence_step": metrics.get("trm_convergence_step", 0.0),
+            "trm_final_residual": metrics.get("trm_final_residual", 0.0),
+            "trm_gradient_norm": metrics.get("gradient_norm", 0.0),
+        }
+
+        print(f"  TRM Loss: {result['trm_loss']:.4f}, Convergence: {result['trm_convergence_step']:.1f}")
+
+        return result
 
     async def _evaluate(self) -> dict[str, float]:
-        """Evaluate current model against baseline."""
-        # Simplified evaluation: play games against previous best
-        # In production, this would be more sophisticated
-        win_rate = 0.55  # Placeholder
+        """
+        Evaluate current model against previous best through self-play.
 
-        return {
-            "win_rate": win_rate,
-            "eval_games": self.config.training.evaluation_games,
-        }
+        Uses arena-style evaluation with alternating starting positions.
+        """
+        from .agent_trainer import EvaluationConfig, SelfPlayEvaluator
+
+        # Create evaluation config from system config
+        eval_config = EvaluationConfig(
+            num_games=self.config.training.evaluation_games,
+            temperature=self.config.training.eval_temperature,
+            mcts_iterations=self.config.mcts.num_simulations,
+            win_threshold=self.config.training.win_threshold,
+        )
+
+        # Load previous best model if available
+        best_model = None
+        if self.best_model_path is not None and self.best_model_path.exists():
+            try:
+                checkpoint = torch.load(
+                    self.best_model_path,
+                    map_location=self.device,
+                    weights_only=True,
+                )
+                # Create a copy of the current model with best weights
+                from copy import deepcopy
+                best_model = deepcopy(self.policy_value_net)
+                best_model.load_state_dict(checkpoint["policy_value_net"])
+                best_model.eval()
+            except Exception as e:
+                print(f"  Warning: Could not load best model: {e}")
+                best_model = None
+
+        # Create evaluator
+        evaluator = SelfPlayEvaluator(
+            mcts=self.mcts,
+            initial_state_fn=self.initial_state_fn,
+            config=eval_config,
+            device=self.device,
+        )
+
+        # Run evaluation
+        self.policy_value_net.eval()
+        try:
+            metrics = await evaluator.evaluate(
+                current_model=self.policy_value_net,
+                best_model=best_model,
+            )
+        finally:
+            self.policy_value_net.train()
+
+        print(f"  Win Rate: {metrics['win_rate']:.2%} ({metrics['wins']}W/{metrics['losses']}L/{metrics['draws']}D)")
+
+        return metrics
 
     def _save_checkpoint(self, iteration: int, metrics: dict, is_best: bool = False):
         """Save model checkpoint."""
@@ -472,9 +621,40 @@ class UnifiedTrainingOrchestrator:
         self.monitor.print_summary()
 
     def _should_early_stop(self, iteration: int) -> bool:
-        """Check early stopping criteria."""
-        # Placeholder: implement actual early stopping logic
-        _ = iteration  # noqa: F841
+        """
+        Check early stopping criteria based on win rate improvement.
+
+        Uses patience-based early stopping: stop if no improvement
+        for `patience` consecutive evaluations.
+        """
+        # Only check at evaluation intervals
+        if iteration % self.config.training.checkpoint_interval != 0:
+            return False
+
+        # Initialize tracking if not exists
+        if not hasattr(self, "_best_seen_win_rate"):
+            self._best_seen_win_rate = 0.0
+            self._iterations_without_improvement = 0
+
+        # Check if current best is an improvement
+        current_win_rate = self.best_win_rate
+        min_delta = self.config.training.min_delta
+
+        if current_win_rate > self._best_seen_win_rate + min_delta:
+            # Improvement found
+            self._best_seen_win_rate = current_win_rate
+            self._iterations_without_improvement = 0
+            return False
+
+        # No improvement
+        self._iterations_without_improvement += 1
+
+        # Check patience
+        if self._iterations_without_improvement >= self.config.training.patience:
+            print(f"  Early stopping: no improvement for {self.config.training.patience} evaluations")
+            print(f"  Best win rate seen: {self._best_seen_win_rate:.2%}")
+            return True
+
         return False
 
     def load_checkpoint(self, path: str):

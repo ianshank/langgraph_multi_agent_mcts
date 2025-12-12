@@ -161,6 +161,23 @@ class Settings(BaseSettings):
         default=60, ge=1, le=1000, description="Rate limit for API requests per minute"
     )
 
+    # Framework Service Configuration
+    FRAMEWORK_MAX_ITERATIONS: int = Field(
+        default=3, ge=1, le=100, description="Maximum iterations for agent processing"
+    )
+
+    FRAMEWORK_CONSENSUS_THRESHOLD: float = Field(
+        default=0.75, ge=0.0, le=1.0, description="Consensus threshold for agent agreement"
+    )
+
+    FRAMEWORK_TOP_K_RETRIEVAL: int = Field(
+        default=5, ge=1, le=100, description="Number of top documents to retrieve for RAG"
+    )
+
+    FRAMEWORK_ENABLE_PARALLEL_AGENTS: bool = Field(
+        default=True, description="Enable parallel agent execution"
+    )
+
     @field_validator("OPENAI_API_KEY")
     @classmethod
     def validate_openai_key_format(cls, v: SecretStr | None) -> SecretStr | None:
