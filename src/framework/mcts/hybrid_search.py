@@ -19,6 +19,7 @@ Architecture:
 from __future__ import annotations
 
 import asyncio
+from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any
@@ -569,18 +570,6 @@ class Verifier(ABC):
     ) -> VerificationResult:
         """Verify a candidate solution."""
         pass
-
-
-class ABCMeta(type):
-    """Placeholder ABC metaclass."""
-
-    pass
-
-
-class ABC(metaclass=ABCMeta):
-    """Placeholder ABC base class."""
-
-    pass
 
 
 class CodeExecutionVerifier:
