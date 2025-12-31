@@ -1,1 +1,1 @@
-"""Tests for game implementations."""
+"""Tests for game environments."""
