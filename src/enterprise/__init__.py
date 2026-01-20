@@ -24,6 +24,13 @@ Example:
 
 from __future__ import annotations
 
+# Base classes and protocols (alphabetically sorted)
+from .base.domain_detector import (
+    DetectionResult,
+    DomainDetector,
+    DomainPattern,
+    get_domain_detector,
+)
 from .base.use_case import (
     BaseDomainState,
     BaseUseCase,
@@ -32,7 +39,7 @@ from .base.use_case import (
     UseCaseProtocol,
 )
 
-# Core exports
+# Configuration (alphabetically sorted)
 from .config.enterprise_settings import (
     BaseUseCaseConfig,
     ClinicalTrialConfig,
@@ -43,28 +50,34 @@ from .config.enterprise_settings import (
     get_enterprise_settings,
     reset_enterprise_settings,
 )
+
+# Factories (alphabetically sorted)
 from .factories.use_case_factory import (
     EnterpriseUseCaseFactory,
     UseCaseFactory,
 )
 
 __all__ = [
-    # Configuration
-    "BaseUseCaseConfig",
-    "MADueDiligenceConfig",
-    "ClinicalTrialConfig",
-    "RegulatoryComplianceConfig",
-    "EnterpriseSettings",
-    "EnterpriseDomain",
-    "get_enterprise_settings",
-    "reset_enterprise_settings",
-    # Base classes and protocols
-    "BaseUseCase",
+    # Base classes and protocols (alphabetically sorted)
     "BaseDomainState",
+    "BaseUseCase",
+    "DetectionResult",
     "DomainAgentProtocol",
+    "DomainDetector",
+    "DomainPattern",
     "RewardFunctionProtocol",
     "UseCaseProtocol",
-    # Factories
+    "get_domain_detector",
+    # Configuration (alphabetically sorted)
+    "BaseUseCaseConfig",
+    "ClinicalTrialConfig",
+    "EnterpriseDomain",
+    "EnterpriseSettings",
+    "MADueDiligenceConfig",
+    "RegulatoryComplianceConfig",
+    "get_enterprise_settings",
+    "reset_enterprise_settings",
+    # Factories (alphabetically sorted)
     "EnterpriseUseCaseFactory",
     "UseCaseFactory",
 ]

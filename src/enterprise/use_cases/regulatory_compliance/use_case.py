@@ -7,6 +7,7 @@ enforcement prediction, and compliance optimization.
 
 from __future__ import annotations
 
+import copy
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -128,8 +129,6 @@ class RegulatoryCompliance(BaseUseCase[RegulatoryComplianceState]):
         action: str,
     ) -> RegulatoryComplianceState:
         """Apply action to compliance state."""
-        import copy
-
         new_state = copy.deepcopy(state)
         new_state.state_id = f"{state.state_id}_{hash(action) % 10000}"
         new_state.action_history.append(action)

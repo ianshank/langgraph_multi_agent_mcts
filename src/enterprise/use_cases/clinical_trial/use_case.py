@@ -7,6 +7,7 @@ approval probability while minimizing cost and timeline.
 
 from __future__ import annotations
 
+import copy
 import logging
 import uuid
 from dataclasses import dataclass, field
@@ -123,8 +124,6 @@ class ClinicalTrialDesign(BaseUseCase[ClinicalTrialState]):
         action: str,
     ) -> ClinicalTrialState:
         """Apply action to trial design state."""
-        import copy
-
         new_state = copy.deepcopy(state)
         new_state.state_id = f"{state.state_id}_{hash(action) % 10000}"
         new_state.action_history.append(action)

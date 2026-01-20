@@ -28,6 +28,34 @@ DomainStateT = TypeVar("DomainStateT", bound="BaseDomainState")
 DomainActionT = TypeVar("DomainActionT")
 
 
+# Custom exceptions for better error handling
+class EnterpriseUseCaseError(Exception):
+    """Base exception for enterprise use case errors."""
+
+    pass
+
+
+class MCTSSearchError(EnterpriseUseCaseError):
+    """Error during MCTS search operations."""
+
+    pass
+
+
+class AgentProcessingError(EnterpriseUseCaseError):
+    """Error during agent processing."""
+
+    def __init__(self, agent_name: str, original_error: Exception) -> None:
+        self.agent_name = agent_name
+        self.original_error = original_error
+        super().__init__(f"Agent '{agent_name}' failed: {original_error}")
+
+
+class StateValidationError(EnterpriseUseCaseError):
+    """Error during state validation."""
+
+    pass
+
+
 @dataclass
 class BaseDomainState:
     """
@@ -497,8 +525,18 @@ class BaseUseCase(Generic[DomainStateT]):
                     "explored_nodes": 0,
                 },
             }
-        except Exception as e:
-            self._logger.warning(f"MCTS search failed: {e}")
+        except ImportError as e:
+            self._logger.warning(f"MCTS module not available: {e}")
+            return {"best_action": None, "stats": {}}
+        except (ValueError, TypeError, AttributeError) as e:
+            # Catch specific errors related to MCTS state/node creation
+            self._logger.warning(f"MCTS search failed due to configuration error: {e}")
+            raise MCTSSearchError(f"MCTS configuration error: {e}") from e
+        except MCTSSearchError:
+            raise  # Re-raise our custom exceptions
+        except RuntimeError as e:
+            # Catch runtime errors from MCTS engine
+            self._logger.warning(f"MCTS runtime error: {e}")
             return {"best_action": None, "stats": {}}
 
     async def _process_with_agents(
@@ -521,10 +559,30 @@ class BaseUseCase(Generic[DomainStateT]):
             try:
                 result = await agent.process(query, state, enriched_context)
                 agent_results[agent_name] = result
-            except Exception as e:
-                self._logger.error(f"Agent {agent_name} failed: {e}")
+            except (ValueError, TypeError, KeyError) as e:
+                # Catch specific errors from agent processing
+                self._logger.error(f"Agent {agent_name} failed with data error: {e}")
                 agent_results[agent_name] = {
                     "error": str(e),
+                    "error_type": type(e).__name__,
+                    "confidence": 0.0,
+                }
+            except (ConnectionError, TimeoutError, OSError) as e:
+                # Catch network/IO related errors
+                self._logger.error(f"Agent {agent_name} failed with IO error: {e}")
+                agent_results[agent_name] = {
+                    "error": str(e),
+                    "error_type": "IOError",
+                    "confidence": 0.0,
+                }
+            except AgentProcessingError:
+                raise  # Re-raise our custom exceptions
+            except RuntimeError as e:
+                # Catch general runtime errors
+                self._logger.error(f"Agent {agent_name} runtime error: {e}")
+                agent_results[agent_name] = {
+                    "error": str(e),
+                    "error_type": "RuntimeError",
                     "confidence": 0.0,
                 }
 

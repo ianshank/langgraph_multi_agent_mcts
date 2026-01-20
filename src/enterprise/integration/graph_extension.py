@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING, Annotated, Any, NotRequired, TypedDict
 if TYPE_CHECKING:
     from src.framework.graph import GraphBuilder
 
+from ..base.domain_detector import DomainDetector, get_domain_detector
 from ..base.use_case import UseCaseProtocol
 from ..config.enterprise_settings import EnterpriseDomain
 from ..factories.use_case_factory import EnterpriseUseCaseFactory
@@ -62,6 +63,7 @@ class EnterpriseGraphBuilder:
         self,
         base_graph_builder: GraphBuilder | None = None,
         use_case_factory: EnterpriseUseCaseFactory | None = None,
+        domain_detector: DomainDetector | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
         """
@@ -70,10 +72,12 @@ class EnterpriseGraphBuilder:
         Args:
             base_graph_builder: Existing graph builder to extend
             use_case_factory: Factory for creating use cases
+            domain_detector: Optional domain detector (uses singleton if not provided)
             logger: Optional logger instance
         """
         self._base_builder = base_graph_builder
         self._factory = use_case_factory or EnterpriseUseCaseFactory()
+        self._detector = domain_detector or get_domain_detector()
         self._logger = logger or logging.getLogger(__name__)
         self._use_cases: dict[EnterpriseDomain, UseCaseProtocol] = {}
 
@@ -199,37 +203,17 @@ class EnterpriseGraphBuilder:
         """
         Determine if query should be routed to enterprise processing.
 
+        Uses the centralized DomainDetector for consistent domain detection.
+
         Args:
             state: Current agent state
 
         Returns:
             True if enterprise routing is appropriate
         """
-        query = state.get("query", "").lower()
-
-        # Check for enterprise domain indicators
-        enterprise_keywords = [
-            # M&A
-            "acquisition",
-            "merger",
-            "due diligence",
-            "m&a",
-            "target company",
-            # Clinical
-            "clinical trial",
-            "fda",
-            "phase 1",
-            "phase 2",
-            "phase 3",
-            # Regulatory
-            "compliance",
-            "regulation",
-            "gdpr",
-            "sox",
-            "hipaa",
-        ]
-
-        return any(kw in query for kw in enterprise_keywords)
+        query = state.get("query", "")
+        result = self._detector.detect(query)
+        return result.is_detected
 
     def get_enterprise_route(self, state: EnterpriseAgentState) -> str:
         """

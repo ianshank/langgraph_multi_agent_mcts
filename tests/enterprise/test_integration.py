@@ -38,7 +38,7 @@ class TestEnterpriseMetaControllerAdapter:
             domain_detection_threshold=0.7,
         )
 
-        assert adapter._detection_threshold == 0.7
+        assert adapter._detector.detection_threshold == 0.7
 
     @pytest.mark.skipif(not INTEGRATION_AVAILABLE, reason="Integration not available")
     def test_detect_ma_domain(self, sample_ma_query):

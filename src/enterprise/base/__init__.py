@@ -7,6 +7,12 @@ must implement, ensuring consistency and interoperability across domains.
 
 from __future__ import annotations
 
+from .domain_detector import (
+    DetectionResult,
+    DomainDetector,
+    DomainPattern,
+    get_domain_detector,
+)
 from .use_case import (
     BaseDomainState,
     BaseUseCase,
@@ -16,8 +22,14 @@ from .use_case import (
 )
 
 __all__ = [
-    "BaseUseCase",
+    # Domain detection
+    "DetectionResult",
+    "DomainDetector",
+    "DomainPattern",
+    "get_domain_detector",
+    # Use case abstractions
     "BaseDomainState",
+    "BaseUseCase",
     "DomainAgentProtocol",
     "RewardFunctionProtocol",
     "UseCaseProtocol",
