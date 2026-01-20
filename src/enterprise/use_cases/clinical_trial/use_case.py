@@ -116,7 +116,9 @@ class ClinicalTrialDesign(BaseUseCase[ClinicalTrialState]):
             "run_power_analysis",
             "finalize_design",
         ]
-        return [a for a in actions if a not in state.action_history[-3:]]
+        # Use configurable recent action window for deduplication
+        recent_window = self._config.recent_action_window
+        return [a for a in actions if a not in state.action_history[-recent_window:]]
 
     def apply_action(
         self,
@@ -129,15 +131,22 @@ class ClinicalTrialDesign(BaseUseCase[ClinicalTrialState]):
         new_state.action_history.append(action)
         new_state.design_iterations += 1
 
-        # Apply action effects
+        # Get adjustment factors from configuration
+        increase_factor = self._config.sample_size_increase_factor
+        decrease_factor = self._config.sample_size_decrease_factor
+        min_sample = self._config.min_sample_size
+        duration_adjustment = self._config.duration_adjustment_months
+        min_duration = self._config.min_trial_duration_months
+
+        # Apply action effects using configurable factors
         if action == "adjust_sample_size_up":
-            new_state.sample_size = int(new_state.sample_size * 1.2)
+            new_state.sample_size = int(new_state.sample_size * increase_factor)
         elif action == "adjust_sample_size_down":
-            new_state.sample_size = max(10, int(new_state.sample_size * 0.8))
+            new_state.sample_size = max(min_sample, int(new_state.sample_size * decrease_factor))
         elif action == "extend_duration":
-            new_state.duration_months += 3
+            new_state.duration_months += duration_adjustment
         elif action == "shorten_duration":
-            new_state.duration_months = max(3, new_state.duration_months - 3)
+            new_state.duration_months = max(min_duration, new_state.duration_months - duration_adjustment)
 
         new_state.features["action_count"] = len(new_state.action_history)
         return new_state

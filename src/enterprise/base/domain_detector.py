@@ -9,9 +9,12 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from src.enterprise.config.enterprise_settings import EnterpriseDomain
+
+if TYPE_CHECKING:
+    from src.enterprise.config.enterprise_settings import DomainDetectorConfig
 
 
 @dataclass
@@ -137,9 +140,10 @@ class DomainDetector:
 
     def __init__(
         self,
-        detection_threshold: float = 0.05,
+        detection_threshold: float | None = None,
         patterns: dict[EnterpriseDomain, DomainPattern] | None = None,
         logger: logging.Logger | None = None,
+        config: DomainDetectorConfig | None = None,
     ) -> None:
         """
         Initialize the domain detector.
@@ -148,8 +152,16 @@ class DomainDetector:
             detection_threshold: Minimum confidence score to consider a domain detected
             patterns: Optional custom patterns (defaults to DEFAULT_PATTERNS)
             logger: Optional logger instance
+            config: Optional DomainDetectorConfig (uses singleton if not provided)
         """
-        self._threshold = detection_threshold
+        # Load config from settings if not provided
+        if config is None:
+            from src.enterprise.config.enterprise_settings import get_enterprise_settings
+
+            config = get_enterprise_settings().domain_detector
+
+        self._config = config
+        self._threshold = detection_threshold if detection_threshold is not None else config.detection_threshold
         self._patterns = patterns or self.DEFAULT_PATTERNS.copy()
         self._logger = logger or logging.getLogger(__name__)
 
@@ -229,20 +241,27 @@ class DomainDetector:
         """
         state = state or {}
 
+        # Get configurable values
+        length_divisor = self._config.complexity_length_divisor
+        length_max = self._config.complexity_length_max
+        tech_multiplier = self._config.complexity_tech_multiplier
+        tech_max = self._config.complexity_tech_max
+        state_factor_value = self._config.complexity_state_factor
+
         # Length factor (longer queries tend to be more complex)
-        length_factor = min(len(query) / 1000, 0.3)
+        length_factor = min(len(query) / length_divisor, length_max)
 
         # Technical keyword factor
         query_lower = query.lower()
         tech_matches = sum(1 for kw in self.TECHNICAL_KEYWORDS if kw in query_lower)
-        tech_factor = min(tech_matches * 0.1, 0.3)
+        tech_factor = min(tech_matches * tech_multiplier, tech_max)
 
         # State complexity factor
         state_factor = 0.0
         if state.get("rag_context"):
-            state_factor += 0.1
+            state_factor += state_factor_value
         if state.get("previous_responses"):
-            state_factor += 0.1
+            state_factor += state_factor_value
 
         return min(length_factor + tech_factor + state_factor, 1.0)
 
@@ -296,7 +315,8 @@ class DomainDetector:
         if self.requires_compliance(query):
             return "enterprise_regulatory"
 
-        if self.estimate_complexity(query) > 0.7:
+        # Use configurable complexity threshold
+        if self.estimate_complexity(query) > self._config.high_complexity_threshold:
             return "mcts"
 
         return "hrm"

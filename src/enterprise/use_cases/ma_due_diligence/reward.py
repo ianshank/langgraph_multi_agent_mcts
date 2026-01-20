@@ -9,11 +9,18 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any
 
+from ...config.enterprise_settings import MADueDiligenceConfig, get_enterprise_settings
+
 if TYPE_CHECKING:
-    from ...config.enterprise_settings import MADueDiligenceConfig
+    pass
 
 from ...base.use_case import RewardFunctionProtocol
 from .state import MADueDiligenceState
+
+
+def _get_default_config() -> MADueDiligenceConfig:
+    """Get default configuration from enterprise settings."""
+    return get_enterprise_settings().ma_due_diligence
 
 
 class MADueDiligenceReward(RewardFunctionProtocol):
@@ -40,14 +47,10 @@ class MADueDiligenceReward(RewardFunctionProtocol):
             config: Use case configuration
             weights: Optional custom weights for components
         """
-        self._config = config
+        self._config = config or _get_default_config()
 
-        # Default weights (can be overridden)
-        self._weights = weights or {
-            "information_gain": 0.4,
-            "risk_discovery": 0.35,
-            "timeline_efficiency": 0.25,
-        }
+        # Get weights from configuration
+        self._weights = weights or self._config.reward_weights.copy()
 
     def evaluate(
         self,
@@ -138,9 +141,10 @@ class MADueDiligenceReward(RewardFunctionProtocol):
 
         base = action_base_gain.get(action, 0.5)
 
-        # Diminishing returns for repeated similar actions
+        # Diminishing returns for repeated similar actions (configurable decay factor)
         similar_count = sum(1 for a in state.action_history if action.split("_")[0] in a)  # Same action category
-        decay = 0.8**similar_count
+        decay_factor = self._config.reward_decay_factor
+        decay = decay_factor**similar_count
 
         return base * decay
 
@@ -180,14 +184,17 @@ class MADueDiligenceReward(RewardFunctionProtocol):
         else:
             base_reward = 0.4
 
-        # Higher reward if few risks found so far
+        # Higher reward if few risks found so far (configurable thresholds)
         risk_count = len(state.risks_identified)
-        if risk_count < 3:
-            multiplier = 1.2
-        elif risk_count < 6:
-            multiplier = 1.0
+        low_threshold = self._config.risk_count_low_threshold
+        high_threshold = self._config.risk_count_high_threshold
+
+        if risk_count < low_threshold:
+            multiplier = self._config.risk_low_count_multiplier
+        elif risk_count < high_threshold:
+            multiplier = self._config.risk_medium_count_multiplier
         else:
-            multiplier = 0.8
+            multiplier = self._config.risk_high_count_multiplier
 
         return min(base_reward * multiplier, 1.0)
 
@@ -203,23 +210,29 @@ class MADueDiligenceReward(RewardFunctionProtocol):
         excessive time in any single phase.
         """
         action_count = len(state.action_history)
-        max_analysis_depth = self._config.max_analysis_depth * 5 if self._config else 50
+        max_analysis_depth = self._config.max_analysis_depth * 5
 
-        # Penalize if taking too long
-        if action_count > max_analysis_depth * 0.8:
-            time_penalty = 0.3
-        elif action_count > max_analysis_depth * 0.6:
-            time_penalty = 0.6
+        # Get configurable thresholds
+        early_threshold = self._config.timeline_depth_early_threshold
+        late_threshold = self._config.timeline_depth_late_threshold
+
+        # Penalize if taking too long (configurable penalties)
+        depth_ratio = action_count / max_analysis_depth if max_analysis_depth > 0 else 0
+        if depth_ratio > late_threshold:
+            time_penalty = self._config.timeline_late_penalty
+        elif depth_ratio > early_threshold:
+            time_penalty = self._config.timeline_mid_penalty
         else:
-            time_penalty = 1.0
+            time_penalty = self._config.timeline_early_penalty
 
         # Reward phase progression
         if action == "proceed_to_next_phase":
-            # Check if current phase has enough coverage
+            # Check if current phase has enough coverage (configurable minimum)
             phase_actions = sum(
                 1 for a in state.action_history[-10:] if a not in ["proceed_to_next_phase", "revisit_previous_phase"]
             )
-            if phase_actions >= 3:  # Minimum coverage
+            min_coverage = self._config.min_phase_coverage_actions
+            if phase_actions >= min_coverage:
                 return 0.9 * time_penalty
             else:
                 return 0.5 * time_penalty  # Too early to progress

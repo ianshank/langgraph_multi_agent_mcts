@@ -425,18 +425,23 @@ class BaseUseCase(Generic[DomainStateT]):
         """Return MCTS rollout policy for this use case."""
         from src.framework.mcts.policies import HybridRolloutPolicy
 
+        # Get rollout policy config from settings
+        rollout_config = self._config.rollout_policy
+        depth_divisor = rollout_config.depth_bonus_divisor
+        max_bonus = rollout_config.max_depth_bonus
+
         def heuristic_fn(mcts_state: MCTSState) -> float:
             """Default heuristic based on state features."""
             features = mcts_state.features
             base = 0.5
             action_count = int(features.get("action_count", 0))
-            depth_bonus = min(action_count / 20, 0.2)
+            depth_bonus = min(action_count / depth_divisor, max_bonus)
             return float(min(base + depth_bonus, 1.0))
 
         return HybridRolloutPolicy(
             heuristic_fn=heuristic_fn,
-            heuristic_weight=0.7,
-            random_weight=0.3,
+            heuristic_weight=rollout_config.heuristic_weight,
+            random_weight=rollout_config.random_weight,
         )
 
     async def process(
@@ -508,8 +513,8 @@ class BaseUseCase(Generic[DomainStateT]):
             from src.framework.mcts.core import MCTSEngine, MCTSNode
 
             engine = MCTSEngine(
-                seed=self._config.mcts_iterations if hasattr(self._config, "seed") else 42,
-                exploration_weight=getattr(self._config, "mcts_exploration_weight", 1.414),
+                seed=self._config.mcts_seed,
+                exploration_weight=self._config.mcts_exploration_weight,
             )
 
             # Create root node for MCTS search tree

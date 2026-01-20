@@ -8,12 +8,13 @@ following patterns established in the HRM and TRM agent architecture.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from src.adapters.llm.base import LLMClient
 
+from ...config.enterprise_settings import MADueDiligenceConfig, get_enterprise_settings
 from .state import (
     IdentifiedRisk,
     MADueDiligenceState,
@@ -22,21 +23,28 @@ from .state import (
 )
 
 
+def _get_default_config() -> MADueDiligenceConfig:
+    """Get default configuration from enterprise settings."""
+    return get_enterprise_settings().ma_due_diligence
+
+
 @dataclass
 class AgentConfig:
     """Base configuration for domain agents."""
 
-    confidence_threshold: float = 0.7
-    max_retries: int = 3
-    timeout_seconds: float = 30.0
+    confidence_threshold: float = field(default_factory=lambda: _get_default_config().agent_config.confidence_threshold)
+    max_retries: int = field(default_factory=lambda: _get_default_config().agent_config.max_retries)
+    timeout_seconds: float = field(default_factory=lambda: _get_default_config().agent_config.timeout_seconds)
 
 
 @dataclass
 class DocumentAnalysisAgentConfig(AgentConfig):
     """Configuration for document analysis agent."""
 
-    max_docs_per_batch: int = 10
-    extraction_confidence_threshold: float = 0.7
+    max_docs_per_batch: int = field(default_factory=lambda: _get_default_config().max_docs_per_batch)
+    extraction_confidence_threshold: float = field(
+        default_factory=lambda: _get_default_config().extraction_confidence_threshold
+    )
     enable_ocr: bool = True
     analysis_depth: str = "moderate"  # surface, moderate, deep
 
@@ -207,7 +215,8 @@ class RiskIdentificationAgent:
         llm_client: LLMClient | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
-        self._config = config or {"max_refinement_rounds": 3}
+        enterprise_config = _get_default_config()
+        self._config = config or {"max_refinement_rounds": enterprise_config.max_refinement_rounds}
         self._llm = llm_client
         self._logger = logger or logging.getLogger(__name__)
         self._last_confidence: float = 0.0
@@ -335,7 +344,8 @@ class SynergyExplorationAgent:
         llm_client: LLMClient | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
-        self._config = config or {"exploration_depth": 5}
+        enterprise_config = _get_default_config()
+        self._config = config or {"exploration_depth": enterprise_config.synergy_exploration_depth}
         self._llm = llm_client
         self._logger = logger or logging.getLogger(__name__)
         self._last_confidence: float = 0.0
@@ -441,7 +451,8 @@ class ComplianceCheckAgent:
         llm_client: LLMClient | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
-        self._config = config or {"jurisdictions": ["US", "EU"]}
+        self._enterprise_config = _get_default_config()
+        self._config = config or {"jurisdictions": self._enterprise_config.jurisdictions}
         self._llm = llm_client
         self._logger = logger or logging.getLogger(__name__)
         self._last_confidence: float = 0.0
@@ -505,23 +516,29 @@ class ComplianceCheckAgent:
         # Rule-based compliance checks (would be more comprehensive in production)
         issues = []
 
+        # Get thresholds from configuration
+        hsr_threshold = self._enterprise_config.hsr_filing_threshold
+        eu_threshold = self._enterprise_config.eu_merger_threshold
+
         if jurisdiction == "US":
-            if state.deal_value and state.deal_value > 101_000_000:
+            if state.deal_value and state.deal_value > hsr_threshold:
                 issues.append(
                     {
                         "regulation": "HSR Act",
                         "description": "Hart-Scott-Rodino filing required",
                         "severity": "high",
                         "remediation": "File HSR notification",
+                        "threshold": hsr_threshold,
                     }
                 )
-        elif jurisdiction == "EU" and state.deal_value and state.deal_value > 150_000_000:
+        elif jurisdiction == "EU" and state.deal_value and state.deal_value > eu_threshold:
             issues.append(
                 {
                     "regulation": "EU Merger Regulation",
                     "description": "EU merger notification may be required",
                     "severity": "high",
                     "remediation": "Assess EU turnover thresholds",
+                    "threshold": eu_threshold,
                 }
             )
 

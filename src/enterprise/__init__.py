@@ -41,12 +41,15 @@ from .base.use_case import (
 
 # Configuration (alphabetically sorted)
 from .config.enterprise_settings import (
+    AgentConfig,
     BaseUseCaseConfig,
     ClinicalTrialConfig,
+    DomainDetectorConfig,
     EnterpriseDomain,
     EnterpriseSettings,
     MADueDiligenceConfig,
     RegulatoryComplianceConfig,
+    RolloutPolicyConfig,
     get_enterprise_settings,
     reset_enterprise_settings,
 )
@@ -69,12 +72,15 @@ __all__ = [
     "UseCaseProtocol",
     "get_domain_detector",
     # Configuration (alphabetically sorted)
+    "AgentConfig",
     "BaseUseCaseConfig",
     "ClinicalTrialConfig",
+    "DomainDetectorConfig",
     "EnterpriseDomain",
     "EnterpriseSettings",
     "MADueDiligenceConfig",
     "RegulatoryComplianceConfig",
+    "RolloutPolicyConfig",
     "get_enterprise_settings",
     "reset_enterprise_settings",
     # Factories (alphabetically sorted)
