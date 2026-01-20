@@ -14,9 +14,11 @@ Based on: CLAUDE_CODE_IMPLEMENTATION_TEMPLATE.md
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import os
-from typing import Any, AsyncGenerator, Generator
+from collections.abc import AsyncGenerator, Generator
+from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -24,27 +26,35 @@ import pytest
 # Import project modules with graceful fallback
 try:
     from src.config.settings import Settings, get_settings, reset_settings
+
     SETTINGS_AVAILABLE = True
 except ImportError:
+    # Settings module not installed; settings-dependent tests will be skipped
     SETTINGS_AVAILABLE = False
 
 try:
     from src.adapters.llm.base import LLMClient, LLMResponse
+
     LLM_AVAILABLE = True
 except ImportError:
+    # LLM adapters not installed; LLM-dependent tests will be skipped
     LLM_AVAILABLE = False
 
 try:
-    from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
     from src.framework.mcts.config import MCTSConfig
+    from src.framework.mcts.core import MCTSEngine, MCTSNode, MCTSState
+
     MCTS_AVAILABLE = True
 except ImportError:
+    # MCTS framework not installed; MCTS-dependent tests will be skipped
     MCTS_AVAILABLE = False
 
 try:
-    from src.observability.logging import get_correlation_id, set_correlation_id
+    from src.observability.logging import set_correlation_id
+
     LOGGING_AVAILABLE = True
 except ImportError:
+    # Observability module is optional; tests will skip logging-dependent fixtures
     LOGGING_AVAILABLE = False
 
 
@@ -88,11 +98,10 @@ def pytest_collection_modifyitems(config, items):
                 item.add_marker(skip_neural)
 
         # Skip LLM tests if no API key or SKIP_LLM set
-        if "llm" in item.keywords:
-            if os.environ.get("SKIP_LLM", "0") == "1":
-                item.add_marker(skip_llm)
-            elif not os.environ.get("OPENAI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY"):
-                item.add_marker(skip_llm)
+        skip_llm_flag = os.environ.get("SKIP_LLM", "0") == "1"
+        no_api_keys = not os.environ.get("OPENAI_API_KEY") and not os.environ.get("ANTHROPIC_API_KEY")
+        if "llm" in item.keywords and (skip_llm_flag or no_api_keys):
+            item.add_marker(skip_llm)
 
 
 def pytest_addoption(parser):
@@ -130,11 +139,13 @@ def torch_device() -> str:
     """Determine the best available torch device."""
     try:
         import torch
+
         if torch.cuda.is_available():
             return "cuda"
         elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
             return "mps"
     except ImportError:
+        # PyTorch is optional; fall back to CPU-only mode for non-neural tests
         pass
     return "cpu"
 
@@ -483,12 +494,11 @@ def enterprise_config_overrides() -> dict[str, str]:
 def cleanup_after_test():
     """Ensure cleanup after each test."""
     yield
-    # Add any global cleanup here
+    # Best-effort cleanup: settings reset may fail if module state is corrupted,
+    # but this should not cause test failures during teardown
     if SETTINGS_AVAILABLE:
-        try:
+        with contextlib.suppress(Exception):
             reset_settings()
-        except Exception:
-            pass
 
 
 # =============================================================================

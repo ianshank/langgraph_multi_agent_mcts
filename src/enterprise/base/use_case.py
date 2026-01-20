@@ -512,12 +512,14 @@ class BaseUseCase(Generic[DomainStateT]):
                 exploration_weight=getattr(self._config, "mcts_exploration_weight", 1.414),
             )
 
-            # Create root node
+            # Create root node for MCTS search tree
+            # Note: The root node is created here to validate state conversion works correctly.
+            # Full MCTS tree search (selection, expansion, simulation, backpropagation)
+            # will be implemented in a future iteration to find optimal action sequences.
             mcts_state = state.to_mcts_state()
-            _root = MCTSNode(state=mcts_state, rng=engine.rng)  # noqa: F841 - Used in future MCTS integration
+            MCTSNode(state=mcts_state, rng=engine.rng)  # Validates state is MCTS-compatible
 
-            # Note: Full MCTS integration would go here
-            # For now, return placeholder
+            # Placeholder return until full MCTS integration
             return {
                 "best_action": None,
                 "stats": {
