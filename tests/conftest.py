@@ -62,6 +62,7 @@ except ImportError:
 # Pytest Configuration
 # =============================================================================
 
+
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
     # Register custom markers
@@ -92,6 +93,7 @@ def pytest_collection_modifyitems(config, items):
         if "neural" in item.keywords:
             try:
                 import torch  # noqa: F401
+
                 if os.environ.get("SKIP_NEURAL", "0") == "1":
                     item.add_marker(skip_neural)
             except ImportError:
@@ -117,6 +119,7 @@ def pytest_addoption(parser):
 # =============================================================================
 # Session-Scoped Fixtures (Expensive, shared across all tests)
 # =============================================================================
+
 
 @pytest.fixture(scope="session")
 def event_loop_policy():
@@ -154,6 +157,7 @@ def torch_device() -> str:
 # Settings Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def test_settings() -> Generator[Settings, None, None]:
     """
@@ -168,14 +172,17 @@ def test_settings() -> Generator[Settings, None, None]:
     reset_settings()
 
     # Create test settings with safe defaults
-    with patch.dict(os.environ, {
-        "LLM_PROVIDER": "openai",
-        "OPENAI_API_KEY": "sk-test-key-for-testing-only",
-        "MCTS_ENABLED": "true",
-        "MCTS_ITERATIONS": "10",
-        "SEED": "42",
-        "LOG_LEVEL": "DEBUG",
-    }):
+    with patch.dict(
+        os.environ,
+        {
+            "LLM_PROVIDER": "openai",
+            "OPENAI_API_KEY": "sk-test-key-for-testing-only",
+            "MCTS_ENABLED": "true",
+            "MCTS_ITERATIONS": "10",
+            "SEED": "42",
+            "LOG_LEVEL": "DEBUG",
+        },
+    ):
         settings = get_settings()
         yield settings
 
@@ -209,6 +216,7 @@ def settings_override():
 # =============================================================================
 # LLM Client Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def mock_llm_response() -> LLMResponse:
@@ -287,6 +295,7 @@ def mock_llm_client_error() -> AsyncMock:
 # MCTS Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def mcts_config() -> MCTSConfig:
     """Create a fast MCTS configuration for testing."""
@@ -346,6 +355,7 @@ def mcts_node(simple_mcts_state: MCTSState, mcts_engine: MCTSEngine) -> MCTSNode
 # Correlation ID and Logging Fixtures
 # =============================================================================
 
+
 @pytest.fixture(autouse=True)
 def reset_correlation_id():
     """Reset correlation ID before each test for isolation."""
@@ -363,6 +373,7 @@ def correlation_id() -> str:
         return "test-correlation-id"
 
     import uuid
+
     test_id = f"test-{uuid.uuid4().hex[:8]}"
     set_correlation_id(test_id)
     return test_id
@@ -371,6 +382,7 @@ def correlation_id() -> str:
 # =============================================================================
 # Agent Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def mock_hrm_agent() -> MagicMock:
@@ -407,6 +419,7 @@ def mock_trm_agent() -> MagicMock:
 # Async Fixtures and Helpers
 # =============================================================================
 
+
 @pytest.fixture
 async def async_mock_llm_client(mock_llm_response: LLMResponse) -> AsyncGenerator[AsyncMock, None]:
     """
@@ -427,6 +440,7 @@ async def async_mock_llm_client(mock_llm_response: LLMResponse) -> AsyncGenerato
 # =============================================================================
 # Test Data Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def sample_query() -> str:
@@ -469,6 +483,7 @@ def sample_agent_state(sample_query: str, sample_context: dict) -> dict[str, Any
 # Enterprise Use Case Fixtures
 # =============================================================================
 
+
 @pytest.fixture
 def enterprise_config_overrides() -> dict[str, str]:
     """Provide environment variable overrides for enterprise testing."""
@@ -488,6 +503,7 @@ def enterprise_config_overrides() -> dict[str, str]:
 # Cleanup and Safety
 # =============================================================================
 
+
 @pytest.fixture(autouse=True)
 def cleanup_after_test():
     """Ensure cleanup after each test."""
@@ -502,6 +518,7 @@ def cleanup_after_test():
 # =============================================================================
 # Performance Testing Fixtures
 # =============================================================================
+
 
 @pytest.fixture
 def benchmark_iterations() -> int:
