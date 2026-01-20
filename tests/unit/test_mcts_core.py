@@ -16,8 +16,11 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from examples.langgraph_multi_agent_mcts import LangGraphMultiAgentFramework
-from src.framework.mcts.core import MCTSNode, MCTSState
+# Skip entire module if langchain_openai is not installed (optional LLM dependency)
+pytest.importorskip("langchain_openai", reason="langchain_openai required for MCTS framework tests")
+
+from examples.langgraph_multi_agent_mcts import LangGraphMultiAgentFramework  # noqa: E402
+from src.framework.mcts.core import MCTSNode, MCTSState  # noqa: E402
 
 
 class TestMCTSNode:

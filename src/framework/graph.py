@@ -59,13 +59,13 @@ except ImportError:
 # Neuro-Symbolic imports (optional)
 try:
     from src.neuro_symbolic import (
+        ConstraintSystem,
         NeuroSymbolicConfig,
-        SymbolicReasoningAgent,
+        NeuroSymbolicMCTSConfig,
+        NeuroSymbolicMCTSIntegration,
         SymbolicAgentGraphExtension,
         SymbolicAgentNodeConfig,
-        NeuroSymbolicMCTSIntegration,
-        NeuroSymbolicMCTSConfig,
-        ConstraintSystem,
+        SymbolicReasoningAgent,
     )
     from src.neuro_symbolic.config import ConstraintConfig
 
@@ -582,14 +582,13 @@ class GraphBuilder:
         iteration = state.get("iteration", 0)
 
         # Check for symbolic reasoning triggers first
-        if self.use_symbolic_reasoning and self.symbolic_extension:
-            if (
-                "symbolic_results" not in state
-                and self.symbolic_extension.should_route_to_symbolic(
-                    state.get("query", ""), state
-                )
-            ):
-                return "symbolic"
+        if (
+            self.use_symbolic_reasoning
+            and self.symbolic_extension
+            and "symbolic_results" not in state
+            and self.symbolic_extension.should_route_to_symbolic(state.get("query", ""), state)
+        ):
+            return "symbolic"
 
         # First iteration: run HRM and TRM
         if iteration == 0:

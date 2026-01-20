@@ -14,10 +14,10 @@ Based on: CLAUDE_CODE_IMPLEMENTATION_TEMPLATE.md
 from __future__ import annotations
 
 import asyncio
-import contextlib
 import logging
 import os
 from collections.abc import AsyncGenerator, Generator
+from contextlib import contextmanager, suppress
 from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -195,8 +195,6 @@ def settings_override():
     """
     if not SETTINGS_AVAILABLE:
         pytest.skip("Settings module not available")
-
-    from contextlib import contextmanager
 
     @contextmanager
     def _override(overrides: dict[str, str]):
@@ -497,7 +495,7 @@ def cleanup_after_test():
     # Best-effort cleanup: settings reset may fail if module state is corrupted,
     # but this should not cause test failures during teardown
     if SETTINGS_AVAILABLE:
-        with contextlib.suppress(Exception):
+        with suppress(Exception):
             reset_settings()
 
 

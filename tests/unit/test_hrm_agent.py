@@ -17,10 +17,12 @@ All tests use deterministic seeding for reproducibility.
 import math
 
 import pytest
-import torch
-import torch.nn as nn
 
-from src.agents.hrm_agent import (
+# Skip entire module if torch is not installed (optional neural dependency)
+torch = pytest.importorskip("torch", reason="PyTorch required for neural agent tests")
+import torch.nn as nn  # noqa: E402
+
+from src.agents.hrm_agent import (  # noqa: E402
     AdaptiveComputationTime,
     HModule,
     HRMAgent,
@@ -30,7 +32,7 @@ from src.agents.hrm_agent import (
     SubProblem,
     create_hrm_agent,
 )
-from src.training.system_config import HRMConfig
+from src.training.system_config import HRMConfig  # noqa: E402
 
 # ============================================================================
 # Fixtures
