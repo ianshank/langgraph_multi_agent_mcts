@@ -17,6 +17,9 @@ from unittest.mock import AsyncMock, MagicMock, Mock, patch
 
 import pytest
 
+# Skip entire module if torch is not available (meta_controller package requires it)
+pytest.importorskip("torch", reason="PyTorch required for meta_controller module")
+
 sys.path.insert(0, ".")
 
 # Mock the observability module before importing storage modules

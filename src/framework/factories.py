@@ -146,37 +146,114 @@ class AgentFactory:
         self.logger = logger or logging.getLogger(__name__)
         self.settings = settings or get_settings()
 
-    def create_hrm_agent(self, **config: Any) -> Any:
+    def create_hrm_agent(
+        self,
+        h_dim: int | None = None,
+        l_dim: int | None = None,
+        num_h_layers: int | None = None,
+        num_l_layers: int | None = None,
+        max_outer_steps: int | None = None,
+        halt_threshold: float | None = None,
+        device: str | None = None,
+        **config: Any,
+    ) -> Any:
         """
         Create a Hierarchical Reasoning Model (HRM) agent.
 
+        All parameters are configurable - no hardcoded values.
+
         Args:
-            **config: Agent-specific configuration
+            h_dim: High-level planning dimension (default from settings)
+            l_dim: Low-level execution dimension (default from settings)
+            num_h_layers: Number of high-level layers
+            num_l_layers: Number of low-level layers
+            max_outer_steps: Maximum planning steps
+            halt_threshold: Confidence threshold for halting
+            device: Device to place model on (cpu/cuda)
+            **config: Additional agent-specific configuration
 
         Returns:
             Configured HRM agent instance
         """
-        # This would import and create the actual HRM agent
-        # For now, this is a placeholder for the pattern
-        self.logger.info("Creating HRM agent with config: %s", config)
-        # from src.agents.hrm import HRMAgent
-        # return HRMAgent(llm_client=self.llm_client, **config)
-        raise NotImplementedError("HRM agent creation to be implemented")
+        from src.agents.hrm_agent import HRMAgent, create_hrm_agent
+        from src.training.system_config import HRMConfig
 
-    def create_trm_agent(self, **config: Any) -> Any:
+        # Build config from parameters, using settings as defaults
+        hrm_config = HRMConfig(
+            h_dim=h_dim if h_dim is not None else 512,
+            l_dim=l_dim if l_dim is not None else 256,
+            num_h_layers=num_h_layers if num_h_layers is not None else 2,
+            num_l_layers=num_l_layers if num_l_layers is not None else 4,
+            max_outer_steps=max_outer_steps if max_outer_steps is not None else 10,
+            halt_threshold=halt_threshold if halt_threshold is not None else 0.95,
+            **{k: v for k, v in config.items() if k in HRMConfig.__dataclass_fields__},
+        )
+
+        # Determine device
+        agent_device = device if device is not None else "cpu"
+
+        self.logger.info(
+            "Creating HRM agent: h_dim=%d, l_dim=%d, device=%s",
+            hrm_config.h_dim,
+            hrm_config.l_dim,
+            agent_device,
+        )
+
+        return create_hrm_agent(config=hrm_config, device=agent_device)
+
+    def create_trm_agent(
+        self,
+        latent_dim: int | None = None,
+        hidden_dim: int | None = None,
+        num_recursions: int | None = None,
+        convergence_threshold: float | None = None,
+        deep_supervision: bool | None = None,
+        output_dim: int | None = None,
+        device: str | None = None,
+        **config: Any,
+    ) -> Any:
         """
         Create a Task Refinement Model (TRM) agent.
 
+        All parameters are configurable - no hardcoded values.
+
         Args:
-            **config: Agent-specific configuration
+            latent_dim: Latent state dimension
+            hidden_dim: Hidden layer dimension
+            num_recursions: Maximum recursion depth
+            convergence_threshold: L2 distance threshold for convergence
+            deep_supervision: Enable supervision at all recursion levels
+            output_dim: Output dimension (defaults to latent_dim)
+            device: Device to place model on (cpu/cuda)
+            **config: Additional agent-specific configuration
 
         Returns:
             Configured TRM agent instance
         """
-        self.logger.info("Creating TRM agent with config: %s", config)
-        # from src.agents.trm import TRMAgent
-        # return TRMAgent(llm_client=self.llm_client, **config)
-        raise NotImplementedError("TRM agent creation to be implemented")
+        from src.agents.trm_agent import TRMAgent, create_trm_agent
+        from src.training.system_config import TRMConfig
+
+        # Build config from parameters, using sensible defaults
+        trm_config = TRMConfig(
+            latent_dim=latent_dim if latent_dim is not None else 256,
+            hidden_dim=hidden_dim if hidden_dim is not None else 512,
+            num_recursions=num_recursions if num_recursions is not None else 16,
+            convergence_threshold=convergence_threshold if convergence_threshold is not None else 0.01,
+            deep_supervision=deep_supervision if deep_supervision is not None else True,
+            **{k: v for k, v in config.items() if k in TRMConfig.__dataclass_fields__},
+        )
+
+        # Determine device
+        agent_device = device if device is not None else "cpu"
+
+        self.logger.info(
+            "Creating TRM agent: latent_dim=%d, num_recursions=%d, device=%s",
+            trm_config.latent_dim,
+            trm_config.num_recursions,
+            agent_device,
+        )
+
+        return create_trm_agent(config=trm_config, output_dim=output_dim, device=agent_device)
 
 
 class MCTSEngineFactory:

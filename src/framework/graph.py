@@ -59,13 +59,13 @@ except ImportError:
 # Neuro-Symbolic imports (optional)
 try:
     from src.neuro_symbolic import (
+        ConstraintSystem,
         NeuroSymbolicConfig,
-        SymbolicReasoningAgent,
+        NeuroSymbolicMCTSConfig,
+        NeuroSymbolicMCTSIntegration,
         SymbolicAgentGraphExtension,
         SymbolicAgentNodeConfig,
-        NeuroSymbolicMCTSIntegration,
-        NeuroSymbolicMCTSConfig,
-        ConstraintSystem,
+        SymbolicReasoningAgent,
     )
     from src.neuro_symbolic.config import ConstraintConfig
 
@@ -582,14 +582,13 @@ class GraphBuilder:
         iteration = state.get("iteration", 0)
 
         # Check for symbolic reasoning triggers first
-        if self.use_symbolic_reasoning and self.symbolic_extension:
-            if (
-                "symbolic_results" not in state
-                and self.symbolic_extension.should_route_to_symbolic(
-                    state.get("query", ""), state
-                )
-            ):
-                return "symbolic"
+        if (
+            self.use_symbolic_reasoning
+            and self.symbolic_extension
+            and "symbolic_results" not in state
+            and self.symbolic_extension.should_route_to_symbolic(state.get("query", ""), state)
+        ):
+            return "symbolic"
 
         # First iteration: run HRM and TRM
         if iteration == 0:
@@ -600,22 +599,10 @@ class GraphBuilder:
             for name in self.adk_agents:
                 # Check if we haven't run this ADK agent yet
                 adk_results = state.get("adk_results", {})
-                if (
-                    name not in adk_results
-                    and (
-                        (
-                            name == "deep_search"
-                            and ("research" in query_lower or "investigate" in query_lower)
-                        )
-                        or (
-                            name == "ml_engineering"
-                            and ("train" in query_lower or "model" in query_lower)
-                        )
-                        or (
-                            name == "data_science"
-                            and ("analyze" in query_lower or "data" in query_lower)
-                        )
-                    )
+                if name not in adk_results and (
+                    (name == "deep_search" and ("research" in query_lower or "investigate" in query_lower))
+                    or (name == "ml_engineering" and ("train" in query_lower or "model" in query_lower))
+                    or (name == "data_science" and ("analyze" in query_lower or "data" in query_lower))
                 ):
                     return f"adk_{name}"
 
@@ -908,15 +895,15 @@ class GraphBuilder:
             # or we pass the query directly
             try:
                 # Check if it's a mock or real agent
-                if hasattr(agent, "process_query"): # Assuming custom method
-                     response = await agent.process_query(state["query"])
-                elif hasattr(agent, "run"): # Standard LangChain-like
-                     response = await agent.run(state["query"])
-                elif hasattr(agent, "process"): # Framework standard
-                     response = await agent.process(state["query"])
+                if hasattr(agent, "process_query"):  # Assuming custom method
+                    response = await agent.process_query(state["query"])
+                elif hasattr(agent, "run"):  # Standard LangChain-like
+                    response = await agent.run(state["query"])
+                elif hasattr(agent, "process"):  # Framework standard
+                    response = await agent.process(state["query"])
                 else:
-                     # Fallback for demonstration/mock objects
-                     response = {"response": f"Processed by {name}", "confidence": 0.8}
+                    # Fallback for demonstration/mock objects
+                    response = {"response": f"Processed by {name}", "confidence": 0.8}
 
                 # Extract content based on response type
                 if isinstance(response, dict):
@@ -929,19 +916,14 @@ class GraphBuilder:
                     metadata = {}
 
                 return {
-                    "adk_results": {
-                        name: {
-                            "response": content,
-                            "metadata": metadata
-                        }
-                    },
+                    "adk_results": {name: {"response": content, "metadata": metadata}},
                     "agent_outputs": [
                         {
                             "agent": f"adk_{name}",
                             "response": content,
                             "confidence": confidence,
                         }
-                    ]
+                    ],
                 }
             except Exception as e:
                 self.logger.error(f"ADK agent {name} failed: {e}")

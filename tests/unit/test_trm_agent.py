@@ -17,10 +17,12 @@ All tests use deterministic seeding for reproducibility.
 import math
 
 import pytest
-import torch
-import torch.nn as nn
 
-from src.agents.trm_agent import (
+# Skip entire module if torch is not installed (optional neural dependency)
+torch = pytest.importorskip("torch", reason="PyTorch required for neural agent tests")
+import torch.nn as nn  # noqa: E402
+
+from src.agents.trm_agent import (  # noqa: E402
     DeepSupervisionHead,
     RecursiveBlock,
     TRMAgent,
@@ -29,7 +31,7 @@ from src.agents.trm_agent import (
     TRMRefinementWrapper,
     create_trm_agent,
 )
-from src.training.system_config import TRMConfig
+from src.training.system_config import TRMConfig  # noqa: E402
 
 # ============================================================================
 # Fixtures
