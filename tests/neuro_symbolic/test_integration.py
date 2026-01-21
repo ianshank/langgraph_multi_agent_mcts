@@ -13,17 +13,16 @@ Best Practices 2025:
 - Realistic scenarios
 """
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
 import pytest
 
 from src.neuro_symbolic.config import (
     ConstraintConfig,
     ConstraintEnforcement,
-    NeuroSymbolicConfig,
     get_default_config,
 )
-from src.neuro_symbolic.constraints import ConstraintSystem, PredicateConstraint
+from src.neuro_symbolic.constraints import ConstraintSystem
 from src.neuro_symbolic.integration import (
     HybridConfidenceAggregator,
     NeuroSymbolicMCTSConfig,
@@ -416,9 +415,11 @@ class TestEndToEndScenarios:
         # Process query with facts
         state = NeuroSymbolicState(
             state_id="test",
-            facts=frozenset([
-                Fact(name="human", arguments=("socrates",)),
-            ]),
+            facts=frozenset(
+                [
+                    Fact(name="human", arguments=("socrates",)),
+                ]
+            ),
         )
 
         result = await agent.process(

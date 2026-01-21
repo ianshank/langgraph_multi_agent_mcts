@@ -49,6 +49,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger("E2E_Runner")
 
+
 def get_real_llm_client() -> BaseLLMClient:
     """
     Get a real LLM client based on available environment variables.
@@ -66,8 +67,10 @@ def get_real_llm_client() -> BaseLLMClient:
         # Ensure LM Studio URL is reachable or set env var if needed
         return LMStudioClient(base_url="http://localhost:1234/v1")
 
+
 class LangGraphAgentAdapter:
     """Adapter to make demo agents compatible with GraphBuilder."""
+
     def __init__(self, agent, name: str):
         self.agent = agent
         self.name = name
@@ -84,12 +87,13 @@ class LangGraphAgentAdapter:
                 "metadata": {
                     "decomposition_quality_score": result.get("confidence", 0.5),
                     "final_quality_score": result.get("confidence", 0.5),
-                    "steps": result.get("steps", [])
-                }
+                    "steps": result.get("steps", []),
+                },
             }
         except Exception as e:
             logger.error(f"Agent {self.name} failed: {e}")
             return {"response": f"Error: {e}", "metadata": {}}
+
 
 async def main():
     logger.info("Starting E2E Workflow with ADK Agents...")
@@ -127,9 +131,7 @@ async def main():
 
     # Check for credentials - either via env var (service account) or application default credentials
     app_default_creds_path = os.path.join(
-        os.environ.get("APPDATA", ""),
-        "gcloud",
-        "application_default_credentials.json"
+        os.environ.get("APPDATA", ""), "gcloud", "application_default_credentials.json"
     )
 
     has_service_account = bool(os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"))
@@ -168,7 +170,7 @@ async def main():
         logger=logger,
         max_iterations=2,
         enable_parallel_agents=True,
-        adk_agents=adk_agents
+        adk_agents=adk_agents,
     )
 
     # Build and Compile Graph
@@ -185,11 +187,14 @@ async def main():
         ("Deep Search", "Conduct comprehensive research on the impact of quantum computing on cryptography."),
         ("ML Engineering", "Train a regression model to predict housing prices using the california_housing dataset."),
         ("Data Science", "Analyze the sales_data table in BigQuery to identify seasonal trends."),
-        ("Market Research", "perform deep research on the trend of the market using advanced workflow offer bes suggestions for options withinn 3,000 and stocks to short with high return and safe"),
+        (
+            "Market Research",
+            "perform deep research on the trend of the market using advanced workflow offer bes suggestions for options withinn 3,000 and stocks to short with high return and safe",
+        ),
     ]
 
     for agent_name, query in queries:
-        print(f"\n{'='*20} Processing {agent_name} Query {'='*20}")
+        print(f"\n{'=' * 20} Processing {agent_name} Query {'=' * 20}")
         print(f"Query: {query}\n")
 
         # Initial State
@@ -206,28 +211,31 @@ async def main():
         try:
             result = await app.ainvoke(initial_state)
 
-            print(f"\n{'='*20} {agent_name} Workflow Complete {'='*20}")
-            print(f"\n[RESPONSE] Final Response:\n{'-'*20}\n{result.get('final_response', 'No response generated')}\n{'-'*20}")
+            print(f"\n{'=' * 20} {agent_name} Workflow Complete {'=' * 20}")
+            print(
+                f"\n[RESPONSE] Final Response:\n{'-' * 20}\n{result.get('final_response', 'No response generated')}\n{'-' * 20}"
+            )
 
             # Log details
             metadata = result.get("metadata", {})
             print("\n[METADATA] Execution Metadata:")
             print(f"  * Agents Used: {', '.join(metadata.get('agents_used', []))}")
             print(f"  * Consensus Score: {metadata.get('consensus_score', 0.0):.2f}")
-            if 'confidence_scores' in metadata:
+            if "confidence_scores" in metadata:
                 print("  * Confidence Scores:")
-                for agent, score in metadata['confidence_scores'].items():
+                for agent, score in metadata["confidence_scores"].items():
                     print(f"    - {agent}: {score:.2f}")
 
             # Check for ADK execution
             if "adk_results" in result.get("state", {}):
-                 print(f"\n[ADK] Integration Active: {list(result['state']['adk_results'].keys())}")
+                print(f"\n[ADK] Integration Active: {list(result['state']['adk_results'].keys())}")
 
         except Exception as e:
             logger.error(f"Workflow execution failed for {agent_name}: {e}", exc_info=True)
             # Don't exit, try next query
 
     return 0
+
 
 if __name__ == "__main__":
     sys.exit(asyncio.run(main()))

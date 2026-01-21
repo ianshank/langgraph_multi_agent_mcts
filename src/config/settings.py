@@ -174,9 +174,7 @@ class Settings(BaseSettings):
         default=5, ge=1, le=100, description="Number of top documents to retrieve for RAG"
     )
 
-    FRAMEWORK_ENABLE_PARALLEL_AGENTS: bool = Field(
-        default=True, description="Enable parallel agent execution"
-    )
+    FRAMEWORK_ENABLE_PARALLEL_AGENTS: bool = Field(default=True, description="Enable parallel agent execution")
 
     @field_validator("OPENAI_API_KEY")
     @classmethod

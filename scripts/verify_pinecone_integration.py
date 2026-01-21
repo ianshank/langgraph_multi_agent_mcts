@@ -22,14 +22,21 @@ def check_package_installed():
 
     print("1. Checking package installation...")
     try:
-        import pinecone
+        from pinecone import Pinecone
 
-        print("   [OK] pinecone-client is installed")
-        print(f"   Version: {pinecone.__version__ if hasattr(pinecone, '__version__') else 'Unknown'}")
+        print("   [OK] pinecone is installed")
+        # Version check might be different or unavailable directly on the class
+        import importlib.metadata
+
+        try:
+            version = importlib.metadata.version("pinecone")
+        except importlib.metadata.PackageNotFoundError:
+            version = "Unknown"
+        print(f"   Version: {version}")
         return True
     except ImportError:
-        print("   [FAIL] pinecone-client is NOT installed")
-        print("   Install with: pip install pinecone-client")
+        print("   [FAIL] pinecone is NOT installed")
+        print("   Install with: pip install pinecone")
         return False
 
 

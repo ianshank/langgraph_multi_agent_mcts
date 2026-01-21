@@ -90,7 +90,7 @@ class InferenceServer:
         self,
         checkpoint_path: str,
         config: SystemConfig | None = None,
-        host: str = "0.0.0.0",
+        host: str = "0.0.0.0",  # nosec B104 - intentional binding for container/server deployment
         port: int = 8000,
     ):
         """
@@ -349,7 +349,7 @@ def main():
         required=True,
         help="Path to model checkpoint",
     )
-    parser.add_argument("--host", type=str, default="0.0.0.0", help="Server host")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Server host")  # nosec B104
     parser.add_argument("--port", type=int, default=8000, help="Server port")
     parser.add_argument(
         "--device",

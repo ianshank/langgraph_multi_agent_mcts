@@ -545,7 +545,9 @@ def load_dataset(
 
     except ImportError as e:
         logger.error("datasets library not installed. Run: pip install datasets")
-        raise ImportError("The datasets library is required but not installed. Install it with: pip install datasets") from e
+        raise ImportError(
+            "The datasets library is required but not installed. Install it with: pip install datasets"
+        ) from e
     except Exception as e:
         logger.error(f"Failed to load dataset {dataset_name}: {e}")
         raise

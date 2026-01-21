@@ -541,7 +541,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "src.api.rest_server:app",
-        host="0.0.0.0",
+        host="0.0.0.0",  # nosec B104 - intentional binding for container/server deployment
         port=8000,
         reload=False,
         workers=4,

@@ -268,9 +268,7 @@ class FrameworkService:
         """
         # Ensure initialized
         if self._state != FrameworkState.READY and not await self.initialize():
-            raise RuntimeError(
-                f"Framework not available: {self._init_error or 'initialization failed'}"
-            )
+            raise RuntimeError(f"Framework not available: {self._init_error or 'initialization failed'}")
 
         if not query or not query.strip():
             raise ValueError("Query cannot be empty")
@@ -323,9 +321,7 @@ class FrameworkService:
         except TimeoutError:
             self._error_count += 1
             processing_time = (time.perf_counter() - start_time) * 1000
-            raise TimeoutError(
-                f"Query processing timed out after {self._config.timeout_seconds}s"
-            )
+            raise TimeoutError(f"Query processing timed out after {self._config.timeout_seconds}s")
         except Exception as e:
             self._error_count += 1
             self._logger.error(f"Query processing failed: {e}")
