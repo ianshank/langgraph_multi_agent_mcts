@@ -17,6 +17,7 @@ try:
     from src.integrations.google_adk.agents.deep_search import DeepSearchAgent
     from src.integrations.google_adk.agents.ml_engineering import MLEngineeringAgent
     from src.integrations.google_adk.base import ADKAgentAdapter, ADKConfig
+
     ADK_AVAILABLE = True
 except ImportError:
     ADK_AVAILABLE = False
@@ -38,15 +39,15 @@ class TestADKAgentIntegration:
         """Create a mock LLM client."""
         client = Mock(spec=BaseLLMClient)
         client.generate.return_value = LLMResponse(
-            content="Mock response",
-            raw_response={"choices": [{"message": {"content": "Mock response"}}]},
-            metadata={}
+            content="Mock response", raw_response={"choices": [{"message": {"content": "Mock response"}}]}, metadata={}
         )
-        client.generate_async = AsyncMock(return_value=LLMResponse(
-            content="Mock async response",
-            raw_response={"choices": [{"message": {"content": "Mock async response"}}]},
-            metadata={}
-        ))
+        client.generate_async = AsyncMock(
+            return_value=LLMResponse(
+                content="Mock async response",
+                raw_response={"choices": [{"message": {"content": "Mock async response"}}]},
+                metadata={},
+            )
+        )
         return client
 
     @pytest.fixture
@@ -56,7 +57,7 @@ class TestADKAgentIntegration:
             return ADKConfig(
                 project_id=os.environ.get("GOOGLE_CLOUD_PROJECT", "test-project"),
                 location="us-central1",
-                credentials_path=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+                credentials_path=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS"),
             )
         return Mock()
 
@@ -64,7 +65,7 @@ class TestADKAgentIntegration:
     @pytest.mark.asyncio
     async def test_deep_search_agent_initialization(self, adk_config, mock_llm_client):
         """Test DeepSearchAgent initialization and basic functionality."""
-        with patch('src.integrations.google_adk.agents.deep_search.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.agents.deep_search.vertexai") as mock_vertexai:
             agent = DeepSearchAgent(config=adk_config, llm_client=mock_llm_client)
 
             assert agent is not None
@@ -75,13 +76,12 @@ class TestADKAgentIntegration:
     @pytest.mark.asyncio
     async def test_ml_engineering_agent_task_execution(self, adk_config, mock_llm_client):
         """Test MLEngineeringAgent task execution."""
-        with patch('src.integrations.google_adk.agents.ml_engineering.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.agents.ml_engineering.vertexai") as mock_vertexai:
             agent = MLEngineeringAgent(config=adk_config, llm_client=mock_llm_client)
 
             # Mock task execution
             result = await agent.execute_task(
-                task="Optimize model training pipeline",
-                context={"model_type": "transformer", "dataset_size": "10GB"}
+                task="Optimize model training pipeline", context={"model_type": "transformer", "dataset_size": "10GB"}
             )
 
             assert result is not None
@@ -91,13 +91,12 @@ class TestADKAgentIntegration:
     @pytest.mark.asyncio
     async def test_data_science_agent_analysis(self, adk_config, mock_llm_client):
         """Test DataScienceAgent data analysis capabilities."""
-        with patch('src.integrations.google_adk.agents.data_science.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.agents.data_science.vertexai") as mock_vertexai:
             agent = DataScienceAgent(config=adk_config, llm_client=mock_llm_client)
 
             # Mock data analysis
             result = await agent.analyze_data(
-                query="Analyze customer churn patterns",
-                data_source="bigquery://project.dataset.table"
+                query="Analyze customer churn patterns", data_source="bigquery://project.dataset.table"
             )
 
             assert result is not None
@@ -116,7 +115,7 @@ class TestADKUserJourneys:
     @pytest.mark.asyncio
     async def test_research_and_development_journey(self, graph_builder, adk_config):
         """Test a complete R&D user journey using ADK agents."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             # Initialize agents
             deep_search = DeepSearchAgent(config=adk_config, llm_client=graph_builder.llm_client)
             ml_engineer = MLEngineeringAgent(config=adk_config, llm_client=graph_builder.llm_client)
@@ -127,29 +126,26 @@ class TestADKUserJourneys:
                 {
                     "step": "Research",
                     "agent": deep_search,
-                    "task": "Research latest advances in transformer architectures for NLP"
+                    "task": "Research latest advances in transformer architectures for NLP",
                 },
                 {
                     "step": "Design",
                     "agent": ml_engineer,
-                    "task": "Design a scalable training pipeline for the new architecture"
+                    "task": "Design a scalable training pipeline for the new architecture",
                 },
                 {
                     "step": "Analysis",
                     "agent": data_scientist,
-                    "task": "Analyze performance metrics and suggest optimizations"
-                }
+                    "task": "Analyze performance metrics and suggest optimizations",
+                },
             ]
 
             results = []
             for step in journey_steps:
                 # Mock agent execution
-                with patch.object(step["agent"], 'execute', return_value={"response": f"Completed: {step['task']}"}):
+                with patch.object(step["agent"], "execute", return_value={"response": f"Completed: {step['task']}"}):
                     result = await step["agent"].execute(step["task"])
-                    results.append({
-                        "step": step["step"],
-                        "result": result
-                    })
+                    results.append({"step": step["step"], "result": result})
 
             assert len(results) == 3
             assert all("result" in r for r in results)
@@ -158,12 +154,12 @@ class TestADKUserJourneys:
     @pytest.mark.asyncio
     async def test_collaborative_problem_solving_journey(self, graph_builder, adk_config):
         """Test collaborative problem-solving between ADK agents."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             # Initialize agents
             agents = {
                 "search": DeepSearchAgent(config=adk_config, llm_client=graph_builder.llm_client),
                 "engineer": MLEngineeringAgent(config=adk_config, llm_client=graph_builder.llm_client),
-                "analyst": DataScienceAgent(config=adk_config, llm_client=graph_builder.llm_client)
+                "analyst": DataScienceAgent(config=adk_config, llm_client=graph_builder.llm_client),
             }
 
             # Complex problem requiring collaboration
@@ -174,19 +170,19 @@ class TestADKUserJourneys:
                 "research_phase": {
                     "agent": "search",
                     "task": f"Research state-of-the-art fraud detection techniques for {problem}",
-                    "output_to": ["engineer", "analyst"]
+                    "output_to": ["engineer", "analyst"],
                 },
                 "design_phase": {
                     "agent": "engineer",
                     "task": "Design system architecture based on research findings",
                     "requires": ["research_phase"],
-                    "output_to": ["analyst"]
+                    "output_to": ["analyst"],
                 },
                 "evaluation_phase": {
                     "agent": "analyst",
                     "task": "Evaluate proposed architecture and suggest improvements",
-                    "requires": ["research_phase", "design_phase"]
-                }
+                    "requires": ["research_phase", "design_phase"],
+                },
             }
 
             # Execute workflow
@@ -201,15 +197,16 @@ class TestADKUserJourneys:
                         if req in results:
                             context[req] = results[req]
 
-                with patch.object(agent, 'execute', return_value={
-                    "response": f"Completed: {phase_config['task']}",
-                    "confidence": 0.85,
-                    "context": context
-                }):
-                    results[phase_name] = await agent.execute(
-                        phase_config["task"],
-                        context=context
-                    )
+                with patch.object(
+                    agent,
+                    "execute",
+                    return_value={
+                        "response": f"Completed: {phase_config['task']}",
+                        "confidence": 0.85,
+                        "context": context,
+                    },
+                ):
+                    results[phase_name] = await agent.execute(phase_config["task"], context=context)
 
             assert len(results) == 3
             assert results["evaluation_phase"]["context"]
@@ -220,35 +217,23 @@ class TestADKUserJourneys:
     @pytest.mark.asyncio
     async def test_error_handling_and_recovery(self, graph_builder, adk_config):
         """Test error handling and recovery in ADK agent workflows."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             agent = DeepSearchAgent(config=adk_config, llm_client=graph_builder.llm_client)
 
             # Simulate various error conditions
             error_scenarios = [
-                {
-                    "error_type": "RateLimitError",
-                    "should_retry": True,
-                    "max_retries": 3
-                },
-                {
-                    "error_type": "AuthenticationError",
-                    "should_retry": False,
-                    "max_retries": 0
-                },
-                {
-                    "error_type": "TimeoutError",
-                    "should_retry": True,
-                    "max_retries": 2
-                }
+                {"error_type": "RateLimitError", "should_retry": True, "max_retries": 3},
+                {"error_type": "AuthenticationError", "should_retry": False, "max_retries": 0},
+                {"error_type": "TimeoutError", "should_retry": True, "max_retries": 2},
             ]
 
             for scenario in error_scenarios:
-                with patch.object(agent, 'execute') as mock_execute:
+                with patch.object(agent, "execute") as mock_execute:
                     if scenario["should_retry"]:
                         # Simulate successful retry
                         mock_execute.side_effect = [
                             Exception(scenario["error_type"]),
-                            {"response": "Success after retry"}
+                            {"response": "Success after retry"},
                         ]
                     else:
                         # Simulate persistent failure
@@ -270,19 +255,19 @@ class TestADKAgentPerformance:
     @pytest.mark.asyncio
     async def test_parallel_agent_execution(self, adk_config):
         """Test parallel execution of multiple ADK agents."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             # Create multiple agents
             agents = [
                 DeepSearchAgent(config=adk_config, llm_client=Mock()),
                 MLEngineeringAgent(config=adk_config, llm_client=Mock()),
-                DataScienceAgent(config=adk_config, llm_client=Mock())
+                DataScienceAgent(config=adk_config, llm_client=Mock()),
             ]
 
             # Define tasks for each agent
             tasks = [
                 "Research quantum computing applications",
                 "Design distributed training system",
-                "Analyze model performance metrics"
+                "Analyze model performance metrics",
             ]
 
             # Mock execution for each agent
@@ -290,9 +275,7 @@ class TestADKAgentPerformance:
                 agent.execute = AsyncMock(return_value={"response": "Task completed"})
 
             # Execute tasks in parallel
-            results = await asyncio.gather(
-                *[agent.execute(task) for agent, task in zip(agents, tasks)]
-            )
+            results = await asyncio.gather(*[agent.execute(task) for agent, task in zip(agents, tasks)])
 
             assert len(results) == 3
             assert all(r["response"] == "Task completed" for r in results)
@@ -301,8 +284,9 @@ class TestADKAgentPerformance:
     @pytest.mark.benchmark(group="adk-agents")
     def test_agent_initialization_performance(self, benchmark, adk_config):
         """Benchmark ADK agent initialization time."""
+
         def init_agent():
-            with patch('src.integrations.google_adk.base.vertexai'):
+            with patch("src.integrations.google_adk.base.vertexai"):
                 return DeepSearchAgent(config=adk_config, llm_client=Mock())
 
         agent = benchmark(init_agent)
@@ -312,7 +296,7 @@ class TestADKAgentPerformance:
     @pytest.mark.asyncio
     async def test_agent_caching_effectiveness(self, adk_config):
         """Test caching effectiveness in ADK agents."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             agent = DeepSearchAgent(config=adk_config, llm_client=Mock())
             agent.execute = AsyncMock(return_value={"response": "Cached response"})
 
@@ -336,7 +320,7 @@ class TestADKAgentSecurity:
     @pytest.mark.skipif(not ADK_AVAILABLE, reason="ADK dependencies not available")
     def test_credential_handling(self, adk_config):
         """Test secure handling of credentials."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             # Ensure credentials are not exposed in logs or errors
             agent = DeepSearchAgent(config=adk_config, llm_client=Mock())
 
@@ -353,7 +337,7 @@ class TestADKAgentSecurity:
     @pytest.mark.asyncio
     async def test_input_sanitization(self, adk_config):
         """Test input sanitization in ADK agents."""
-        with patch('src.integrations.google_adk.base.vertexai') as mock_vertexai:
+        with patch("src.integrations.google_adk.base.vertexai") as mock_vertexai:
             agent = DeepSearchAgent(config=adk_config, llm_client=Mock())
             agent.execute = AsyncMock(return_value={"response": "Sanitized response"})
 
@@ -362,7 +346,7 @@ class TestADKAgentSecurity:
                 "<script>alert('XSS')</script>",
                 "'; DROP TABLE users; --",
                 "../../../etc/passwd",
-                "{{7*7}}"  # Template injection attempt
+                "{{7*7}}",  # Template injection attempt
             ]
 
             for malicious_input in malicious_inputs:

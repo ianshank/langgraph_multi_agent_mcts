@@ -36,11 +36,11 @@ class Match:
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         return {
-            'pattern_id': self.pattern_id,
-            'sequence': [str(s) for s in self.sequence],  # Convert to strings
-            'frequency': self.frequency,
-            'similarity': self.similarity,
-            'metadata': self.metadata,
+            "pattern_id": self.pattern_id,
+            "sequence": [str(s) for s in self.sequence],  # Convert to strings
+            "frequency": self.frequency,
+            "similarity": self.similarity,
+            "metadata": self.metadata,
         }
 
 
@@ -85,22 +85,17 @@ class SubstructureLibrary:
 
         # Statistics
         self._stats = {
-            'total_additions': 0,
-            'total_queries': 0,
-            'cache_hits': 0,
-            'evictions': 0,
+            "total_additions": 0,
+            "total_queries": 0,
+            "cache_hits": 0,
+            "evictions": 0,
         }
 
         # Load from disk if exists
         if self.enable_persistence:
             self._load_from_disk()
 
-    def add_pattern(
-        self,
-        sequence: list[Any],
-        frequency: int = 1,
-        **metadata
-    ) -> str:
+    def add_pattern(self, sequence: list[Any], frequency: int = 1, **metadata) -> str:
         """
         Add or increment assembly pattern.
 
@@ -136,10 +131,10 @@ class SubstructureLibrary:
             if len(self._patterns) > self.max_size:
                 self._evict_lru()
 
-        self._stats['total_additions'] += 1
+        self._stats["total_additions"] += 1
 
         # Auto-save
-        if self.enable_persistence and self._stats['total_additions'] % 100 == 0:
+        if self.enable_persistence and self._stats["total_additions"] % 100 == 0:
             self._save_to_disk()
 
         return pattern_id
@@ -164,21 +159,23 @@ class SubstructureLibrary:
         if not query_sequence:
             return []
 
-        self._stats['total_queries'] += 1
+        self._stats["total_queries"] += 1
 
         # Check for exact match first
         query_id = self._hash_sequence(query_sequence)
         if query_id in self._patterns:
             seq, freq, _, meta = self._patterns[query_id]
             if freq >= min_frequency:
-                self._stats['cache_hits'] += 1
-                return [Match(
-                    pattern_id=query_id,
-                    sequence=seq,
-                    frequency=freq,
-                    similarity=1.0,
-                    metadata=meta,
-                )]
+                self._stats["cache_hits"] += 1
+                return [
+                    Match(
+                        pattern_id=query_id,
+                        sequence=seq,
+                        frequency=freq,
+                        similarity=1.0,
+                        metadata=meta,
+                    )
+                ]
 
         # Find similar patterns
         matches = []
@@ -191,13 +188,15 @@ class SubstructureLibrary:
             similarity = self._calculate_similarity(query_sequence, seq)
 
             if similarity >= self.similarity_threshold:
-                matches.append(Match(
-                    pattern_id=pattern_id,
-                    sequence=seq,
-                    frequency=freq,
-                    similarity=similarity,
-                    metadata=meta,
-                ))
+                matches.append(
+                    Match(
+                        pattern_id=pattern_id,
+                        sequence=seq,
+                        frequency=freq,
+                        similarity=similarity,
+                        metadata=meta,
+                    )
+                )
 
         # Sort by frequency (descending) then similarity (descending)
         matches.sort(key=lambda m: (m.frequency, m.similarity), reverse=True)
@@ -239,13 +238,15 @@ class SubstructureLibrary:
         patterns = []
 
         for pattern_id, (seq, freq, _, meta) in self._patterns.items():
-            patterns.append(Match(
-                pattern_id=pattern_id,
-                sequence=seq,
-                frequency=freq,
-                similarity=1.0,
-                metadata=meta,
-            ))
+            patterns.append(
+                Match(
+                    pattern_id=pattern_id,
+                    sequence=seq,
+                    frequency=freq,
+                    similarity=1.0,
+                    metadata=meta,
+                )
+            )
 
         patterns.sort(key=lambda m: m.frequency, reverse=True)
         return patterns[:n]
@@ -271,10 +272,12 @@ class SubstructureLibrary:
             Statistics dictionary
         """
         stats = dict(self._stats)
-        stats['num_patterns'] = len(self._patterns)
-        stats['reuse_rate'] = self.calculate_reuse_rate()
-        stats['max_frequency'] = max((freq for _, freq, _, _ in self._patterns.values()), default=0)
-        stats['avg_sequence_length'] = sum(len(seq) for seq, _, _, _ in self._patterns.values()) / len(self._patterns) if self._patterns else 0
+        stats["num_patterns"] = len(self._patterns)
+        stats["reuse_rate"] = self.calculate_reuse_rate()
+        stats["max_frequency"] = max((freq for _, freq, _, _ in self._patterns.values()), default=0)
+        stats["avg_sequence_length"] = (
+            sum(len(seq) for seq, _, _, _ in self._patterns.values()) / len(self._patterns) if self._patterns else 0
+        )
 
         return stats
 
@@ -282,7 +285,7 @@ class SubstructureLibrary:
         """Clear all patterns from library."""
         self._patterns.clear()
         self._hash_index.clear()
-        self._stats['evictions'] += len(self._patterns)
+        self._stats["evictions"] += len(self._patterns)
 
     def _calculate_similarity(self, seq1: list[Any], seq2: list[Any]) -> float:
         """
@@ -331,10 +334,10 @@ class SubstructureLibrary:
 
         for i in range(1, m + 1):
             for j in range(1, n + 1):
-                if seq1[i-1] == seq2[j-1]:
-                    dp[i][j] = dp[i-1][j-1] + 1
+                if seq1[i - 1] == seq2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1] + 1
                 else:
-                    dp[i][j] = max(dp[i-1][j], dp[i][j-1])
+                    dp[i][j] = max(dp[i - 1][j], dp[i][j - 1])
 
         return dp[m][n]
 
@@ -349,7 +352,7 @@ class SubstructureLibrary:
             Hash string
         """
         # Convert sequence to string representation
-        seq_str = '|'.join(str(s) for s in sequence)
+        seq_str = "|".join(str(s) for s in sequence)
         return hashlib.sha256(seq_str.encode()).hexdigest()
 
     def _evict_lru(self) -> None:
@@ -360,7 +363,7 @@ class SubstructureLibrary:
         # Find least recently used
         lru_id = min(
             self._patterns.keys(),
-            key=lambda pid: self._patterns[pid][2]  # timestamp
+            key=lambda pid: self._patterns[pid][2],  # timestamp
         )
 
         # Remove
@@ -368,7 +371,7 @@ class SubstructureLibrary:
         if lru_id in self._hash_index:
             del self._hash_index[lru_id]
 
-        self._stats['evictions'] += 1
+        self._stats["evictions"] += 1
 
     def _save_to_disk(self) -> None:
         """Save library to disk."""
@@ -378,21 +381,21 @@ class SubstructureLibrary:
 
             # Convert to serializable format
             data = {
-                'patterns': {
+                "patterns": {
                     pid: (
                         [str(s) for s in seq],  # Convert to strings
                         freq,
                         timestamp,
-                        meta
+                        meta,
                     )
                     for pid, (seq, freq, timestamp, meta) in self._patterns.items()
                 },
-                'stats': self._stats,
-                'max_size': self.max_size,
-                'similarity_threshold': self.similarity_threshold,
+                "stats": self._stats,
+                "max_size": self.max_size,
+                "similarity_threshold": self.similarity_threshold,
             }
 
-            with open(persistence_path, 'wb') as f:
+            with open(persistence_path, "wb") as f:
                 pickle.dump(data, f)
 
         except Exception as e:
@@ -406,20 +409,19 @@ class SubstructureLibrary:
             if not persistence_path.exists():
                 return
 
-            with open(persistence_path, 'rb') as f:
+            with open(persistence_path, "rb") as f:
                 data = pickle.load(f)
 
             # Restore patterns
             self._patterns = {
-                pid: (seq, freq, timestamp, meta)
-                for pid, (seq, freq, timestamp, meta) in data['patterns'].items()
+                pid: (seq, freq, timestamp, meta) for pid, (seq, freq, timestamp, meta) in data["patterns"].items()
             }
 
             # Rebuild hash index
             self._hash_index = {pid: pid for pid in self._patterns.keys()}
 
             # Restore stats
-            self._stats.update(data.get('stats', {}))
+            self._stats.update(data.get("stats", {}))
 
             # Update config (but preserve constructor values if different)
             # self.max_size = data.get('max_size', self.max_size)
@@ -441,18 +443,18 @@ class SubstructureLibrary:
         output_path.parent.mkdir(parents=True, exist_ok=True)
 
         data = {
-            'patterns': [
+            "patterns": [
                 {
-                    'pattern_id': pid,
-                    'sequence': [str(s) for s in seq],
-                    'frequency': freq,
-                    'timestamp': timestamp,
-                    'metadata': meta,
+                    "pattern_id": pid,
+                    "sequence": [str(s) for s in seq],
+                    "frequency": freq,
+                    "timestamp": timestamp,
+                    "metadata": meta,
                 }
                 for pid, (seq, freq, timestamp, meta) in self._patterns.items()
             ],
-            'statistics': self.get_statistics(),
+            "statistics": self.get_statistics(),
         }
 
-        with open(output_path, 'w') as f:
+        with open(output_path, "w") as f:
             json.dump(data, f, indent=2)

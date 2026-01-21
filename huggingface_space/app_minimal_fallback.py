@@ -62,12 +62,8 @@ class MinimalMetaController:
         # Heuristic feature extraction
         has_multiple_questions = query.count("?") > 1
         has_comparison = any(word in query_lower for word in ["vs", "versus", "compare", "difference", "better"])
-        has_optimization = any(
-            word in query_lower for word in ["optimize", "best", "improve", "maximize", "minimize"]
-        )
-        has_technical = any(
-            word in query_lower for word in ["algorithm", "code", "implement", "technical", "system"]
-        )
+        has_optimization = any(word in query_lower for word in ["optimize", "best", "improve", "maximize", "minimize"])
+        has_technical = any(word in query_lower for word in ["algorithm", "code", "implement", "technical", "system"])
 
         # Calculate confidence scores
         hrm_score = 0.5

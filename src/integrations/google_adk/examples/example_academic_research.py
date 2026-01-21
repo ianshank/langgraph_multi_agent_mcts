@@ -125,10 +125,12 @@ async def example_training_corpus_building():
         response = await agent.find_citations(paper_title=topic)
 
         if response.status == "success":
-            corpus_data.append({
-                "topic": topic,
-                "citation_file": response.metadata.get("citation_file"),
-            })
+            corpus_data.append(
+                {
+                    "topic": topic,
+                    "citation_file": response.metadata.get("citation_file"),
+                }
+            )
             print(f"  ✓ Citations collected")
 
     print(f"\nCorpus building complete!")

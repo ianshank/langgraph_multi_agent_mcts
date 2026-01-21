@@ -30,28 +30,17 @@ def safe_torch_load():
     """Fixture to set up safe torch loading for all tests in the module."""
     if hasattr(torch.serialization, "add_safe_globals"):
         import numpy as np
+
         # Patch numpy to support _core alias for models saved with NumPy 2.0+
         if not hasattr(np, "_core") and hasattr(np, "core"):
             # Set up the alias
             sys.modules["numpy._core"] = np.core
             sys.modules["numpy._core.multiarray"] = np.core.multiarray
             np._core = np.core
-            
-        # Get the scalar type safely
-        try:
-            # Try to get it from the core module directly first
-            scalar_type = np.core.multiarray.scalar
-        except AttributeError:
-             # Fallback or fail
-             scalar_type = getattr(getattr(np, "core"), "multiarray").scalar
 
         # Add all needed numpy types including the patched _core path
         # Use string tuple for _core to ensure exact name matching despite aliasing
-        torch.serialization.add_safe_globals([
-            ("numpy._core.multiarray", "scalar"), 
-            np.dtype,
-            np.dtypes.Float64DType
-        ])
+        torch.serialization.add_safe_globals([("numpy._core.multiarray", "scalar"), np.dtype, np.dtypes.Float64DType])
 
 
 @pytest.fixture
@@ -67,7 +56,7 @@ def production_config():
     if not config_path.exists():
         # Fallback to main config if production config not generated yet
         config_path = PROJECT_ROOT / "training" / "config.yaml"
-    
+
     with open(config_path) as f:
         return yaml.safe_load(f)
 
@@ -75,18 +64,13 @@ def production_config():
 @pytest.mark.integration
 def test_deployed_models_exist(production_models_dir):
     """Verify all required models are deployed."""
-    required_models = [
-        "hrm_production.pt",
-        "trm_production.pt",
-        "mcts_production.pt",
-        "meta_production.pt"
-    ]
-    
+    required_models = ["hrm_production.pt", "trm_production.pt", "mcts_production.pt", "meta_production.pt"]
+
     missing = []
     for model in required_models:
         if not (production_models_dir / model).exists():
             missing.append(model)
-            
+
     assert not missing, f"Missing deployed models: {', '.join(missing)}"
 
 
@@ -94,13 +78,13 @@ def test_deployed_models_exist(production_models_dir):
 def test_hrm_model_loading_and_inference(production_models_dir, production_config):
     """Test that deployed HRM model loads and runs inference."""
     model_path = production_models_dir / "hrm_production.pt"
-    
+
     if not model_path.exists():
         pytest.skip("HRM model not deployed")
 
     # Initialize trainer wrapper
     trainer = HRMTrainer(production_config)
-    
+
     # Load checkpoint
     try:
         checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
@@ -115,7 +99,7 @@ def test_hrm_model_loading_and_inference(production_models_dir, production_confi
     # Run dummy inference
     # Ensure input is on correct device (cuda)
     input_ids = torch.randint(0, 1000, (1, 128)).to(device)
-    
+
     with torch.no_grad():
         start_time = time.time()
         outputs = trainer.model(input_ids)
@@ -123,7 +107,7 @@ def test_hrm_model_loading_and_inference(production_models_dir, production_confi
 
     assert "logits" in outputs
     assert outputs["logits"].shape[-1] == production_config["agents"]["hrm"]["num_labels"]
-    
+
     # Performance check (loose threshold for CI/CD environments)
     # Initial run might be slow due to CUDA initialization overhead
     assert duration < 5000, f"Inference too slow: {duration:.2f}ms"
@@ -133,12 +117,12 @@ def test_hrm_model_loading_and_inference(production_models_dir, production_confi
 def test_trm_model_loading_and_inference(production_models_dir, production_config):
     """Test that deployed TRM model loads and runs inference."""
     model_path = production_models_dir / "trm_production.pt"
-    
+
     if not model_path.exists():
         pytest.skip("TRM model not deployed")
 
     trainer = TRMTrainer(production_config)
-    
+
     try:
         checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
         trainer.model.load_state_dict(checkpoint["model_state_dict"])
@@ -150,10 +134,10 @@ def test_trm_model_loading_and_inference(production_models_dir, production_confi
         pytest.fail(f"Failed to load TRM model: {e}")
 
     input_ids = torch.randint(0, 1000, (1, 128)).to(device)
-    
+
     with torch.no_grad():
         outputs = trainer.model(input_ids)
-        
+
     assert "improvement_predictions" in outputs
     # Check max iterations match config
     expected_iters = production_config["agents"]["trm"]["max_refinement_iterations"]
@@ -164,10 +148,10 @@ def test_trm_model_loading_and_inference(production_models_dir, production_confi
 def test_meta_controller_loading(production_models_dir):
     """Test that deployed meta-controller loads."""
     model_path = production_models_dir / "meta_production.pt"
-    
+
     if not model_path.exists():
         pytest.skip("Meta-controller not deployed")
-        
+
     try:
         checkpoint = torch.load(model_path, map_location="cpu", weights_only=True)
         assert "model_state_dict" in checkpoint

@@ -19,21 +19,19 @@ import pytest
 # Skip all tests if chess not available
 try:
     import chess
+
     CHESS_AVAILABLE = True
 except ImportError:
     CHESS_AVAILABLE = False
 
-pytestmark = pytest.mark.skipif(
-    not CHESS_AVAILABLE,
-    reason="python-chess not installed"
-)
+pytestmark = pytest.mark.skipif(not CHESS_AVAILABLE, reason="python-chess not installed")
 
 if CHESS_AVAILABLE:
     from examples.chess_demo.chess_state import (
-        ChessState,
         ChessConfig,
-        uci_to_index,
+        ChessState,
         index_to_uci,
+        uci_to_index,
     )
 
 
@@ -150,6 +148,7 @@ class TestChessState:
         # Should have 14 channels
         try:
             import torch
+
             assert tensor.shape == (14, 8, 8)
 
             # Check that pieces are encoded correctly
@@ -158,7 +157,7 @@ class TestChessState:
 
         except ImportError:
             # NumPy fallback
-            import numpy as np
+
             assert tensor.shape == (14, 8, 8)
 
     def test_get_hash_deterministic(self):

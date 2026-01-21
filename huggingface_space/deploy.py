@@ -21,9 +21,10 @@ import sys
 from pathlib import Path
 
 # Ensure UTF-8 output
-if sys.stdout.encoding != 'utf-8':
+if sys.stdout.encoding != "utf-8":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
 class DeploymentOrchestrator:
@@ -124,9 +125,7 @@ class DeploymentOrchestrator:
         self.log(f"Using strategy: {strategy}", "INFO")
 
         # Apply strategy
-        success, output = self.run_script(
-            "fix_dependencies.py", ["--strategy", strategy, "--apply"]
-        )
+        success, output = self.run_script("fix_dependencies.py", ["--strategy", strategy, "--apply"])
 
         if success:
             self.log(f"Applied {strategy} strategy", "SUCCESS")

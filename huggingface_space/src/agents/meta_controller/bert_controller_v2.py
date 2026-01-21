@@ -54,9 +54,7 @@ except ImportError as e:
     # Graceful degradation - PEFT is optional
     _PEFT_AVAILABLE = False
     _PEFT_ERROR = e
-    logger.warning(
-        f"⚠️ BERT Controller V2 ({CONTROLLER_VERSION}): peft not available (will use base BERT): {e}"
-    )
+    logger.warning(f"⚠️ BERT Controller V2 ({CONTROLLER_VERSION}): peft not available (will use base BERT): {e}")
     LoraConfig = None  # type: ignore
     TaskType = None  # type: ignore
     get_peft_model = None  # type: ignore
@@ -65,9 +63,7 @@ except Exception as e:
     # Catch all other errors (like the transformers.modeling_layers issue)
     _PEFT_AVAILABLE = False
     _PEFT_ERROR = e
-    logger.error(
-        f"❌ BERT Controller V2 ({CONTROLLER_VERSION}): peft failed to load: {type(e).__name__}: {e}"
-    )
+    logger.error(f"❌ BERT Controller V2 ({CONTROLLER_VERSION}): peft failed to load: {type(e).__name__}: {e}")
     LoraConfig = None  # type: ignore
     TaskType = None  # type: ignore
     get_peft_model = None  # type: ignore
@@ -174,10 +170,7 @@ class BERTMetaController(AbstractMetaController):
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
 
         # Initialize base model for sequence classification
-        base_model = AutoModelForSequenceClassification.from_pretrained(
-            self.model_name,
-            num_labels=self.NUM_LABELS
-        )
+        base_model = AutoModelForSequenceClassification.from_pretrained(self.model_name, num_labels=self.NUM_LABELS)
 
         # Apply LoRA adapters if requested AND available
         if self.use_lora:
@@ -334,10 +327,7 @@ class BERTMetaController(AbstractMetaController):
 
     def get_cache_info(self) -> dict[str, Any]:
         """Get information about the current tokenization cache."""
-        truncated_keys = [
-            key[:50] + "..." if len(key) > 50 else key
-            for key in self._tokenization_cache
-        ]
+        truncated_keys = [key[:50] + "..." if len(key) > 50 else key for key in self._tokenization_cache]
 
         return {
             "cache_size": len(self._tokenization_cache),

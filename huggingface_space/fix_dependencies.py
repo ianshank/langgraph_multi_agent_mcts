@@ -22,9 +22,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Ensure UTF-8 output
-if sys.stdout.encoding != 'utf-8':
+if sys.stdout.encoding != "utf-8":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
 @dataclass

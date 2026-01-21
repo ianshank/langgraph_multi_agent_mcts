@@ -147,9 +147,9 @@ Risks Already Identified: {len(state.risks_identified)}
 Query: {query}
 
 Document Content (if available):
-{context.get('document_content', 'No specific document provided')}
+{context.get("document_content", "No specific document provided")}
 
-MCTS Recommended Action: {context.get('mcts_action', 'None')}
+MCTS Recommended Action: {context.get("mcts_action", "None")}
 
 Extract and provide:
 1. Key financial terms and conditions

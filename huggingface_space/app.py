@@ -18,10 +18,7 @@ from datetime import datetime
 from pathlib import Path
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 # Debug marker
@@ -59,6 +56,7 @@ try:
         FeatureExtractor,
         FeatureExtractorConfig,
     )
+
     _FEATURE_EXTRACTOR_AVAILABLE = True
     logger.info("✅ Feature Extractor imports available")
 except Exception as e:
@@ -411,10 +409,7 @@ def process_query_sync(
     # Generate personality-infused response
     personality_gen = PersonalityResponseGenerator()
     try:
-        personality_response = personality_gen.generate_response(
-            agent_response=final_response,
-            query=query
-        )
+        personality_response = personality_gen.generate_response(agent_response=final_response, query=query)
     except Exception as e:
         # Fallback to a simple wrapper if personality generation fails
         personality_response = f"Here's what I found:\n\n{final_response}"
@@ -555,7 +550,14 @@ with gr.Blocks(
             query_input,
             controller_type,
         ],
-        outputs=[final_response_output, agent_details_output, routing_viz, features_viz, metrics_output, personality_output],
+        outputs=[
+            final_response_output,
+            agent_details_output,
+            routing_viz,
+            features_viz,
+            metrics_output,
+            personality_output,
+        ],
     )
 
     gr.Markdown(

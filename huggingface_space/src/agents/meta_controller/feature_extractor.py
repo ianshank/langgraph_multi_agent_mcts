@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class FeatureExtractorConfig:
     """Configuration for FeatureExtractor."""
+
     model_name: str = "heuristic-only"
     device: str = "cpu"
 
@@ -40,16 +41,29 @@ class FeatureExtractor:
     # Agent keywords for heuristic matching
     AGENT_KEYWORDS = {
         "hrm": [
-            "complex", "decompose", "break", "hierarchical", "structure",
-            "multiple", "questions", "planning", "analyze", "components"
+            "complex",
+            "decompose",
+            "break",
+            "hierarchical",
+            "structure",
+            "multiple",
+            "questions",
+            "planning",
+            "analyze",
+            "components",
         ],
-        "trm": [
-            "iterate", "refine", "improve", "compare", "versus", "vs",
-            "fix", "polish", "enhance", "better"
-        ],
+        "trm": ["iterate", "refine", "improve", "compare", "versus", "vs", "fix", "polish", "enhance", "better"],
         "mcts": [
-            "optimize", "best", "strategic", "search", "explore",
-            "path", "decision", "uncertainty", "maximize", "performance"
+            "optimize",
+            "best",
+            "strategic",
+            "search",
+            "explore",
+            "path",
+            "decision",
+            "uncertainty",
+            "maximize",
+            "performance",
         ],
     }
 
@@ -96,24 +110,24 @@ class FeatureExtractor:
 
         # Calculate confidence scores with keyword matches and heuristics
         hrm_confidence = (
-            keyword_scores["hrm"] * 0.5 +
-            (0.2 if has_multiple_questions else 0) +
-            (0.15 if has_technical else 0) +
-            (0.15 * query_complexity)
+            keyword_scores["hrm"] * 0.5
+            + (0.2 if has_multiple_questions else 0)
+            + (0.15 if has_technical else 0)
+            + (0.15 * query_complexity)
         )
 
         trm_confidence = (
-            keyword_scores["trm"] * 0.5 +
-            (0.25 if has_comparison else 0) +
-            (0.15 if len(query) > 100 else 0) +
-            (0.1 if "refine" in query_lower or "improve" in query_lower else 0)
+            keyword_scores["trm"] * 0.5
+            + (0.25 if has_comparison else 0)
+            + (0.15 if len(query) > 100 else 0)
+            + (0.1 if "refine" in query_lower or "improve" in query_lower else 0)
         )
 
         mcts_confidence = (
-            keyword_scores["mcts"] * 0.5 +
-            (0.25 if has_optimization else 0) +
-            (0.15 if has_technical else 0) +
-            (0.1 if "search" in query_lower or "explore" in query_lower else 0)
+            keyword_scores["mcts"] * 0.5
+            + (0.25 if has_optimization else 0)
+            + (0.15 if has_technical else 0)
+            + (0.1 if "search" in query_lower or "explore" in query_lower else 0)
         )
 
         # Add base confidence to avoid all zeros
