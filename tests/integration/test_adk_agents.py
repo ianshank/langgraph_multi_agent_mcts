@@ -92,7 +92,7 @@ class TestADKAgentIntegration:
     async def test_data_science_agent_analysis(self, adk_config, mock_llm_client):
         """Test DataScienceAgent data analysis capabilities."""
         with patch("src.integrations.google_adk.agents.data_science.vertexai") as mock_vertexai:
-            agent = DataScienceAgent(config=adk_config, llm_client=mock_llm_client)
+            agent = DataScienceAgent(config=adk_config)
 
             # Mock data analysis
             result = await agent.analyze_data(
@@ -119,7 +119,7 @@ class TestADKUserJourneys:
             # Initialize agents
             deep_search = DeepSearchAgent(config=adk_config, llm_client=graph_builder.llm_client)
             ml_engineer = MLEngineeringAgent(config=adk_config, llm_client=graph_builder.llm_client)
-            data_scientist = DataScienceAgent(config=adk_config, llm_client=graph_builder.llm_client)
+            data_scientist = DataScienceAgent(config=adk_config)
 
             # User journey: Research -> Design -> Implement
             journey_steps = [
@@ -159,7 +159,7 @@ class TestADKUserJourneys:
             agents = {
                 "search": DeepSearchAgent(config=adk_config, llm_client=graph_builder.llm_client),
                 "engineer": MLEngineeringAgent(config=adk_config, llm_client=graph_builder.llm_client),
-                "analyst": DataScienceAgent(config=adk_config, llm_client=graph_builder.llm_client),
+                "analyst": DataScienceAgent(config=adk_config),
             }
 
             # Complex problem requiring collaboration
@@ -260,7 +260,7 @@ class TestADKAgentPerformance:
             agents = [
                 DeepSearchAgent(config=adk_config, llm_client=Mock()),
                 MLEngineeringAgent(config=adk_config, llm_client=Mock()),
-                DataScienceAgent(config=adk_config, llm_client=Mock()),
+                DataScienceAgent(config=adk_config),
             ]
 
             # Define tasks for each agent

@@ -6,8 +6,8 @@ Fast tests to verify project configurations can be loaded and validated.
 These tests should always pass and run in <5 seconds.
 """
 
-from pathlib import Path
 import tomllib
+from pathlib import Path
 
 import pytest
 

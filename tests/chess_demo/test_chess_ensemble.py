@@ -13,7 +13,6 @@ Best Practices 2025:
 - Edge case handling
 """
 
-
 import pytest
 
 # Skip all tests if chess not available
