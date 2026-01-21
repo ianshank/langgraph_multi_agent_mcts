@@ -18,6 +18,8 @@ sentence-transformers>=2.2.0
 
 # Configuration
 pyyaml>=6.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
 
 # Experiment Tracking
 wandb>=0.16.0
