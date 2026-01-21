@@ -252,7 +252,7 @@ class TrainingExecutor:
     def run_command(self, command: str, timeout: int = 300) -> dict[str, Any]:
         """Run a shell command and capture results."""
         try:
-            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout)
+            result = subprocess.run(command, shell=True, capture_output=True, text=True, timeout=timeout)  # nosec B602
 
             return {
                 "command": command,

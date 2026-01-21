@@ -208,7 +208,7 @@ async def test_mock_generation():
         # Create generator
         generator = SyntheticKnowledgeGenerator(
             llm_client=MockClient(),
-            output_dir="/tmp/synthetic_test",
+            output_dir="/tmp/synthetic_test",  # nosec B108 - test path only
         )
 
         logger.info("  ✓ Generator initialized")
