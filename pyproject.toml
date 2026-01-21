@@ -198,6 +198,7 @@ markers = [
     "component: Component-level tests for specific modules",
     "contract: Contract tests for API and interface compliance",
     "property: Property-based tests using hypothesis",
+    "sanity: Fast sanity checks for CI/CD (deselect with '-m \"not sanity\"')",
 ]
 
 [tool.coverage.run]

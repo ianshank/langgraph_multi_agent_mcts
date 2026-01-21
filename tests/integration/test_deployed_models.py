@@ -30,9 +30,25 @@ def safe_torch_load():
     """Fixture to set up safe torch loading for all tests in the module."""
     if hasattr(torch.serialization, "add_safe_globals"):
         import numpy as np
-        # Add all needed numpy types
+        # Patch numpy to support _core alias for models saved with NumPy 2.0+
+        if not hasattr(np, "_core") and hasattr(np, "core"):
+            # Set up the alias
+            sys.modules["numpy._core"] = np.core
+            sys.modules["numpy._core.multiarray"] = np.core.multiarray
+            np._core = np.core
+            
+        # Get the scalar type safely
+        try:
+            # Try to get it from the core module directly first
+            scalar_type = np.core.multiarray.scalar
+        except AttributeError:
+             # Fallback or fail
+             scalar_type = getattr(getattr(np, "core"), "multiarray").scalar
+
+        # Add all needed numpy types including the patched _core path
+        # Use string tuple for _core to ensure exact name matching despite aliasing
         torch.serialization.add_safe_globals([
-            np._core.multiarray.scalar, 
+            ("numpy._core.multiarray", "scalar"), 
             np.dtype,
             np.dtypes.Float64DType
         ])
