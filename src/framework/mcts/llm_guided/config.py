@@ -437,6 +437,38 @@ def create_llm_mcts_preset(preset: LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         raise ValueError(f"Unknown preset: {preset}")
 
 
+def get_preset_config(preset: str | LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
+    """
+    Get a preset configuration by name.
+
+    Args:
+        preset: Preset name string or LLMGuidedMCTSPreset enum
+
+    Returns:
+        LLMGuidedMCTSConfig with preset parameters
+
+    Raises:
+        ValueError: If preset name is not recognized
+    """
+    if isinstance(preset, str):
+        preset_map = {
+            "fast": LLMGuidedMCTSPreset.FAST,
+            "balanced": LLMGuidedMCTSPreset.BALANCED,
+            "thorough": LLMGuidedMCTSPreset.THOROUGH,
+            "data_collection": LLMGuidedMCTSPreset.DATA_COLLECTION,
+            "benchmark": LLMGuidedMCTSPreset.BENCHMARK,
+        }
+        preset_enum = preset_map.get(preset.lower())
+        if preset_enum is None:
+            raise ValueError(
+                f"Unknown preset: {preset}. "
+                f"Available presets: {list(preset_map.keys())}"
+            )
+        return create_llm_mcts_preset(preset_enum)
+    else:
+        return create_llm_mcts_preset(preset)
+
+
 # Default configuration for easy access
 DEFAULT_LLM_MCTS_CONFIG = LLMGuidedMCTSConfig()
 FAST_LLM_MCTS_CONFIG = create_llm_mcts_preset(LLMGuidedMCTSPreset.FAST)

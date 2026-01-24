@@ -13,6 +13,7 @@ Components:
 - ReflectorAgent: LLM agent for code evaluation
 - CodeExecutor: Safe code execution sandbox
 - LLMGuidedMCTSEngine: Main orchestrator
+- UnifiedSearchOrchestrator: Integration with HRM, TRM, Meta-Controller
 """
 
 from .config import (
@@ -21,6 +22,7 @@ from .config import (
     LLMGuidedMCTSPreset,
     ReflectorConfig,
     create_llm_mcts_preset,
+    get_preset_config,
 )
 from .data_collector import (
     EpisodeMetadata,
@@ -30,7 +32,20 @@ from .data_collector import (
 from .executor import CodeExecutionResult, CodeExecutor
 from .node import LLMGuidedMCTSNode, NodeState
 from .agents import GeneratorAgent, GeneratorOutput, ReflectorAgent, ReflectorOutput
-from .engine import LLMGuidedMCTSEngine
+from .engine import LLMGuidedMCTSEngine, MCTSSearchResult
+from .integration import (
+    AgentType,
+    HRMAdapter,
+    IntegrationConfig,
+    MetaControllerAdapter,
+    RefinementResult,
+    RoutingDecision,
+    SubProblemDecomposition,
+    TRMAdapter,
+    UnifiedSearchOrchestrator,
+    UnifiedSearchResult,
+    create_unified_orchestrator,
+)
 
 __all__ = [
     # Config
@@ -39,6 +54,7 @@ __all__ = [
     "GeneratorConfig",
     "ReflectorConfig",
     "create_llm_mcts_preset",
+    "get_preset_config",
     # Node
     "LLMGuidedMCTSNode",
     "NodeState",
@@ -56,4 +72,17 @@ __all__ = [
     "ReflectorOutput",
     # Engine
     "LLMGuidedMCTSEngine",
+    "MCTSSearchResult",
+    # Integration
+    "AgentType",
+    "IntegrationConfig",
+    "HRMAdapter",
+    "TRMAdapter",
+    "MetaControllerAdapter",
+    "SubProblemDecomposition",
+    "RefinementResult",
+    "RoutingDecision",
+    "UnifiedSearchOrchestrator",
+    "UnifiedSearchResult",
+    "create_unified_orchestrator",
 ]
