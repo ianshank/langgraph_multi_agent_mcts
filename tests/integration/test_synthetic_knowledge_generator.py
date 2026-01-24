@@ -290,7 +290,7 @@ class TestSyntheticKnowledgeGenerator:
             output_dir=temp_output_dir,
         )
 
-        template = "What is {algorithm}?"
+        template = "What is {algorithm} and how does it work in practice?"
         qa_pair = await generator._generate_question_answer(template, "mcts_algorithms", "medium")
 
         assert qa_pair is not None
@@ -337,8 +337,8 @@ def mcts():
             output_dir=temp_output_dir,
         )
 
-        # Generate first pair
-        template = "What is UCB1?"
+        # Generate first pair with a longer template to meet minimum length
+        template = "What is UCB1 and how does it balance exploration versus exploitation?"
         qa1 = await generator._generate_question_answer(template, "mcts_algorithms")
 
         assert qa1 is not None
