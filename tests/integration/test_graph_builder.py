@@ -9,10 +9,9 @@ Based on: MULTI_AGENT_MCTS_TEMPLATE.md Section 8.6
 
 from __future__ import annotations
 
-import pytest
-from typing import Any
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import MagicMock
 
+import pytest
 
 # =============================================================================
 # Test Markers
@@ -20,7 +19,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 pytestmark = [
     pytest.mark.integration,
-    pytest.mark.asyncio,
 ]
 
 
@@ -228,7 +226,7 @@ class TestGraphStateFlow:
 class TestAgentNodes:
     """Test individual agent nodes in the graph."""
 
-    async def test_hrm_agent_node_updates_state(
+    def test_hrm_agent_node_updates_state(
         self,
         mock_hrm_agent,
         sample_graph_state,
@@ -247,7 +245,7 @@ class TestAgentNodes:
         assert sample_graph_state["hrm_results"] is not None
         assert sample_graph_state["hrm_results"]["halt_step"] == 3
 
-    async def test_trm_agent_node_updates_state(
+    def test_trm_agent_node_updates_state(
         self,
         mock_trm_agent,
         sample_graph_state,
@@ -265,7 +263,7 @@ class TestAgentNodes:
         assert sample_graph_state["trm_results"] is not None
         assert sample_graph_state["trm_results"]["converged"] is True
 
-    async def test_confidence_scores_are_recorded(
+    def test_confidence_scores_are_recorded(
         self,
         mock_hrm_agent,
         mock_trm_agent,
@@ -402,7 +400,7 @@ class TestConsensusEvaluation:
 class TestErrorHandling:
     """Test error handling in graph execution."""
 
-    async def test_graph_handles_agent_failure_gracefully(
+    def test_graph_handles_agent_failure_gracefully(
         self,
         mock_llm_client,
         test_logger,
@@ -516,7 +514,7 @@ class TestParallelAgentExecution:
 
         assert state["enable_parallel_agents"] is True
 
-    async def test_parallel_execution_updates_multiple_agents(
+    def test_parallel_execution_updates_multiple_agents(
         self,
         mock_hrm_agent,
         mock_trm_agent,

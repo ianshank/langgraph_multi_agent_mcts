@@ -175,7 +175,7 @@ class AgentFactory:
         Returns:
             Configured HRM agent instance
         """
-        from src.agents.hrm_agent import HRMAgent, create_hrm_agent
+        from src.agents.hrm_agent import create_hrm_agent
         from src.training.system_config import HRMConfig
 
         # Build config from parameters, using settings as defaults
@@ -230,7 +230,7 @@ class AgentFactory:
         Returns:
             Configured TRM agent instance
         """
-        from src.agents.trm_agent import TRMAgent, create_trm_agent
+        from src.agents.trm_agent import create_trm_agent
         from src.training.system_config import TRMConfig
 
         # Build config from parameters, using settings as defaults

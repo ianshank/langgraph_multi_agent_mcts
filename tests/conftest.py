@@ -33,7 +33,7 @@ except ImportError:
     SETTINGS_AVAILABLE = False
 
 try:
-    from src.adapters.llm.base import LLMClient, LLMResponse
+    from src.adapters.llm.base import LLMResponse
 
     LLM_AVAILABLE = True
 except ImportError:
@@ -245,7 +245,7 @@ def mock_llm_response() -> LLMResponse:
         pytest.skip("LLM module not available")
 
     return LLMResponse(
-        content="This is a test response from the mock LLM.",
+        text="This is a test response from the mock LLM.",
         model="gpt-4-test",
         usage={
             "prompt_tokens": 10,
@@ -266,7 +266,7 @@ def mock_llm_client(mock_llm_response: LLMResponse) -> AsyncMock:
     if not LLM_AVAILABLE:
         pytest.skip("LLM module not available")
 
-    client = AsyncMock(spec=LLMClient)
+    client = AsyncMock()
     client.generate.return_value = mock_llm_response
     client.generate_with_tools.return_value = mock_llm_response
     client.model = "gpt-4-test"
@@ -287,7 +287,7 @@ def mock_llm_client_streaming() -> AsyncMock:
             yield {"content": chunk, "finish_reason": None}
         yield {"content": "", "finish_reason": "stop"}
 
-    client = AsyncMock(spec=LLMClient)
+    client = AsyncMock()
     client.generate_stream = mock_stream
     client.model = "gpt-4-test"
     client.provider = "openai"
@@ -303,7 +303,7 @@ def mock_llm_client_error() -> AsyncMock:
 
     from src.adapters.llm.exceptions import LLMError
 
-    client = AsyncMock(spec=LLMClient)
+    client = AsyncMock()
     client.generate.side_effect = LLMError("API unavailable")
     client.model = "gpt-4-test"
     client.provider = "openai"
@@ -448,7 +448,7 @@ async def async_mock_llm_client(mock_llm_response: LLMResponse) -> AsyncGenerato
     if not LLM_AVAILABLE:
         pytest.skip("LLM module not available")
 
-    client = AsyncMock(spec=LLMClient)
+    client = AsyncMock()
     client.generate.return_value = mock_llm_response
 
     yield client
