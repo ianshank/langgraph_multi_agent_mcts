@@ -21,8 +21,10 @@ from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-import torch
-import yaml
+
+# Skip all tests in this module if torch is not available
+torch = pytest.importorskip("torch", reason="PyTorch required for demo pipeline tests")
+yaml = pytest.importorskip("yaml", reason="PyYAML required for config loading")
 
 # Add project root to path
 PROJECT_ROOT = Path(__file__).parent.parent.parent

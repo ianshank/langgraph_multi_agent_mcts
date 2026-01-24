@@ -48,15 +48,13 @@ from src.config.settings import Settings, get_settings
 from src.observability.logging import StructuredLogger, get_structured_logger
 
 if TYPE_CHECKING:
-    import torch
-    import torch.nn as nn
     import torch.optim as optim
 
     from src.agents.hrm_agent import HRMAgent, HRMLoss
     from src.agents.trm_agent import TRMAgent, TRMLoss
     from src.data.dataset_loader import CombinedDatasetLoader, DABStepLoader, PRIMUSLoader
     from src.framework.mcts.neural_mcts import NeuralMCTS
-    from src.training.agent_trainer import EvaluationConfig, HRMTrainer, HRMTrainingConfig, SelfPlayEvaluator, TRMTrainer, TRMTrainingConfig
+    from src.training.agent_trainer import HRMTrainer, SelfPlayEvaluator, TRMTrainer
     from src.training.experiment_tracker import BraintrustTracker, UnifiedExperimentTracker, WandBTracker
     from src.training.performance_monitor import PerformanceMonitor
     from src.training.replay_buffer import AugmentedReplayBuffer, PrioritizedReplayBuffer, ReplayBuffer
