@@ -38,25 +38,26 @@ class TestADKAgentIntegration:
         """Create a mock LLM client."""
         client = Mock(spec=BaseLLMClient)
         client.generate.return_value = LLMResponse(
-            content="Mock response",
+            text="Mock response",
             raw_response={"choices": [{"message": {"content": "Mock response"}}]},
-            metadata={}
         )
         client.generate_async = AsyncMock(return_value=LLMResponse(
-            content="Mock async response",
+            text="Mock async response",
             raw_response={"choices": [{"message": {"content": "Mock async response"}}]},
-            metadata={}
         ))
         return client
 
     @pytest.fixture
     def adk_config(self):
-        """Create ADK configuration."""
+        """Create ADK configuration.
+
+        Note: Google Cloud credentials are handled via GOOGLE_APPLICATION_CREDENTIALS
+        environment variable automatically by the Google Cloud client libraries.
+        """
         if ADK_AVAILABLE:
             return ADKConfig(
                 project_id=os.environ.get("GOOGLE_CLOUD_PROJECT", "test-project"),
                 location="us-central1",
-                credentials_path=os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
             )
         return Mock()
 
@@ -108,9 +109,38 @@ class TestADKUserJourneys:
     """Test end-to-end user journeys with ADK agents."""
 
     @pytest.fixture
+    def mock_llm_client(self):
+        """Create a mock LLM client for user journey tests."""
+        client = Mock(spec=BaseLLMClient)
+        client.generate.return_value = LLMResponse(
+            text="Mock response",
+            raw_response={"choices": [{"message": {"content": "Mock response"}}]},
+        )
+        client.generate_async = AsyncMock(return_value=LLMResponse(
+            text="Mock async response",
+            raw_response={"choices": [{"message": {"content": "Mock async response"}}]},
+        ))
+        return client
+
+    @pytest.fixture
+    def adk_config(self):
+        """Create ADK configuration for user journey tests."""
+        if ADK_AVAILABLE:
+            return ADKConfig(
+                project_id=os.environ.get("GOOGLE_CLOUD_PROJECT", "test-project"),
+                location="us-central1",
+            )
+        return Mock()
+
+    @pytest.fixture
     def graph_builder(self, mock_llm_client):
-        """Create a GraphBuilder instance."""
-        return GraphBuilder(llm_client=mock_llm_client)
+        """Create a mock GraphBuilder with llm_client for testing.
+
+        Note: These tests only need access to llm_client, not a full GraphBuilder.
+        """
+        mock_builder = Mock()
+        mock_builder.llm_client = mock_llm_client
+        return mock_builder
 
     @pytest.mark.skipif(not ADK_AVAILABLE, reason="ADK dependencies not available")
     @pytest.mark.asyncio
@@ -266,6 +296,16 @@ class TestADKUserJourneys:
 class TestADKAgentPerformance:
     """Test performance characteristics of ADK agents."""
 
+    @pytest.fixture
+    def adk_config(self):
+        """Create ADK configuration for performance tests."""
+        if ADK_AVAILABLE:
+            return ADKConfig(
+                project_id=os.environ.get("GOOGLE_CLOUD_PROJECT", "test-project"),
+                location="us-central1",
+            )
+        return Mock()
+
     @pytest.mark.skipif(not ADK_AVAILABLE, reason="ADK dependencies not available")
     @pytest.mark.asyncio
     async def test_parallel_agent_execution(self, adk_config):
@@ -332,6 +372,16 @@ class TestADKAgentPerformance:
 
 class TestADKAgentSecurity:
     """Test security aspects of ADK agent integration."""
+
+    @pytest.fixture
+    def adk_config(self):
+        """Create ADK configuration for security tests."""
+        if ADK_AVAILABLE:
+            return ADKConfig(
+                project_id=os.environ.get("GOOGLE_CLOUD_PROJECT", "test-project"),
+                location="us-central1",
+            )
+        return Mock()
 
     @pytest.mark.skipif(not ADK_AVAILABLE, reason="ADK dependencies not available")
     def test_credential_handling(self, adk_config):
