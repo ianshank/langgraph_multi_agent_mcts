@@ -65,17 +65,37 @@ except ImportError:
 
 def pytest_configure(config):
     """Configure pytest with custom markers and settings."""
-    # Register custom markers
-    config.addinivalue_line("markers", "unit: Fast, isolated unit tests")
-    config.addinivalue_line("markers", "integration: Component interaction tests")
-    config.addinivalue_line("markers", "e2e: End-to-end scenario tests")
-    config.addinivalue_line("markers", "slow: Tests taking >10 seconds")
-    config.addinivalue_line("markers", "benchmark: Performance benchmarks")
-    config.addinivalue_line("markers", "property: Property-based tests")
-    config.addinivalue_line("markers", "enterprise: Enterprise use case tests")
-    config.addinivalue_line("markers", "mcts: MCTS-related tests")
-    config.addinivalue_line("markers", "neural: Neural network tests (requires PyTorch)")
-    config.addinivalue_line("markers", "llm: LLM integration tests")
+    # Register custom markers - comprehensive list for all test categories
+    markers = [
+        # Core test categories
+        "unit: Fast, isolated unit tests",
+        "integration: Component interaction tests",
+        "e2e: End-to-end scenario tests",
+        "component: Component-level tests",
+        # Performance and quality
+        "slow: Tests taking >10 seconds",
+        "benchmark: Performance benchmarks",
+        "performance: Performance-specific tests",
+        "property: Property-based tests (hypothesis)",
+        # Feature-specific
+        "mcts: MCTS-related tests",
+        "neural: Neural network tests (requires PyTorch)",
+        "llm: LLM integration tests",
+        "enterprise: Enterprise use case tests",
+        "training: Training pipeline tests",
+        "dataset: Dataset integration tests",
+        # API and contracts
+        "api: API endpoint tests",
+        "contract: Contract compliance tests",
+        "smoke: Smoke tests for quick validation",
+        # Security and reliability
+        "security: Security-focused tests",
+        "chaos: Chaos engineering tests",
+        # Async support
+        "asyncio: Async tests (pytest-asyncio)",
+    ]
+    for marker in markers:
+        config.addinivalue_line("markers", marker)
 
 
 def pytest_collection_modifyitems(config, items):
@@ -530,3 +550,218 @@ def benchmark_iterations() -> int:
 def performance_threshold_ms() -> float:
     """Maximum allowed time in milliseconds for performance tests."""
     return float(os.environ.get("PERFORMANCE_THRESHOLD_MS", "1000.0"))
+
+
+# =============================================================================
+# Meta-Controller Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def mock_meta_controller() -> MagicMock:
+    """Create a mock meta-controller for testing."""
+    controller = MagicMock()
+    controller.predict.return_value = MagicMock(
+        selected_agent="hrm",
+        confidence=0.85,
+        reasoning="Query requires hierarchical decomposition",
+    )
+    controller.extract_features.return_value = MagicMock(
+        hrm_confidence=0.8,
+        trm_confidence=0.6,
+        mcts_value=0.7,
+        consensus_score=0.75,
+        last_agent="hrm",
+        iteration=1,
+        query_length=50,
+        has_rag_context=True,
+        rag_relevance_score=0.9,
+        is_technical_query=True,
+    )
+    return controller
+
+
+@pytest.fixture
+def meta_controller_features() -> dict[str, Any]:
+    """Sample meta-controller features for testing."""
+    return {
+        "hrm_confidence": 0.8,
+        "trm_confidence": 0.6,
+        "mcts_value": 0.7,
+        "consensus_score": 0.75,
+        "last_agent": "hrm",
+        "iteration": 1,
+        "query_length": 50,
+        "has_rag_context": True,
+        "rag_relevance_score": 0.9,
+        "is_technical_query": True,
+    }
+
+
+# =============================================================================
+# Factory Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def llm_client_factory(test_settings):
+    """Create LLM client factory for testing."""
+    if not SETTINGS_AVAILABLE:
+        pytest.skip("Settings module not available")
+
+    try:
+        from src.framework.factories import LLMClientFactory
+
+        return LLMClientFactory(settings=test_settings)
+    except ImportError:
+        pytest.skip("Factory module not available")
+
+
+@pytest.fixture
+def mcts_engine_factory(test_settings):
+    """Create MCTS engine factory for testing."""
+    if not SETTINGS_AVAILABLE:
+        pytest.skip("Settings module not available")
+
+    try:
+        from src.framework.factories import MCTSEngineFactory
+
+        return MCTSEngineFactory(settings=test_settings)
+    except ImportError:
+        pytest.skip("Factory module not available")
+
+
+@pytest.fixture
+def meta_controller_factory(test_settings):
+    """Create meta-controller factory for testing."""
+    if not SETTINGS_AVAILABLE:
+        pytest.skip("Settings module not available")
+
+    try:
+        from src.framework.factories import MetaControllerFactory
+
+        return MetaControllerFactory(settings=test_settings)
+    except ImportError:
+        pytest.skip("Factory module not available")
+
+
+@pytest.fixture
+def framework_factory(test_settings):
+    """Create framework factory for testing."""
+    if not SETTINGS_AVAILABLE:
+        pytest.skip("Settings module not available")
+
+    try:
+        from src.framework.factories import FrameworkFactory
+
+        return FrameworkFactory(settings=test_settings)
+    except ImportError:
+        pytest.skip("Factory module not available")
+
+
+# =============================================================================
+# Hybrid Agent Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def mock_hybrid_agent() -> MagicMock:
+    """Create a mock hybrid agent for testing."""
+    agent = MagicMock()
+    agent.decide.return_value = MagicMock(
+        action="analyze_financials",
+        confidence=0.9,
+        decision_source="blended",
+        cost_savings=MagicMock(
+            actual_cost=0.001,
+            hypothetical_llm_cost=0.03,
+            savings_percentage=96.7,
+        ),
+    )
+    agent.get_cost_summary.return_value = {
+        "total_neural_calls": 10,
+        "total_llm_calls": 2,
+        "total_neural_cost": 0.00001,
+        "total_llm_cost": 0.06,
+        "savings_percentage": 95.0,
+    }
+    return agent
+
+
+@pytest.fixture
+def hybrid_agent_config() -> dict[str, Any]:
+    """Sample hybrid agent configuration for testing."""
+    return {
+        "mode": "adaptive",
+        "policy_confidence_threshold": 0.8,
+        "value_confidence_threshold": 0.7,
+        "neural_cost_per_call": 0.000001,
+        "llm_cost_per_1k_tokens": 0.03,
+        "track_costs": True,
+    }
+
+
+# =============================================================================
+# Structured Logger Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def structured_logger():
+    """Create a structured logger for testing."""
+    try:
+        from src.observability.logging import StructuredLogger
+
+        return StructuredLogger("test")
+    except ImportError:
+        pytest.skip("Logging module not available")
+
+
+@pytest.fixture
+def mock_structured_logger() -> MagicMock:
+    """Create a mock structured logger for testing."""
+    logger = MagicMock()
+    logger.info = MagicMock()
+    logger.debug = MagicMock()
+    logger.warning = MagicMock()
+    logger.error = MagicMock()
+    logger.log_timing = MagicMock()
+    logger.log_memory = MagicMock()
+    logger.log_mcts_iteration = MagicMock()
+    logger.log_agent_execution = MagicMock()
+    return logger
+
+
+# =============================================================================
+# Graph Builder Fixtures
+# =============================================================================
+
+
+@pytest.fixture
+def graph_builder_config() -> dict[str, Any]:
+    """Sample configuration for graph builder testing."""
+    return {
+        "use_mcts": True,
+        "use_rag": False,
+        "max_iterations": 5,
+        "consensus_threshold": 0.75,
+        "enable_parallel_agents": True,
+    }
+
+
+@pytest.fixture
+def sample_graph_state(sample_query: str) -> dict[str, Any]:
+    """Sample initial state for graph execution testing."""
+    return {
+        "query": sample_query,
+        "use_mcts": True,
+        "use_rag": False,
+        "iteration": 0,
+        "max_iterations": 5,
+        "hrm_results": None,
+        "trm_results": None,
+        "mcts_root": None,
+        "confidence_scores": {},
+        "consensus_reached": False,
+        "final_response": None,
+    }

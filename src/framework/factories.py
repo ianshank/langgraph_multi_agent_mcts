@@ -84,8 +84,8 @@ class LLMClientFactory:
 
         provider = provider or self.settings.LLM_PROVIDER
         model = model or self._get_default_model(provider)
-        timeout = timeout if timeout is not None else 60.0
-        max_retries = max_retries if max_retries is not None else 3
+        timeout = timeout if timeout is not None else self.settings.HTTP_TIMEOUT_SECONDS
+        max_retries = max_retries if max_retries is not None else self.settings.HTTP_MAX_RETRIES
 
         self.logger.info(f"Creating LLM client: provider={provider}, model={model}")
 
@@ -180,12 +180,12 @@ class AgentFactory:
 
         # Build config from parameters, using settings as defaults
         hrm_config = HRMConfig(
-            h_dim=h_dim if h_dim is not None else 512,
-            l_dim=l_dim if l_dim is not None else 256,
-            num_h_layers=num_h_layers if num_h_layers is not None else 2,
-            num_l_layers=num_l_layers if num_l_layers is not None else 4,
-            max_outer_steps=max_outer_steps if max_outer_steps is not None else 10,
-            halt_threshold=halt_threshold if halt_threshold is not None else 0.95,
+            h_dim=h_dim if h_dim is not None else self.settings.HRM_H_DIM,
+            l_dim=l_dim if l_dim is not None else self.settings.HRM_L_DIM,
+            num_h_layers=num_h_layers if num_h_layers is not None else self.settings.HRM_NUM_H_LAYERS,
+            num_l_layers=num_l_layers if num_l_layers is not None else self.settings.HRM_NUM_L_LAYERS,
+            max_outer_steps=max_outer_steps if max_outer_steps is not None else self.settings.HRM_MAX_OUTER_STEPS,
+            halt_threshold=halt_threshold if halt_threshold is not None else self.settings.HRM_HALT_THRESHOLD,
             **{k: v for k, v in config.items() if k in HRMConfig.__dataclass_fields__},
         )
 
@@ -233,12 +233,12 @@ class AgentFactory:
         from src.agents.trm_agent import TRMAgent, create_trm_agent
         from src.training.system_config import TRMConfig
 
-        # Build config from parameters, using sensible defaults
+        # Build config from parameters, using settings as defaults
         trm_config = TRMConfig(
-            latent_dim=latent_dim if latent_dim is not None else 256,
-            hidden_dim=hidden_dim if hidden_dim is not None else 512,
-            num_recursions=num_recursions if num_recursions is not None else 16,
-            convergence_threshold=convergence_threshold if convergence_threshold is not None else 0.01,
+            latent_dim=latent_dim if latent_dim is not None else self.settings.TRM_LATENT_DIM,
+            hidden_dim=hidden_dim if hidden_dim is not None else self.settings.TRM_HIDDEN_DIM,
+            num_recursions=num_recursions if num_recursions is not None else self.settings.TRM_NUM_RECURSIONS,
+            convergence_threshold=convergence_threshold if convergence_threshold is not None else self.settings.TRM_CONVERGENCE_THRESHOLD,
             deep_supervision=deep_supervision if deep_supervision is not None else True,
             **{k: v for k, v in config.items() if k in TRMConfig.__dataclass_fields__},
         )
@@ -337,6 +337,272 @@ class MCTSEngineFactory:
         return presets[preset]
 
 
+class MetaControllerFactory:
+    """
+    Factory for creating neural meta-controller instances.
+
+    Supports different meta-controller implementations:
+    - RNN (GRU-based sequential routing)
+    - BERT (DeBERTa-based semantic routing)
+    - Hybrid (combines multiple approaches)
+    - Assembly (assembly theory-based routing)
+
+    Example:
+        >>> factory = MetaControllerFactory()
+        >>> controller = factory.create(controller_type="rnn")
+    """
+
+    def __init__(self, settings: Settings | None = None):
+        """
+        Initialize meta-controller factory.
+
+        Args:
+            settings: Optional settings instance
+        """
+        self.settings = settings or get_settings()
+        self.logger = logging.getLogger(__name__)
+
+    def create(
+        self,
+        controller_type: str | None = None,
+        input_dim: int | None = None,
+        hidden_dim: int | None = None,
+        num_layers: int | None = None,
+        num_agents: int | None = None,
+        dropout: float | None = None,
+        device: str | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Create a meta-controller instance.
+
+        Args:
+            controller_type: Type of controller (rnn, bert, hybrid, assembly)
+            input_dim: Input feature dimension
+            hidden_dim: Hidden layer dimension
+            num_layers: Number of layers
+            num_agents: Number of agents to route between
+            dropout: Dropout rate
+            device: Device to place model on (cpu/cuda)
+            **kwargs: Additional controller-specific arguments
+
+        Returns:
+            Configured meta-controller instance
+        """
+        controller_type = controller_type or self.settings.META_CONTROLLER_TYPE
+        input_dim = input_dim if input_dim is not None else self.settings.META_CONTROLLER_INPUT_DIM
+        hidden_dim = hidden_dim if hidden_dim is not None else self.settings.META_CONTROLLER_HIDDEN_DIM
+        num_layers = num_layers if num_layers is not None else self.settings.META_CONTROLLER_NUM_LAYERS
+        num_agents = num_agents if num_agents is not None else self.settings.META_CONTROLLER_NUM_AGENTS
+        dropout = dropout if dropout is not None else self.settings.META_CONTROLLER_DROPOUT
+        device = device or "cpu"
+
+        self.logger.info(
+            f"Creating meta-controller: type={controller_type}, "
+            f"input_dim={input_dim}, hidden_dim={hidden_dim}, device={device}"
+        )
+
+        if controller_type == "rnn":
+            return self._create_rnn_controller(
+                input_dim=input_dim,
+                hidden_dim=hidden_dim,
+                num_layers=num_layers,
+                num_agents=num_agents,
+                dropout=dropout,
+                device=device,
+                **kwargs,
+            )
+        elif controller_type == "bert":
+            return self._create_bert_controller(
+                num_agents=num_agents,
+                dropout=dropout,
+                device=device,
+                **kwargs,
+            )
+        elif controller_type == "hybrid":
+            return self._create_hybrid_controller(
+                input_dim=input_dim,
+                hidden_dim=hidden_dim,
+                num_agents=num_agents,
+                device=device,
+                **kwargs,
+            )
+        elif controller_type == "assembly":
+            return self._create_assembly_router(
+                num_agents=num_agents,
+                device=device,
+                **kwargs,
+            )
+        else:
+            raise ValueError(
+                f"Unknown controller type: {controller_type}. "
+                f"Valid types: rnn, bert, hybrid, assembly"
+            )
+
+    def _create_rnn_controller(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        num_layers: int,
+        num_agents: int,
+        dropout: float,
+        device: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Create RNN-based meta-controller."""
+        from src.agents.meta_controller.rnn_controller import RNNMetaController
+
+        controller = RNNMetaController(
+            input_dim=input_dim,
+            hidden_dim=hidden_dim,
+            num_layers=num_layers,
+            num_agents=num_agents,
+            dropout=dropout,
+            **kwargs,
+        )
+        return controller.to(device) if hasattr(controller, "to") else controller
+
+    def _create_bert_controller(
+        self,
+        num_agents: int,
+        dropout: float,
+        device: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Create BERT-based meta-controller."""
+        from src.agents.meta_controller.bert_controller import BERTMetaController
+
+        controller = BERTMetaController(
+            num_agents=num_agents,
+            dropout=dropout,
+            **kwargs,
+        )
+        return controller.to(device) if hasattr(controller, "to") else controller
+
+    def _create_hybrid_controller(
+        self,
+        input_dim: int,
+        hidden_dim: int,
+        num_agents: int,
+        device: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Create hybrid meta-controller."""
+        from src.agents.meta_controller.hybrid_controller import HybridMetaController
+
+        controller = HybridMetaController(
+            input_dim=input_dim,
+            hidden_dim=hidden_dim,
+            num_agents=num_agents,
+            **kwargs,
+        )
+        return controller.to(device) if hasattr(controller, "to") else controller
+
+    def _create_assembly_router(
+        self,
+        num_agents: int,
+        device: str,
+        **kwargs: Any,
+    ) -> Any:
+        """Create assembly theory-based router."""
+        from src.agents.meta_controller.assembly_router import AssemblyRouter
+
+        router = AssemblyRouter(
+            num_agents=num_agents,
+            **kwargs,
+        )
+        return router.to(device) if hasattr(router, "to") else router
+
+
+class HybridAgentFactory:
+    """
+    Factory for creating hybrid LLM-Neural agents.
+
+    Combines neural networks with LLM reasoning for cost-effective decision making.
+
+    Example:
+        >>> factory = HybridAgentFactory(llm_client=client)
+        >>> agent = factory.create(mode="adaptive")
+    """
+
+    def __init__(
+        self,
+        llm_client: LLMClient | None = None,
+        settings: Settings | None = None,
+    ):
+        """
+        Initialize hybrid agent factory.
+
+        Args:
+            llm_client: Optional LLM client (created if not provided)
+            settings: Optional settings instance
+        """
+        self.settings = settings or get_settings()
+        self.logger = logging.getLogger(__name__)
+        self._llm_client = llm_client
+
+    @property
+    def llm_client(self) -> LLMClient:
+        """Get or create LLM client."""
+        if self._llm_client is None:
+            llm_factory = LLMClientFactory(settings=self.settings)
+            self._llm_client = llm_factory.create()
+        return self._llm_client
+
+    def create(
+        self,
+        policy_net: Any | None = None,
+        value_net: Any | None = None,
+        mode: str | None = None,
+        policy_confidence_threshold: float | None = None,
+        value_confidence_threshold: float | None = None,
+        neural_cost_per_call: float | None = None,
+        llm_cost_per_1k_tokens: float | None = None,
+        track_costs: bool = True,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Create a hybrid LLM-Neural agent.
+
+        Args:
+            policy_net: Optional policy network
+            value_net: Optional value network
+            mode: Operating mode (auto, neural_only, llm_only, adaptive)
+            policy_confidence_threshold: Threshold for policy network confidence
+            value_confidence_threshold: Threshold for value network confidence
+            neural_cost_per_call: Cost per neural network inference (USD)
+            llm_cost_per_1k_tokens: Cost per 1000 LLM tokens (USD)
+            track_costs: Whether to track costs
+            **kwargs: Additional configuration
+
+        Returns:
+            Configured hybrid agent instance
+        """
+        from src.agents.hybrid_agent import HybridAgent, HybridConfig
+
+        config = HybridConfig(
+            mode=mode or self.settings.HYBRID_MODE,
+            policy_confidence_threshold=policy_confidence_threshold or self.settings.HYBRID_POLICY_CONFIDENCE_THRESHOLD,
+            value_confidence_threshold=value_confidence_threshold or self.settings.HYBRID_VALUE_CONFIDENCE_THRESHOLD,
+            neural_cost_per_call=neural_cost_per_call or self.settings.HYBRID_NEURAL_COST_PER_CALL,
+            llm_cost_per_1k_tokens=llm_cost_per_1k_tokens or self.settings.HYBRID_LLM_COST_PER_1K_TOKENS,
+            track_costs=track_costs,
+        )
+
+        self.logger.info(
+            f"Creating hybrid agent: mode={config.mode}, "
+            f"policy_threshold={config.policy_confidence_threshold}"
+        )
+
+        return HybridAgent(
+            policy_net=policy_net,
+            value_net=value_net,
+            llm_client=self.llm_client,
+            config=config,
+            **kwargs,
+        )
+
+
 class FrameworkFactory:
     """
     Master factory for creating complete framework instances.
@@ -363,6 +629,7 @@ class FrameworkFactory:
         self.logger = logging.getLogger(__name__)
         self.llm_factory = LLMClientFactory(settings=self.settings)
         self.mcts_factory = MCTSEngineFactory(settings=self.settings)
+        self.meta_controller_factory = MetaControllerFactory(settings=self.settings)
 
     def create_framework(
         self,
@@ -396,6 +663,11 @@ class FrameworkFactory:
         if mcts_enabled:
             mcts_engine = self.mcts_factory.create(seed=mcts_seed)
 
+        # Create meta-controller if requested
+        meta_controller = None
+        if kwargs.pop("meta_controller_enabled", True):
+            meta_controller = self.meta_controller_factory.create()
+
         self.logger.info(
             f"Creating framework: provider={llm_provider}, "
             f"mcts_enabled={mcts_enabled}, "
@@ -403,15 +675,55 @@ class FrameworkFactory:
             f"additional_config={list(kwargs.keys())}"
         )
 
-        # This would create the actual framework
-        # For now, returning a dict with components
+        # Return configured framework components
         return {
             "llm_client": llm_client,
             "agent_factory": agent_factory,
             "mcts_engine": mcts_engine,
+            "meta_controller": meta_controller,
             "settings": self.settings,
-            "additional_config": kwargs,  # Store for future use
+            "additional_config": kwargs,
         }
+
+    def create_meta_controller(self, **kwargs: Any) -> Any:
+        """
+        Create a meta-controller using the framework's factory.
+
+        Args:
+            **kwargs: Meta-controller configuration
+
+        Returns:
+            Configured meta-controller instance
+        """
+        return self.meta_controller_factory.create(**kwargs)
+
+    def create_hybrid_agent(
+        self,
+        policy_net: Any | None = None,
+        value_net: Any | None = None,
+        **kwargs: Any,
+    ) -> Any:
+        """
+        Create a hybrid agent using the framework's LLM client.
+
+        Args:
+            policy_net: Optional policy network
+            value_net: Optional value network
+            **kwargs: Additional configuration
+
+        Returns:
+            Configured hybrid agent instance
+        """
+        llm_client = self.llm_factory.create()
+        hybrid_factory = HybridAgentFactory(
+            llm_client=llm_client,
+            settings=self.settings,
+        )
+        return hybrid_factory.create(
+            policy_net=policy_net,
+            value_net=value_net,
+            **kwargs,
+        )
 
 
 # Convenience function for quick framework creation

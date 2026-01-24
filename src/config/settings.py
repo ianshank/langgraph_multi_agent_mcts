@@ -178,6 +178,115 @@ class Settings(BaseSettings):
         default=True, description="Enable parallel agent execution"
     )
 
+    # HRM Agent Configuration
+    HRM_H_DIM: int = Field(
+        default=512, ge=1, le=4096, description="HRM high-level hidden dimension"
+    )
+
+    HRM_L_DIM: int = Field(
+        default=256, ge=1, le=4096, description="HRM low-level hidden dimension"
+    )
+
+    HRM_NUM_H_LAYERS: int = Field(
+        default=2, ge=1, le=10, description="Number of HRM high-level layers"
+    )
+
+    HRM_NUM_L_LAYERS: int = Field(
+        default=4, ge=1, le=10, description="Number of HRM low-level layers"
+    )
+
+    HRM_MAX_OUTER_STEPS: int = Field(
+        default=10, ge=1, le=100, description="Maximum outer steps for HRM"
+    )
+
+    HRM_HALT_THRESHOLD: float = Field(
+        default=0.95, ge=0.0, le=1.0, description="HRM halt threshold for adaptive computation"
+    )
+
+    # TRM Agent Configuration
+    TRM_LATENT_DIM: int = Field(
+        default=256, ge=1, le=4096, description="TRM latent dimension"
+    )
+
+    TRM_HIDDEN_DIM: int = Field(
+        default=512, ge=1, le=4096, description="TRM hidden dimension"
+    )
+
+    TRM_NUM_RECURSIONS: int = Field(
+        default=16, ge=1, le=100, description="Number of TRM recursions"
+    )
+
+    TRM_CONVERGENCE_THRESHOLD: float = Field(
+        default=0.01, ge=0.0, le=1.0, description="TRM convergence threshold"
+    )
+
+    # Meta-Controller Configuration
+    META_CONTROLLER_TYPE: str = Field(
+        default="rnn", description="Meta-controller type: rnn, bert, hybrid, assembly"
+    )
+
+    META_CONTROLLER_INPUT_DIM: int = Field(
+        default=10, ge=1, le=1024, description="Meta-controller input dimension"
+    )
+
+    META_CONTROLLER_HIDDEN_DIM: int = Field(
+        default=64, ge=1, le=1024, description="Meta-controller hidden dimension"
+    )
+
+    META_CONTROLLER_NUM_LAYERS: int = Field(
+        default=1, ge=1, le=10, description="Number of meta-controller layers"
+    )
+
+    META_CONTROLLER_NUM_AGENTS: int = Field(
+        default=3, ge=1, le=20, description="Number of agents for meta-controller routing"
+    )
+
+    META_CONTROLLER_DROPOUT: float = Field(
+        default=0.1, ge=0.0, le=1.0, description="Meta-controller dropout rate"
+    )
+
+    # Hybrid Agent Cost Tracking
+    HYBRID_NEURAL_COST_PER_CALL: float = Field(
+        default=0.000001, ge=0.0, description="Neural network cost per inference call (USD)"
+    )
+
+    HYBRID_LLM_COST_PER_1K_TOKENS: float = Field(
+        default=0.03, ge=0.0, description="LLM cost per 1000 tokens (USD)"
+    )
+
+    HYBRID_MODE: str = Field(
+        default="auto", description="Hybrid agent mode: auto, neural_only, llm_only, adaptive"
+    )
+
+    HYBRID_POLICY_CONFIDENCE_THRESHOLD: float = Field(
+        default=0.8, ge=0.0, le=1.0, description="Policy network confidence threshold"
+    )
+
+    HYBRID_VALUE_CONFIDENCE_THRESHOLD: float = Field(
+        default=0.7, ge=0.0, le=1.0, description="Value network confidence threshold"
+    )
+
+    # MCTS Advanced Configuration
+    MCTS_PROGRESSIVE_WIDENING_K: float = Field(
+        default=1.0, ge=0.1, le=10.0, description="Progressive widening constant K"
+    )
+
+    MCTS_PROGRESSIVE_WIDENING_ALPHA: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Progressive widening exponent alpha"
+    )
+
+    MCTS_MAX_PARALLEL_ROLLOUTS: int = Field(
+        default=4, ge=1, le=32, description="Maximum parallel MCTS rollouts"
+    )
+
+    MCTS_CACHE_SIZE_LIMIT: int = Field(
+        default=10000, ge=100, le=1000000, description="MCTS simulation cache size limit"
+    )
+
+    MCTS_MAX_ROLLOUT_DEPTH: int = Field(
+        default=50, ge=1, le=500, description="Maximum MCTS rollout depth"
+    )
+
     @field_validator("OPENAI_API_KEY")
     @classmethod
     def validate_openai_key_format(cls, v: SecretStr | None) -> SecretStr | None:

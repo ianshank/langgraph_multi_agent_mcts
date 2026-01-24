@@ -493,3 +493,170 @@ def log_execution_time(logger: logging.Logger | None = None, level: int = loggin
 
 # Import asyncio for decorator
 import asyncio  # noqa: E402
+
+
+class StructuredLogger:
+    """
+    Convenience wrapper for structured logging with automatic correlation IDs.
+
+    Provides a clean API for logging with structured data while automatically
+    handling correlation ID injection and secret sanitization.
+
+    Example:
+        >>> logger = StructuredLogger("my.module")
+        >>> logger.info("Processing request", user_id="123", action="query")
+        >>> logger.log_timing("database_query", duration_ms=45.2)
+    """
+
+    def __init__(self, name: str) -> None:
+        """
+        Initialize structured logger.
+
+        Args:
+            name: Logger name (typically __name__ from calling module)
+        """
+        self._logger = logging.getLogger(name)
+
+    def _log(self, level: int, message: str, **extra) -> None:
+        """
+        Internal log method with correlation ID and sanitization.
+
+        Args:
+            level: Logging level (e.g., logging.INFO)
+            message: Log message
+            **extra: Additional structured data to include
+        """
+        extra["correlation_id"] = get_correlation_id()
+        sanitized_extra = sanitize_dict(extra) if extra else {}
+        self._logger.log(level, sanitize_message(message), extra=sanitized_extra)
+
+    def debug(self, message: str, **extra) -> None:
+        """Log debug message with structured data."""
+        self._log(logging.DEBUG, message, **extra)
+
+    def info(self, message: str, **extra) -> None:
+        """Log info message with structured data."""
+        self._log(logging.INFO, message, **extra)
+
+    def warning(self, message: str, **extra) -> None:
+        """Log warning message with structured data."""
+        self._log(logging.WARNING, message, **extra)
+
+    def error(self, message: str, **extra) -> None:
+        """Log error message with structured data."""
+        self._log(logging.ERROR, message, **extra)
+
+    def critical(self, message: str, **extra) -> None:
+        """Log critical message with structured data."""
+        self._log(logging.CRITICAL, message, **extra)
+
+    def exception(self, message: str, **extra) -> None:
+        """Log exception with traceback and structured data."""
+        extra["correlation_id"] = get_correlation_id()
+        extra["traceback"] = traceback.format_exc()
+        sanitized_extra = sanitize_dict(extra) if extra else {}
+        self._logger.exception(sanitize_message(message), extra=sanitized_extra)
+
+    def log_timing(self, operation: str, duration_ms: float, **extra) -> None:
+        """
+        Log operation timing.
+
+        Args:
+            operation: Name of the timed operation
+            duration_ms: Duration in milliseconds
+            **extra: Additional context
+        """
+        self.info(
+            f"Operation completed: {operation}",
+            timing_ms=round(duration_ms, 2),
+            operation=operation,
+            **extra,
+        )
+
+    def log_memory(self, component: str, memory_mb: float, **extra) -> None:
+        """
+        Log memory usage.
+
+        Args:
+            component: Component name
+            memory_mb: Memory usage in megabytes
+            **extra: Additional context
+        """
+        self.debug(
+            f"Memory usage: {component}",
+            memory_mb=round(memory_mb, 2),
+            component=component,
+            **extra,
+        )
+
+    def log_mcts_iteration(
+        self,
+        iteration: int,
+        tree_depth: int,
+        nodes_explored: int,
+        best_action: str | None = None,
+        ucb_score: float | None = None,
+        **extra,
+    ) -> None:
+        """
+        Log MCTS iteration details.
+
+        Args:
+            iteration: Current iteration number
+            tree_depth: Current tree depth
+            nodes_explored: Number of nodes explored
+            best_action: Best action found (if any)
+            ucb_score: UCB score of best action
+            **extra: Additional context
+        """
+        self.debug(
+            f"MCTS iteration {iteration}",
+            iteration=iteration,
+            tree_depth=tree_depth,
+            nodes_explored=nodes_explored,
+            best_action=best_action,
+            ucb_score=round(ucb_score, 4) if ucb_score is not None else None,
+            **extra,
+        )
+
+    def log_agent_execution(
+        self,
+        agent_name: str,
+        duration_ms: float,
+        confidence: float,
+        success: bool = True,
+        **extra,
+    ) -> None:
+        """
+        Log agent execution details.
+
+        Args:
+            agent_name: Name of the agent
+            duration_ms: Execution duration in milliseconds
+            confidence: Agent confidence score
+            success: Whether execution succeeded
+            **extra: Additional context
+        """
+        level = logging.INFO if success else logging.WARNING
+        self._log(
+            level,
+            f"Agent {agent_name} execution {'completed' if success else 'failed'}",
+            agent_name=agent_name,
+            timing_ms=round(duration_ms, 2),
+            confidence=round(confidence, 4),
+            success=success,
+            **extra,
+        )
+
+
+def get_structured_logger(name: str) -> StructuredLogger:
+    """
+    Get a structured logger instance.
+
+    Args:
+        name: Logger name (typically __name__)
+
+    Returns:
+        StructuredLogger instance
+    """
+    return StructuredLogger(name)
