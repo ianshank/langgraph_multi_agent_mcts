@@ -315,6 +315,83 @@ DOMAIN_VOCABULARIES = {
         "resource scheduling",
         "portfolio optimization",
     ],
+    # Additional vocabulary keys for template coverage
+    "method": [
+        "UCB1 selection",
+        "PUCT with neural guidance",
+        "progressive widening",
+        "virtual loss parallelization",
+        "Dirichlet noise injection",
+    ],
+    "alternative_framework": [
+        "LangChain",
+        "CrewAI",
+        "AutoGen",
+        "Haystack",
+        "semantic-kernel",
+    ],
+    "scenario": [
+        "high-throughput inference",
+        "real-time decision making",
+        "distributed training",
+        "edge deployment",
+        "multi-tenant serving",
+    ],
+    "features": [
+        "caching and batching",
+        "async execution and streaming",
+        "retry logic and error handling",
+        "logging and observability",
+        "type safety and validation",
+    ],
+    "code_snippet": [
+        "# Implementation code here",
+        "def process(data): return transform(data)",
+        "async def fetch(): return await client.get()",
+        "class Handler: pass",
+    ],
+    "constraint": [
+        "memory efficiency",
+        "latency requirements",
+        "throughput optimization",
+        "resource limits",
+        "concurrent access",
+    ],
+    "functionality": [
+        "processes input data",
+        "manages state transitions",
+        "handles error recovery",
+        "coordinates multi-agent workflows",
+        "optimizes search strategies",
+    ],
+    "pattern": [
+        "singleton",
+        "factory",
+        "observer",
+        "strategy",
+        "decorator",
+    ],
+    "scale": [
+        "1000 requests per second",
+        "millions of daily active users",
+        "petabytes of data",
+        "global distribution",
+        "real-time streaming",
+    ],
+    "service": [
+        "inference API",
+        "training orchestrator",
+        "model registry",
+        "experiment tracker",
+        "feature store",
+    ],
+    "metrics": [
+        "latency percentiles (p50, p95, p99)",
+        "throughput and error rates",
+        "resource utilization",
+        "model accuracy and drift",
+        "business KPIs",
+    ],
 }
 
 

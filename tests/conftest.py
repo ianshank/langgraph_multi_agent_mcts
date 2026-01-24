@@ -327,7 +327,8 @@ def mcts_config() -> MCTSConfig:
         num_iterations=10,  # Low for fast tests
         exploration_weight=1.414,
         max_rollout_depth=5,
-        cache_size=100,
+        cache_size_limit=100,
+        min_iterations_before_termination=5,  # Must be <= num_iterations
     )
 
 

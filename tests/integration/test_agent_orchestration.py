@@ -18,7 +18,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import torch
+
+# Skip all tests in this module if torch is not available
+torch = pytest.importorskip("torch", reason="PyTorch required for agent orchestration tests")
 
 from tests.mocks.mock_external_services import create_mock_llm
 

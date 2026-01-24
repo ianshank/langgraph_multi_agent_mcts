@@ -130,8 +130,10 @@ class TestGraphBuilderConstruction:
         graph = builder.build_graph()
 
         assert graph is not None
-        # Graph should have invoke/ainvoke methods
-        assert hasattr(graph, "invoke") or hasattr(graph, "ainvoke")
+        # StateGraph should have nodes and edges attributes
+        # (invoke/ainvoke are only available after calling compile())
+        assert hasattr(graph, "nodes") or hasattr(graph, "_nodes")
+        assert hasattr(graph, "add_node") or hasattr(graph, "add_edge")
 
 
 # =============================================================================
