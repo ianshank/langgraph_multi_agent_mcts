@@ -2,14 +2,13 @@
 
 import json
 import tempfile
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
 from src.framework.mcts.llm_guided.config import (
     LLMGuidedMCTSConfig,
     LLMGuidedMCTSPreset,
-    create_llm_mcts_preset,
 )
 from src.framework.mcts.llm_guided.data_collector import TrainingDataCollector
 from src.framework.mcts.llm_guided.engine import (
@@ -169,12 +168,14 @@ class TestLLMGuidedMCTSEngine:
     @pytest.mark.asyncio
     async def test_expand(self, mock_llm_client, config):
         """Test node expansion."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "variants": [
-                {"code": "def foo(): return 1", "confidence": 0.8},
-                {"code": "def foo(): return int(1)", "confidence": 0.2},
-            ]
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "variants": [
+                    {"code": "def foo(): return 1", "confidence": 0.8},
+                    {"code": "def foo(): return int(1)", "confidence": 0.2},
+                ]
+            }
+        )
 
         engine = LLMGuidedMCTSEngine(mock_llm_client, config)
         node = create_root_node(problem="Return 1", episode_id="ep1")
@@ -219,11 +220,13 @@ class TestLLMGuidedMCTSEngine:
     @pytest.mark.asyncio
     async def test_evaluate_failing_code(self, mock_llm_client, config):
         """Test evaluation of failing code."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "value": 0.3,
-            "reflection": "Code returns wrong value",
-            "is_solution": False,
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "value": 0.3,
+                "reflection": "Code returns wrong value",
+                "is_solution": False,
+            }
+        )
 
         engine = LLMGuidedMCTSEngine(mock_llm_client, config)
 
@@ -293,7 +296,7 @@ class TestLLMGuidedMCTSEngine:
             state=NodeState(code="code1", problem="test"),
             action="a",
         )
-        grandchild = child1.add_child(
+        _grandchild = child1.add_child(
             state=NodeState(code="code2", problem="test"),
             action="b",
         )
@@ -326,11 +329,13 @@ class TestLLMGuidedMCTSEngine:
         # Mock generator to return correct code
         # The generator returns code that passes tests, so we should find a solution
         # Use return_value for simplicity since the code passes tests on first try
-        mock_llm_client.complete.return_value = json.dumps({
-            "variants": [
-                {"code": "def foo(): return 1", "confidence": 0.9},
-            ]
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "variants": [
+                    {"code": "def foo(): return 1", "confidence": 0.9},
+                ]
+            }
+        )
 
         # Configure for faster test with early termination
         config.num_iterations = 5
@@ -352,16 +357,20 @@ class TestLLMGuidedMCTSEngine:
         """Test search when no solution found."""
         # Mock generator to return wrong code
         mock_llm_client.complete.side_effect = [
-            json.dumps({
-                "variants": [
-                    {"code": "def foo(): return 0", "confidence": 0.5},
-                ]
-            }),
-            json.dumps({
-                "value": 0.2,
-                "reflection": "Wrong output",
-                "is_solution": False,
-            }),
+            json.dumps(
+                {
+                    "variants": [
+                        {"code": "def foo(): return 0", "confidence": 0.5},
+                    ]
+                }
+            ),
+            json.dumps(
+                {
+                    "value": 0.2,
+                    "reflection": "Wrong output",
+                    "is_solution": False,
+                }
+            ),
         ] * 10  # Repeat for multiple iterations
 
         config.num_iterations = 2
@@ -444,11 +453,13 @@ class TestLangGraphIntegration:
     async def test_search_with_langgraph(self, mock_llm_client):
         """Test search using LangGraph orchestration."""
         mock_llm_client.complete.side_effect = [
-            json.dumps({
-                "variants": [
-                    {"code": "def foo(): return 1", "confidence": 0.9},
-                ]
-            }),
+            json.dumps(
+                {
+                    "variants": [
+                        {"code": "def foo(): return 1", "confidence": 0.9},
+                    ]
+                }
+            ),
         ]
 
         config = LLMGuidedMCTSConfig(num_iterations=3)

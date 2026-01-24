@@ -13,8 +13,6 @@ Provides:
 from __future__ import annotations
 
 import json
-import logging
-import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -451,9 +449,7 @@ class TrainingDataCollector:
             "total_episodes": self.total_episodes,
             "total_examples": self.total_examples,
             "successful_episodes": self.successful_episodes,
-            "success_rate": (
-                self.successful_episodes / self.total_episodes if self.total_episodes > 0 else 0.0
-            ),
+            "success_rate": (self.successful_episodes / self.total_episodes if self.total_episodes > 0 else 0.0),
             "num_files": len(files),
             "file_examples": total_file_examples,
             "current_episode_size": len(self.current_episode),

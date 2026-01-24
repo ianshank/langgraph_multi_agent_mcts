@@ -12,12 +12,11 @@ Main orchestrator that combines:
 
 from __future__ import annotations
 
-import asyncio
 import math
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Annotated, Any, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np
 
@@ -29,20 +28,20 @@ try:
     _LANGGRAPH_AVAILABLE = True
 except ImportError:
     _LANGGRAPH_AVAILABLE = False
-    StateGraph = None  # type: ignore
+    StateGraph = None
     END = "END"
-    MemorySaver = None  # type: ignore
+    MemorySaver = None
 
-from src.observability.logging import get_structured_logger, log_execution_time
+from src.observability.logging import get_structured_logger
 
 from .agents import GeneratorAgent, LLMClientProtocol, ReflectorAgent
-from .config import LLMGuidedMCTSConfig, create_llm_mcts_preset, LLMGuidedMCTSPreset
+from .config import LLMGuidedMCTSConfig, LLMGuidedMCTSPreset, create_llm_mcts_preset
 from .data_collector import TrainingDataCollector
-from .executor import CodeExecutor, CodeExecutionResult
+from .executor import CodeExecutionResult, CodeExecutor
 from .node import LLMGuidedMCTSNode, NodeState, NodeStatus, create_root_node
 
 if TYPE_CHECKING:
-    from .agents import GeneratorOutput, ReflectorOutput
+    pass
 
 logger = get_structured_logger(__name__)
 
@@ -205,9 +204,7 @@ class LLMGuidedMCTSEngine:
         # Data collection
         self._data_collector = data_collector
         if self._config.collect_training_data and data_collector is None:
-            self._data_collector = TrainingDataCollector(
-                output_dir=self._config.training_data_dir
-            )
+            self._data_collector = TrainingDataCollector(output_dir=self._config.training_data_dir)
 
         # Random number generator
         self._rng = np.random.default_rng(self._config.seed)
@@ -246,9 +243,10 @@ class LLMGuidedMCTSEngine:
         node = root
 
         while node.children and not node.is_terminal:
-            node = node.select_child(self._config.exploration_weight)
-            if node is None:
+            selected = node.select_child(self._config.exploration_weight)
+            if selected is None:
                 break
+            node = selected
 
         return node
 
@@ -292,8 +290,7 @@ class LLMGuidedMCTSEngine:
             )
 
             child.generated_variants = [
-                {"code": v.code, "confidence": v.confidence, "reasoning": v.reasoning}
-                for v in output.variants
+                {"code": v.code, "confidence": v.confidence, "reasoning": v.reasoning} for v in output.variants
             ]
 
             children.append(child)
@@ -498,9 +495,9 @@ class LLMGuidedMCTSEngine:
 
         # Finalize data collection
         if self._data_collector:
-            final_result = None
+            # Execute final solution to verify (result used for logging if needed)
             if best_solution_node:
-                final_result = self._executor.execute(
+                _ = self._executor.execute(
                     best_solution_node.state.code,
                     test_cases,
                 )
@@ -788,11 +785,7 @@ class LLMGuidedMCTSEngine:
         return {
             "total_searches": self._total_searches,
             "total_solutions": self._total_solutions,
-            "success_rate": (
-                self._total_solutions / self._total_searches
-                if self._total_searches > 0
-                else 0.0
-            ),
+            "success_rate": (self._total_solutions / self._total_searches if self._total_searches > 0 else 0.0),
             "generator_stats": {
                 "total_calls": self._generator.total_calls,
                 "total_tokens": self._generator.total_tokens,
@@ -801,9 +794,7 @@ class LLMGuidedMCTSEngine:
                 "total_calls": self._reflector.total_calls,
                 "total_tokens": self._reflector.total_tokens,
             },
-            "data_collector_stats": (
-                self._data_collector.get_statistics() if self._data_collector else None
-            ),
+            "data_collector_stats": (self._data_collector.get_statistics() if self._data_collector else None),
             "config": self._config.to_dict(),
         }
 

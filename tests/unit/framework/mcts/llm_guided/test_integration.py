@@ -1,7 +1,7 @@
 """Tests for Integration Layer with HRM, TRM, and Meta-Controller."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock
 
 import pytest
 
@@ -173,11 +173,13 @@ class TestHRMAdapter:
     @pytest.mark.asyncio
     async def test_decompose_with_llm(self, mock_llm_client):
         """Test LLM-based decomposition."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "subproblems": ["Parse input", "Process data", "Format output"],
-            "levels": [0, 0, 0],
-            "confidences": [0.9, 0.85, 0.9],
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "subproblems": ["Parse input", "Process data", "Format output"],
+                "levels": [0, 0, 0],
+                "confidences": [0.9, 0.85, 0.9],
+            }
+        )
 
         adapter = HRMAdapter(llm_client=mock_llm_client)
         result = await adapter.decompose("Write a data processor")
@@ -229,11 +231,13 @@ class TestTRMAdapter:
     @pytest.mark.asyncio
     async def test_refine_with_llm(self, mock_llm_client):
         """Test LLM-based refinement."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "refined_code": "def foo(): return 42",
-            "improvement_score": 0.1,
-            "converged": True,
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "refined_code": "def foo(): return 42",
+                "improvement_score": 0.1,
+                "converged": True,
+            }
+        )
 
         adapter = TRMAdapter(llm_client=mock_llm_client)
         result = await adapter.refine(
@@ -251,16 +255,20 @@ class TestTRMAdapter:
         # First iteration: not converged
         # Second iteration: converged
         mock_llm_client.complete.side_effect = [
-            json.dumps({
-                "refined_code": "def foo(): return 41",
-                "improvement_score": 0.3,
-                "converged": False,
-            }),
-            json.dumps({
-                "refined_code": "def foo(): return 42",
-                "improvement_score": 0.1,
-                "converged": True,
-            }),
+            json.dumps(
+                {
+                    "refined_code": "def foo(): return 41",
+                    "improvement_score": 0.3,
+                    "converged": False,
+                }
+            ),
+            json.dumps(
+                {
+                    "refined_code": "def foo(): return 42",
+                    "improvement_score": 0.1,
+                    "converged": True,
+                }
+            ),
         ]
 
         adapter = TRMAdapter(llm_client=mock_llm_client)
@@ -358,11 +366,13 @@ class TestUnifiedSearchOrchestrator:
         """Create mock LLM client."""
         client = AsyncMock()
         # Default response for generator - returns correct code that passes tests
-        client.complete.return_value = json.dumps({
-            "variants": [
-                {"code": "def foo(): return 1", "confidence": 0.9},
-            ]
-        })
+        client.complete.return_value = json.dumps(
+            {
+                "variants": [
+                    {"code": "def foo(): return 1", "confidence": 0.9},
+                ]
+            }
+        )
         return client
 
     @pytest.fixture

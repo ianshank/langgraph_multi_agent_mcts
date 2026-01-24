@@ -15,7 +15,6 @@ from src.framework.mcts.llm_guided.data_collector import (
 from src.framework.mcts.llm_guided.node import (
     LLMGuidedMCTSNode,
     NodeState,
-    NodeStatus,
 )
 
 
@@ -110,20 +109,22 @@ class TestTrainingExample:
 
     def test_from_json(self):
         """Test creation from JSON."""
-        json_str = json.dumps({
-            "state_code": "code",
-            "state_problem": "problem",
-            "state_hash": "hash",
-            "depth": 1,
-            "llm_action_probs": {},
-            "mcts_action_probs": {},
-            "llm_value_estimate": 0.5,
-            "outcome": 0.0,
-            "episode_id": "ep",
-            "timestamp": 0.0,
-            "visits": 0,
-            "q_value": 0.0,
-        })
+        json_str = json.dumps(
+            {
+                "state_code": "code",
+                "state_problem": "problem",
+                "state_hash": "hash",
+                "depth": 1,
+                "llm_action_probs": {},
+                "mcts_action_probs": {},
+                "llm_value_estimate": 0.5,
+                "outcome": 0.0,
+                "episode_id": "ep",
+                "timestamp": 0.0,
+                "visits": 0,
+                "q_value": 0.0,
+            }
+        )
 
         example = TrainingExample.from_json(json_str)
         assert example.state_code == "code"

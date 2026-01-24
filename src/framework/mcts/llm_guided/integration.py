@@ -14,8 +14,6 @@ LLM-guided exploration.
 
 from __future__ import annotations
 
-import logging
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -26,18 +24,14 @@ from src.observability.logging import get_structured_logger
 
 from .config import LLMGuidedMCTSConfig
 from .engine import LLMGuidedMCTSEngine, MCTSSearchResult
-from .node import LLMGuidedMCTSNode, NodeState
 
 if TYPE_CHECKING:
-    import torch
 
-    from src.agents.hrm_agent import HRMAgent, HRMOutput
+    from src.agents.hrm_agent import HRMAgent
     from src.agents.meta_controller.base import (
         AbstractMetaController,
-        MetaControllerFeatures,
-        MetaControllerPrediction,
     )
-    from src.agents.trm_agent import TRMAgent, TRMOutput
+    from src.agents.trm_agent import TRMAgent
 
 logger = get_structured_logger(__name__)
 
@@ -71,11 +65,7 @@ class SubProblemDecomposition:
         if not self.hierarchy_levels:
             return self.subproblems
         max_level = max(self.hierarchy_levels)
-        return [
-            sp
-            for sp, level in zip(self.subproblems, self.hierarchy_levels)
-            if level == max_level
-        ]
+        return [sp for sp, level in zip(self.subproblems, self.hierarchy_levels) if level == max_level]
 
 
 @dataclass
@@ -264,7 +254,6 @@ class HRMAdapter:
         context: str | None = None,
     ) -> SubProblemDecomposition:
         """Decompose using neural HRM agent."""
-        import torch
 
         # Encode problem text to tensor (requires encoder)
         # For now, use a placeholder - actual implementation would use
@@ -291,6 +280,8 @@ class HRMAdapter:
     ) -> SubProblemDecomposition:
         """Decompose using LLM."""
         import json
+
+        assert self._llm_client is not None, "LLM client required for LLM decomposition"
 
         prompt = self._build_decomposition_prompt(problem, context)
 
@@ -441,14 +432,14 @@ class TRMAdapter:
         """Refine using LLM iteratively."""
         import json
 
+        assert self._llm_client is not None, "LLM client required for LLM refinement"
+
         current_code = code
         intermediate_codes = [code]
         residual_norms = []
 
         for iteration in range(max_iterations):
-            prompt = self._build_refinement_prompt(
-                current_code, problem, test_cases, iteration
-            )
+            prompt = self._build_refinement_prompt(current_code, problem, test_cases, iteration)
 
             try:
                 response = await self._llm_client.complete(prompt)
@@ -580,6 +571,8 @@ class MetaControllerAdapter:
         context: dict[str, Any],
     ) -> RoutingDecision:
         """Route using neural meta-controller."""
+        assert self._meta_controller is not None, "Meta-controller required for neural routing"
+
         features = self._meta_controller.extract_features(context)
         prediction = self._meta_controller.predict(features)
 
@@ -602,18 +595,12 @@ class MetaControllerAdapter:
         # Simple heuristics based on problem characteristics
         problem_length = len(problem)
         has_complex_keywords = any(
-            kw in problem.lower()
-            for kw in ["optimize", "complex", "multiple", "hierarchical", "recursive"]
+            kw in problem.lower() for kw in ["optimize", "complex", "multiple", "hierarchical", "recursive"]
         )
-        has_simple_keywords = any(
-            kw in problem.lower()
-            for kw in ["simple", "basic", "single", "straightforward"]
-        )
+        has_simple_keywords = any(kw in problem.lower() for kw in ["simple", "basic", "single", "straightforward"])
 
-        # Extract context signals
-        hrm_conf = context.get("hrm_confidence", 0.5)
-        trm_conf = context.get("trm_confidence", 0.5)
-        mcts_val = context.get("mcts_value", 0.5)
+        # Note: Context signals (hrm_confidence, trm_confidence, mcts_value)
+        # can be used for more sophisticated routing when neural meta-controller is available
 
         # Decision logic
         if has_complex_keywords or problem_length > 500:
@@ -648,7 +635,7 @@ class MetaControllerAdapter:
         if not self._routing_history:
             return {"total_decisions": 0}
 
-        agent_counts = {}
+        agent_counts: dict[str, int] = {}
         total_confidence = 0.0
 
         for decision in self._routing_history:
@@ -720,15 +707,9 @@ class UnifiedSearchOrchestrator:
         self._config = integration_config or IntegrationConfig()
 
         # Initialize adapters
-        self._hrm = hrm_adapter or HRMAdapter(
-            llm_client=llm_client, config=self._config
-        )
-        self._trm = trm_adapter or TRMAdapter(
-            llm_client=llm_client, config=self._config
-        )
-        self._router = meta_controller_adapter or MetaControllerAdapter(
-            config=self._config
-        )
+        self._hrm = hrm_adapter or HRMAdapter(llm_client=llm_client, config=self._config)
+        self._trm = trm_adapter or TRMAdapter(llm_client=llm_client, config=self._config)
+        self._router = meta_controller_adapter or MetaControllerAdapter(config=self._config)
 
         # Initialize MCTS engine
         self._mcts_engine = LLMGuidedMCTSEngine(llm_client, self._mcts_config)
@@ -764,8 +745,7 @@ class UnifiedSearchOrchestrator:
         if self._config.use_meta_controller:
             routing_decision = self._router.route(problem, ctx)
             self._logger.info(
-                f"Routed to {routing_decision.selected_agent.value} "
-                f"(confidence: {routing_decision.confidence:.2f})"
+                f"Routed to {routing_decision.selected_agent.value} " f"(confidence: {routing_decision.confidence:.2f})"
             )
         else:
             routing_decision = RoutingDecision(
@@ -779,19 +759,14 @@ class UnifiedSearchOrchestrator:
         decomposition = None
         search_problems = [(problem, test_cases)]
 
-        if (
-            self._config.use_hrm_decomposition
-            and routing_decision.selected_agent == AgentType.HRM
-        ):
+        if self._config.use_hrm_decomposition and routing_decision.selected_agent == AgentType.HRM:
             decomposition = await self._hrm.decompose(problem, ctx.get("context"))
 
             if decomposition.num_subproblems > 1:
                 # Use leaf problems for search
                 leaf_problems = decomposition.get_leaf_problems()
                 search_problems = [(sp, test_cases) for sp in leaf_problems]
-                self._logger.info(
-                    f"Decomposed into {len(search_problems)} subproblems"
-                )
+                self._logger.info(f"Decomposed into {len(search_problems)} subproblems")
 
         # Step 3: Run MCTS search on each subproblem
         mcts_results = []
@@ -799,7 +774,7 @@ class UnifiedSearchOrchestrator:
             result = await self._mcts_engine.search(
                 problem=sub_problem,
                 test_cases=sub_tests,
-                initial_code=initial_code,
+                initial_code=initial_code or "",
             )
             mcts_results.append(result)
 
@@ -827,9 +802,7 @@ class UnifiedSearchOrchestrator:
 
             if refinement.improvement_score > 0:
                 final_code = refinement.refined_code
-                self._logger.info(
-                    f"Refined solution with {refinement.num_iterations} iterations"
-                )
+                self._logger.info(f"Refined solution with {refinement.num_iterations} iterations")
 
         execution_time_ms = (time.perf_counter() - start_time) * 1000
 
@@ -886,9 +859,9 @@ class UnifiedSearchOrchestrator:
                 search_with_agent(AgentType.TRM),
                 search_with_agent(AgentType.LLM_MCTS),
             ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            # Filter out exceptions
-            results = [r for r in results if isinstance(r, UnifiedSearchResult)]
+            gathered = await asyncio.gather(*tasks, return_exceptions=True)
+            # Filter out exceptions and keep only successful results
+            results = [r for r in gathered if isinstance(r, UnifiedSearchResult)]
         else:
             # Run sequentially
             for agent_type in [AgentType.HRM, AgentType.TRM, AgentType.LLM_MCTS]:
