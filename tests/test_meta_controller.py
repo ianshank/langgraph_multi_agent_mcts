@@ -143,18 +143,42 @@ class TestMetaControllerFeatures:
         assert sample_features.has_rag_context is True
 
     def test_features_default_values(self):
-        """Test that all fields are required (no defaults)."""
+        """Test that core fields are required and new fields have defaults."""
         from dataclasses import MISSING
 
         # Get all field names
-        feature_fields = fields(MetaControllerFeatures)
+        feature_fields = {f.name: f for f in fields(MetaControllerFeatures)}
 
-        # Check that no fields have default values (MISSING means no default)
-        for field in feature_fields:
+        # Required fields (from Phase 0)
+        required_fields = [
+            "hrm_confidence",
+            "trm_confidence",
+            "mcts_value",
+            "consensus_score",
+            "last_agent",
+            "iteration",
+            "query_length",
+            "has_rag_context",
+        ]
+
+        # Optional fields with defaults (from Phase 1)
+        optional_fields = {
+            "rag_relevance_score": 0.0,
+            "is_technical_query": False,
+        }
+
+        # Check required fields have no defaults
+        for field_name in required_fields:
+            field = feature_fields[field_name]
             assert field.default is MISSING
             assert field.default_factory is MISSING
 
-        # Verify that creating without all fields raises TypeError
+        # Check optional fields have correct defaults
+        for field_name, expected_default in optional_fields.items():
+            field = feature_fields[field_name]
+            assert field.default == expected_default
+
+        # Verify that creating without all required fields raises TypeError
         with pytest.raises(TypeError):
             MetaControllerFeatures()  # type: ignore
 

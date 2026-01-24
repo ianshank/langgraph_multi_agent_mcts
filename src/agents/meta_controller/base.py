@@ -205,13 +205,18 @@ class AbstractMetaController(ABC):
         else:
             query_length = 0
 
-        # Extract has_rag_context
+        # Extract has_rag_context and rag_relevance_score
         if "has_rag_context" in state:
             has_rag_context = bool(state["has_rag_context"])
         elif "rag_context" in state:
             has_rag_context = state["rag_context"] is not None and len(str(state["rag_context"])) > 0
         else:
             has_rag_context = False
+
+        rag_relevance_score = float(state.get("rag_relevance_score", 0.0))
+
+        # Extract is_technical_query
+        is_technical_query = bool(state.get("is_technical_query", False))
 
         return MetaControllerFeatures(
             hrm_confidence=hrm_confidence,
@@ -222,4 +227,6 @@ class AbstractMetaController(ABC):
             iteration=iteration,
             query_length=query_length,
             has_rag_context=has_rag_context,
+            rag_relevance_score=rag_relevance_score,
+            is_technical_query=is_technical_query,
         )

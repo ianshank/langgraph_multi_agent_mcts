@@ -1,7 +1,7 @@
 """Tests for LLM Agents."""
 
 import json
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 

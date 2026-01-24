@@ -397,6 +397,10 @@ class LLMGuidedMCTSEngine:
         start_time = time.perf_counter()
         episode_id = str(uuid.uuid4())
 
+        # Reset agent statistics for this search
+        self._generator.reset_stats()
+        self._reflector.reset_stats()
+
         # Start data collection
         if self._data_collector:
             self._data_collector.start_episode(
@@ -496,15 +500,16 @@ class LLMGuidedMCTSEngine:
         if self._data_collector and root.children:
             self._data_collector.record_mcts_policy(root)
 
+        # Final execution to get test results for the best solution
+        final_result = None
+        if best_solution_node and best_solution_node.state.code:
+            final_result = self._executor.execute(
+                best_solution_node.state.code,
+                test_cases,
+            )
+
         # Finalize data collection
         if self._data_collector:
-            final_result = None
-            if best_solution_node:
-                final_result = self._executor.execute(
-                    best_solution_node.state.code,
-                    test_cases,
-                )
-
             self._data_collector.finalize_episode(
                 outcome=1.0 if solution_found else -1.0,
                 solution_found=solution_found,
@@ -542,6 +547,7 @@ class LLMGuidedMCTSEngine:
             episode_id=episode_id,
             root_visits=root.visits,
             action_stats=action_stats,
+            test_results=final_result,
         )
 
         # Update statistics
@@ -754,6 +760,10 @@ class LLMGuidedMCTSEngine:
             "should_terminate": False,
         }
 
+        # Reset agent statistics for this search
+        self._generator.reset_stats()
+        self._reflector.reset_stats()
+
         # Run graph
         config = {"configurable": {"thread_id": episode_id}}
         final_state = await app.ainvoke(initial_state, config=config)
@@ -777,6 +787,10 @@ class LLMGuidedMCTSEngine:
             tokens_used=final_state["total_tokens"],
             episode_id=episode_id,
             root_visits=root.visits,
+            test_results=self._executor.execute(
+                best_node.state.code if best_node else "",
+                test_cases,
+            ) if best_node else None,
         )
 
     # ========================================================================

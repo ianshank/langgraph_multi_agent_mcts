@@ -14,7 +14,7 @@ LLM-guided exploration.
 
 from __future__ import annotations
 
-import logging
+import asyncio
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -24,9 +24,11 @@ from pydantic import BaseModel, Field
 
 from src.observability.logging import get_structured_logger
 
+if TYPE_CHECKING:
+    from .agents import LLMClientProtocol
+
 from .config import LLMGuidedMCTSConfig
 from .engine import LLMGuidedMCTSEngine, MCTSSearchResult
-from .node import LLMGuidedMCTSNode, NodeState
 
 if TYPE_CHECKING:
     import torch
@@ -205,7 +207,7 @@ class HRMAdapter:
     def __init__(
         self,
         hrm_agent: HRMAgent | None = None,
-        llm_client: Any | None = None,
+        llm_client: LLMClientProtocol | None = None,
         config: IntegrationConfig | None = None,
     ):
         """
@@ -294,6 +296,15 @@ class HRMAdapter:
 
         prompt = self._build_decomposition_prompt(problem, context)
 
+        if self._llm_client is None:
+            self._logger.error("LLM client not available for decomposition")
+            return SubProblemDecomposition(
+                original_problem=problem,
+                subproblems=[problem],
+                hierarchy_levels=[0],
+                confidences=[0.5],
+            )
+
         try:
             response = await self._llm_client.complete(prompt)
             result = json.loads(response)
@@ -348,7 +359,7 @@ class TRMAdapter:
     def __init__(
         self,
         trm_agent: TRMAgent | None = None,
-        llm_client: Any | None = None,
+        llm_client: LLMClientProtocol | None = None,
         config: IntegrationConfig | None = None,
     ):
         """
@@ -444,6 +455,16 @@ class TRMAdapter:
         current_code = code
         intermediate_codes = [code]
         residual_norms = []
+
+        if self._llm_client is None:
+            self._logger.error("LLM client not available for refinement")
+            return RefinementResult(
+                original_code=code,
+                refined_code=code,
+                num_iterations=0,
+                converged=True,
+                improvement_score=0.0,
+            )
 
         for iteration in range(max_iterations):
             prompt = self._build_refinement_prompt(
@@ -580,6 +601,9 @@ class MetaControllerAdapter:
         context: dict[str, Any],
     ) -> RoutingDecision:
         """Route using neural meta-controller."""
+        if self._meta_controller is None:
+            return self._route_heuristic(problem, context)
+
         features = self._meta_controller.extract_features(context)
         prediction = self._meta_controller.predict(features)
 
@@ -648,7 +672,7 @@ class MetaControllerAdapter:
         if not self._routing_history:
             return {"total_decisions": 0}
 
-        agent_counts = {}
+        agent_counts: dict[str, int] = {}
         total_confidence = 0.0
 
         for decision in self._routing_history:
@@ -799,7 +823,7 @@ class UnifiedSearchOrchestrator:
             result = await self._mcts_engine.search(
                 problem=sub_problem,
                 test_cases=sub_tests,
-                initial_code=initial_code,
+                initial_code=initial_code or "",
             )
             mcts_results.append(result)
 
@@ -886,9 +910,9 @@ class UnifiedSearchOrchestrator:
                 search_with_agent(AgentType.TRM),
                 search_with_agent(AgentType.LLM_MCTS),
             ]
-            results = await asyncio.gather(*tasks, return_exceptions=True)
-            # Filter out exceptions
-            results = [r for r in results if isinstance(r, UnifiedSearchResult)]
+            results_with_errors = await asyncio.gather(*tasks, return_exceptions=True)
+            # Filter out exceptions and cast to list
+            results = [r for r in results_with_errors if isinstance(r, UnifiedSearchResult)]
         else:
             # Run sequentially
             for agent_type in [AgentType.HRM, AgentType.TRM, AgentType.LLM_MCTS]:
