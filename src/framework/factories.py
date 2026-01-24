@@ -302,7 +302,8 @@ class MCTSEngineFactory:
         """
         from src.framework.mcts.core import MCTSEngine
 
-        seed = seed if seed is not None else self.settings.SEED
+        # Default seed to 42 if not provided
+        seed = seed if seed is not None else (self.settings.SEED if self.settings.SEED is not None else 42)
         exploration_weight = exploration_weight if exploration_weight is not None else self.settings.MCTS_C
 
         if config_preset:
@@ -404,35 +405,28 @@ class MetaControllerFactory:
 
         if controller_type == "rnn":
             return self._create_rnn_controller(
-                input_dim=input_dim,
                 hidden_dim=hidden_dim,
                 num_layers=num_layers,
-                num_agents=num_agents,
                 dropout=dropout,
                 device=device,
                 **kwargs,
             )
         elif controller_type == "bert":
             return self._create_bert_controller(
-                num_agents=num_agents,
                 dropout=dropout,
                 device=device,
                 **kwargs,
             )
         elif controller_type == "hybrid":
             return self._create_hybrid_controller(
-                input_dim=input_dim,
                 hidden_dim=hidden_dim,
-                num_agents=num_agents,
+                num_layers=num_layers,
+                dropout=dropout,
                 device=device,
                 **kwargs,
             )
         elif controller_type == "assembly":
-            return self._create_assembly_router(
-                num_agents=num_agents,
-                device=device,
-                **kwargs,
-            )
+            return self._create_assembly_router(**kwargs)
         else:
             raise ValueError(
                 f"Unknown controller type: {controller_type}. "
@@ -441,10 +435,8 @@ class MetaControllerFactory:
 
     def _create_rnn_controller(
         self,
-        input_dim: int,
         hidden_dim: int,
         num_layers: int,
-        num_agents: int,
         dropout: float,
         device: str,
         **kwargs: Any,
@@ -453,18 +445,16 @@ class MetaControllerFactory:
         from src.agents.meta_controller.rnn_controller import RNNMetaController
 
         controller = RNNMetaController(
-            input_dim=input_dim,
             hidden_dim=hidden_dim,
             num_layers=num_layers,
-            num_agents=num_agents,
             dropout=dropout,
+            device=device,
             **kwargs,
         )
-        return controller.to(device) if hasattr(controller, "to") else controller
+        return controller
 
     def _create_bert_controller(
         self,
-        num_agents: int,
         dropout: float,
         device: str,
         **kwargs: Any,
@@ -473,45 +463,47 @@ class MetaControllerFactory:
         from src.agents.meta_controller.bert_controller import BERTMetaController
 
         controller = BERTMetaController(
-            num_agents=num_agents,
-            dropout=dropout,
+            lora_dropout=dropout,
+            device=device,
             **kwargs,
         )
-        return controller.to(device) if hasattr(controller, "to") else controller
+        return controller
 
     def _create_hybrid_controller(
         self,
-        input_dim: int,
         hidden_dim: int,
-        num_agents: int,
+        num_layers: int,
+        dropout: float,
         device: str,
         **kwargs: Any,
     ) -> Any:
-        """Create hybrid meta-controller."""
+        """Create hybrid meta-controller combining neural and assembly routing."""
         from src.agents.meta_controller.hybrid_controller import HybridMetaController
+        from src.agents.meta_controller.rnn_controller import RNNMetaController
+
+        # Create underlying neural controller
+        neural_controller = RNNMetaController(
+            hidden_dim=hidden_dim,
+            num_layers=num_layers,
+            dropout=dropout,
+            device=device,
+        )
 
         controller = HybridMetaController(
-            input_dim=input_dim,
-            hidden_dim=hidden_dim,
-            num_agents=num_agents,
+            neural_controller=neural_controller,
             **kwargs,
         )
-        return controller.to(device) if hasattr(controller, "to") else controller
+        return controller
 
     def _create_assembly_router(
         self,
-        num_agents: int,
-        device: str,
         **kwargs: Any,
     ) -> Any:
         """Create assembly theory-based router."""
         from src.agents.meta_controller.assembly_router import AssemblyRouter
 
-        router = AssemblyRouter(
-            num_agents=num_agents,
-            **kwargs,
-        )
-        return router.to(device) if hasattr(router, "to") else router
+        router = AssemblyRouter(**kwargs)
+        return router
 
 
 class HybridAgentFactory:
@@ -578,10 +570,19 @@ class HybridAgentFactory:
         Returns:
             Configured hybrid agent instance
         """
+        from typing import Literal, cast
+
         from src.agents.hybrid_agent import HybridAgent, HybridConfig
 
+        # Cast mode to expected Literal type
+        mode_value = mode or self.settings.HYBRID_MODE
+        valid_modes = ("auto", "neural_only", "llm_only", "adaptive")
+        if mode_value not in valid_modes:
+            mode_value = "auto"  # Default to auto if invalid
+        typed_mode = cast(Literal["auto", "neural_only", "llm_only", "adaptive"], mode_value)
+
         config = HybridConfig(
-            mode=mode or self.settings.HYBRID_MODE,
+            mode=typed_mode,
             policy_confidence_threshold=policy_confidence_threshold or self.settings.HYBRID_POLICY_CONFIDENCE_THRESHOLD,
             value_confidence_threshold=value_confidence_threshold or self.settings.HYBRID_VALUE_CONFIDENCE_THRESHOLD,
             neural_cost_per_call=neural_cost_per_call or self.settings.HYBRID_NEURAL_COST_PER_CALL,
