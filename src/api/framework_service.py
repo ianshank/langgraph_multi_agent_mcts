@@ -409,7 +409,6 @@ class FrameworkService:
 
             if use_rag and self._rag_retriever is not None:
                 try:
-                    rag_start = time.perf_counter()
                     retrieval_result = await self._rag_retriever.retrieve(
                         query=query,
                         top_k=self._config.top_k_retrieval,
@@ -428,6 +427,7 @@ class FrameworkService:
                             documents=len(retrieval_result.documents),
                             retrieval_time_ms=round(retrieval_result.retrieval_time_ms, 2),
                             backend=retrieval_result.backend,
+                            context_length=len(rag_context),
                         )
                 except Exception as e:
                     if _HAS_STRUCTURED_LOGGING:
@@ -440,7 +440,10 @@ class FrameworkService:
                         self._logger.warning(f"RAG retrieval failed: {e}")
 
             # Build config for this request
-            config: dict[str, Any] = {"configurable": {"thread_id": thread_id or "default"}}
+            config: dict[str, Any] = {
+                "configurable": {"thread_id": thread_id or "default"},
+                "rag_context": rag_context,  # Pass RAG context to framework
+            }
 
             if mcts_iterations is not None:
                 config["mcts_iterations"] = mcts_iterations

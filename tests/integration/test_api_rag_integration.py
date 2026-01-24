@@ -8,8 +8,9 @@ Tests:
 - Error handling and fallbacks
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 # Skip if dependencies not available
 pydantic_settings = pytest.importorskip("pydantic_settings")
@@ -104,8 +105,9 @@ class TestFrameworkServiceRAGIntegration:
             # Mock the initialization components via internal imports
             with patch.object(service, 'initialize') as mock_init:
                 async def mock_initialize():
-                    from src.api.framework_service import FrameworkState, MockLLMClient, LightweightFramework
                     import logging
+
+                    from src.api.framework_service import FrameworkState, LightweightFramework, MockLLMClient
                     service._state = FrameworkState.READY
                     service._start_time = 1000.0
                     service._framework = LightweightFramework(
@@ -368,9 +370,9 @@ class TestLightweightFrameworkWithRAG:
     @pytest.mark.asyncio
     async def test_process_without_rag(self, mock_config, mock_llm_client):
         """Test processing without RAG."""
-        from src.api.framework_service import LightweightFramework
-
         import logging
+
+        from src.api.framework_service import LightweightFramework
         framework = LightweightFramework(
             llm_client=mock_llm_client,
             config=mock_config,
@@ -390,9 +392,9 @@ class TestLightweightFrameworkWithRAG:
         self, mock_config, mock_llm_client
     ):
         """Test MCTS stats are included when enabled."""
-        from src.api.framework_service import LightweightFramework
-
         import logging
+
+        from src.api.framework_service import LightweightFramework
         framework = LightweightFramework(
             llm_client=mock_llm_client,
             config=mock_config,
@@ -412,9 +414,9 @@ class TestLightweightFrameworkWithRAG:
         self, mock_config, mock_llm_client
     ):
         """Test MCTS stats are None when disabled."""
-        from src.api.framework_service import LightweightFramework
-
         import logging
+
+        from src.api.framework_service import LightweightFramework
         framework = LightweightFramework(
             llm_client=mock_llm_client,
             config=mock_config,

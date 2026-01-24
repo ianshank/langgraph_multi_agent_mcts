@@ -9,8 +9,9 @@ Tests:
 - Error handling
 """
 
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
 
 # Skip if pydantic_settings not available
 pydantic_settings = pytest.importorskip("pydantic_settings")
@@ -82,7 +83,7 @@ class TestRetrievalResult:
 
     def test_context_property_with_documents(self):
         """Test context property with documents."""
-        from src.api.rag_retriever import RetrievedDocument, RetrievalResult
+        from src.api.rag_retriever import RetrievalResult, RetrievedDocument
 
         docs = [
             RetrievedDocument(content="First document", score=0.9),
@@ -105,7 +106,7 @@ class TestRetrievalResult:
 
     def test_has_results(self):
         """Test has_results property."""
-        from src.api.rag_retriever import RetrievedDocument, RetrievalResult
+        from src.api.rag_retriever import RetrievalResult, RetrievedDocument
 
         empty_result = RetrievalResult(
             documents=[],
