@@ -14,9 +14,23 @@ Expected outcomes:
 - Feature extraction for meta-controller training
 """
 
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
+
+# Check if the datasets library is available
+try:
+    import datasets
+
+    HAS_DATASETS = True
+except ImportError:
+    HAS_DATASETS = False
+
+# Skip marker for tests that require the datasets library
+requires_datasets = pytest.mark.skipif(
+    not HAS_DATASETS,
+    reason="datasets library not installed (pip install datasets)",
+)
 
 
 @pytest.fixture
@@ -96,7 +110,8 @@ class TestDABStepDatasetLoading:
 
     @pytest.mark.training
     @pytest.mark.dataset
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_dabstep_loader_initialization(self, mock_load):
         """DABStep loader should initialize correctly."""
         from src.data.dataset_loader import DABStepLoader
@@ -108,7 +123,8 @@ class TestDABStepDatasetLoading:
 
     @pytest.mark.training
     @pytest.mark.dataset
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_load_train_split(self, mock_load, mock_dabstep_dataset):
         """Should load train split successfully."""
         from src.data.dataset_loader import DABStepLoader
@@ -124,7 +140,8 @@ class TestDABStepDatasetLoading:
 
     @pytest.mark.training
     @pytest.mark.dataset
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_filter_by_difficulty(self, mock_load, mock_dabstep_dataset):
         """Should filter samples by difficulty."""
         from src.data.dataset_loader import DABStepLoader
@@ -139,7 +156,8 @@ class TestDABStepDatasetLoading:
 
     @pytest.mark.training
     @pytest.mark.dataset
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_reasoning_steps_preserved(self, mock_load, mock_dabstep_dataset):
         """Reasoning steps should be preserved in samples."""
         from src.data.dataset_loader import DABStepLoader
@@ -156,7 +174,8 @@ class TestDABStepDatasetLoading:
 
     @pytest.mark.training
     @pytest.mark.dataset
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_dataset_statistics(self, mock_load, mock_dabstep_dataset):
         """Should compute dataset statistics correctly."""
         from src.data.dataset_loader import DABStepLoader
@@ -176,7 +195,8 @@ class TestDABStepDatasetLoading:
 
     @pytest.mark.training
     @pytest.mark.dataset
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_batch_iteration(self, mock_load, mock_dabstep_dataset):
         """Should iterate samples in batches."""
         from src.data.dataset_loader import DABStepLoader
@@ -423,7 +443,8 @@ class TestTrainingPipelineIntegration:
 
     @pytest.mark.training
     @pytest.mark.integration
-    @patch("src.data.dataset_loader.load_dataset")
+    @requires_datasets
+    @patch("datasets.load_dataset")
     def test_full_pipeline(self, mock_load, mock_dabstep_dataset):
         """Complete pipeline from loading to training-ready data."""
         from src.data.dataset_loader import DABStepLoader
