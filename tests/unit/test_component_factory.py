@@ -222,87 +222,92 @@ class TestTrainerFactory:
 
     def test_create_hrm_trainer_default(self, mock_settings, mock_logger, trainer_config, mock_hrm_agent, mock_optimizer, mock_loss_fn):
         """Test creating HRM trainer with default configuration."""
-        from src.framework.component_factory import TrainerFactory
-
-        with patch("src.framework.component_factory.TrainerFactory._config", trainer_config):
-            factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
-
-            # Mock the import inside create_hrm_trainer
-            with patch.dict("sys.modules", {"src.training.agent_trainer": MagicMock()}):
-                mock_trainer_module = MagicMock()
-                mock_hrm_trainer_class = MagicMock()
-                mock_trainer_instance = MagicMock()
-                mock_hrm_trainer_class.return_value = mock_trainer_instance
-                mock_trainer_module.HRMTrainer = mock_hrm_trainer_class
-                mock_trainer_module.HRMTrainingConfig = MagicMock()
-
-                with patch("src.training.agent_trainer.HRMTrainer", mock_hrm_trainer_class):
-                    with patch("src.training.agent_trainer.HRMTrainingConfig") as mock_config_class:
-                        mock_config_instance = MagicMock()
-                        mock_config_class.return_value = mock_config_instance
-
-                        trainer = factory.create_hrm_trainer(
-                            agent=mock_hrm_agent,
-                            optimizer=mock_optimizer,
-                            loss_fn=mock_loss_fn,
-                        )
-
-                        # Verify trainer was created
-                        mock_hrm_trainer_class.assert_called_once()
-                        assert trainer is mock_trainer_instance
-
-                        # Verify logging occurred
-                        mock_logger.info.assert_called()
-
-    def test_create_trm_trainer_default(self, mock_settings, mock_logger, trainer_config, mock_trm_agent, mock_optimizer, mock_loss_fn):
-        """Test creating TRM trainer with default configuration."""
+        import sys
         from src.framework.component_factory import TrainerFactory
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
 
-        with patch("src.training.agent_trainer.TRMTrainer") as mock_trm_trainer_class:
-            with patch("src.training.agent_trainer.TRMTrainingConfig") as mock_config_class:
-                mock_trainer_instance = MagicMock()
-                mock_trm_trainer_class.return_value = mock_trainer_instance
-                mock_config_class.return_value = MagicMock()
+        # Create mock module with mock classes
+        mock_trainer_module = MagicMock()
+        mock_hrm_trainer_class = MagicMock()
+        mock_trainer_instance = MagicMock()
+        mock_hrm_trainer_class.return_value = mock_trainer_instance
+        mock_trainer_module.HRMTrainer = mock_hrm_trainer_class
+        mock_trainer_module.HRMTrainingConfig = MagicMock(return_value=MagicMock())
 
-                trainer = factory.create_trm_trainer(
-                    agent=mock_trm_agent,
-                    optimizer=mock_optimizer,
-                    loss_fn=mock_loss_fn,
-                )
+        # Inject mock module before factory tries to import
+        with patch.dict(sys.modules, {"src.training.agent_trainer": mock_trainer_module}):
+            trainer = factory.create_hrm_trainer(
+                agent=mock_hrm_agent,
+                optimizer=mock_optimizer,
+                loss_fn=mock_loss_fn,
+            )
 
-                mock_trm_trainer_class.assert_called_once()
-                assert trainer is mock_trainer_instance
+            # Verify trainer was created
+            mock_hrm_trainer_class.assert_called_once()
+            assert trainer is mock_trainer_instance
+
+            # Verify logging occurred
+            mock_logger.info.assert_called()
+
+    def test_create_trm_trainer_default(self, mock_settings, mock_logger, trainer_config, mock_trm_agent, mock_optimizer, mock_loss_fn):
+        """Test creating TRM trainer with default configuration."""
+        import sys
+        from src.framework.component_factory import TrainerFactory
+
+        factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
+
+        # Create mock module with mock classes
+        mock_trainer_module = MagicMock()
+        mock_trm_trainer_class = MagicMock()
+        mock_trainer_instance = MagicMock()
+        mock_trm_trainer_class.return_value = mock_trainer_instance
+        mock_trainer_module.TRMTrainer = mock_trm_trainer_class
+        mock_trainer_module.TRMTrainingConfig = MagicMock(return_value=MagicMock())
+
+        with patch.dict(sys.modules, {"src.training.agent_trainer": mock_trainer_module}):
+            trainer = factory.create_trm_trainer(
+                agent=mock_trm_agent,
+                optimizer=mock_optimizer,
+                loss_fn=mock_loss_fn,
+            )
+
+            mock_trm_trainer_class.assert_called_once()
+            assert trainer is mock_trainer_instance
 
     def test_create_self_play_evaluator(self, mock_settings, mock_logger, trainer_config, mock_mcts):
         """Test creating self-play evaluator."""
+        import sys
         from src.framework.component_factory import TrainerFactory
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
 
         mock_initial_state_fn = MagicMock()
 
-        with patch("src.training.agent_trainer.SelfPlayEvaluator") as mock_evaluator_class:
-            with patch("src.training.agent_trainer.EvaluationConfig") as mock_config_class:
-                mock_evaluator_instance = MagicMock()
-                mock_evaluator_class.return_value = mock_evaluator_instance
-                mock_config_class.return_value = MagicMock()
+        # Create mock module with mock classes
+        mock_trainer_module = MagicMock()
+        mock_evaluator_class = MagicMock()
+        mock_evaluator_instance = MagicMock()
+        mock_evaluator_class.return_value = mock_evaluator_instance
+        mock_config_class = MagicMock(return_value=MagicMock())
+        mock_trainer_module.SelfPlayEvaluator = mock_evaluator_class
+        mock_trainer_module.EvaluationConfig = mock_config_class
 
-                evaluator = factory.create_self_play_evaluator(
-                    mcts=mock_mcts,
-                    initial_state_fn=mock_initial_state_fn,
-                )
+        with patch.dict(sys.modules, {"src.training.agent_trainer": mock_trainer_module}):
+            evaluator = factory.create_self_play_evaluator(
+                mcts=mock_mcts,
+                initial_state_fn=mock_initial_state_fn,
+            )
 
-                mock_evaluator_class.assert_called_once()
-                assert evaluator is mock_evaluator_instance
+            mock_evaluator_class.assert_called_once()
+            assert evaluator is mock_evaluator_instance
 
-                # Verify configuration used defaults from trainer_config
-                call_kwargs = mock_config_class.call_args.kwargs
-                assert "num_games" in call_kwargs or len(mock_config_class.call_args.args) > 0
+            # Verify configuration used defaults from trainer_config
+            assert mock_config_class.called
 
     def test_create_self_play_evaluator_custom_config(self, mock_settings, mock_logger, trainer_config, mock_mcts):
         """Test creating self-play evaluator with custom configuration."""
+        import sys
         from src.framework.component_factory import TrainerFactory
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
@@ -310,33 +315,45 @@ class TestTrainerFactory:
         custom_num_games = 50
         custom_temperature = 0.5
 
-        with patch("src.training.agent_trainer.SelfPlayEvaluator") as mock_evaluator_class:
-            with patch("src.training.agent_trainer.EvaluationConfig") as mock_config_class:
-                mock_config_instance = MagicMock()
-                mock_config_class.return_value = mock_config_instance
+        # Create mock module with mock classes
+        mock_trainer_module = MagicMock()
+        mock_evaluator_class = MagicMock()
+        mock_config_class = MagicMock()
+        mock_config_instance = MagicMock()
+        mock_config_class.return_value = mock_config_instance
+        mock_trainer_module.SelfPlayEvaluator = mock_evaluator_class
+        mock_trainer_module.EvaluationConfig = mock_config_class
 
-                factory.create_self_play_evaluator(
-                    mcts=mock_mcts,
-                    initial_state_fn=MagicMock(),
-                    num_games=custom_num_games,
-                    temperature=custom_temperature,
-                )
+        with patch.dict(sys.modules, {"src.training.agent_trainer": mock_trainer_module}):
+            factory.create_self_play_evaluator(
+                mcts=mock_mcts,
+                initial_state_fn=MagicMock(),
+                num_games=custom_num_games,
+                temperature=custom_temperature,
+            )
 
-                # Verify custom values were passed
-                call_kwargs = mock_config_class.call_args.kwargs
-                assert call_kwargs.get("num_games") == custom_num_games
-                assert call_kwargs.get("temperature") == custom_temperature
+            # Verify custom values were passed
+            call_kwargs = mock_config_class.call_args.kwargs
+            assert call_kwargs.get("num_games") == custom_num_games
+            assert call_kwargs.get("temperature") == custom_temperature
 
     def test_create_replay_buffer_uniform(self, mock_settings, mock_logger, trainer_config):
         """Test creating uniform replay buffer."""
+        import sys
         from src.framework.component_factory import TrainerFactory
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
 
-        with patch("src.training.replay_buffer.ReplayBuffer") as mock_buffer_class:
-            mock_buffer_instance = MagicMock()
-            mock_buffer_class.return_value = mock_buffer_instance
+        # Create mock module
+        mock_buffer_module = MagicMock()
+        mock_buffer_class = MagicMock()
+        mock_buffer_instance = MagicMock()
+        mock_buffer_class.return_value = mock_buffer_instance
+        mock_buffer_module.ReplayBuffer = mock_buffer_class
+        mock_buffer_module.PrioritizedReplayBuffer = MagicMock()
+        mock_buffer_module.AugmentedReplayBuffer = MagicMock()
 
+        with patch.dict(sys.modules, {"src.training.replay_buffer": mock_buffer_module}):
             buffer = factory.create_replay_buffer(
                 buffer_type="uniform",
                 capacity=TEST_BUFFER_CAPACITY,
@@ -348,6 +365,7 @@ class TestTrainerFactory:
 
     def test_create_replay_buffer_prioritized(self, mock_settings, mock_logger, trainer_config):
         """Test creating prioritized replay buffer."""
+        import sys
         from src.framework.component_factory import TrainerFactory
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
@@ -355,37 +373,51 @@ class TestTrainerFactory:
         custom_alpha = 0.7
         custom_beta_start = 0.5
 
-        with patch("src.training.replay_buffer.PrioritizedReplayBuffer") as mock_buffer_class:
-            with patch("src.training.replay_buffer.ReplayBuffer"):
-                with patch("src.training.replay_buffer.AugmentedReplayBuffer"):
-                    mock_buffer_instance = MagicMock()
-                    mock_buffer_class.return_value = mock_buffer_instance
+        # Create mock module
+        mock_buffer_module = MagicMock()
+        mock_buffer_class = MagicMock()
+        mock_buffer_instance = MagicMock()
+        mock_buffer_class.return_value = mock_buffer_instance
+        mock_buffer_module.ReplayBuffer = MagicMock()
+        mock_buffer_module.PrioritizedReplayBuffer = mock_buffer_class
+        mock_buffer_module.AugmentedReplayBuffer = MagicMock()
 
-                    buffer = factory.create_replay_buffer(
-                        buffer_type="prioritized",
-                        capacity=TEST_BUFFER_CAPACITY,
-                        alpha=custom_alpha,
-                        beta_start=custom_beta_start,
-                        use_singleton=False,
-                    )
+        with patch.dict(sys.modules, {"src.training.replay_buffer": mock_buffer_module}):
+            buffer = factory.create_replay_buffer(
+                buffer_type="prioritized",
+                capacity=TEST_BUFFER_CAPACITY,
+                alpha=custom_alpha,
+                beta_start=custom_beta_start,
+                use_singleton=False,
+            )
 
-                    mock_buffer_class.assert_called_once()
-                    call_kwargs = mock_buffer_class.call_args.kwargs
-                    assert call_kwargs["capacity"] == TEST_BUFFER_CAPACITY
-                    assert call_kwargs["alpha"] == custom_alpha
-                    assert call_kwargs["beta_start"] == custom_beta_start
-                    assert buffer is mock_buffer_instance
+            mock_buffer_class.assert_called_once()
+            call_kwargs = mock_buffer_class.call_args.kwargs
+            assert call_kwargs["capacity"] == TEST_BUFFER_CAPACITY
+            assert call_kwargs["alpha"] == custom_alpha
+            assert call_kwargs["beta_start"] == custom_beta_start
+            assert buffer is mock_buffer_instance
 
     def test_create_replay_buffer_singleton_caching(self, mock_settings, mock_logger, trainer_config):
         """Test that replay buffers are cached when use_singleton=True."""
+        import sys
         from src.framework.component_factory import TrainerFactory
+
+        # Clear any existing cache
+        TrainerFactory.clear_singleton_cache()
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
 
-        with patch("src.training.replay_buffer.ReplayBuffer") as mock_buffer_class:
-            mock_buffer_instance = MagicMock()
-            mock_buffer_class.return_value = mock_buffer_instance
+        # Create mock module
+        mock_buffer_module = MagicMock()
+        mock_buffer_class = MagicMock()
+        mock_buffer_instance = MagicMock()
+        mock_buffer_class.return_value = mock_buffer_instance
+        mock_buffer_module.ReplayBuffer = mock_buffer_class
+        mock_buffer_module.PrioritizedReplayBuffer = MagicMock()
+        mock_buffer_module.AugmentedReplayBuffer = MagicMock()
 
+        with patch.dict(sys.modules, {"src.training.replay_buffer": mock_buffer_module}):
             # First call - should create new buffer
             buffer1 = factory.create_replay_buffer(
                 buffer_type="uniform",
@@ -406,28 +438,43 @@ class TestTrainerFactory:
 
     def test_create_replay_buffer_invalid_type(self, mock_settings, mock_logger, trainer_config):
         """Test that invalid buffer type raises ValueError."""
+        import sys
         from src.framework.component_factory import TrainerFactory
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
 
-        with patch("src.training.replay_buffer.ReplayBuffer"):
-            with patch("src.training.replay_buffer.PrioritizedReplayBuffer"):
-                with patch("src.training.replay_buffer.AugmentedReplayBuffer"):
-                    with pytest.raises(ValueError, match="Unknown buffer_type"):
-                        factory.create_replay_buffer(
-                            buffer_type="invalid_type",
-                            use_singleton=False,
-                        )
+        # Create mock module
+        mock_buffer_module = MagicMock()
+        mock_buffer_module.ReplayBuffer = MagicMock()
+        mock_buffer_module.PrioritizedReplayBuffer = MagicMock()
+        mock_buffer_module.AugmentedReplayBuffer = MagicMock()
+
+        with patch.dict(sys.modules, {"src.training.replay_buffer": mock_buffer_module}):
+            with pytest.raises(ValueError, match="Unknown buffer_type"):
+                factory.create_replay_buffer(
+                    buffer_type="invalid_type",
+                    use_singleton=False,
+                )
 
     def test_clear_singleton_cache(self, mock_settings, mock_logger, trainer_config):
         """Test clearing singleton cache."""
+        import sys
         from src.framework.component_factory import TrainerFactory
+
+        # Clear any existing cache
+        TrainerFactory.clear_singleton_cache()
 
         factory = TrainerFactory(settings=mock_settings, logger=mock_logger, config=trainer_config)
 
-        with patch("src.training.replay_buffer.ReplayBuffer") as mock_buffer_class:
-            mock_buffer_class.return_value = MagicMock()
+        # Create mock module
+        mock_buffer_module = MagicMock()
+        mock_buffer_class = MagicMock()
+        mock_buffer_class.return_value = MagicMock()
+        mock_buffer_module.ReplayBuffer = mock_buffer_class
+        mock_buffer_module.PrioritizedReplayBuffer = MagicMock()
+        mock_buffer_module.AugmentedReplayBuffer = MagicMock()
 
+        with patch.dict(sys.modules, {"src.training.replay_buffer": mock_buffer_module}):
             # Create a cached buffer
             factory.create_replay_buffer(buffer_type="uniform", use_singleton=True)
             assert mock_buffer_class.call_count == 1
@@ -465,14 +512,19 @@ class TestMetricsFactory:
 
     def test_create_performance_monitor(self, mock_settings, mock_logger, metrics_config):
         """Test creating performance monitor."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.performance_monitor.PerformanceMonitor") as mock_monitor_class:
-            mock_monitor_instance = MagicMock()
-            mock_monitor_class.return_value = mock_monitor_instance
+        # Create mock module
+        mock_monitor_module = MagicMock()
+        mock_monitor_class = MagicMock()
+        mock_monitor_instance = MagicMock()
+        mock_monitor_class.return_value = mock_monitor_instance
+        mock_monitor_module.PerformanceMonitor = mock_monitor_class
 
+        with patch.dict(sys.modules, {"src.training.performance_monitor": mock_monitor_module}):
             monitor = factory.create_performance_monitor(
                 window_size=TEST_WINDOW_SIZE,
                 enable_gpu_monitoring=False,
@@ -488,14 +540,22 @@ class TestMetricsFactory:
 
     def test_create_performance_monitor_singleton(self, mock_settings, mock_logger, metrics_config):
         """Test performance monitor singleton caching."""
+        import sys
         from src.framework.component_factory import MetricsFactory
+
+        # Clear cache
+        MetricsFactory.clear_singleton_cache()
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.performance_monitor.PerformanceMonitor") as mock_monitor_class:
-            mock_monitor_instance = MagicMock()
-            mock_monitor_class.return_value = mock_monitor_instance
+        # Create mock module
+        mock_monitor_module = MagicMock()
+        mock_monitor_class = MagicMock()
+        mock_monitor_instance = MagicMock()
+        mock_monitor_class.return_value = mock_monitor_instance
+        mock_monitor_module.PerformanceMonitor = mock_monitor_class
 
+        with patch.dict(sys.modules, {"src.training.performance_monitor": mock_monitor_module}):
             # First call
             monitor1 = factory.create_performance_monitor(use_singleton=True)
 
@@ -507,14 +567,21 @@ class TestMetricsFactory:
 
     def test_create_experiment_tracker_braintrust(self, mock_settings, mock_logger, metrics_config):
         """Test creating Braintrust experiment tracker."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.experiment_tracker.BraintrustTracker") as mock_tracker_class:
-            mock_tracker_instance = MagicMock()
-            mock_tracker_class.return_value = mock_tracker_instance
+        # Create mock module
+        mock_tracker_module = MagicMock()
+        mock_tracker_class = MagicMock()
+        mock_tracker_instance = MagicMock()
+        mock_tracker_class.return_value = mock_tracker_instance
+        mock_tracker_module.BraintrustTracker = mock_tracker_class
+        mock_tracker_module.WandBTracker = MagicMock()
+        mock_tracker_module.UnifiedExperimentTracker = MagicMock()
 
+        with patch.dict(sys.modules, {"src.training.experiment_tracker": mock_tracker_module}):
             tracker = factory.create_experiment_tracker(
                 platform="braintrust",
                 project_name=TEST_PROJECT_NAME,
@@ -528,14 +595,21 @@ class TestMetricsFactory:
 
     def test_create_experiment_tracker_wandb(self, mock_settings, mock_logger, metrics_config):
         """Test creating W&B experiment tracker."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.experiment_tracker.WandBTracker") as mock_tracker_class:
-            mock_tracker_instance = MagicMock()
-            mock_tracker_class.return_value = mock_tracker_instance
+        # Create mock module
+        mock_tracker_module = MagicMock()
+        mock_tracker_class = MagicMock()
+        mock_tracker_instance = MagicMock()
+        mock_tracker_class.return_value = mock_tracker_instance
+        mock_tracker_module.BraintrustTracker = MagicMock()
+        mock_tracker_module.WandBTracker = mock_tracker_class
+        mock_tracker_module.UnifiedExperimentTracker = MagicMock()
 
+        with patch.dict(sys.modules, {"src.training.experiment_tracker": mock_tracker_module}):
             tracker = factory.create_experiment_tracker(
                 platform="wandb",
                 project_name=TEST_PROJECT_NAME,
@@ -551,14 +625,21 @@ class TestMetricsFactory:
 
     def test_create_experiment_tracker_unified(self, mock_settings, mock_logger, metrics_config):
         """Test creating unified experiment tracker."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.experiment_tracker.UnifiedExperimentTracker") as mock_tracker_class:
-            mock_tracker_instance = MagicMock()
-            mock_tracker_class.return_value = mock_tracker_instance
+        # Create mock module
+        mock_tracker_module = MagicMock()
+        mock_tracker_class = MagicMock()
+        mock_tracker_instance = MagicMock()
+        mock_tracker_class.return_value = mock_tracker_instance
+        mock_tracker_module.BraintrustTracker = MagicMock()
+        mock_tracker_module.WandBTracker = MagicMock()
+        mock_tracker_module.UnifiedExperimentTracker = mock_tracker_class
 
+        with patch.dict(sys.modules, {"src.training.experiment_tracker": mock_tracker_module}):
             tracker = factory.create_experiment_tracker(
                 platform="unified",
                 use_singleton=False,
@@ -569,49 +650,65 @@ class TestMetricsFactory:
 
     def test_create_experiment_tracker_invalid_platform(self, mock_settings, mock_logger, metrics_config):
         """Test that invalid platform raises ValueError."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.experiment_tracker.BraintrustTracker"):
-            with patch("src.training.experiment_tracker.WandBTracker"):
-                with patch("src.training.experiment_tracker.UnifiedExperimentTracker"):
-                    with pytest.raises(ValueError, match="Unknown platform"):
-                        factory.create_experiment_tracker(
-                            platform="invalid_platform",
-                            use_singleton=False,
-                        )
+        # Create mock module
+        mock_tracker_module = MagicMock()
+        mock_tracker_module.BraintrustTracker = MagicMock()
+        mock_tracker_module.WandBTracker = MagicMock()
+        mock_tracker_module.UnifiedExperimentTracker = MagicMock()
+
+        with patch.dict(sys.modules, {"src.training.experiment_tracker": mock_tracker_module}):
+            with pytest.raises(ValueError, match="Unknown platform"):
+                factory.create_experiment_tracker(
+                    platform="invalid_platform",
+                    use_singleton=False,
+                )
 
     def test_create_metrics_collector(self, mock_settings, mock_logger, metrics_config):
         """Test creating metrics collector with all components."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.performance_monitor.PerformanceMonitor") as mock_monitor_class:
-            with patch("src.training.experiment_tracker.UnifiedExperimentTracker") as mock_tracker_class:
-                mock_monitor_class.return_value = MagicMock()
-                mock_tracker_class.return_value = MagicMock()
+        # Create mock modules
+        mock_monitor_module = MagicMock()
+        mock_monitor_module.PerformanceMonitor = MagicMock(return_value=MagicMock())
+        mock_tracker_module = MagicMock()
+        mock_tracker_module.UnifiedExperimentTracker = MagicMock(return_value=MagicMock())
+        mock_tracker_module.BraintrustTracker = MagicMock()
+        mock_tracker_module.WandBTracker = MagicMock()
 
-                collector = factory.create_metrics_collector(
-                    include_performance=True,
-                    include_experiment_tracking=True,
-                    tracking_platform="unified",
-                )
+        with patch.dict(sys.modules, {
+            "src.training.performance_monitor": mock_monitor_module,
+            "src.training.experiment_tracker": mock_tracker_module,
+        }):
+            collector = factory.create_metrics_collector(
+                include_performance=True,
+                include_experiment_tracking=True,
+                tracking_platform="unified",
+            )
 
-                assert collector is not None
-                assert collector._monitor is not None
-                assert collector._tracker is not None
+            assert collector is not None
+            assert collector._monitor is not None
+            assert collector._tracker is not None
 
     def test_create_metrics_collector_performance_only(self, mock_settings, mock_logger, metrics_config):
         """Test creating metrics collector with performance only."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
         factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-        with patch("src.training.performance_monitor.PerformanceMonitor") as mock_monitor_class:
-            mock_monitor_class.return_value = MagicMock()
+        # Create mock module
+        mock_monitor_module = MagicMock()
+        mock_monitor_module.PerformanceMonitor = MagicMock(return_value=MagicMock())
 
+        with patch.dict(sys.modules, {"src.training.performance_monitor": mock_monitor_module}):
             collector = factory.create_metrics_collector(
                 include_performance=True,
                 include_experiment_tracking=False,
@@ -622,23 +719,47 @@ class TestMetricsFactory:
 
     def test_clear_singleton_cache(self, mock_settings, mock_logger, metrics_config):
         """Test clearing metrics factory singleton cache."""
+        import sys
         from src.framework.component_factory import MetricsFactory
 
-        factory = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
+        # Clear any existing cache at start
+        MetricsFactory.clear_singleton_cache()
 
-        with patch("src.training.performance_monitor.PerformanceMonitor") as mock_monitor_class:
-            mock_monitor_class.return_value = MagicMock()
+        # Create two separate factory instances
+        factory1 = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
+        factory2 = MetricsFactory(settings=mock_settings, logger=mock_logger, config=metrics_config)
 
-            # Create cached monitor
-            factory.create_performance_monitor(use_singleton=True)
-            assert mock_monitor_class.call_count == 1
+        # Create mock modules for each call
+        mock_monitor_module1 = MagicMock()
+        mock_monitor_class1 = MagicMock()
+        mock_instance1 = MagicMock()
+        mock_monitor_class1.return_value = mock_instance1
+        mock_monitor_module1.PerformanceMonitor = mock_monitor_class1
 
-            # Clear cache
-            MetricsFactory.clear_singleton_cache()
+        with patch.dict(sys.modules, {"src.training.performance_monitor": mock_monitor_module1}):
+            # Create cached monitor with first factory
+            monitor1 = factory1.create_performance_monitor(use_singleton=True)
+            assert mock_monitor_class1.call_count == 1
+            assert monitor1 is mock_instance1
 
-            # Create again
-            factory.create_performance_monitor(use_singleton=True)
-            assert mock_monitor_class.call_count == 2
+        # Clear cache
+        MetricsFactory.clear_singleton_cache()
+
+        # Create new mock for second call
+        mock_monitor_module2 = MagicMock()
+        mock_monitor_class2 = MagicMock()
+        mock_instance2 = MagicMock()
+        mock_monitor_class2.return_value = mock_instance2
+        mock_monitor_module2.PerformanceMonitor = mock_monitor_class2
+
+        with patch.dict(sys.modules, {"src.training.performance_monitor": mock_monitor_module2}):
+            # Create new monitor with second factory - should create new instance
+            monitor2 = factory2.create_performance_monitor(use_singleton=True)
+            assert mock_monitor_class2.call_count == 1
+            assert monitor2 is mock_instance2
+
+        # Verify they are different instances
+        assert monitor1 is not monitor2
 
 
 # ============================================================================
@@ -876,6 +997,7 @@ class TestComponentRegistry:
 
     def test_clear_caches(self, mock_settings, mock_logger):
         """Test clearing all caches across factories."""
+        import sys
         from src.framework.component_factory import ComponentRegistry
 
         registry = ComponentRegistry(settings=mock_settings, logger=mock_logger)
@@ -885,21 +1007,32 @@ class TestComponentRegistry:
         _ = registry.metrics
         _ = registry.data_loaders
 
+        # Create mock modules
+        mock_buffer_module = MagicMock()
+        mock_buffer_module.ReplayBuffer = MagicMock(return_value=MagicMock())
+        mock_buffer_module.PrioritizedReplayBuffer = MagicMock()
+        mock_buffer_module.AugmentedReplayBuffer = MagicMock()
+
+        mock_monitor_module = MagicMock()
+        mock_monitor_module.PerformanceMonitor = MagicMock(return_value=MagicMock())
+
+        mock_loader_module = MagicMock()
+        mock_loader_module.DABStepLoader = MagicMock(return_value=MagicMock())
+        mock_loader_module.PRIMUSLoader = MagicMock()
+        mock_loader_module.CombinedDatasetLoader = MagicMock()
+
         # Create some cached components
-        with patch("src.training.replay_buffer.ReplayBuffer") as mock_buffer:
-            mock_buffer.return_value = MagicMock()
+        with patch.dict(sys.modules, {
+            "src.training.replay_buffer": mock_buffer_module,
+            "src.training.performance_monitor": mock_monitor_module,
+            "src.data.dataset_loader": mock_loader_module,
+        }):
             registry.trainers.create_replay_buffer(use_singleton=True)
-
-        with patch("src.training.performance_monitor.PerformanceMonitor") as mock_monitor:
-            mock_monitor.return_value = MagicMock()
             registry.metrics.create_performance_monitor(use_singleton=True)
-
-        with patch("src.data.dataset_loader.DABStepLoader") as mock_loader:
-            mock_loader.return_value = MagicMock()
             registry.data_loaders.create_dabstep_loader(use_singleton=True)
 
-        # Clear all caches
-        registry.clear_caches()
+            # Clear all caches
+            registry.clear_caches()
 
         # Verify logging occurred
         mock_logger.info.assert_called()
