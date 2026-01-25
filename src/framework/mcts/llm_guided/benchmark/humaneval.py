@@ -11,9 +11,10 @@ from __future__ import annotations
 
 import json
 import re
+from collections.abc import Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from src.observability.logging import get_structured_logger
 
@@ -183,6 +184,8 @@ class HumanEvalBenchmark:
 
     def _load_problems(self) -> None:
         """Load problems from JSONL file."""
+        assert self._data_path is not None, "Data path must be set to load problems"
+
         if not self._data_path.exists():
             logger.warning(f"HumanEval data not found: {self._data_path}")
             self._create_sample_problems()
@@ -208,21 +211,21 @@ class HumanEvalBenchmark:
     True
     """
 ''',
-                canonical_solution='''    for i, num1 in enumerate(numbers):
+                canonical_solution="""    for i, num1 in enumerate(numbers):
         for j, num2 in enumerate(numbers):
             if i != j and abs(num1 - num2) < threshold:
                 return True
     return False
-''',
+""",
                 entry_point="has_close_elements",
-                test='''
+                test="""
 def check(candidate):
     assert candidate([1.0, 2.0, 3.0], 0.5) == False
     assert candidate([1.0, 2.8, 3.0, 4.0, 5.0, 2.0], 0.3) == True
     assert candidate([1.0, 2.0, 3.9, 4.0, 5.0, 2.2], 0.05) == True
     assert candidate([1.0, 2.0, 5.9, 4.0, 5.0], 0.95) == True
     assert candidate([1.0, 2.0, 5.9, 4.0, 5.0], 0.8) == False
-''',
+""",
             ),
             HumanEvalProblem(
                 task_id="HumanEval/1",
@@ -235,7 +238,7 @@ def check(candidate):
     ['()', '(())', '(()())']
     """
 ''',
-                canonical_solution='''    result = []
+                canonical_solution="""    result = []
     current_string = []
     current_depth = 0
     for c in paren_string:
@@ -249,14 +252,14 @@ def check(candidate):
                 result.append(''.join(current_string))
                 current_string = []
     return result
-''',
+""",
                 entry_point="separate_paren_groups",
-                test='''
+                test="""
 def check(candidate):
     assert candidate('( ) (( )) (( )( ))') == ['()', '(())', '(()())']
     assert candidate('(()(()))') == ['(()(()))']
     assert candidate('( ) ( )') == ['()', '()']
-''',
+""",
             ),
             HumanEvalProblem(
                 task_id="HumanEval/2",
@@ -268,15 +271,15 @@ def check(candidate):
     0.5
     """
 ''',
-                canonical_solution='''    return number % 1.0
-''',
+                canonical_solution="""    return number % 1.0
+""",
                 entry_point="truncate_number",
-                test='''
+                test="""
 def check(candidate):
     assert candidate(3.5) == 0.5
     assert abs(candidate(1.33) - 0.33) < 1e-6
     assert abs(candidate(123.456) - 0.456) < 1e-6
-''',
+""",
             ),
             HumanEvalProblem(
                 task_id="HumanEval/3",
@@ -290,22 +293,22 @@ def check(candidate):
     True
     """
 ''',
-                canonical_solution='''    balance = 0
+                canonical_solution="""    balance = 0
     for op in operations:
         balance += op
         if balance < 0:
             return True
     return False
-''',
+""",
                 entry_point="below_zero",
-                test='''
+                test="""
 def check(candidate):
     assert candidate([]) == False
     assert candidate([1, 2, -3, 1, 2, -3]) == False
     assert candidate([1, 2, -4, 5, 6]) == True
     assert candidate([1, -1, 2, -2, 5, -5, 4, -4]) == False
     assert candidate([1, -1, 2, -2, 5, -5, 4, -5]) == True
-''',
+""",
             ),
             HumanEvalProblem(
                 task_id="HumanEval/4",
@@ -317,15 +320,15 @@ def check(candidate):
     1.0
     """
 ''',
-                canonical_solution='''    mean = sum(numbers) / len(numbers)
+                canonical_solution="""    mean = sum(numbers) / len(numbers)
     return sum(abs(x - mean) for x in numbers) / len(numbers)
-''',
+""",
                 entry_point="mean_absolute_deviation",
-                test='''
+                test="""
 def check(candidate):
     assert abs(candidate([1.0, 2.0, 3.0, 4.0]) - 1.0) < 1e-6
     assert abs(candidate([1.0, 2.0, 3.0, 4.0, 5.0]) - 1.2) < 1e-6
-''',
+""",
             ),
         ]
 

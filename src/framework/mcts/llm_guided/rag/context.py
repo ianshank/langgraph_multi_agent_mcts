@@ -8,7 +8,7 @@ to augment LLM prompts during MCTS search.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import Any, Protocol
 
 from src.config.settings import get_settings
 from src.observability.logging import get_structured_logger
@@ -213,9 +213,11 @@ class RAGContextProvider:
 
             # Check for Pinecone
             if settings.PINECONE_API_KEY:
-                from src.storage.pinecone_store import PineconeStore
+                from src.storage.pinecone_store import PineconeVectorStore
 
-                return PineconeStore()
+                store = PineconeVectorStore()
+                # Cast to protocol (PineconeVectorStore should implement query method)
+                return store  # type: ignore[return-value]
 
             logger.debug("No vector store configured, RAG will use local fallback")
             return None
@@ -309,6 +311,8 @@ class RAGContextProvider:
         tags: list[str] | None,
     ) -> list[dict[str, Any]]:
         """Retrieve results from vector store."""
+        assert self._vector_store is not None, "Vector store must be initialized"
+
         filter_dict = None
         if tags:
             filter_dict = {"tags": {"$in": tags}}

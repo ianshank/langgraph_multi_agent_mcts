@@ -16,14 +16,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
-from src.config.settings import get_settings
 from src.observability.logging import get_correlation_id, get_structured_logger
 
 from .humaneval import HumanEvalBenchmark, HumanEvalProblem
 from .metrics import BenchmarkMetrics, ProblemResult, aggregate_metrics
 
 if TYPE_CHECKING:
-    from ..engine import LLMGuidedMCTSEngine, MCTSSearchResult
+    pass
 
 logger = get_structured_logger(__name__)
 
@@ -344,7 +343,7 @@ class BenchmarkRunner:
                 if hasattr(search_result, "max_depth"):
                     result.max_depth_reached = max(result.max_depth_reached, search_result.max_depth)
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 result.timeout_errors += 1
                 result.error_messages.append(f"Sample {sample_idx + 1} timed out")
 

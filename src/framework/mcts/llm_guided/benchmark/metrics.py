@@ -9,7 +9,6 @@ Provides:
 
 from __future__ import annotations
 
-import math
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -259,23 +258,25 @@ def compute_pass_at_k(
     if n - c < k:
         return 1.0
 
-    return 1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1))
+    return float(1.0 - np.prod(1.0 - k / np.arange(n - c + 1, n + 1)))
 
 
 def compute_pass_at_k_for_problems(
     results: list[ProblemResult],
-    k_values: list[int] = [1, 5, 10],
+    k_values: list[int] | None = None,
 ) -> dict[int, float]:
     """
     Compute pass@k for a set of problem results.
 
     Args:
         results: List of problem results
-        k_values: Values of k to compute
+        k_values: Values of k to compute (default: [1, 5, 10])
 
     Returns:
         Dictionary mapping k to pass@k value
     """
+    if k_values is None:
+        k_values = [1, 5, 10]
     pass_at_k = {}
 
     for k in k_values:
@@ -331,18 +332,20 @@ def compute_execution_accuracy(results: list[ProblemResult]) -> tuple[float, flo
 
 def aggregate_metrics(
     results: list[ProblemResult],
-    k_values: list[int] = [1, 5, 10],
+    k_values: list[int] | None = None,
 ) -> BenchmarkMetrics:
     """
     Aggregate metrics from problem results.
 
     Args:
         results: List of problem results
-        k_values: Values of k for pass@k computation
+        k_values: Values of k for pass@k computation (default: [1, 5, 10])
 
     Returns:
         Aggregated BenchmarkMetrics
     """
+    if k_values is None:
+        k_values = [1, 5, 10]
     if not results:
         return BenchmarkMetrics()
 
@@ -369,11 +372,8 @@ def aggregate_metrics(
     avg_tree_size = np.mean([r.tree_size for r in results]) if results else 0.0
     avg_max_depth = np.mean([r.max_depth_reached for r in results]) if results else 0.0
 
-    # By difficulty
-    by_difficulty: dict[str, dict[str, float]] = {}
-    for result in results:
-        # Would need difficulty info from problem - skipping for now
-        pass
+    # Note: By difficulty metrics would require problem difficulty info
+    # which is not available from ProblemResult alone
 
     return BenchmarkMetrics(
         total_problems=total_problems,

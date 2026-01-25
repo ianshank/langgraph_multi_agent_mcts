@@ -212,7 +212,9 @@ class MetricsAccumulator:
         self._value_squared_error += np.sum(diff**2)
         self._value_absolute_error += np.sum(np.abs(diff))
 
-    def compute(self, learning_rate: float = 0.0, gradient_norm: float = 0.0, epoch: int = 0, step: int = 0) -> TrainingMetrics:
+    def compute(
+        self, learning_rate: float = 0.0, gradient_norm: float = 0.0, epoch: int = 0, step: int = 0
+    ) -> TrainingMetrics:
         """Compute final metrics."""
         if self._num_samples == 0:
             return TrainingMetrics()
@@ -281,9 +283,9 @@ def compute_policy_accuracy(
         num_valid = valid.sum().item()
         if num_valid == 0:
             return 0.0
-        return correct.sum().item() / num_valid
+        return float(correct.sum().item() / num_valid)
 
-    return correct.float().mean().item()
+    return float(correct.float().mean().item())
 
 
 def compute_value_mse(
@@ -303,7 +305,7 @@ def compute_value_mse(
     if not _TORCH_AVAILABLE:
         raise ImportError("PyTorch is required")
 
-    return ((predictions - targets) ** 2).mean().item()
+    return float(((predictions - targets) ** 2).mean().item())
 
 
 def compute_kl_divergence(
@@ -352,7 +354,7 @@ def compute_kl_divergence(
     # KL = cross_entropy - target_entropy
     kl = cross_entropy - target_entropy
 
-    return kl.mean().item()
+    return float(kl.mean().item())
 
 
 def compute_policy_entropy(
@@ -381,4 +383,4 @@ def compute_policy_entropy(
     else:
         entropy = entropy.sum(dim=-1)
 
-    return entropy.mean().item()
+    return float(entropy.mean().item())

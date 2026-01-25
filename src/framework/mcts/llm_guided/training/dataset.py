@@ -11,9 +11,9 @@ Provides:
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Iterator
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 
@@ -32,7 +32,7 @@ except ImportError:
     DataLoader = None
 
 if TYPE_CHECKING:
-    from ..data_collector import TrainingExample
+    pass
 
 logger = get_structured_logger(__name__)
 
@@ -249,9 +249,8 @@ class MCTSDataset(Dataset if _TORCH_AVAILABLE else object):
                 if "_metadata" in data:
                     episode_metadata = data["_metadata"]
                     # Filter by success if configured
-                    if self._config.only_successful_episodes:
-                        if not episode_metadata.get("solution_found", False):
-                            return []  # Skip entire episode
+                    if self._config.only_successful_episodes and not episode_metadata.get("solution_found", False):
+                        return []  # Skip entire episode
                     continue
 
                 # Apply filters
@@ -419,7 +418,7 @@ class MCTSDataset(Dataset if _TORCH_AVAILABLE else object):
         visits = [e.visits for e in self._examples]
         outcomes = [e.outcome for e in self._examples]
         q_values = [e.q_value for e in self._examples]
-        episode_ids = set(e.episode_id for e in self._examples)
+        episode_ids = {e.episode_id for e in self._examples}
 
         return {
             "num_examples": len(self._examples),

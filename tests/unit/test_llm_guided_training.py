@@ -15,8 +15,16 @@ import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-import numpy as np
 import pytest
+
+# Check for numpy availability
+try:
+    import numpy as np
+
+    _NUMPY_AVAILABLE = True
+except ImportError:
+    _NUMPY_AVAILABLE = False
+    np = None  # type: ignore
 
 # Check for PyTorch availability
 try:
@@ -26,8 +34,11 @@ try:
 except ImportError:
     _TORCH_AVAILABLE = False
 
-# Skip all tests if PyTorch not available
-pytestmark = pytest.mark.skipif(not _TORCH_AVAILABLE, reason="PyTorch not available")
+# Skip all tests if PyTorch or numpy not available
+pytestmark = pytest.mark.skipif(
+    not _TORCH_AVAILABLE or not _NUMPY_AVAILABLE,
+    reason="PyTorch and numpy required for training tests"
+)
 
 
 class TestMCTSDatasetConfig:

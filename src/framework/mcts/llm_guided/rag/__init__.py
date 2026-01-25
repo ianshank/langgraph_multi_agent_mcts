@@ -7,9 +7,9 @@ Provides:
 """
 
 from .context import (
+    RAGContext,
     RAGContextProvider,
     RAGContextProviderConfig,
-    RAGContext,
     create_rag_provider,
 )
 from .prompts import (

@@ -9,23 +9,16 @@ Provides:
 
 from __future__ import annotations
 
-import json
-import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Protocol
+from typing import TYPE_CHECKING, Any
 
-from src.config.settings import get_settings
 from src.observability.logging import get_correlation_id, get_structured_logger
 
 from .metrics import (
     MetricsAccumulator,
     TrainingMetrics,
-    compute_kl_divergence,
-    compute_policy_accuracy,
-    compute_policy_entropy,
-    compute_value_mse,
 )
 
 # Optional PyTorch imports
@@ -473,7 +466,11 @@ class DistillationTrainer:
 
         accumulator = MetricsAccumulator()
 
-        for batch_idx, batch in enumerate(train_loader):
+        # These should be set by train() before this method is called
+        assert self._optimizer is not None, "Optimizer must be initialized"
+        assert self._scheduler is not None, "Scheduler must be initialized"
+
+        for _batch_idx, batch in enumerate(train_loader):
             batch = batch.to(self._device)
 
             # Forward pass

@@ -13,6 +13,17 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+# Check for numpy availability (required by parent modules)
+try:
+    import numpy as np
+
+    _NUMPY_AVAILABLE = True
+except ImportError:
+    _NUMPY_AVAILABLE = False
+
+# Skip all tests if numpy not available (required by parent MCTS modules)
+pytestmark = pytest.mark.skipif(not _NUMPY_AVAILABLE, reason="numpy not available")
+
 
 class TestRAGContext:
     """Tests for RAGContext."""

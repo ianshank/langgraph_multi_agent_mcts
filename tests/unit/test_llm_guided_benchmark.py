@@ -14,8 +14,19 @@ import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
-import numpy as np
 import pytest
+
+# Check for numpy availability
+try:
+    import numpy as np
+
+    _NUMPY_AVAILABLE = True
+except ImportError:
+    _NUMPY_AVAILABLE = False
+    np = None  # type: ignore
+
+# Skip all tests if numpy not available (required for metrics)
+pytestmark = pytest.mark.skipif(not _NUMPY_AVAILABLE, reason="numpy not available")
 
 
 class TestHumanEvalProblem:

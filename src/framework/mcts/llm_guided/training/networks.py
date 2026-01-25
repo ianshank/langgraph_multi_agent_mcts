@@ -11,7 +11,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from src.observability.logging import get_structured_logger
 
@@ -29,7 +29,7 @@ except ImportError:
     F = None
 
 if TYPE_CHECKING:
-    from .dataset import TrainingBatch
+    pass
 
 logger = get_structured_logger(__name__)
 
