@@ -61,7 +61,11 @@ class MCTSDatasetConfig:
 
     # Augmentation
     shuffle_actions: bool = False
-    """Shuffle action order during training."""
+    """Shuffle action order during training.
+
+    Note: This is a placeholder for future data augmentation.
+    Currently not implemented - actions maintain their sorted order.
+    """
 
     # Filtering
     min_visits: int = 1

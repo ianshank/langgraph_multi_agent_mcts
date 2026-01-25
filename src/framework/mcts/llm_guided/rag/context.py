@@ -266,10 +266,15 @@ class RAGContextProvider:
                 results = await self._retrieve_from_vector_store(query, tags)
                 context = self._process_results(results, query)
             except Exception as e:
-                logger.error(f"Vector store retrieval failed: {e}")
-                # Fall through to local fallback
+                logger.error(
+                    f"Vector store retrieval failed, using fallback context: {e}",
+                    extra={"error_type": type(e).__name__, "query_preview": query[:100]},
+                )
+                # Explicitly use fallback on error
+                context = self._get_fallback_context(problem)
         else:
-            # Use local fallback
+            # Use local fallback when no vector store is configured
+            logger.debug("No vector store configured, using fallback context")
             context = self._get_fallback_context(problem)
 
         context.retrieval_time_ms = (time.perf_counter() - start_time) * 1000

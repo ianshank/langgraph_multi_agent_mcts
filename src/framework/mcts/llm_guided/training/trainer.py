@@ -345,6 +345,9 @@ class DistillationTrainer:
         if self._value_network is not None:
             params.extend(self._value_network.parameters())
 
+        if not params:
+            raise ValueError("At least one network (policy_network or value_network) must be provided for training")
+
         return optim.AdamW(
             params,
             lr=self._config.learning_rate,
@@ -353,11 +356,13 @@ class DistillationTrainer:
 
     def _create_scheduler(self, num_training_steps: int) -> optim.lr_scheduler._LRScheduler:
         """Create learning rate scheduler."""
+        # Clamp pct_start to [0, 1] to handle cases where warmup_steps > total_steps
+        pct_start = min(1.0, max(0.0, self._config.warmup_steps / max(num_training_steps, 1)))
         return optim.lr_scheduler.OneCycleLR(
             self._optimizer,
             max_lr=self._config.learning_rate,
             total_steps=num_training_steps,
-            pct_start=self._config.warmup_steps / max(num_training_steps, 1),
+            pct_start=pct_start,
         )
 
     def train(
@@ -533,13 +538,16 @@ class DistillationTrainer:
         """Compute loss for a batch."""
         policy_loss = torch.tensor(0.0, device=self._device)
         value_loss = torch.tensor(0.0, device=self._device)
+        batch_size = len(batch.episode_ids)
+        value_targets = batch.outcome if self._config.use_outcome_value else batch.llm_value
         batch_metrics: dict[str, Any] = {
             "policy_loss": 0.0,
             "value_loss": 0.0,
             "policy_correct": 0,
             "policy_top3_correct": 0,
-            "value_predictions": torch.zeros(1),
-            "value_targets": batch.outcome if self._config.use_outcome_value else batch.llm_value,
+            # Initialize with zeros matching batch size for proper metric aggregation
+            "value_predictions": torch.zeros(batch_size, device=self._device),
+            "value_targets": value_targets,
         }
 
         # Policy loss
@@ -599,10 +607,26 @@ class DistillationTrainer:
         target_probs: torch.Tensor,
         action_mask: torch.Tensor,
     ) -> torch.Tensor:
-        """Compute KL divergence loss."""
-        # Cross entropy: -sum(target * log_pred)
+        """
+        Compute cross-entropy loss between predicted and target policies.
+
+        Uses cross-entropy H(target, pred) = -sum(target * log_pred) which is
+        equivalent to KL divergence up to the target entropy constant.
+
+        The loss is normalized by the number of valid actions per sample to ensure
+        consistent gradient magnitudes regardless of action space size.
+
+        Args:
+            log_probs: Log probabilities from policy network [batch, actions]
+            target_probs: Target probability distribution [batch, actions]
+            action_mask: Mask for valid actions [batch, actions]
+
+        Returns:
+            Mean cross-entropy loss across the batch
+        """
         cross_entropy = -(target_probs * log_probs)
         cross_entropy = cross_entropy * action_mask
+        # Normalize by number of valid actions per sample for consistent scaling
         cross_entropy = cross_entropy.sum(dim=-1) / action_mask.sum(dim=-1).clamp(min=1e-8)
         return cross_entropy.mean()
 

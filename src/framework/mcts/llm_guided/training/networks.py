@@ -106,6 +106,27 @@ class PolicyNetworkConfig:
     temperature: float = 1.0
     """Temperature for softmax."""
 
+    def validate(self) -> None:
+        """Validate configuration."""
+        errors = []
+
+        if self.max_actions < 1:
+            errors.append("max_actions must be >= 1")
+        if self.hidden_dim < 1:
+            errors.append("hidden_dim must be >= 1")
+        if self.num_layers < 1:
+            errors.append("num_layers must be >= 1")
+        if self.dropout < 0 or self.dropout > 1:
+            errors.append("dropout must be in [0, 1]")
+        if self.temperature <= 0:
+            errors.append("temperature must be > 0")
+
+        # Also validate encoder config
+        self.encoder_config.validate()
+
+        if errors:
+            raise ValueError("Invalid PolicyNetworkConfig:\n" + "\n".join(f"  - {e}" for e in errors))
+
 
 @dataclass
 class ValueNetworkConfig:
@@ -132,6 +153,25 @@ class ValueNetworkConfig:
 
     max_value: float = 1.0
     """Maximum value output."""
+
+    def validate(self) -> None:
+        """Validate configuration."""
+        errors = []
+
+        if self.hidden_dim < 1:
+            errors.append("hidden_dim must be >= 1")
+        if self.num_layers < 1:
+            errors.append("num_layers must be >= 1")
+        if self.dropout < 0 or self.dropout > 1:
+            errors.append("dropout must be in [0, 1]")
+        if self.min_value >= self.max_value:
+            errors.append("min_value must be less than max_value")
+
+        # Also validate encoder config
+        self.encoder_config.validate()
+
+        if errors:
+            raise ValueError("Invalid ValueNetworkConfig:\n" + "\n".join(f"  - {e}" for e in errors))
 
 
 def _check_torch() -> None:
@@ -289,6 +329,7 @@ class PolicyNetwork(nn.Module if _TORCH_AVAILABLE else object):
         super().__init__()
 
         self._config = config or PolicyNetworkConfig()
+        self._config.validate()
 
         # Encoder for code and problem
         self.code_encoder = CodeEncoder(self._config.encoder_config)
@@ -412,6 +453,7 @@ class ValueNetwork(nn.Module if _TORCH_AVAILABLE else object):
         super().__init__()
 
         self._config = config or ValueNetworkConfig()
+        self._config.validate()
 
         # Encoder for code and problem
         self.code_encoder = CodeEncoder(self._config.encoder_config)
