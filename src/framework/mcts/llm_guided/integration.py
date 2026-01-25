@@ -876,7 +876,17 @@ class UnifiedSearchOrchestrator:
 
         # Step 1: Route to appropriate agent
         routing_decision = None
-        if self._config.use_meta_controller:
+        if "force_agent" in ctx:
+            # Force specific agent if requested (e.g. for parallel search)
+            forced_agent = AgentType(ctx["force_agent"])
+            routing_decision = RoutingDecision(
+                selected_agent=forced_agent,
+                confidence=1.0,
+                probabilities={forced_agent.value: 1.0},
+                reasoning=f"Forced agent selection: {forced_agent.value}",
+            )
+            self._logger.info(f"Forced routing to {forced_agent.value}")
+        elif self._config.use_meta_controller:
             routing_decision = self._router.route(problem, ctx)
             self._logger.info(
                 f"Routed to {routing_decision.selected_agent.value} (confidence: {routing_decision.confidence:.2f})"
@@ -972,6 +982,7 @@ class UnifiedSearchOrchestrator:
             # Ensure we close the episode even on error
             if data_collector:
                 import contextlib
+
                 with contextlib.suppress(Exception):
                     data_collector.finalize_episode(outcome=-1.0)
             raise e

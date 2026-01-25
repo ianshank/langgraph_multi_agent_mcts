@@ -21,6 +21,7 @@ from typing import TYPE_CHECKING, Any
 from src.observability.logging import get_correlation_id, get_structured_logger
 
 if TYPE_CHECKING:
+    from .executor import CodeExecutionResult
     from .node import LLMGuidedMCTSNode
 
 logger = get_structured_logger(__name__)
@@ -154,6 +155,9 @@ class EpisodeMetadata:
 
     correlation_id: str = ""
     """Correlation ID for tracing."""
+
+    test_results: CodeExecutionResult | None = None
+    """Final test execution results."""
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
@@ -399,6 +403,7 @@ class TrainingDataCollector:
         total_iterations: int = 0,
         total_llm_calls: int = 0,
         total_tokens: int = 0,
+        test_results: CodeExecutionResult | None = None,
     ) -> str:
         """
         Finalize episode and save training data.
@@ -430,6 +435,7 @@ class TrainingDataCollector:
         self.episode_metadata.solution_code = solution_code
         self.episode_metadata.total_llm_calls = total_llm_calls
         self.episode_metadata.total_tokens = total_tokens
+        self.episode_metadata.test_results = test_results
 
         # Save to file
         filepath = self._save_episode()

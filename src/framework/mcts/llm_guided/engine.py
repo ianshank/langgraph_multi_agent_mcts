@@ -518,6 +518,7 @@ class LLMGuidedMCTSEngine:
                 total_iterations=root.visits,
                 total_llm_calls=self._generator.total_calls + self._reflector.total_calls,
                 total_tokens=self._generator.total_tokens + self._reflector.total_tokens,
+                test_results=final_result,
             )
 
         # Build result

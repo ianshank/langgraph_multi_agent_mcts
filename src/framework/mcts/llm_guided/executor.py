@@ -14,6 +14,7 @@ import ast
 import io
 import multiprocessing
 import signal
+import time
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from typing import Any
@@ -343,6 +344,8 @@ class CodeExecutor:
         # Validate code first
         is_valid, validation_errors = self.validate_code(code)
         if not is_valid:
+            # Check if any validation error looks like a syntax error
+            is_syntax = any("Syntax error" in e for e in validation_errors)
             return CodeExecutionResult(
                 passed=False,
                 num_tests_passed=0,
@@ -351,7 +354,7 @@ class CodeExecutor:
                 stderr="\n".join(validation_errors),
                 errors=validation_errors,
                 execution_time_ms=0.0,
-                syntax_error=True,
+                syntax_error=is_syntax,
             )
 
         if self.use_subprocess:
@@ -515,29 +518,10 @@ class CodeExecutor:
         """Execute code in a separate subprocess for better isolation."""
         import time
 
-        def worker(queue: multiprocessing.Queue, code: str, test_cases: list[str] | None) -> None:
-            """Worker function for subprocess execution."""
-            try:
-                result = self._execute_in_process(code, test_cases, None, time.perf_counter())
-                queue.put(result.to_dict())
-            except Exception as e:
-                queue.put(
-                    {
-                        "passed": False,
-                        "num_tests_passed": 0,
-                        "num_tests_total": len(test_cases) if test_cases else 0,
-                        "stdout": "",
-                        "stderr": str(e),
-                        "errors": [str(e)],
-                        "execution_time_ms": 0.0,
-                        "timed_out": False,
-                        "syntax_error": False,
-                        "test_results": [],
-                    }
-                )
-
         queue: multiprocessing.Queue = multiprocessing.Queue()
-        process = multiprocessing.Process(target=worker, args=(queue, code, test_cases))
+        process = multiprocessing.Process(
+            target=_worker_process, args=(queue, code, test_cases, self.timeout_seconds)
+        )
         process.start()
         process.join(timeout=self.timeout_seconds)
 
@@ -571,6 +555,7 @@ class CodeExecutor:
                 execution_time_ms=execution_time_ms,
             )
 
+
     def run_with_inputs(
         self,
         code: str,
@@ -600,6 +585,36 @@ class CodeExecutor:
             test_cases.append(f"assert {function_name}({args_str}) == {repr(expected)}")
 
         return self.execute(code, test_cases)
+
+
+def _worker_process(
+    queue: multiprocessing.Queue,
+    code: str,
+    test_cases: list[str] | None,
+    timeout_seconds: float,
+) -> None:
+    """Worker function for subprocess execution (must be module-level for pickling)."""
+    try:
+        # Create a temporary executor instance for checking logic
+        # We don't use the full config here, just enough to run _execute_in_process
+        executor = CodeExecutor(timeout_seconds=timeout_seconds)
+        result = executor._execute_in_process(code, test_cases, None, time.perf_counter())
+        queue.put(result.to_dict())
+    except Exception as e:
+        queue.put(
+            {
+                "passed": False,
+                "num_tests_passed": 0,
+                "num_tests_total": len(test_cases) if test_cases else 0,
+                "stdout": "",
+                "stderr": str(e),
+                "errors": [str(e)],
+                "execution_time_ms": 0.0,
+                "timed_out": False,
+                "syntax_error": False,
+                "test_results": [],
+            }
+        )
 
 
 def create_executor_from_config(config: Any) -> CodeExecutor:

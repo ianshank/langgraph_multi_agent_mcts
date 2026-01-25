@@ -453,6 +453,7 @@ class ReflectorAgent(BaseAgent):
         value_match = re.search(r"value[:\s]+([0-9.]+)", response.lower())
         if value_match:
             import contextlib
+
             with contextlib.suppress(ValueError):
                 value = float(value_match.group(1))
 
