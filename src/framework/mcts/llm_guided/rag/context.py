@@ -468,9 +468,10 @@ class RAGContextProvider:
             num_results=len(patterns),
         )
 
-    def clear_cache(self) -> None:
-        """Clear the context cache."""
-        self._cache.clear()
+    async def clear_cache(self) -> None:
+        """Clear the context cache (thread-safe)."""
+        async with self._cache_lock:
+            self._cache.clear()
         logger.debug("RAG context cache cleared")
 
 

@@ -232,14 +232,14 @@ class TestRAGContextProvider:
         # Should only include the high-score result
         assert len(context.similar_solutions) == 1
 
-    def test_clear_cache(self, mock_vector_store):
+    async def test_clear_cache(self, mock_vector_store):
         """Test clearing context cache."""
         from src.framework.mcts.llm_guided.rag.context import RAGContextProvider
 
         provider = RAGContextProvider(vector_store=mock_vector_store)
         provider._cache["key"] = ("value", 0)
 
-        provider.clear_cache()
+        await provider.clear_cache()
 
         assert len(provider._cache) == 0
 

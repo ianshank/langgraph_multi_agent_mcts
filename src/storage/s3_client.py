@@ -29,7 +29,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from src.observability.logging import get_logger
+from src.observability.logging import get_structured_logger
 
 
 @dataclass
@@ -78,7 +78,7 @@ class S3StorageClient:
             config: S3 configuration (uses environment variables if not provided)
         """
         self.config = config or S3Config()
-        self.logger = get_logger("storage.s3")
+        self.logger = get_structured_logger("storage.s3")
         self._session: aioboto3.Session | None = None
         self._initialized = False
 
@@ -97,7 +97,7 @@ class S3StorageClient:
 
         self._session = aioboto3.Session()
         self._initialized = True
-        self.logger.info(f"S3 client initialized for bucket: {self.config.bucket_name}")
+        self.logger.info("S3 client initialized", bucket_name=self.config.bucket_name)
 
     async def close(self) -> None:
         """Close the client (cleanup if needed)."""
@@ -198,11 +198,9 @@ class S3StorageClient:
 
             self.logger.debug(
                 "Uploaded object to S3",
-                extra={
-                    "s3_key": key,
-                    "size_bytes": len(body),
-                    "etag": response.get("ETag"),
-                },
+                s3_key=key,
+                size_bytes=len(body),
+                etag=response.get("ETag"),
             )
 
             return {
@@ -236,10 +234,8 @@ class S3StorageClient:
 
             self.logger.debug(
                 "Downloaded object from S3",
-                extra={
-                    "s3_key": key,
-                    "size_bytes": len(data),
-                },
+                s3_key=key,
+                size_bytes=len(data),
             )
 
             return data

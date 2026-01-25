@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Protocol
 
-from src.observability.logging import get_correlation_id, get_structured_logger
+from src.observability.logging import get_structured_logger
 
 from .humaneval import HumanEvalBenchmark, HumanEvalProblem
 from .metrics import BenchmarkMetrics, ProblemResult, aggregate_metrics
@@ -244,8 +244,8 @@ class BenchmarkRunner:
         problems = self._select_problems(list(benchmark))
 
         logger.info(
-            f"Running HumanEval benchmark on {len(problems)} problems",
-            correlation_id=get_correlation_id(),
+            "Running HumanEval benchmark",
+            num_problems=len(problems),
         )
 
         self._start_time = time.perf_counter()
