@@ -530,17 +530,17 @@ class StructuredLogger:
         exc_info = extra.pop("exc_info", None)
         stack_info = extra.pop("stack_info", None)
         stacklevel = extra.pop("stacklevel", 1)
-        
+
         extra["correlation_id"] = get_correlation_id()
         sanitized_extra = sanitize_dict(extra) if extra else {}
-        
+
         self._logger.log(
-            level, 
-            sanitize_message(message), 
+            level,
+            sanitize_message(message),
             extra=sanitized_extra,
             exc_info=exc_info,
             stack_info=stack_info,
-            stacklevel=stacklevel
+            stacklevel=stacklevel,
         )
 
     def debug(self, message: str, **extra) -> None:

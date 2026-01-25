@@ -403,7 +403,7 @@ class MCPServer:
                 tool_name = request.params.get("name")
                 if not isinstance(tool_name, str):
                     raise ValueError("Tool name must be a string")
-                
+
                 tool_args = request.params.get("arguments", {})
                 if not isinstance(tool_args, dict):
                     raise ValueError("Tool arguments must be a dictionary")

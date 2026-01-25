@@ -248,11 +248,11 @@ class TestMetricsAggregator:
         aggregator.start_session("test")
 
         # First half: lower Elo
-        for i in range(5):
+        for _ in range(5):
             aggregator.record_game_complete("draw", 30, 4000.0, 1500.0)
 
         # Second half: higher Elo
-        for i in range(5):
+        for _ in range(5):
             aggregator.record_game_complete("white_win", 30, 4000.0, 1550.0)
 
         metrics = aggregator.get_improvement_metrics()

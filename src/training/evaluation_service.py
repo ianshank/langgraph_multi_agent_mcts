@@ -791,10 +791,12 @@ class EvaluationService:
         std = math.sqrt(variance) if variance > 0 else 0.0
 
         if std == 0:
+            # If standard deviation is 0, any deviation is an anomaly
+            is_anomaly = abs(result.win_rate - mean) > 0
             return {
-                "is_anomaly": False,
-                "reason": "zero_variance",
-                "z_score": 0.0,
+                "is_anomaly": is_anomaly,
+                "reason": "zero_variance_deviation" if is_anomaly else "stable_zero_variance",
+                "z_score": float('inf') if is_anomaly else 0.0,
             }
 
         z_score = (result.win_rate - mean) / std

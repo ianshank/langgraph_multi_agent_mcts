@@ -16,7 +16,6 @@ from __future__ import annotations
 
 import asyncio
 import uuid
-from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
@@ -32,17 +31,13 @@ from .config import LLMGuidedMCTSConfig
 from .engine import LLMGuidedMCTSEngine, MCTSSearchResult
 
 if TYPE_CHECKING:
-    import torch
-
-    from src.agents.hrm_agent import HRMAgent, HRMOutput
-    from src.agents.meta_controller.base import (
-        AbstractMetaController,
-        MetaControllerFeatures,
-        MetaControllerPrediction,
-    )
-    from src.agents.trm_agent import TRMAgent, TRMOutput
     from src.agents.common.system_encoder import SystemEncoder
     from src.agents.common.text_decoder import SystemDecoder
+    from src.agents.hrm_agent import HRMAgent
+    from src.agents.meta_controller.base import (
+        AbstractMetaController,
+    )
+    from src.agents.trm_agent import TRMAgent
 
 logger = get_structured_logger(__name__)
 
@@ -76,11 +71,7 @@ class SubProblemDecomposition:
         if not self.hierarchy_levels:
             return self.subproblems
         max_level = max(self.hierarchy_levels)
-        return [
-            sp
-            for sp, level in zip(self.subproblems, self.hierarchy_levels)
-            if level == max_level
-        ]
+        return [sp for sp, level in zip(self.subproblems, self.hierarchy_levels) if level == max_level]
 
 
 @dataclass
@@ -280,26 +271,26 @@ class HRMAdapter:
     ) -> SubProblemDecomposition:
         """Decompose using neural HRM agent."""
         if self._encoder is None or self._decoder is None:
-             self._logger.warning("Neural decomposition requires encoder/decoder. Falling back.")
-             return await self._decompose_llm(problem, context)
+            self._logger.warning("Neural decomposition requires encoder/decoder. Falling back.")
+            return await self._decompose_llm(problem, context)
 
         import torch
-        
+
         self._logger.info("Decomposing problem with neural HRM")
-        
+
         # 1. Encode
         with torch.no_grad():
-             embeddings = self._encoder([problem]) # [1, S, H]
-        
+            embeddings = self._encoder([problem])  # [1, S, H]
+
         # 2. Run Agent
         agent_output = self._hrm_agent(embeddings)
-        plan_embedding = agent_output.final_state # [1, 1, H]
-        
+        plan_embedding = agent_output.final_state  # [1, 1, H]
+
         # 3. Decode
         description_texts = self._decoder.generate(plan_embedding.squeeze(1))
-        
+
         description = description_texts[0] if description_texts else problem
-        
+
         # Parse description (Naive line splitting)
         subproblems = [s.strip() for s in description.split("\n") if s.strip()]
         if not subproblems:
@@ -309,24 +300,25 @@ class HRMAdapter:
             original_problem=problem,
             subproblems=subproblems,
             hierarchy_levels=[0] * len(subproblems),
-            confidences=[0.9] * len(subproblems), # Neural confidence hard to get from simple decoder
+            confidences=[0.9] * len(subproblems),  # Neural confidence hard to get from simple decoder
         )
 
     def load_model(self, model_path: str | Any, device: str = "cpu") -> None:
         """
         Load/Reload neural model from path.
         """
-        from src.agents.hrm_agent import create_hrm_agent, HRMConfig
         import torch
-        
+
+        from src.agents.hrm_agent import HRMConfig, create_hrm_agent
+
         # Determine strict config or deduce?
         # For now use default config compatible with SystemEncoder
         h_dim = self._encoder.hidden_size if self._encoder else 768
         config = HRMConfig(h_dim=h_dim)
-        
+
         self._logger.info(f"Hot-reloading HRM from {model_path}")
         self._hrm_agent = create_hrm_agent(config, device=device)
-        
+
         state_dict = torch.load(model_path, map_location=device)
         self._hrm_agent.load_state_dict(state_dict)
         self._hrm_agent.eval()
@@ -479,22 +471,23 @@ class TRMAdapter:
     ) -> RefinementResult:
         """Refine using neural TRM agent."""
         if self._encoder is None or self._decoder is None:
-             self._logger.warning("Neural refinement requires encoder/decoder. Falling back.")
-             return await self._refine_llm(code, problem, test_cases, max_iterations)
+            self._logger.warning("Neural refinement requires encoder/decoder. Falling back.")
+            return await self._refine_llm(code, problem, test_cases, max_iterations)
 
         import torch
+
         self._logger.info("Refining solution with neural TRM")
-        
+
         # 1. Encode
         with torch.no_grad():
-             embeddings = self._encoder([code]) # [1, S, H]
-             # Pool to vector
-             input_vec = embeddings.mean(dim=1) # [1, H]
-             
+            embeddings = self._encoder([code])  # [1, S, H]
+            # Pool to vector
+            input_vec = embeddings.mean(dim=1)  # [1, H]
+
         # 2. Run Agent
         output = self._trm_agent(input_vec)
-        refined_vec = output.final_prediction # [1, H]
-        
+        refined_vec = output.final_prediction  # [1, H]
+
         # 3. Decode
         refined_texts = self._decoder.generate(refined_vec)
         refined_code = refined_texts[0] if refined_texts else code
@@ -502,24 +495,25 @@ class TRMAdapter:
         return RefinementResult(
             original_code=code,
             refined_code=refined_code,
-            num_iterations=int(output.steps_taken.item() if hasattr(output, 'steps_taken') else 1),
+            num_iterations=int(output.steps_taken.item() if hasattr(output, "steps_taken") else 1),
             converged=True,
-            improvement_score=0.5, # Placeholder score
+            improvement_score=0.5,  # Placeholder score
         )
 
     def load_model(self, model_path: str | Any, device: str = "cpu") -> None:
         """
         Load/Reload neural model from path.
         """
-        from src.agents.trm_agent import create_trm_agent, TRMConfig
         import torch
-        
+
+        from src.agents.trm_agent import TRMConfig, create_trm_agent
+
         latent_dim = self._encoder.hidden_size if self._encoder else 768
         config = TRMConfig(latent_dim=latent_dim)
-        
+
         self._logger.info(f"Hot-reloading TRM from {model_path}")
         self._trm_agent = create_trm_agent(config, device=device)
-        
+
         state_dict = torch.load(model_path, map_location=device)
         self._trm_agent.load_state_dict(state_dict)
         self._trm_agent.eval()
@@ -549,9 +543,7 @@ class TRMAdapter:
             )
 
         for iteration in range(max_iterations):
-            prompt = self._build_refinement_prompt(
-                current_code, problem, test_cases, iteration
-            )
+            prompt = self._build_refinement_prompt(current_code, problem, test_cases, iteration)
 
             try:
                 response = await self._llm_client.complete(prompt)
@@ -702,13 +694,14 @@ class MetaControllerAdapter:
     def load_model(self, model_path: str | Any) -> None:
         """Load/Reload meta-controller."""
         if self._meta_controller:
-             self._meta_controller.load_model(model_path)
+            self._meta_controller.load_model(model_path)
         else:
-             # Need to instantiate
-             from src.agents.meta_controller.bert_controller_v2 import BERTMetaController
-             self._logger.info(f"Hot-loading Meta-Controller from {model_path}")
-             self._meta_controller = BERTMetaController()
-             self._meta_controller.load_model(model_path)
+            # Need to instantiate
+            from src.agents.meta_controller.bert_controller_v2 import BERTMetaController
+
+            self._logger.info(f"Hot-loading Meta-Controller from {model_path}")
+            self._meta_controller = BERTMetaController()
+            self._meta_controller.load_model(model_path)
 
     def _route_heuristic(
         self,
@@ -719,13 +712,9 @@ class MetaControllerAdapter:
         # Simple heuristics based on problem characteristics
         problem_length = len(problem)
         has_complex_keywords = any(
-            kw in problem.lower()
-            for kw in ["optimize", "complex", "multiple", "hierarchical", "recursive"]
+            kw in problem.lower() for kw in ["optimize", "complex", "multiple", "hierarchical", "recursive"]
         )
-        has_simple_keywords = any(
-            kw in problem.lower()
-            for kw in ["simple", "basic", "single", "straightforward"]
-        )
+        has_simple_keywords = any(kw in problem.lower() for kw in ["simple", "basic", "single", "straightforward"])
 
         # Extract context signals
         hrm_conf = context.get("hrm_confidence", 0.5)
@@ -837,16 +826,10 @@ class UnifiedSearchOrchestrator:
         self._config = integration_config or IntegrationConfig()
 
         # Initialize adapters
-        self._hrm = hrm_adapter or HRMAdapter(
-            llm_client=llm_client, config=self._config
-        )
-        self._trm = trm_adapter or TRMAdapter(
-            llm_client=llm_client, config=self._config
-        )
-        self._router = meta_controller_adapter or MetaControllerAdapter(
-            config=self._config
-        )
-        
+        self._hrm = hrm_adapter or HRMAdapter(llm_client=llm_client, config=self._config)
+        self._trm = trm_adapter or TRMAdapter(llm_client=llm_client, config=self._config)
+        self._router = meta_controller_adapter or MetaControllerAdapter(config=self._config)
+
         # Initialize engine immediately
         self._mcts_engine = LLMGuidedMCTSEngine(self._llm_client, self._mcts_config)
         self._logger = get_structured_logger(f"{__name__}.UnifiedSearchOrchestrator")
@@ -856,11 +839,11 @@ class UnifiedSearchOrchestrator:
         Hot-reload neural components from paths.
         """
         if hrm_path:
-             self._hrm.load_model(hrm_path, device)
+            self._hrm.load_model(hrm_path, device)
         if trm_path:
-             self._trm.load_model(trm_path, device)
+            self._trm.load_model(trm_path, device)
         if meta_path:
-             self._router.load_model(meta_path)
+            self._router.load_model(meta_path)
 
         # Initialize MCTS engine
         self._mcts_engine = LLMGuidedMCTSEngine(self._llm_client, self._mcts_config)
@@ -896,8 +879,7 @@ class UnifiedSearchOrchestrator:
         if self._config.use_meta_controller:
             routing_decision = self._router.route(problem, ctx)
             self._logger.info(
-                f"Routed to {routing_decision.selected_agent.value} "
-                f"(confidence: {routing_decision.confidence:.2f})"
+                f"Routed to {routing_decision.selected_agent.value} (confidence: {routing_decision.confidence:.2f})"
             )
         else:
             routing_decision = RoutingDecision(
@@ -911,33 +893,36 @@ class UnifiedSearchOrchestrator:
         decomposition = None
         refinement = None
         mcts_result = None
-        
+
         # Manage episode for distillation
         episode_id = str(uuid.uuid4())
         data_collector = self._mcts_engine._data_collector if self._config.distillation_mode else None
-        
+
         try:
             # Start data collection if enabled
             if data_collector:
                 data_collector.start_episode(
                     episode_id=episode_id,
                     problem_type="code_generation",
-                    difficulty="unknown", # Could infer from metadata
+                    difficulty="unknown",  # Could infer from metadata
                     config_name="unified_search",
                 )
                 # TODO: Record routing decision once we have a schema for it
-                
+
             # Step 2: H-Decomposition
             current_problem = problem
-            if self._config.use_hrm_decomposition and routing_decision.selected_agent in [AgentType.HRM, AgentType.LLM_MCTS]:
+            if self._config.use_hrm_decomposition and routing_decision.selected_agent in [
+                AgentType.HRM,
+                AgentType.LLM_MCTS,
+            ]:
                 decomposition = await self._hrm.decompose(problem, ctx.get("context"))
-                
+
                 if data_collector:
                     self._record_decomposition(data_collector, problem, decomposition)
-                
+
                 # Use subproblems or just continue (simplified for now to just pass through)
-                 # In a full implementation, we would solve subproblems. 
-                 # Here we assume MCTS handles the decomposition guidance via context or prompt injection
+                # In a full implementation, we would solve subproblems.
+                # Here we assume MCTS handles the decomposition guidance via context or prompt injection
                 pass
 
             # Step 3: MCTS Search (or other agent execution)
@@ -947,49 +932,49 @@ class UnifiedSearchOrchestrator:
                 test_cases=test_cases,
                 initial_code=initial_code,
                 episode_id=episode_id,
-                finalize=False, # We finalize at the end
+                finalize=False,  # We finalize at the end
             )
-            
+
             best_code = mcts_result.best_code
             solution_found = mcts_result.solution_found
-            
+
             # Step 4: TRM Refinement
             if self._config.use_trm_refinement and best_code and (not solution_found or self._config.distillation_mode):
-                 # We refine if no solution found OR if we want to generate training data (refining a good solution is also useful)
-                 refinement = await self._trm.refine(
-                     code=best_code,
-                     problem=problem,
-                     test_cases=test_cases,
-                 )
-                 
-                 if refinement.improvement_score > 0:
-                     best_code = refinement.refined_code
-                     # Re-verify refined code
-                     # (In a real system we would run tests again here)
-                     solution_found = True # Optimistic assumption or check `converged`
-                     
-                 if data_collector:
-                     self._record_refinement(data_collector, mcts_result.best_code, refinement, problem)
+                # We refine if no solution found OR if we want to generate training data (refining a good solution is also useful)
+                refinement = await self._trm.refine(
+                    code=best_code,
+                    problem=problem,
+                    test_cases=test_cases,
+                )
+
+                if refinement.improvement_score > 0:
+                    best_code = refinement.refined_code
+                    # Re-verify refined code
+                    # (In a real system we would run tests again here)
+                    solution_found = True  # Optimistic assumption or check `converged`
+
+                if data_collector:
+                    self._record_refinement(data_collector, mcts_result.best_code, refinement, problem)
 
             # Finalize data collection
             if data_collector:
-                 data_collector.finalize_episode(
-                     outcome=1.0 if solution_found else -1.0,
-                     solution_found=solution_found,
-                     solution_code=best_code,
-                     total_iterations=mcts_result.num_iterations if mcts_result else 0,
-                     total_llm_calls=(mcts_result.llm_calls if mcts_result else 0),
-                     total_tokens=(mcts_result.tokens_used if mcts_result else 0),
-                 )
+                data_collector.finalize_episode(
+                    outcome=1.0 if solution_found else -1.0,
+                    solution_found=solution_found,
+                    solution_code=best_code,
+                    total_iterations=mcts_result.num_iterations if mcts_result else 0,
+                    total_llm_calls=(mcts_result.llm_calls if mcts_result else 0),
+                    total_tokens=(mcts_result.tokens_used if mcts_result else 0),
+                )
 
         except Exception as e:
             self._logger.error(f"Unified search failed: {e}")
             # Ensure we close the episode even on error
             if data_collector:
-                 try:
-                     data_collector.finalize_episode(outcome=-1.0)
-                 except: 
-                     pass
+                try:
+                    data_collector.finalize_episode(outcome=-1.0)
+                except:
+                    pass
             raise e
 
         execution_time_ms = (time.perf_counter() - start_time) * 1000
@@ -1021,7 +1006,7 @@ class UnifiedSearchOrchestrator:
                 "levels": decomposition.hierarchy_levels,
                 "confidences": decomposition.confidences,
             },
-            outcome=1.0, # Assumed high quality if coming from LLM
+            outcome=1.0,  # Assumed high quality if coming from LLM
         )
 
     def _record_refinement(
@@ -1041,9 +1026,8 @@ class UnifiedSearchOrchestrator:
                 "iterations": refinement.num_iterations,
                 "improvement": refinement.improvement_score,
                 "intermediate_codes": refinement.intermediate_codes,
-            }
+            },
         )
-
 
     async def search_with_all_agents(
         self,
@@ -1064,7 +1048,6 @@ class UnifiedSearchOrchestrator:
         Returns:
             List of results from each agent
         """
-        import asyncio
 
         results = []
 

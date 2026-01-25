@@ -9,14 +9,9 @@ Tests:
 - Data loader utilities
 """
 
-import asyncio
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
-# Skip all tests if torch is not available
-torch = pytest.importorskip("torch")
-nn = torch.nn
 
 from src.training.agent_trainer import (
     DummyDataLoader,
@@ -29,6 +24,10 @@ from src.training.agent_trainer import (
     TRMTrainingConfig,
     create_data_loader_from_buffer,
 )
+
+# Skip all tests if torch is not available
+torch = pytest.importorskip("torch")
+nn = torch.nn
 
 
 class TestTrainingMetrics:
@@ -281,9 +280,7 @@ class TestHRMTrainer:
         return optimizer
 
     @pytest.mark.asyncio
-    async def test_train_step_returns_metrics(
-        self, mock_hrm_agent, mock_loss_fn, mock_optimizer
-    ):
+    async def test_train_step_returns_metrics(self, mock_hrm_agent, mock_loss_fn, mock_optimizer):
         """Test that train_step returns proper metrics."""
         config = HRMTrainingConfig(batch_size=8)
         trainer = HRMTrainer(
@@ -352,9 +349,7 @@ class TestTRMTrainer:
         return optimizer
 
     @pytest.mark.asyncio
-    async def test_train_step_returns_metrics(
-        self, mock_trm_agent, mock_loss_fn, mock_optimizer
-    ):
+    async def test_train_step_returns_metrics(self, mock_trm_agent, mock_loss_fn, mock_optimizer):
         """Test that train_step returns proper metrics."""
         config = TRMTrainingConfig(batch_size=8)
         trainer = TRMTrainer(
@@ -447,6 +442,7 @@ class TestIntegration:
     @pytest.mark.asyncio
     async def test_hrm_training_epoch_with_dummy_data(self):
         """Test HRM training with dummy data loader."""
+
         # Create a simple HRM-like model for testing
         class SimpleHRM(nn.Module):
             def __init__(self):

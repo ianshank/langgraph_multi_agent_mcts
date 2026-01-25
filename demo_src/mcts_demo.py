@@ -122,10 +122,7 @@ class MCTSDemo:
             return MCTSState(state_id=new_id, features={"history": history, "query": query})
 
         # Create root
-        root = MCTSNode(
-            state=MCTSState(state_id="root", features={"history": [], "query": query}),
-            rng=self.engine.rng
-        )
+        root = MCTSNode(state=MCTSState(state_id="root", features={"history": [], "query": query}), rng=self.engine.rng)
 
         # Run search
         best_action, stats = await self.engine.search(
@@ -134,7 +131,7 @@ class MCTSDemo:
             action_generator=action_generator,
             state_transition=state_transition,
             rollout_policy=RandomRolloutPolicy(),
-            max_rollout_depth=self.max_depth
+            max_rollout_depth=self.max_depth,
         )
 
         # augment stats with visualization
@@ -148,7 +145,9 @@ class MCTSDemo:
                     "action": child.action,
                     "visits": child.visits,
                     "value": round(child.value, 4),
-                    "ucb1": round(child.select_child(exploration_weight).value if child.children else 0.0, 4), # approximate
+                    "ucb1": round(
+                        child.select_child(exploration_weight).value if child.children else 0.0, 4
+                    ),  # approximate
                 }
                 for child in top_children
             ]

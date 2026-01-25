@@ -202,12 +202,14 @@ class TestGeneratorAgent:
     @pytest.mark.asyncio
     async def test_run_success(self, mock_llm_client, generator_config):
         """Test successful code generation."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "variants": [
-                {"code": "def foo(): return 1", "confidence": 0.8, "reasoning": "simple"},
-                {"code": "def foo(): return int(1)", "confidence": 0.2, "reasoning": "explicit"},
-            ]
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "variants": [
+                    {"code": "def foo(): return 1", "confidence": 0.8, "reasoning": "simple"},
+                    {"code": "def foo(): return int(1)", "confidence": 0.2, "reasoning": "explicit"},
+                ]
+            }
+        )
 
         agent = GeneratorAgent(mock_llm_client, generator_config)
         state = NodeState(code="", problem="Return 1", test_cases=["assert foo() == 1"])
@@ -296,13 +298,15 @@ class TestReflectorAgent:
     @pytest.mark.asyncio
     async def test_run_success(self, mock_llm_client, reflector_config):
         """Test successful code evaluation."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "value": 0.85,
-            "reflection": "Good implementation",
-            "is_solution": True,
-            "issues": [],
-            "suggestions": ["add type hints"],
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "value": 0.85,
+                "reflection": "Good implementation",
+                "is_solution": True,
+                "issues": [],
+                "suggestions": ["add type hints"],
+            }
+        )
 
         agent = ReflectorAgent(mock_llm_client, reflector_config)
         state = NodeState(code="def foo(): return 1", problem="Return 1")
@@ -317,12 +321,14 @@ class TestReflectorAgent:
     @pytest.mark.asyncio
     async def test_run_with_test_results(self, mock_llm_client, reflector_config):
         """Test evaluation with test results."""
-        mock_llm_client.complete.return_value = json.dumps({
-            "value": 0.3,
-            "reflection": "Tests failing",
-            "is_solution": False,
-            "issues": ["assertion failed"],
-        })
+        mock_llm_client.complete.return_value = json.dumps(
+            {
+                "value": 0.3,
+                "reflection": "Tests failing",
+                "is_solution": False,
+                "issues": ["assertion failed"],
+            }
+        )
 
         agent = ReflectorAgent(mock_llm_client, reflector_config)
         state = NodeState(code="def foo(): return 0", problem="Return 1")
@@ -370,9 +376,7 @@ class TestFactoryFunctions:
     def test_create_generator_from_config(self):
         """Test creating generator from full config."""
         mock_client = AsyncMock()
-        config = LLMGuidedMCTSConfig(
-            generator_config=GeneratorConfig(model="test-model", temperature=0.5)
-        )
+        config = LLMGuidedMCTSConfig(generator_config=GeneratorConfig(model="test-model", temperature=0.5))
 
         generator = create_generator_from_config(mock_client, config)
 
@@ -382,9 +386,7 @@ class TestFactoryFunctions:
     def test_create_reflector_from_config(self):
         """Test creating reflector from full config."""
         mock_client = AsyncMock()
-        config = LLMGuidedMCTSConfig(
-            reflector_config=ReflectorConfig(model="test-model", temperature=0.2)
-        )
+        config = LLMGuidedMCTSConfig(reflector_config=ReflectorConfig(model="test-model", temperature=0.2))
 
         reflector = create_reflector_from_config(mock_client, config)
 

@@ -14,8 +14,6 @@ import ast
 import io
 import multiprocessing
 import signal
-import sys
-import traceback
 from contextlib import redirect_stderr, redirect_stdout
 from dataclasses import dataclass, field
 from typing import Any
@@ -205,6 +203,7 @@ def _get_safe_import():
         _safe_import_instance = _create_safe_import(ALLOWED_IMPORTS)
     return _safe_import_instance
 
+
 # Allowed imports
 ALLOWED_IMPORTS = {
     "math",
@@ -385,22 +384,25 @@ class CodeExecutor:
         import operator
         import re
         import string
-        from typing import List, Dict, Optional, Any as TypingAny, Tuple
+        from typing import Any as TypingAny
+        from typing import Optional
 
-        exec_globals.update({
-            "math": math,
-            "string": string,
-            "re": re,
-            "collections": collections,
-            "itertools": itertools,
-            "functools": functools,
-            "operator": operator,
-            "List": List,
-            "Dict": Dict,
-            "Optional": Optional,
-            "Any": TypingAny,
-            "Tuple": Tuple,
-        })
+        exec_globals.update(
+            {
+                "math": math,
+                "string": string,
+                "re": re,
+                "collections": collections,
+                "itertools": itertools,
+                "functools": functools,
+                "operator": operator,
+                "List": list,
+                "Dict": dict,
+                "Optional": Optional,
+                "Any": TypingAny,
+                "Tuple": tuple,
+            }
+        )
 
         stdout_capture = io.StringIO()
         stderr_capture = io.StringIO()
@@ -503,18 +505,20 @@ class CodeExecutor:
                 result = self._execute_in_process(code, test_cases, None, time.perf_counter())
                 queue.put(result.to_dict())
             except Exception as e:
-                queue.put({
-                    "passed": False,
-                    "num_tests_passed": 0,
-                    "num_tests_total": len(test_cases) if test_cases else 0,
-                    "stdout": "",
-                    "stderr": str(e),
-                    "errors": [str(e)],
-                    "execution_time_ms": 0.0,
-                    "timed_out": False,
-                    "syntax_error": False,
-                    "test_results": [],
-                })
+                queue.put(
+                    {
+                        "passed": False,
+                        "num_tests_passed": 0,
+                        "num_tests_total": len(test_cases) if test_cases else 0,
+                        "stdout": "",
+                        "stderr": str(e),
+                        "errors": [str(e)],
+                        "execution_time_ms": 0.0,
+                        "timed_out": False,
+                        "syntax_error": False,
+                        "test_results": [],
+                    }
+                )
 
         queue: multiprocessing.Queue = multiprocessing.Queue()
         process = multiprocessing.Process(target=worker, args=(queue, code, test_cases))

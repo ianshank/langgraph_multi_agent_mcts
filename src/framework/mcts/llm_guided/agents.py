@@ -12,7 +12,6 @@ from __future__ import annotations
 import json
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Protocol
 
 from pydantic import BaseModel, Field, field_validator
@@ -35,9 +34,7 @@ class CodeVariant(BaseModel):
     """A single code variant with confidence score."""
 
     code: str = Field(..., description="The generated code")
-    confidence: float = Field(
-        ..., description="Confidence score between 0 and 1 (will be clamped)"
-    )
+    confidence: float = Field(..., description="Confidence score between 0 and 1 (will be clamped)")
     reasoning: str = Field(default="", description="Brief explanation of the approach")
 
     @field_validator("confidence")
@@ -49,9 +46,7 @@ class CodeVariant(BaseModel):
 class GeneratorOutput(BaseModel):
     """Output from the Generator agent."""
 
-    variants: list[CodeVariant] = Field(
-        ..., description="List of code variants with confidence scores"
-    )
+    variants: list[CodeVariant] = Field(..., description="List of code variants with confidence scores")
     total_tokens: int = Field(default=0, description="Total tokens used")
 
     @property
@@ -67,10 +62,7 @@ class GeneratorOutput(BaseModel):
             n = len(self.variants)
             return {f"variant_{i}": 1.0 / n for i in range(n)}
 
-        return {
-            f"variant_{i}": v.confidence / total_conf
-            for i, v in enumerate(self.variants)
-        }
+        return {f"variant_{i}": v.confidence / total_conf for i, v in enumerate(self.variants)}
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -83,19 +75,11 @@ class GeneratorOutput(BaseModel):
 class ReflectorOutput(BaseModel):
     """Output from the Reflector agent."""
 
-    value: float = Field(
-        ..., description="Estimated probability of success (will be clamped to [0, 1])"
-    )
+    value: float = Field(..., description="Estimated probability of success (will be clamped to [0, 1])")
     reflection: str = Field(..., description="Analysis of the code")
-    is_solution: bool = Field(
-        default=False, description="Whether this code is a valid solution"
-    )
-    issues: list[str] = Field(
-        default_factory=list, description="Identified issues with the code"
-    )
-    suggestions: list[str] = Field(
-        default_factory=list, description="Suggestions for improvement"
-    )
+    is_solution: bool = Field(default=False, description="Whether this code is a valid solution")
+    issues: list[str] = Field(default_factory=list, description="Identified issues with the code")
+    suggestions: list[str] = Field(default_factory=list, description="Suggestions for improvement")
     total_tokens: int = Field(default=0, description="Total tokens used")
 
     @field_validator("value")
@@ -240,6 +224,7 @@ class GeneratorAgent(BaseAgent):
         """Get configuration, creating default if needed."""
         if self._config is None:
             from .config import GeneratorConfig
+
             self._config = GeneratorConfig()
         return self._config
 
@@ -276,22 +261,24 @@ class GeneratorAgent(BaseAgent):
         """Parse LLM response into structured output."""
         try:
             # Try to find JSON in the response
-            json_match = re.search(r'\{[\s\S]*\}', response)
+            json_match = re.search(r"\{[\s\S]*\}", response)
             if json_match:
                 data = json.loads(json_match.group())
                 variants = []
                 for v in data.get("variants", []):
-                    variants.append(CodeVariant(
-                        code=v.get("code", ""),
-                        confidence=float(v.get("confidence", 0.5)),
-                        reasoning=v.get("reasoning", ""),
-                    ))
+                    variants.append(
+                        CodeVariant(
+                            code=v.get("code", ""),
+                            confidence=float(v.get("confidence", 0.5)),
+                            reasoning=v.get("reasoning", ""),
+                        )
+                    )
                 return GeneratorOutput(variants=variants)
         except (json.JSONDecodeError, ValueError, KeyError) as e:
             self._logger.warning(f"Failed to parse JSON response: {e}")
 
         # Fallback: try to extract code blocks
-        code_blocks = re.findall(r'```python\n([\s\S]*?)```', response)
+        code_blocks = re.findall(r"```python\n([\s\S]*?)```", response)
         if code_blocks:
             variants = [
                 CodeVariant(
@@ -299,15 +286,13 @@ class GeneratorAgent(BaseAgent):
                     confidence=0.5,
                     reasoning="Extracted from response",
                 )
-                for code in code_blocks[:self.config.num_variants]
+                for code in code_blocks[: self.config.num_variants]
             ]
             return GeneratorOutput(variants=variants)
 
         # Last resort: use entire response as code
         self._logger.warning("Could not parse response, using fallback")
-        return GeneratorOutput(
-            variants=[CodeVariant(code=response.strip(), confidence=0.3, reasoning="Fallback")]
-        )
+        return GeneratorOutput(variants=[CodeVariant(code=response.strip(), confidence=0.3, reasoning="Fallback")])
 
     async def run(self, state: NodeState) -> GeneratorOutput:
         """
@@ -337,6 +322,12 @@ class GeneratorAgent(BaseAgent):
 
             self._total_calls += 1
             output = self._parse_response(response)
+
+            # Simple token estimation if client doesn't provide it
+            # In a real system, the client would return this in the metadata
+            tokens = len(prompt.split()) + len(response.split())
+            self._total_tokens += tokens
+            output.total_tokens = tokens
 
             self._logger.info(
                 "Generated variants",
@@ -410,6 +401,7 @@ class ReflectorAgent(BaseAgent):
         """Get configuration, creating default if needed."""
         if self._config is None:
             from .config import ReflectorConfig
+
             self._config = ReflectorConfig()
         return self._config
 
@@ -443,7 +435,7 @@ class ReflectorAgent(BaseAgent):
         """Parse LLM response into structured output."""
         try:
             # Try to find JSON in the response
-            json_match = re.search(r'\{[\s\S]*\}', response)
+            json_match = re.search(r"\{[\s\S]*\}", response)
             if json_match:
                 data = json.loads(json_match.group())
                 return ReflectorOutput(
@@ -458,14 +450,14 @@ class ReflectorAgent(BaseAgent):
 
         # Fallback: try to extract value from text
         value = 0.5
-        value_match = re.search(r'value[:\s]+([0-9.]+)', response.lower())
+        value_match = re.search(r"value[:\s]+([0-9.]+)", response.lower())
         if value_match:
             try:
                 value = float(value_match.group(1))
             except ValueError:
                 pass
 
-        is_solution = "is_solution: true" in response.lower() or "is_solution\":true" in response.lower()
+        is_solution = "is_solution: true" in response.lower() or 'is_solution":true' in response.lower()
 
         return ReflectorOutput(
             value=value,
@@ -505,6 +497,11 @@ class ReflectorAgent(BaseAgent):
 
             self._total_calls += 1
             output = self._parse_response(response)
+
+            # Simple token estimation
+            tokens = len(prompt.split()) + len(response.split())
+            self._total_tokens += tokens
+            output.total_tokens = tokens
 
             self._logger.info(
                 "Code evaluation complete",

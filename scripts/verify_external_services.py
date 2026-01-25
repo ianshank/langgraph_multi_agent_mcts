@@ -186,7 +186,7 @@ class ServiceVerifier:
         """
         key = os.getenv(self.config.env_var)
         if key:
-            self.logger.debug(f"Found API key for {self.config.name} " f"(length: {len(key)})")
+            self.logger.debug(f"Found API key for {self.config.name} (length: {len(key)})")
         return key
 
     @retry(

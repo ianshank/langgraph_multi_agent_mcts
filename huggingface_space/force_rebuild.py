@@ -17,8 +17,7 @@ def force_rebuild():
         content = f.read()
 
     # Remove old timestamp comments
-    lines = [line for line in content.split('\n')
-             if not line.startswith('# Force rebuild timestamp:')]
+    lines = [line for line in content.split("\n") if not line.startswith("# Force rebuild timestamp:")]
 
     # Add new timestamp
     timestamp = datetime.datetime.now().strftime("%a, %b %d, %Y %I:%M:%S %p")
@@ -26,7 +25,7 @@ def force_rebuild():
 
     # Write back
     with open("requirements.txt", "w", encoding="utf-8") as f:
-        f.write('\n'.join(lines))
+        f.write("\n".join(lines))
 
     print(f"[OK] Added timestamp: {timestamp}")
 
@@ -37,8 +36,9 @@ def force_rebuild():
         subprocess.run(["git", "commit", "-m", commit_msg], check=True)
 
         # Push to the current branch
-        result = subprocess.run(["git", "rev-parse", "--abbrev-ref", "HEAD"],
-                              capture_output=True, text=True, check=True)
+        result = subprocess.run(
+            ["git", "rev-parse", "--abbrev-ref", "HEAD"], capture_output=True, text=True, check=True
+        )
         branch = result.stdout.strip()
         subprocess.run(["git", "push", "space", branch], check=True)
         print("[OK] Changes pushed to trigger rebuild")
@@ -53,6 +53,7 @@ def force_rebuild():
     print("4. Wait for the Space to rebuild (2-3 minutes)")
 
     return True
+
 
 if __name__ == "__main__":
     success = force_rebuild()

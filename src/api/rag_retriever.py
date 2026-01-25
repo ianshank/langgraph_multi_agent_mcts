@@ -75,9 +75,7 @@ class RetrievalResult:
 
         context_parts = []
         for i, doc in enumerate(self.documents, 1):
-            context_parts.append(
-                f"[Document {i}] (score: {doc.score:.3f})\n{doc.content}"
-            )
+            context_parts.append(f"[Document {i}] (score: {doc.score:.3f})\n{doc.content}")
 
         return "\n\n".join(context_parts)
 
@@ -311,9 +309,7 @@ class RAGRetriever:
                 documents_retrieved=len(documents),
                 backend=backend_used,
                 retrieval_time_ms=round(retrieval_time, 2),
-                avg_score=round(
-                    sum(d.score for d in documents) / len(documents), 3
-                ) if documents else 0.0,
+                avg_score=round(sum(d.score for d in documents) / len(documents), 3) if documents else 0.0,
             )
         else:
             logger.info(f"Document retrieval completed: {len(documents)} docs from {backend_used}")
@@ -439,7 +435,7 @@ class RAGRetriever:
 
         # Truncate if needed
         if max_length and len(context) > max_length:
-            context = context[:max_length - 3] + "..."
+            context = context[: max_length - 3] + "..."
             logger.debug(f"Context truncated from {len(result.context)} to {max_length} chars")
 
         return context

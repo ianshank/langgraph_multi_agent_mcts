@@ -13,8 +13,6 @@ Provides:
 from __future__ import annotations
 
 import json
-import logging
-import os
 import time
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
@@ -150,7 +148,7 @@ class EpisodeMetadata:
 
     config_name: str = ""
     """Configuration name used."""
-    
+
     agent_strategy: str = "LLM_MCTS"
     """Agent/Strategy selected for this episode."""
 
@@ -351,7 +349,7 @@ class TrainingDataCollector:
             return
 
         meta = metadata or {}
-        
+
         example = TrainingExample(
             state_code=initial_code,
             state_problem=problem,
@@ -366,10 +364,7 @@ class TrainingDataCollector:
             visits=0,
             q_value=0.0,
             action="refine",
-            test_results={
-                "refined_code": refined_code,
-                "refinement_metadata": meta
-            },
+            test_results={"refined_code": refined_code, "refinement_metadata": meta},
         )
         self.current_episode.append(example)
 
@@ -536,9 +531,7 @@ class TrainingDataCollector:
             "total_episodes": self.total_episodes,
             "total_examples": self.total_examples,
             "successful_episodes": self.successful_episodes,
-            "success_rate": (
-                self.successful_episodes / self.total_episodes if self.total_episodes > 0 else 0.0
-            ),
+            "success_rate": (self.successful_episodes / self.total_episodes if self.total_episodes > 0 else 0.0),
             "num_files": len(files),
             "file_examples": total_file_examples,
             "current_episode_size": len(self.current_episode),

@@ -8,9 +8,9 @@ import pytest
 
 from src.config.settings import LLMProvider
 from src.framework.mcts.llm_guided.config import (
-    DEFAULT_LLM_MCTS_CONFIG,
     BALANCED_LLM_MCTS_CONFIG,
     DATA_COLLECTION_CONFIG,
+    DEFAULT_LLM_MCTS_CONFIG,
     FAST_LLM_MCTS_CONFIG,
     THOROUGH_LLM_MCTS_CONFIG,
     GeneratorConfig,

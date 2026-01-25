@@ -12,12 +12,11 @@ Main orchestrator that combines:
 
 from __future__ import annotations
 
-import asyncio
 import math
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Annotated, Any, NotRequired, TypedDict
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import numpy as np
 
@@ -33,16 +32,16 @@ except ImportError:
     END = "END"
     MemorySaver = None  # type: ignore
 
-from src.observability.logging import get_structured_logger, log_execution_time
+from src.observability.logging import get_structured_logger
 
 from .agents import GeneratorAgent, LLMClientProtocol, ReflectorAgent
-from .config import LLMGuidedMCTSConfig, create_llm_mcts_preset, LLMGuidedMCTSPreset
+from .config import LLMGuidedMCTSConfig, LLMGuidedMCTSPreset, create_llm_mcts_preset
 from .data_collector import TrainingDataCollector
-from .executor import CodeExecutor, CodeExecutionResult
+from .executor import CodeExecutionResult, CodeExecutor
 from .node import LLMGuidedMCTSNode, NodeState, NodeStatus, create_root_node
 
 if TYPE_CHECKING:
-    from .agents import GeneratorOutput, ReflectorOutput
+    pass
 
 logger = get_structured_logger(__name__)
 
@@ -205,9 +204,7 @@ class LLMGuidedMCTSEngine:
         # Data collection
         self._data_collector = data_collector
         if self._config.collect_training_data and data_collector is None:
-            self._data_collector = TrainingDataCollector(
-                output_dir=self._config.training_data_dir
-            )
+            self._data_collector = TrainingDataCollector(output_dir=self._config.training_data_dir)
 
         # Random number generator
         self._rng = np.random.default_rng(self._config.seed)
@@ -256,7 +253,7 @@ class LLMGuidedMCTSEngine:
         self,
         node: LLMGuidedMCTSNode,
         episode_id: str,
-    ) -> list[LLMGuidedMCTSNode]:
+    ) -> tuple[list[LLMGuidedMCTSNode], int]:
         """
         Expansion phase: Generate code variants using LLM.
 
@@ -265,13 +262,14 @@ class LLMGuidedMCTSEngine:
             episode_id: Episode identifier
 
         Returns:
-            List of newly created child nodes
+            Tuple of (list of newly created child nodes, total tokens used)
         """
         if node.is_terminal:
-            return []
+            return [], 0
 
         # Generate variants using LLM
         output = await self._generator.run(node.state)
+        tokens = output.total_tokens
 
         if not output.variants:
             logger.warning("Generator produced no variants")
@@ -292,8 +290,7 @@ class LLMGuidedMCTSEngine:
             )
 
             child.generated_variants = [
-                {"code": v.code, "confidence": v.confidence, "reasoning": v.reasoning}
-                for v in output.variants
+                {"code": v.code, "confidence": v.confidence, "reasoning": v.reasoning} for v in output.variants
             ]
 
             children.append(child)
@@ -306,12 +303,12 @@ class LLMGuidedMCTSEngine:
             num_children=len(children),
         )
 
-        return children
+        return children, tokens
 
     async def _evaluate(
         self,
         node: LLMGuidedMCTSNode,
-    ) -> tuple[float, bool]:
+    ) -> tuple[float, bool, int]:
         """
         Evaluation phase: Run tests and get LLM value estimate.
 
@@ -319,7 +316,7 @@ class LLMGuidedMCTSEngine:
             node: Node to evaluate
 
         Returns:
-            Tuple of (reward, is_solution)
+            Tuple of (reward, is_solution, total tokens used)
         """
         # Execute code against tests
         test_result = self._executor.execute(
@@ -332,7 +329,7 @@ class LLMGuidedMCTSEngine:
         if test_result.passed:
             node.status = NodeStatus.TERMINAL_SUCCESS
             node.llm_value_estimate = 1.0
-            return 1.0, True
+            return 1.0, True, 0
 
         # Update state with errors for future generations
         if test_result.errors:
@@ -357,11 +354,11 @@ class LLMGuidedMCTSEngine:
         # Check if reflector thinks it's a solution (shouldn't happen if tests failed)
         if reflection_output.is_solution and test_result.passed:
             node.status = NodeStatus.TERMINAL_SUCCESS
-            return 1.0, True
+            return 1.0, True, reflection_output.total_tokens
 
         # Return value as reward (can be negative for very bad code)
         reward = reflection_output.value * 2 - 1  # Scale [0, 1] to [-1, 1]
-        return reward, False
+        return reward, False, reflection_output.total_tokens
 
     def _backpropagate(self, node: LLMGuidedMCTSNode, reward: float) -> None:
         """
@@ -446,7 +443,7 @@ class LLMGuidedMCTSEngine:
                 # Check if we need to expand
                 if not leaf.is_terminal and leaf.visits > 0:
                     # Expansion
-                    children = await self._expand(leaf, episode_id)
+                    children, _ = await self._expand(leaf, episode_id)
                     num_expansions += 1
 
                     if children:
@@ -454,7 +451,7 @@ class LLMGuidedMCTSEngine:
                         leaf = children[0]
 
                 # Evaluation
-                reward, is_solution = await self._evaluate(leaf)
+                reward, is_solution, _ = await self._evaluate(leaf)
                 num_evaluations += 1
 
                 # Record for training
@@ -664,11 +661,12 @@ class LLMGuidedMCTSEngine:
         episode_id = state["episode_id"]
 
         if node and not node.is_terminal and node.visits > 0:
-            children = await self._expand(node, episode_id)
+            children, tokens = await self._expand(node, episode_id)
             if children:
                 return {
                     "current_node": children[0],
                     "total_expansions": state["total_expansions"] + 1,
+                    "total_tokens": state["total_tokens"] + tokens,
                 }
 
         return {}
@@ -679,11 +677,12 @@ class LLMGuidedMCTSEngine:
         if node is None:
             return {}
 
-        reward, is_solution = await self._evaluate(node)
+        reward, is_solution, tokens = await self._evaluate(node)
 
         updates: dict[str, Any] = {
             "total_evaluations": state["total_evaluations"] + 1,
             "total_llm_calls": state["total_llm_calls"] + 1,
+            "total_tokens": state["total_tokens"] + tokens,
         }
 
         if is_solution:
@@ -794,7 +793,9 @@ class LLMGuidedMCTSEngine:
             test_results=self._executor.execute(
                 best_node.state.code if best_node else "",
                 test_cases,
-            ) if best_node else None,
+            )
+            if best_node
+            else None,
         )
 
     # ========================================================================
@@ -806,11 +807,7 @@ class LLMGuidedMCTSEngine:
         return {
             "total_searches": self._total_searches,
             "total_solutions": self._total_solutions,
-            "success_rate": (
-                self._total_solutions / self._total_searches
-                if self._total_searches > 0
-                else 0.0
-            ),
+            "success_rate": (self._total_solutions / self._total_searches if self._total_searches > 0 else 0.0),
             "generator_stats": {
                 "total_calls": self._generator.total_calls,
                 "total_tokens": self._generator.total_tokens,
@@ -819,9 +816,7 @@ class LLMGuidedMCTSEngine:
                 "total_calls": self._reflector.total_calls,
                 "total_tokens": self._reflector.total_tokens,
             },
-            "data_collector_stats": (
-                self._data_collector.get_statistics() if self._data_collector else None
-            ),
+            "data_collector_stats": (self._data_collector.get_statistics() if self._data_collector else None),
             "config": self._config.to_dict(),
         }
 

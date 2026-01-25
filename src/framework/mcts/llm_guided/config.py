@@ -460,10 +460,7 @@ def get_preset_config(preset: str | LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         }
         preset_enum = preset_map.get(preset.lower())
         if preset_enum is None:
-            raise ValueError(
-                f"Unknown preset: {preset}. "
-                f"Available presets: {list(preset_map.keys())}"
-            )
+            raise ValueError(f"Unknown preset: {preset}. Available presets: {list(preset_map.keys())}")
         return create_llm_mcts_preset(preset_enum)
     else:
         return create_llm_mcts_preset(preset)

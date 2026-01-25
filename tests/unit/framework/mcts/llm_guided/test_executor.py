@@ -1,7 +1,5 @@
 """Tests for Code Executor."""
 
-import pytest
-
 from src.framework.mcts.llm_guided.executor import (
     ALLOWED_IMPORTS,
     CodeExecutionResult,
