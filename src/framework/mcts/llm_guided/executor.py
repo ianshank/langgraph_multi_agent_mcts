@@ -519,9 +519,7 @@ class CodeExecutor:
         import time
 
         queue: multiprocessing.Queue = multiprocessing.Queue()
-        process = multiprocessing.Process(
-            target=_worker_process, args=(queue, code, test_cases, self.timeout_seconds)
-        )
+        process = multiprocessing.Process(target=_worker_process, args=(queue, code, test_cases, self.timeout_seconds))
         process.start()
         process.join(timeout=self.timeout_seconds)
 
@@ -554,7 +552,6 @@ class CodeExecutor:
                 errors=["Failed to get result from subprocess"],
                 execution_time_ms=execution_time_ms,
             )
-
 
     def run_with_inputs(
         self,
