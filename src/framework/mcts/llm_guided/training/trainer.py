@@ -233,30 +233,42 @@ class LoggingCallback(TrainingCallback):
 
     def on_epoch_start(self, epoch: int, trainer: DistillationTrainer) -> None:
         """Log epoch start."""
-        logger.info(f"Starting epoch {epoch + 1}/{trainer._config.num_epochs}")
+        logger.info(
+            "Starting epoch",
+            extra={"epoch": epoch + 1, "total_epochs": trainer._config.num_epochs},
+        )
 
     def on_epoch_end(self, epoch: int, metrics: TrainingMetrics, trainer: DistillationTrainer) -> None:
         """Log epoch metrics."""
         logger.info(
-            f"Epoch {epoch + 1} complete",
-            policy_loss=f"{metrics.policy_loss:.4f}",
-            value_loss=f"{metrics.value_loss:.4f}",
-            policy_accuracy=f"{metrics.policy_accuracy:.2%}",
-            value_mse=f"{metrics.value_mse:.4f}",
+            "Epoch complete",
+            extra={
+                "epoch": epoch + 1,
+                "policy_loss": round(metrics.policy_loss, 4),
+                "value_loss": round(metrics.value_loss, 4),
+                "policy_accuracy": round(metrics.policy_accuracy, 4),
+                "value_mse": round(metrics.value_mse, 4),
+            },
         )
 
     def on_batch_end(self, step: int, metrics: TrainingMetrics, trainer: DistillationTrainer) -> None:
         """Log batch metrics periodically."""
         if step % trainer._config.log_every_steps == 0:
             logger.info(
-                f"Step {step}",
-                total_loss=f"{metrics.total_loss:.4f}",
-                lr=f"{metrics.learning_rate:.2e}",
+                "Training step",
+                extra={
+                    "step": step,
+                    "total_loss": round(metrics.total_loss, 4),
+                    "learning_rate": metrics.learning_rate,
+                },
             )
 
     def on_training_end(self, trainer: DistillationTrainer) -> None:
         """Log training completion."""
-        logger.info("Training complete")
+        logger.info(
+            "Training complete",
+            extra={"total_steps": trainer._global_step, "epochs": trainer._current_epoch + 1},
+        )
 
 
 class DistillationTrainer:
@@ -306,8 +318,15 @@ class DistillationTrainer:
         self._optimizer: optim.Optimizer | None = None
         self._scheduler: optim.lr_scheduler._LRScheduler | None = None
 
-        # AMP scaler
-        self._scaler = torch.cuda.amp.GradScaler() if self._config.use_amp else None
+        # AMP scaler - only enabled for CUDA devices
+        self._use_amp = self._config.use_amp and self._device.type == "cuda"
+        self._scaler = torch.cuda.amp.GradScaler() if self._use_amp else None
+
+        if self._config.use_amp and not self._use_amp:
+            logger.warning(
+                "AMP requested but device is not CUDA, disabling AMP",
+                extra={"device": str(self._device)},
+            )
 
         # Callbacks
         self._callbacks = callbacks or [LoggingCallback()]
@@ -479,7 +498,7 @@ class DistillationTrainer:
             batch = batch.to(self._device)
 
             # Forward pass
-            with torch.cuda.amp.autocast(enabled=self._config.use_amp):
+            with torch.cuda.amp.autocast(enabled=self._use_amp):
                 loss, batch_metrics = self._compute_loss(batch)
 
             # Backward pass

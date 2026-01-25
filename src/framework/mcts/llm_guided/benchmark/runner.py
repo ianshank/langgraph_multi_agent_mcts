@@ -426,9 +426,9 @@ class BenchmarkRunner:
                             + "\n"
                         )
 
-        # Print summary
+        # Log summary
         if self._config.verbose:
-            print(report.metrics.summary())
+            logger.info("Benchmark complete", extra={"summary": report.metrics.summary()})
 
 
 async def run_benchmark(

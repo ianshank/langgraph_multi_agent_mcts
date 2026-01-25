@@ -10,8 +10,6 @@ Tests:
 from __future__ import annotations
 
 import json
-import tempfile
-from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
@@ -457,7 +455,6 @@ class TestBenchmarkRunner:
     @pytest.mark.asyncio
     async def test_runner_solves_problems(self, mock_mcts_engine, tmp_path):
         """Test runner solves problems."""
-        from src.framework.mcts.llm_guided.benchmark.humaneval import HumanEvalBenchmark
         from src.framework.mcts.llm_guided.benchmark.runner import (
             BenchmarkRunner,
             BenchmarkRunnerConfig,

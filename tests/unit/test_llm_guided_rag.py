@@ -9,17 +9,18 @@ Tests:
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
 # Check for numpy availability (required by parent modules)
 try:
-    import numpy as np
+    import numpy as np  # noqa: F401 - used for availability check
 
     _NUMPY_AVAILABLE = True
 except ImportError:
     _NUMPY_AVAILABLE = False
+    np = None  # type: ignore
 
 # Skip all tests if numpy not available (required by parent MCTS modules)
 pytestmark = pytest.mark.skipif(not _NUMPY_AVAILABLE, reason="numpy not available")
@@ -57,9 +58,7 @@ class TestRAGContext:
         from src.framework.mcts.llm_guided.rag.context import RAGContext
 
         context = RAGContext(
-            similar_solutions=[
-                {"code": "def foo(): return 1", "description": "Returns 1"}
-            ],
+            similar_solutions=[{"code": "def foo(): return 1", "description": "Returns 1"}],
             code_patterns=[{"name": "List Comp", "code": "[x for x in lst]"}],
         )
 
@@ -75,9 +74,7 @@ class TestRAGContext:
 
         # Create context with long code
         long_code = "x = 1\n" * 500
-        context = RAGContext(
-            similar_solutions=[{"code": long_code, "description": "Long example"}]
-        )
+        context = RAGContext(similar_solutions=[{"code": long_code, "description": "Long example"}])
 
         text = context.to_text(max_length=500)
 
@@ -201,12 +198,15 @@ class TestRAGContextProvider:
         provider = RAGContextProvider(config=config, vector_store=mock_vector_store)
 
         # First call
-        context1 = await provider.get_context(problem="Test problem")
+        _context1 = await provider.get_context(problem="Test problem")
         # Second call with same query
-        context2 = await provider.get_context(problem="Test problem")
+        _context2 = await provider.get_context(problem="Test problem")
 
-        # Should only call vector store once
+        # Should only call vector store once (cache hit on second call)
         assert mock_vector_store.query.call_count == 1
+        # Verify contexts were returned (not None)
+        assert _context1 is not None
+        assert _context2 is not None
 
     @pytest.mark.asyncio
     async def test_similarity_threshold_filtering(self, mock_vector_store):
@@ -299,9 +299,7 @@ class TestRAGPromptBuilder:
         builder = RAGPromptBuilder()
 
         context = RAGContext(
-            similar_solutions=[
-                {"code": "def add(a, b): return a + b", "description": "Simple addition"}
-            ]
+            similar_solutions=[{"code": "def add(a, b): return a + b", "description": "Simple addition"}]
         )
 
         prompt = builder.build_generator_prompt(

@@ -11,9 +11,7 @@ Tests:
 from __future__ import annotations
 
 import json
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -36,8 +34,7 @@ except ImportError:
 
 # Skip all tests if PyTorch or numpy not available
 pytestmark = pytest.mark.skipif(
-    not _TORCH_AVAILABLE or not _NUMPY_AVAILABLE,
-    reason="PyTorch and numpy required for training tests"
+    not _TORCH_AVAILABLE or not _NUMPY_AVAILABLE, reason="PyTorch and numpy required for training tests"
 )
 
 
@@ -330,9 +327,7 @@ class TestPolicyNetwork:
         problem_mask = torch.ones(batch_size, seq_len)
         action_mask = torch.ones(batch_size, 5)
 
-        log_probs = policy_network(
-            code_tokens, code_mask, problem_tokens, problem_mask, action_mask
-        )
+        log_probs = policy_network(code_tokens, code_mask, problem_tokens, problem_mask, action_mask)
 
         assert log_probs.shape == (batch_size, 5)
         # Log probs should be <= 0
@@ -351,9 +346,7 @@ class TestPolicyNetwork:
         problem_tokens = torch.randint(0, 1000, (batch_size, seq_len))
         problem_mask = torch.ones(batch_size, seq_len)
 
-        probs = policy_network.predict(
-            code_tokens, code_mask, problem_tokens, problem_mask
-        )
+        probs = policy_network.predict(code_tokens, code_mask, problem_tokens, problem_mask)
 
         assert probs.shape == (batch_size, 5)
         # Probs should be in [0, 1]
@@ -410,7 +403,7 @@ class TestTrainingMetrics:
         accumulator = MetricsAccumulator()
 
         # Add some batches
-        for i in range(5):
+        for _ in range(5):
             accumulator.update(
                 policy_loss=0.5,
                 value_loss=0.3,

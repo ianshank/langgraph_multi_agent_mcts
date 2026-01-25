@@ -7,7 +7,16 @@ Provides components for training neural networks from MCTS search data:
 - ValueNetwork: Network for state value estimation
 - DistillationTrainer: Trainer for knowledge distillation from LLM to neural networks
 - TrainingMetrics: Metrics tracking during training
+
+Requires PyTorch to be installed. If PyTorch is not available,
+importing this module will raise ImportError.
 """
+
+# Check for PyTorch availability before importing submodules
+try:
+    import torch as _torch  # noqa: F401
+except ImportError as e:
+    raise ImportError("PyTorch is required for the training module. " "Install with: pip install torch") from e
 
 from .dataset import (
     MCTSDataset,
