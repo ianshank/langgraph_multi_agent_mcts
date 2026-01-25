@@ -452,10 +452,9 @@ class ReflectorAgent(BaseAgent):
         value = 0.5
         value_match = re.search(r"value[:\s]+([0-9.]+)", response.lower())
         if value_match:
-            try:
+            import contextlib
+            with contextlib.suppress(ValueError):
                 value = float(value_match.group(1))
-            except ValueError:
-                pass
 
         is_solution = "is_solution: true" in response.lower() or 'is_solution":true' in response.lower()
 

@@ -717,9 +717,9 @@ class MetaControllerAdapter:
         has_simple_keywords = any(kw in problem.lower() for kw in ["simple", "basic", "single", "straightforward"])
 
         # Extract context signals
-        hrm_conf = context.get("hrm_confidence", 0.5)
-        trm_conf = context.get("trm_confidence", 0.5)
-        mcts_val = context.get("mcts_value", 0.5)
+        _hrm_conf = context.get("hrm_confidence", 0.5)
+        _trm_conf = context.get("trm_confidence", 0.5)
+        _mcts_val = context.get("mcts_value", 0.5)
 
         # Decision logic
         if has_complex_keywords or problem_length > 500:
@@ -971,10 +971,9 @@ class UnifiedSearchOrchestrator:
             self._logger.error(f"Unified search failed: {e}")
             # Ensure we close the episode even on error
             if data_collector:
-                try:
+                import contextlib
+                with contextlib.suppress(Exception):
                     data_collector.finalize_episode(outcome=-1.0)
-                except Exception:
-                    pass  # Best-effort cleanup, don't mask original error
             raise e
 
         execution_time_ms = (time.perf_counter() - start_time) * 1000

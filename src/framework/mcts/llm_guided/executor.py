@@ -415,13 +415,12 @@ class CodeExecutor:
         # Set up timeout - uses signal on Unix, threading on Windows
         old_handler = None
         timeout_timer = None
-        timeout_event = None
-        
+
         def _thread_timeout_handler():
             """Thread-based timeout handler for Windows."""
             nonlocal timed_out
             timed_out = True
-        
+
         try:
             # Prefer signal-based timeout on Unix (more reliable)
             if hasattr(signal, "SIGALRM"):
@@ -430,6 +429,7 @@ class CodeExecutor:
             else:
                 # Use threading-based timeout on Windows
                 import threading
+
                 timeout_timer = threading.Timer(self.timeout_seconds, _thread_timeout_handler)
                 timeout_timer.daemon = True
                 timeout_timer.start()
