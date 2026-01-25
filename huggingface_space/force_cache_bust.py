@@ -25,9 +25,10 @@ from datetime import datetime
 from pathlib import Path
 
 # Ensure UTF-8 output
-if sys.stdout.encoding != 'utf-8':
+if sys.stdout.encoding != "utf-8":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
 class CacheBuster:
@@ -125,7 +126,7 @@ class CacheBuster:
 
         # Update VERSION comment if it exists
         version_comment_pattern = r"VERSION:\s*[\w\-]+"
-        new_version_comment = f'VERSION: {self.timestamp.strftime("%Y-%m-%d-%H%M%S")}'
+        new_version_comment = f"VERSION: {self.timestamp.strftime('%Y-%m-%d-%H%M%S')}"
 
         if re.search(version_comment_pattern, content):
             content = re.sub(version_comment_pattern, new_version_comment, content)

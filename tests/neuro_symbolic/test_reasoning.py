@@ -15,14 +15,11 @@ Best Practices 2025:
 """
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
-from src.neuro_symbolic.config import NeuroSymbolicConfig, get_default_config
+from src.neuro_symbolic.config import get_default_config
 from src.neuro_symbolic.reasoning import (
     LogicEngine,
     Predicate,
-    Proof,
     ProofStatus,
     ProofStep,
     ProofTree,
@@ -260,10 +257,12 @@ class TestLogicEngine:
             )
         )
 
-        facts = frozenset([
-            Fact(name="human", arguments=("socrates",)),
-            Fact(name="human", arguments=("plato",)),
-        ])
+        facts = frozenset(
+            [
+                Fact(name="human", arguments=("socrates",)),
+                Fact(name="human", arguments=("plato",)),
+            ]
+        )
         state = NeuroSymbolicState(state_id="s1", facts=facts)
 
         # Query: mortal(?Who)?
@@ -289,26 +288,30 @@ class TestLogicEngine:
         """Test query with transitive relation."""
         # Rule: ancestor(X,Z) :- parent(X,Y), ancestor(Y,Z)
         # Rule: ancestor(X,Y) :- parent(X,Y)
-        engine.add_rules([
-            Rule(
-                rule_id="ancestor_base",
-                head=Predicate(name="ancestor", arguments=("?X", "?Y")),
-                body=[Predicate(name="parent", arguments=("?X", "?Y"))],
-            ),
-            Rule(
-                rule_id="ancestor_trans",
-                head=Predicate(name="ancestor", arguments=("?X", "?Z")),
-                body=[
-                    Predicate(name="parent", arguments=("?X", "?Y")),
-                    Predicate(name="ancestor", arguments=("?Y", "?Z")),
-                ],
-            ),
-        ])
+        engine.add_rules(
+            [
+                Rule(
+                    rule_id="ancestor_base",
+                    head=Predicate(name="ancestor", arguments=("?X", "?Y")),
+                    body=[Predicate(name="parent", arguments=("?X", "?Y"))],
+                ),
+                Rule(
+                    rule_id="ancestor_trans",
+                    head=Predicate(name="ancestor", arguments=("?X", "?Z")),
+                    body=[
+                        Predicate(name="parent", arguments=("?X", "?Y")),
+                        Predicate(name="ancestor", arguments=("?Y", "?Z")),
+                    ],
+                ),
+            ]
+        )
 
-        facts = frozenset([
-            Fact(name="parent", arguments=("a", "b")),
-            Fact(name="parent", arguments=("b", "c")),
-        ])
+        facts = frozenset(
+            [
+                Fact(name="parent", arguments=("a", "b")),
+                Fact(name="parent", arguments=("b", "c")),
+            ]
+        )
         state = NeuroSymbolicState(state_id="s1", facts=facts)
 
         # Query: ancestor(a, c)?
@@ -497,9 +500,11 @@ class TestSymbolicReasoningAgent:
         """Test processing query with facts."""
         state = NeuroSymbolicState(
             state_id="s1",
-            facts=frozenset([
-                Fact(name="isa", arguments=("socrates", "human")),
-            ]),
+            facts=frozenset(
+                [
+                    Fact(name="isa", arguments=("socrates", "human")),
+                ]
+            ),
         )
 
         result = await agent.process(

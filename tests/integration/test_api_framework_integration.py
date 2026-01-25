@@ -15,9 +15,7 @@ Based on: MULTI_AGENT_MCTS_TEMPLATE.md Section 8.6
 
 from __future__ import annotations
 
-import asyncio
 import os
-from typing import Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -252,9 +250,7 @@ def test_client(test_authenticator: APIKeyAuthenticator) -> TestClient:
 
 
 @pytest.fixture
-def test_client_with_lifespan(
-    test_authenticator: APIKeyAuthenticator, test_settings: Settings
-) -> TestClient:
+def test_client_with_lifespan(test_authenticator: APIKeyAuthenticator, test_settings: Settings) -> TestClient:
     """Create a FastAPI test client with full lifespan management."""
     if not FASTAPI_AVAILABLE or not API_AVAILABLE:
         pytest.skip("FastAPI or API module not available")
@@ -309,11 +305,15 @@ class TestFrameworkServiceInitialization:
         service = await FrameworkService.get_instance(config=config, settings=test_settings)
 
         # Initialize the service
-        with patch.object(service, "_framework", LightweightFramework(
-            llm_client=MockLLMClient(),
-            config=config,
-            logger=MagicMock(),
-        )):
+        with patch.object(
+            service,
+            "_framework",
+            LightweightFramework(
+                llm_client=MockLLMClient(),
+                config=config,
+                logger=MagicMock(),
+            ),
+        ):
             service._state = FrameworkState.READY
 
         assert service.is_ready is True

@@ -14,12 +14,9 @@ Best Practices 2025:
 """
 
 import pytest
-from hypothesis import given, settings
-from hypothesis import strategies as st
 
 from src.neuro_symbolic.config import ConstraintConfig, ConstraintEnforcement
 from src.neuro_symbolic.constraints import (
-    Constraint,
     ConstraintResult,
     ConstraintSatisfactionLevel,
     ConstraintSystem,
@@ -590,9 +587,7 @@ class TestConstraintValidator:
         validator = ConstraintValidator(config)
 
         state = NeuroSymbolicState(state_id="s1")
-        validator.add_constraint(
-            PredicateConstraint(constraint_id="c1", name="test", required_facts=[])
-        )
+        validator.add_constraint(PredicateConstraint(constraint_id="c1", name="test", required_facts=[]))
 
         # First evaluation - cache miss
         validator.validate(state)
@@ -610,9 +605,7 @@ class TestConstraintValidator:
         validator = ConstraintValidator(config)
 
         state = NeuroSymbolicState(state_id="s1")
-        validator.add_constraint(
-            PredicateConstraint(constraint_id="c1", name="test", required_facts=[])
-        )
+        validator.add_constraint(PredicateConstraint(constraint_id="c1", name="test", required_facts=[]))
 
         validator.validate(state)
         validator.clear_cache()

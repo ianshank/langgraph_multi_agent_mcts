@@ -16,15 +16,14 @@ Best Practices 2025:
 import json
 import os
 import tempfile
-from pathlib import Path
 
 import pytest
 
 from examples.chess_demo.learning_dashboard import (
-    LearningDashboard,
-    DashboardConfig,
     AgentStats,
+    DashboardConfig,
     GameStats,
+    LearningDashboard,
     create_dashboard,
 )
 
@@ -97,7 +96,7 @@ class TestLearningDashboard:
     @pytest.fixture
     def temp_db(self):
         """Create temporary database file."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".jsonl", delete=False) as f:
             temp_path = f.name
             # Write some test records
             records = [
@@ -278,7 +277,7 @@ class TestDashboardEmpty:
 
     def test_empty_dashboard_summary(self):
         """Test summary with no data."""
-        with tempfile.NamedTemporaryFile(suffix='.jsonl', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
             temp_path = f.name
 
         try:
@@ -293,7 +292,7 @@ class TestDashboardEmpty:
 
     def test_empty_dashboard_html(self):
         """Test HTML generation with no data."""
-        with tempfile.NamedTemporaryFile(suffix='.jsonl', delete=False) as f:
+        with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as f:
             temp_path = f.name
 
         try:

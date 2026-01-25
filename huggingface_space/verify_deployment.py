@@ -23,9 +23,10 @@ from dataclasses import dataclass
 from pathlib import Path
 
 # Ensure UTF-8 output
-if sys.stdout.encoding != 'utf-8':
+if sys.stdout.encoding != "utf-8":
     import io
-    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8")
 
 
 @dataclass
@@ -241,6 +242,7 @@ class DeploymentVerifier:
 
         try:
             from transformers import modeling_layers
+
             self.log("transformers.modeling_layers available", "SUCCESS")
             return True
         except ImportError:
@@ -257,9 +259,7 @@ class DeploymentVerifier:
 
         if peft_version and transformers_version:
             if peft_version.startswith("0.10") and transformers_version.startswith("4.46"):
-                recommendations.append(
-                    "CRITICAL: Upgrade PEFT to >=0.12.0 or downgrade transformers to <4.46.0"
-                )
+                recommendations.append("CRITICAL: Upgrade PEFT to >=0.12.0 or downgrade transformers to <4.46.0")
 
         # Check for sentence-transformers
         sentence_transformers_version = self.get_installed_version("sentence-transformers")

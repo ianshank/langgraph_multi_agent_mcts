@@ -11,7 +11,8 @@ import os
 import subprocess
 import sys
 import time
-from typing import TYPE_CHECKING, Generator
+from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
 
@@ -22,6 +23,7 @@ if TYPE_CHECKING:
 # Check if Selenium is available
 try:
     import selenium
+
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False
@@ -61,13 +63,7 @@ def ui_server(ui_server_port: int) -> Generator[subprocess.Popen | None, None, N
         return
 
     # Get the project root directory
-    project_root = os.path.dirname(
-        os.path.dirname(
-            os.path.dirname(
-                os.path.dirname(os.path.dirname(__file__))
-            )
-        )
-    )
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
 
     # Start the UI server
     env = os.environ.copy()
@@ -99,6 +95,7 @@ demo.launch(server_port={ui_server_port}, share=False, show_error=True, prevent_
     while time.time() - start_time < max_wait:
         try:
             import urllib.request
+
             urllib.request.urlopen(f"http://localhost:{ui_server_port}", timeout=1)
             server_ready = True
             break
@@ -131,7 +128,7 @@ def browser_options() -> dict:
 
 
 @pytest.fixture(scope="function")
-def driver(browser_options: dict, ui_server: subprocess.Popen | None) -> Generator["WebDriver", None, None]:
+def driver(browser_options: dict, ui_server: subprocess.Popen | None) -> Generator[WebDriver, None, None]:
     """Create and configure WebDriver for each test.
 
     This fixture creates a new browser instance for each test function,
@@ -156,10 +153,13 @@ def driver(browser_options: dict, ui_server: subprocess.Popen | None) -> Generat
             options.add_argument("--no-sandbox")
             options.add_argument("--disable-dev-shm-usage")
             options.add_argument("--disable-gpu")
-            options.add_argument(f"--window-size={browser_options['window_size'][0]},{browser_options['window_size'][1]}")
+            options.add_argument(
+                f"--window-size={browser_options['window_size'][0]},{browser_options['window_size'][1]}"
+            )
 
             try:
                 from webdriver_manager.chrome import ChromeDriverManager
+
                 service = ChromeService(ChromeDriverManager().install())
                 driver_instance = webdriver.Chrome(service=service, options=options)
             except ImportError:
@@ -172,6 +172,7 @@ def driver(browser_options: dict, ui_server: subprocess.Popen | None) -> Generat
 
             try:
                 from webdriver_manager.firefox import GeckoDriverManager
+
                 service = FirefoxService(GeckoDriverManager().install())
                 driver_instance = webdriver.Firefox(service=service, options=options)
             except ImportError:

@@ -151,6 +151,7 @@ def fill_template(template: str) -> str:
 
     # Extract placeholders
     import re
+
     placeholders = re.findall(r"\{(\w+)\}", template)
 
     for placeholder in placeholders:
@@ -215,8 +216,7 @@ def select_ground_truth_agent(
     # Medium complexity
     if complexity == "medium" or ai < 7:
         return "hrm", (
-            f"Medium complexity (AI={ai:.1f}) routes to HRM for "
-            "structured hierarchical reasoning and task breakdown"
+            f"Medium complexity (AI={ai:.1f}) routes to HRM for structured hierarchical reasoning and task breakdown"
         )
 
     # Complex query → MCTS
@@ -308,14 +308,10 @@ def generate_training_sample(
     assembly_features = feature_extractor.extract(query)
 
     # Select ground truth agent
-    ground_truth_agent, reasoning = select_ground_truth_agent(
-        assembly_features, complexity
-    )
+    ground_truth_agent, reasoning = select_ground_truth_agent(assembly_features, complexity)
 
     # Generate meta-controller features
-    mc_features = generate_meta_controller_features(
-        assembly_features, ground_truth_agent
-    )
+    mc_features = generate_meta_controller_features(assembly_features, ground_truth_agent)
 
     return {
         "query": query,
@@ -394,6 +390,7 @@ def validate_dataset(samples: list[dict[str, Any]]) -> tuple[bool, list[str]]:
 
         # Agent distribution
         from collections import Counter
+
         agent_counts = Counter(agents)
 
         logger.info(f"Agent distribution: {dict(agent_counts)}")
@@ -457,11 +454,7 @@ def generate_dataset(
     # Generate samples by complexity
     samples = []
 
-    complexities = (
-        ["simple"] * num_simple +
-        ["medium"] * num_medium +
-        ["complex"] * num_complex
-    )
+    complexities = ["simple"] * num_simple + ["medium"] * num_medium + ["complex"] * num_complex
     random.shuffle(complexities)
 
     for i, complexity in enumerate(complexities):
@@ -538,7 +531,7 @@ def print_statistics(samples: list[dict[str, Any]]) -> None:
     logger.info("")
     logger.info("Agent Distribution:")
     for agent, count in sorted(agent_counts.items()):
-        logger.info(f"  {agent.upper():5s}: {count:5d} ({count/len(samples):.1%})")
+        logger.info(f"  {agent.upper():5s}: {count:5d} ({count / len(samples):.1%})")
     logger.info("")
     logger.info("Assembly Index:")
     logger.info(f"  Min:  {ai_stats['min']:.2f}")
@@ -553,7 +546,7 @@ def print_statistics(samples: list[dict[str, Any]]) -> None:
     logger.info("")
     logger.info("Complexity Distribution:")
     for complexity, count in sorted(complexity_counts.items()):
-        logger.info(f"  {complexity.capitalize():8s}: {count:5d} ({count/len(samples):.1%})")
+        logger.info(f"  {complexity.capitalize():8s}: {count:5d} ({count / len(samples):.1%})")
     logger.info("=" * 70)
 
 

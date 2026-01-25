@@ -295,10 +295,16 @@ class TrainerFactory:
         training_config = HRMTrainingConfig(
             batch_size=batch_size if batch_size is not None else self._config.batch_size,
             num_batches=num_batches if num_batches is not None else self._config.num_batches,
-            gradient_clip_norm=gradient_clip_norm if gradient_clip_norm is not None else self._config.gradient_clip_norm,
+            gradient_clip_norm=gradient_clip_norm
+            if gradient_clip_norm is not None
+            else self._config.gradient_clip_norm,
             ponder_weight=ponder_weight if ponder_weight is not None else self._config.ponder_weight,
-            consistency_weight=consistency_weight if consistency_weight is not None else self._config.consistency_weight,
-            use_mixed_precision=use_mixed_precision if use_mixed_precision is not None else self._config.use_mixed_precision,
+            consistency_weight=consistency_weight
+            if consistency_weight is not None
+            else self._config.consistency_weight,
+            use_mixed_precision=use_mixed_precision
+            if use_mixed_precision is not None
+            else self._config.use_mixed_precision,
         )
 
         trainer_device = device if device is not None else self._config.device
@@ -364,9 +370,15 @@ class TrainerFactory:
         training_config = TRMTrainingConfig(
             batch_size=batch_size if batch_size is not None else self._config.batch_size,
             num_batches=num_batches if num_batches is not None else self._config.num_batches,
-            gradient_clip_norm=gradient_clip_norm if gradient_clip_norm is not None else self._config.gradient_clip_norm,
-            supervision_weight_decay=supervision_weight_decay if supervision_weight_decay is not None else self._config.supervision_weight_decay,
-            use_mixed_precision=use_mixed_precision if use_mixed_precision is not None else self._config.use_mixed_precision,
+            gradient_clip_norm=gradient_clip_norm
+            if gradient_clip_norm is not None
+            else self._config.gradient_clip_norm,
+            supervision_weight_decay=supervision_weight_decay
+            if supervision_weight_decay is not None
+            else self._config.supervision_weight_decay,
+            use_mixed_precision=use_mixed_precision
+            if use_mixed_precision is not None
+            else self._config.use_mixed_precision,
         )
 
         trainer_device = device if device is not None else self._config.device
@@ -524,10 +536,7 @@ class TrainerFactory:
                 augmentation_fn=augmentation_fn,
             )
         else:
-            raise ValueError(
-                f"Unknown buffer_type: {buffer_type}. "
-                f"Valid types: uniform, prioritized, augmented"
-            )
+            raise ValueError(f"Unknown buffer_type: {buffer_type}. Valid types: uniform, prioritized, augmented")
 
         # Cache singleton if requested
         if use_singleton:
@@ -622,7 +631,9 @@ class MetricsFactory:
             return self._monitor_instance
 
         window = window_size if window_size is not None else self._config.window_size
-        gpu_monitoring = enable_gpu_monitoring if enable_gpu_monitoring is not None else self._config.enable_gpu_monitoring
+        gpu_monitoring = (
+            enable_gpu_monitoring if enable_gpu_monitoring is not None else self._config.enable_gpu_monitoring
+        )
         threshold = alert_threshold_ms if alert_threshold_ms is not None else self._config.alert_threshold_ms
 
         self._logger.info(
@@ -722,10 +733,7 @@ class MetricsFactory:
                 project_name=project,
             )
         else:
-            raise ValueError(
-                f"Unknown platform: {platform}. "
-                f"Valid platforms: braintrust, wandb, unified"
-            )
+            raise ValueError(f"Unknown platform: {platform}. Valid platforms: braintrust, wandb, unified")
 
         # Cache singleton if requested
         if use_singleton:
@@ -1143,8 +1151,7 @@ class DataLoaderFactory:
             )
         else:
             raise ValueError(
-                f"Unknown dataset_name: {dataset_name}. "
-                f"Valid names: dabstep, primus_seed, primus_instruct, combined"
+                f"Unknown dataset_name: {dataset_name}. Valid names: dabstep, primus_seed, primus_instruct, combined"
             )
 
     @classmethod

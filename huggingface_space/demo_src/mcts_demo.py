@@ -188,6 +188,7 @@ class MCTSDemo:
         Returns:
             Function that generates actions for a given state
         """
+
         def action_generator(state: MCTSState) -> list[str]:
             """Generate available actions from current state."""
             # Get category-specific actions
@@ -215,6 +216,7 @@ class MCTSDemo:
         Returns:
             Function that computes next state from current state + action
         """
+
         def state_transition(state: MCTSState, action: str) -> MCTSState:
             """Compute next state by applying action."""
             # Track action history
@@ -406,20 +408,16 @@ class MCTSDemo:
             "exploration_weight": exploration_weight,
             "seed": seed,
             "category": category,
-
             # Top actions sorted by visits
             "top_actions": [
                 {
                     "action": child.action,
                     "visits": child.visits,
                     "value": round(child.value, 4),
-                    "ucb1": round(
-                        child.visits / root.visits if root.visits > 0 else 0.0, 4
-                    ),  # Simplified UCB display
+                    "ucb1": round(child.visits / root.visits if root.visits > 0 else 0.0, 4),  # Simplified UCB display
                 }
                 for child in sorted(root.children, key=lambda c: -c.visits)[:5]
             ],
-
             # Framework statistics
             "framework_stats": {
                 "cache_hits": stats.get("cache_hits", 0),
@@ -427,7 +425,6 @@ class MCTSDemo:
                 "cache_hit_rate": round(stats.get("cache_hit_rate", 0.0), 4),
                 "total_simulations": stats.get("total_simulations", 0),
             },
-
             # Educational visualization
             "tree_visualization": self._generate_tree_visualization(root),
         }

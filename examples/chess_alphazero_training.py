@@ -67,7 +67,6 @@ def show_component_examples() -> None:
     from src.games.chess import (
         ChessActionEncoder,
         ChessBoardRepresentation,
-        ChessConfig,
         ChessGameState,
         ChessMetaController,
         get_chess_small_config,
@@ -239,7 +238,6 @@ async def run_inference(
     print_header("Chess AlphaZero Inference")
 
     from src.games.chess import (
-        ChessConfig,
         ChessEnsembleAgent,
         ChessGameState,
         get_chess_small_config,
