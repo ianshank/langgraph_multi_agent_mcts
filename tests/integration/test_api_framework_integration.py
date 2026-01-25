@@ -58,7 +58,6 @@ except ImportError:
 try:
     from src.api.auth import (
         APIKeyAuthenticator,
-        ClientInfo,
         RateLimitConfig,
         set_authenticator,
     )
@@ -69,7 +68,6 @@ except ImportError:
 
 try:
     from src.api.exceptions import (
-        AuthenticationError,
         FrameworkError,
         RateLimitError,
     )

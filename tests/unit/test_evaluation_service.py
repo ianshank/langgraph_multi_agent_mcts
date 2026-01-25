@@ -869,7 +869,7 @@ class TestEvaluationService:
         assert "benchmark_0" in results
         assert "benchmark_1" in results
         assert "benchmark_2" in results
-        for key, result in results.items():
+        for _key, result in results.items():
             assert isinstance(result, EvaluationResult)
             assert result.strategy == EvaluationStrategy.BENCHMARK
 
@@ -1214,10 +1214,8 @@ class TestStatisticalMethods:
             null_hypothesis=0.5,
         )
         # Check consistency with expectation (allowing for edge cases)
-        if games >= evaluation_service._config.min_games_for_significance:
-            # For games above threshold, verify the direction matches
-            if abs(win_rate - 0.5) > 0.2:
-                assert is_significant == expected_significant
+        if games >= evaluation_service._config.min_games_for_significance and abs(win_rate - 0.5) > 0.2:
+            assert is_significant == expected_significant
 
 
 # =============================================================================

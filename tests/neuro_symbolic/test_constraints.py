@@ -679,7 +679,7 @@ class TestConstraintSystem:
 
         # All actions should be valid (state satisfies constraint)
         assert len(valid_actions) == 3
-        for action, score in valid_actions:
+        for _action, score in valid_actions:
             assert score == 1.0
 
     def test_conflict_logging(self):
