@@ -21,6 +21,10 @@ DEFAULT_GENERATOR_MODEL: Final[str] = os.getenv("MCTS_GENERATOR_MODEL", "gpt-4o"
 DEFAULT_REFLECTOR_MODEL: Final[str] = os.getenv("MCTS_REFLECTOR_MODEL", "gpt-4o")
 DEFAULT_TOKENIZER_NAME: Final[str] = os.getenv("MCTS_TOKENIZER_NAME", "gpt2")
 
+# Fast preset models (lighter weight for quick iterations)
+DEFAULT_GENERATOR_MODEL_FAST: Final[str] = os.getenv("MCTS_GENERATOR_MODEL_FAST", "gpt-4o-mini")
+DEFAULT_REFLECTOR_MODEL_FAST: Final[str] = os.getenv("MCTS_REFLECTOR_MODEL_FAST", "gpt-4o-mini")
+
 # Model parameters
 DEFAULT_GENERATOR_TEMPERATURE: Final[float] = 0.7
 DEFAULT_REFLECTOR_TEMPERATURE: Final[float] = 0.3
@@ -36,10 +40,15 @@ TEMPERATURE_MAX: Final[float] = 2.0
 # Token validation bounds
 MAX_TOKENS_MIN: Final[int] = 1
 MAX_TOKENS_MAX: Final[int] = 8000
+REFLECTOR_MAX_TOKENS_MAX: Final[int] = 4000
 
 # Variant validation bounds
 NUM_VARIANTS_MIN: Final[int] = 1
 NUM_VARIANTS_MAX: Final[int] = 10
+
+# Top-p validation bounds
+TOP_P_MIN: Final[float] = 0.0
+TOP_P_MAX: Final[float] = 1.0
 
 # ============================================================================
 # MCTS Algorithm Configuration
@@ -58,14 +67,22 @@ DEFAULT_ITERATIONS_BENCHMARK: Final[int] = 50
 ITERATIONS_MIN: Final[int] = 1
 ITERATIONS_MAX: Final[int] = 1000
 
+# Exploration weight validation bounds
+EXPLORATION_WEIGHT_MIN: Final[float] = 0.0
+EXPLORATION_WEIGHT_MAX: Final[float] = 10.0
+
 # Tree depth and breadth limits
 DEFAULT_MAX_DEPTH: Final[int] = 10
 DEFAULT_MAX_CHILDREN: Final[int] = 5
-MAX_DEPTH_LIMIT: Final[int] = 100
-MAX_CHILDREN_LIMIT: Final[int] = 100
+MIN_DEPTH: Final[int] = 1
+MIN_CHILDREN: Final[int] = 1
+MAX_DEPTH_LIMIT: Final[int] = 50
+MAX_CHILDREN_LIMIT: Final[int] = 20
 
-# Solution confidence threshold
+# Solution confidence threshold and bounds
 DEFAULT_SOLUTION_CONFIDENCE_THRESHOLD: Final[float] = 0.95
+CONFIDENCE_MIN: Final[float] = 0.0
+CONFIDENCE_MAX: Final[float] = 1.0
 
 # Best node selection weight for visit count
 BEST_NODE_VISIT_WEIGHT: Final[float] = 0.1
@@ -82,8 +99,16 @@ DEFAULT_EXECUTION_TIMEOUT: Final[float] = float(os.getenv("MCTS_EXECUTION_TIMEOU
 BENCHMARK_TIMEOUT_PER_PROBLEM: Final[float] = float(os.getenv("BENCHMARK_TIMEOUT_PER_PROBLEM", "60.0"))
 TIMEOUT_SIGNAL_PADDING: Final[int] = 1
 
+# Execution timeout validation bounds
+EXECUTION_TIMEOUT_MIN: Final[float] = 0.1
+EXECUTION_TIMEOUT_MAX: Final[float] = 60.0
+
 # Memory limits (can be overridden via environment)
 DEFAULT_MAX_MEMORY_MB: Final[int] = int(os.getenv("MCTS_MAX_MEMORY_MB", "256"))
+
+# Memory validation bounds
+MAX_MEMORY_MIN_MB: Final[int] = 32
+MAX_MEMORY_MAX_MB: Final[int] = 2048
 
 # Benchmark settings
 DEFAULT_BENCHMARK_MAX_CONCURRENT: Final[int] = 1
@@ -173,6 +198,9 @@ EASY_MAX_LINES: Final[int] = 5
 EASY_MAX_TESTS: Final[int] = 3
 MEDIUM_MAX_LINES: Final[int] = 15
 MEDIUM_MAX_TESTS: Final[int] = 6
+
+# Display limits
+MAX_TEST_CASES_TO_SHOW: Final[int] = 3
 
 # ============================================================================
 # Security Configuration

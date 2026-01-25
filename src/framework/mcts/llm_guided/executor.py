@@ -279,6 +279,14 @@ class CodeExecutor:
         self.allow_network = allow_network
         self.use_subprocess = use_subprocess
 
+        logger.debug(
+            "CodeExecutor initialized",
+            timeout_seconds=timeout_seconds,
+            max_memory_mb=max_memory_mb,
+            allow_network=allow_network,
+            use_subprocess=use_subprocess,
+        )
+
     def validate_code(self, code: str) -> tuple[bool, list[str]]:
         """
         Validate code before execution.
@@ -295,12 +303,21 @@ class CodeExecutor:
         try:
             tree = ast.parse(code)
         except SyntaxError as e:
+            logger.debug(
+                "Code validation failed: syntax error",
+                error=str(e),
+                code_length=len(code),
+            )
             return False, [f"Syntax error: {e}"]
 
         # Check for disallowed imports
         checker = ImportChecker()
         checker.visit(tree)
         if checker.disallowed_imports:
+            logger.debug(
+                "Code validation found disallowed imports",
+                disallowed_imports=checker.disallowed_imports,
+            )
             errors.append(f"Disallowed imports: {', '.join(checker.disallowed_imports)}")
 
         # Check for dangerous patterns
@@ -315,9 +332,22 @@ class CodeExecutor:
         ]
         for pattern in dangerous_patterns:
             if pattern in code:
+                logger.debug(
+                    "Code validation found dangerous pattern",
+                    pattern=pattern,
+                )
                 errors.append(f"Potentially dangerous pattern: {pattern}")
 
-        return len(errors) == 0, errors
+        is_valid = len(errors) == 0
+        if is_valid:
+            logger.debug("Code validation passed", code_length=len(code))
+        else:
+            logger.debug(
+                "Code validation failed",
+                error_count=len(errors),
+                errors=errors,
+            )
+        return is_valid, errors
 
     def execute(
         self,
@@ -339,14 +369,26 @@ class CodeExecutor:
         import time
 
         start_time = time.perf_counter()
+        num_tests = len(test_cases) if test_cases else 0
+
+        logger.debug(
+            "Starting code execution",
+            code_length=len(code),
+            num_tests=num_tests,
+            use_subprocess=self.use_subprocess,
+        )
 
         # Validate code first
         is_valid, validation_errors = self.validate_code(code)
         if not is_valid:
+            logger.debug(
+                "Code execution aborted: validation failed",
+                error_count=len(validation_errors),
+            )
             return CodeExecutionResult(
                 passed=False,
                 num_tests_passed=0,
-                num_tests_total=len(test_cases) if test_cases else 0,
+                num_tests_total=num_tests,
                 stdout="",
                 stderr="\n".join(validation_errors),
                 errors=validation_errors,
@@ -355,9 +397,20 @@ class CodeExecutor:
             )
 
         if self.use_subprocess:
-            return self._execute_in_subprocess(code, test_cases, globals_dict, start_time)
+            result = self._execute_in_subprocess(code, test_cases, globals_dict, start_time)
         else:
-            return self._execute_in_process(code, test_cases, globals_dict, start_time)
+            result = self._execute_in_process(code, test_cases, globals_dict, start_time)
+
+        logger.debug(
+            "Code execution completed",
+            passed=result.passed,
+            num_tests_passed=result.num_tests_passed,
+            num_tests_total=result.num_tests_total,
+            execution_time_ms=round(result.execution_time_ms, 2),
+            timed_out=result.timed_out,
+            syntax_error=result.syntax_error,
+        )
+        return result
 
     def _execute_in_process(
         self,
