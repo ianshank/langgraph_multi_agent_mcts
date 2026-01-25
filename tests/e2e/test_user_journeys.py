@@ -653,7 +653,10 @@ class TestCybersecurityIncidentResponseJourney:
 # JOURNEY 5: TRAINING PIPELINE
 # ============================================================================
 
+from tests.conftest import skip_if_cuda_unsupported
 
+
+@skip_if_cuda_unsupported
 class TestTrainingPipelineJourney:
     """
     Tests the complete training pipeline journey.
@@ -1186,7 +1189,7 @@ class TestHRMTRMSynergyJourney:
             dropout=0.1,
         )
 
-        hrm_agent = create_hrm_agent(hrm_config, device="cpu", use_ponder_net=False)
+        hrm_agent = create_hrm_agent(hrm_config, device="cpu")
         trm_agent = create_trm_agent(trm_config, output_dim=64, device="cpu")
 
         # Step 2: Create test input

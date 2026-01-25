@@ -59,6 +59,46 @@ except ImportError:
 
 
 # =============================================================================
+# CUDA Compatibility Detection
+# =============================================================================
+
+
+def is_cuda_architecture_supported() -> tuple[bool, str]:
+    """
+    Check if the current CUDA GPU architecture is supported by PyTorch.
+
+    Returns:
+        Tuple of (is_supported, reason_message)
+    """
+    try:
+        import torch
+
+        if not torch.cuda.is_available():
+            return True, "No CUDA device available (CPU mode)"
+
+        # Try to allocate a small tensor on CUDA to detect architecture issues
+        try:
+            test_tensor = torch.zeros(1, device="cuda")
+            del test_tensor
+            return True, "CUDA architecture supported"
+        except RuntimeError as e:
+            error_msg = str(e)
+            if "no kernel image is available" in error_msg or "CUDA capability" in error_msg:
+                # Get device name for better error message
+                device_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "Unknown"
+                return False, f"CUDA architecture not supported: {device_name}"
+            raise
+    except ImportError:
+        return True, "PyTorch not installed"
+
+
+CUDA_SUPPORTED, CUDA_SKIP_REASON = is_cuda_architecture_supported()
+
+# Decorator for skipping tests on unsupported CUDA architectures
+skip_if_cuda_unsupported = pytest.mark.skipif(not CUDA_SUPPORTED, reason=CUDA_SKIP_REASON)
+
+
+# =============================================================================
 # Pytest Configuration
 # =============================================================================
 
