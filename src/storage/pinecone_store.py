@@ -20,6 +20,9 @@ except ImportError:
 
 from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction
 from src.agents.meta_controller.utils import normalize_features
+from src.observability.logging import get_structured_logger
+
+logger = get_structured_logger(__name__)
 
 
 class PineconeVectorStore:
@@ -60,7 +63,7 @@ class PineconeVectorStore:
         self._operation_buffer: list[dict[str, Any]] = []
 
         if not PINECONE_AVAILABLE:
-            print("Warning: pinecone package not installed. Install with: pip install pinecone")
+            logger.warning("pinecone package not installed. Install with: pip install pinecone")
             return
 
         if auto_init and self._api_key and self._host:
@@ -77,7 +80,7 @@ class PineconeVectorStore:
                 self._index = self._client.Index(host=self._host)
                 self._is_initialized = True
             except Exception as e:
-                print(f"Warning: Failed to initialize Pinecone: {e}")
+                logger.warning(f"Failed to initialize Pinecone: {e}", error_type=type(e).__name__)
                 self._is_initialized = False
 
     @property
@@ -154,7 +157,7 @@ class PineconeVectorStore:
             return vector_id
 
         except Exception as e:
-            print(f"Warning: Failed to store prediction in Pinecone: {e}")
+            logger.warning(f"Failed to store prediction in Pinecone: {e}", error_type=type(e).__name__)
             return None
 
     def find_similar_decisions(
@@ -203,7 +206,7 @@ class PineconeVectorStore:
             return similar_decisions
 
         except Exception as e:
-            print(f"Warning: Failed to query Pinecone: {e}")
+            logger.warning(f"Failed to query Pinecone: {e}", error_type=type(e).__name__)
             return []
 
     def get_agent_distribution(
@@ -314,7 +317,7 @@ class PineconeVectorStore:
             return len(vectors)
 
         except Exception as e:
-            print(f"Warning: Failed to store batch in Pinecone: {e}")
+            logger.warning(f"Failed to store batch in Pinecone: {e}", error_type=type(e).__name__)
             return 0
 
     def delete_namespace(self) -> bool:
@@ -333,7 +336,7 @@ class PineconeVectorStore:
             self._index.delete(delete_all=True, namespace=self.namespace)
             return True
         except Exception as e:
-            print(f"Warning: Failed to delete namespace: {e}")
+            logger.warning(f"Failed to delete namespace: {e}", error_type=type(e).__name__)
             return False
 
     def get_stats(self) -> dict[str, Any]:

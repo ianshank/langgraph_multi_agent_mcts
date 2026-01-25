@@ -7,7 +7,10 @@ to augment LLM prompts during MCTS search.
 
 from __future__ import annotations
 
+import asyncio
 import copy
+import hashlib
+import time
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -144,6 +147,9 @@ class RAGContextProviderConfig:
     cache_ttl_seconds: int = 300
     """Cache TTL in seconds."""
 
+    cache_max_size: int = 1000
+    """Maximum number of entries in cache to prevent unbounded growth."""
+
     def validate(self) -> None:
         """Validate configuration."""
         errors = []
@@ -196,6 +202,7 @@ class RAGContextProvider:
 
         self._vector_store = vector_store
         self._cache: dict[str, tuple[RAGContext, float]] = {}
+        self._cache_lock = asyncio.Lock()  # Thread-safe cache access
 
         # Try to initialize default vector store if not provided
         if self._vector_store is None:
@@ -244,18 +251,21 @@ class RAGContextProvider:
         Returns:
             RAGContext with retrieved information
         """
-        import time
-
         start_time = time.perf_counter()
 
-        # Check cache
+        # Check cache with async lock
         cache_key = self._cache_key(problem, current_code)
-        if self._config.cache_results and cache_key in self._cache:
-            cached_context, cached_time = self._cache[cache_key]
-            if time.time() - cached_time < self._config.cache_ttl_seconds:
-                logger.debug("Returning cached RAG context")
-                # Return a deep copy to prevent mutation of cached data
-                return copy.deepcopy(cached_context)
+        async with self._cache_lock:
+            if self._config.cache_results and cache_key in self._cache:
+                cached_context, cached_time = self._cache[cache_key]
+                # Use monotonic time for TTL comparison (handles clock adjustments)
+                if time.monotonic() - cached_time < self._config.cache_ttl_seconds:
+                    logger.debug("Returning cached RAG context")
+                    # Return a deep copy to prevent mutation of cached data
+                    return copy.deepcopy(cached_context)
+                else:
+                    # Remove expired entry
+                    del self._cache[cache_key]
 
         # Build query
         query = self._build_query(problem, current_code)
@@ -267,13 +277,29 @@ class RAGContextProvider:
             try:
                 results = await self._retrieve_from_vector_store(query, tags)
                 context = self._process_results(results, query)
-            except Exception as e:
-                logger.error(
-                    f"Vector store retrieval failed, using fallback context: {e}",
+            except (TimeoutError, ConnectionError, OSError) as e:
+                # Transient network errors - log as warning
+                logger.warning(
+                    f"Vector store retrieval failed (transient), using fallback: {e}",
                     error_type=type(e).__name__,
                     query_preview=query[:100],
                 )
-                # Explicitly use fallback on error
+                context = self._get_fallback_context(problem)
+            except (ValueError, TypeError, KeyError) as e:
+                # Data/validation errors - likely a bug
+                logger.error(
+                    f"Vector store data error, using fallback: {e}",
+                    error_type=type(e).__name__,
+                    query_preview=query[:100],
+                )
+                context = self._get_fallback_context(problem)
+            except Exception as e:
+                # Unexpected error - log full details
+                logger.error(
+                    f"Unexpected vector store error, using fallback: {e}",
+                    error_type=type(e).__name__,
+                    query_preview=query[:100],
+                )
                 context = self._get_fallback_context(problem)
         else:
             # Use local fallback when no vector store is configured
@@ -282,9 +308,17 @@ class RAGContextProvider:
 
         context.retrieval_time_ms = (time.perf_counter() - start_time) * 1000
 
-        # Cache result
+        # Cache result with async lock
         if self._config.cache_results:
-            self._cache[cache_key] = (context, time.time())
+            async with self._cache_lock:
+                # Evict oldest entries if cache is full
+                if len(self._cache) >= self._config.cache_max_size:
+                    self._evict_expired_entries()
+                    # If still full after eviction, remove oldest
+                    if len(self._cache) >= self._config.cache_max_size:
+                        oldest_key = min(self._cache, key=lambda k: self._cache[k][1])
+                        del self._cache[oldest_key]
+                self._cache[cache_key] = (context, time.monotonic())
 
         logger.debug(
             "Retrieved RAG context",
@@ -296,10 +330,20 @@ class RAGContextProvider:
 
     def _cache_key(self, problem: str, current_code: str | None) -> str:
         """Generate cache key."""
-        import hashlib
-
         content = problem + (current_code or "")
         return hashlib.md5(content.encode()).hexdigest()
+
+    def _evict_expired_entries(self) -> int:
+        """Remove expired entries from cache. Returns count of removed entries."""
+        current_time = time.monotonic()
+        expired_keys = [
+            key
+            for key, (_, cached_time) in self._cache.items()
+            if current_time - cached_time >= self._config.cache_ttl_seconds
+        ]
+        for key in expired_keys:
+            del self._cache[key]
+        return len(expired_keys)
 
     def _build_query(self, problem: str, current_code: str | None) -> str:
         """Build query for vector search."""
@@ -319,7 +363,8 @@ class RAGContextProvider:
         tags: list[str] | None,
     ) -> list[dict[str, Any]]:
         """Retrieve results from vector store."""
-        assert self._vector_store is not None, "Vector store must be initialized"
+        if self._vector_store is None:
+            raise RuntimeError("Vector store must be initialized before retrieval")
 
         filter_dict = None
         if tags:

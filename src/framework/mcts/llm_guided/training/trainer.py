@@ -522,6 +522,15 @@ class DistillationTrainer:
             with torch.cuda.amp.autocast(enabled=self._use_amp):
                 loss, batch_metrics = self._compute_loss(batch)
 
+            # Check for NaN/inf loss - skip batch if detected
+            if not torch.isfinite(loss):
+                logger.warning(
+                    "Detected non-finite loss, skipping batch",
+                    step=self._global_step,
+                    loss_value=loss.item() if loss.numel() == 1 else "tensor",
+                )
+                continue
+
             # Backward pass
             self._optimizer.zero_grad()
 

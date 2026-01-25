@@ -140,14 +140,31 @@ class BenchmarkReport:
     @classmethod
     def load(cls, filepath: str | Path) -> BenchmarkReport:
         """Load report from JSON file."""
-        with open(filepath) as f:
-            data = json.load(f)
+        try:
+            with open(filepath) as f:
+                data = json.load(f)
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in benchmark report file: {e}") from e
+        except OSError as e:
+            raise ValueError(f"Failed to read benchmark report file: {e}") from e
 
-        # Reconstruct metrics and results
-        problem_results = [ProblemResult(**r) for r in data["metrics"]["problem_results"]]
-        metrics_data = data["metrics"].copy()
-        metrics_data["problem_results"] = problem_results
-        metrics = BenchmarkMetrics(**metrics_data)
+        # Validate required fields
+        required_fields = ["run_id", "timestamp", "mcts_config_name", "runner_config", "metrics"]
+        missing_fields = [f for f in required_fields if f not in data]
+        if missing_fields:
+            raise ValueError(f"Missing required fields in benchmark report: {missing_fields}")
+
+        if "problem_results" not in data.get("metrics", {}):
+            raise ValueError("Missing 'problem_results' in metrics")
+
+        try:
+            # Reconstruct metrics and results
+            problem_results = [ProblemResult(**r) for r in data["metrics"]["problem_results"]]
+            metrics_data = data["metrics"].copy()
+            metrics_data["problem_results"] = problem_results
+            metrics = BenchmarkMetrics(**metrics_data)
+        except (TypeError, KeyError) as e:
+            raise ValueError(f"Invalid metrics structure in benchmark report: {e}") from e
 
         return cls(
             run_id=data["run_id"],
@@ -351,9 +368,35 @@ class BenchmarkRunner:
                 result.syntax_errors += 1
                 result.error_messages.append(f"Sample {sample_idx + 1} syntax error: {e}")
 
-            except Exception as e:
+            except (RuntimeError, ValueError, TypeError, AttributeError, IndexError, KeyError) as e:
+                # Specific runtime errors from code execution
                 result.runtime_errors += 1
-                result.error_messages.append(f"Sample {sample_idx + 1} error: {type(e).__name__}: {e}")
+                result.error_messages.append(f"Sample {sample_idx + 1} runtime error: {type(e).__name__}: {e}")
+
+            except (MemoryError, RecursionError) as e:
+                # Resource exhaustion - count as runtime error but log prominently
+                result.runtime_errors += 1
+                result.error_messages.append(f"Sample {sample_idx + 1} resource error: {type(e).__name__}: {e}")
+                logger.warning(
+                    "Resource exhaustion during benchmark",
+                    task_id=problem.task_id,
+                    error=str(e),
+                )
+
+            except (KeyboardInterrupt, SystemExit):
+                # Re-raise system exceptions - don't swallow these
+                raise
+
+            except Exception as e:
+                # Truly unexpected errors - log for debugging but continue
+                result.runtime_errors += 1
+                result.error_messages.append(f"Sample {sample_idx + 1} unexpected error: {type(e).__name__}: {e}")
+                logger.error(
+                    "Unexpected error during benchmark sample",
+                    task_id=problem.task_id,
+                    error_type=type(e).__name__,
+                    error=str(e),
+                )
 
         result.total_time_ms = (time.perf_counter() - start_time) * 1000
 

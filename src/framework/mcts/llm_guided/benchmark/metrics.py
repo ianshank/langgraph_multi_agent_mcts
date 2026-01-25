@@ -291,8 +291,15 @@ def compute_pass_at_k_for_problems(
                 # No attempts, treat as 0
                 problem_pass_rates.append(0.0)
             elif n < k:
-                # Not enough samples, use actual pass rate
-                problem_pass_rates.append(1.0 if c > 0 else 0.0)
+                # Not enough samples - use conservative estimate based on actual pass rate
+                # This is more accurate than assuming pass@k = 1.0 if any sample passes
+                # Conservative formula: estimate probability that at least 1 of k samples passes
+                # given observed pass rate p = c/n
+                # p(at least 1) = 1 - (1-p)^k, but we use observed rate as lower bound
+                pass_rate = c / n
+                # Use the smaller of: actual observed pass rate, or extrapolated probability
+                conservative_estimate = min(1.0 - (1.0 - pass_rate) ** k, c / n) if c > 0 else 0.0
+                problem_pass_rates.append(conservative_estimate)
             else:
                 problem_pass_rates.append(compute_pass_at_k(n, c, k))
 

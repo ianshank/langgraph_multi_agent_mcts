@@ -246,38 +246,52 @@ class MCTSDataset(Dataset if _TORCH_AVAILABLE else object):
         examples = []
         episode_metadata = None
 
-        with open(filepath) as f:
-            for line in f:
-                data = json.loads(line)
+        try:
+            with open(filepath) as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                    except json.JSONDecodeError as e:
+                        logger.warning(
+                            f"Skipping malformed JSON in {filepath}:{line_num}: {e}",
+                            filepath=str(filepath),
+                            line_num=line_num,
+                        )
+                        continue
 
-                if "_metadata" in data:
-                    episode_metadata = data["_metadata"]
-                    # Filter by success if configured
-                    if self._config.only_successful_episodes and not episode_metadata.get("solution_found", False):
-                        return []  # Skip entire episode
-                    continue
+                    if "_metadata" in data:
+                        episode_metadata = data["_metadata"]
+                        # Filter by success if configured
+                        if self._config.only_successful_episodes and not episode_metadata.get("solution_found", False):
+                            return []  # Skip entire episode
+                        continue
 
-                # Apply filters
-                if data.get("visits", 0) < self._config.min_visits:
-                    continue
+                    # Apply filters
+                    if data.get("visits", 0) < self._config.min_visits:
+                        continue
 
-                if self._config.exclude_root_nodes and data.get("depth", 0) == 0:
-                    continue
+                    if self._config.exclude_root_nodes and data.get("depth", 0) == 0:
+                        continue
 
-                example = RawExample(
-                    state_code=data.get("state_code", ""),
-                    state_problem=data.get("state_problem", ""),
-                    state_hash=data.get("state_hash", ""),
-                    depth=data.get("depth", 0),
-                    llm_action_probs=data.get("llm_action_probs", {}),
-                    mcts_action_probs=data.get("mcts_action_probs", {}),
-                    llm_value_estimate=data.get("llm_value_estimate", 0.5),
-                    outcome=data.get("outcome", 0.0),
-                    episode_id=data.get("episode_id", ""),
-                    visits=data.get("visits", 0),
-                    q_value=data.get("q_value", 0.0),
-                )
-                examples.append(example)
+                    example = RawExample(
+                        state_code=data.get("state_code", ""),
+                        state_problem=data.get("state_problem", ""),
+                        state_hash=data.get("state_hash", ""),
+                        depth=data.get("depth", 0),
+                        llm_action_probs=data.get("llm_action_probs", {}),
+                        mcts_action_probs=data.get("mcts_action_probs", {}),
+                        llm_value_estimate=data.get("llm_value_estimate", 0.5),
+                        outcome=data.get("outcome", 0.0),
+                        episode_id=data.get("episode_id", ""),
+                        visits=data.get("visits", 0),
+                        q_value=data.get("q_value", 0.0),
+                    )
+                    examples.append(example)
+        except OSError as e:
+            logger.error(f"Failed to read episode file {filepath}: {e}")
 
         return examples
 
@@ -285,31 +299,45 @@ class MCTSDataset(Dataset if _TORCH_AVAILABLE else object):
         """Load examples from a split file (train/val/test)."""
         examples = []
 
-        with open(filepath) as f:
-            for line in f:
-                data = json.loads(line)
+        try:
+            with open(filepath) as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+                    try:
+                        data = json.loads(line)
+                    except json.JSONDecodeError as e:
+                        logger.warning(
+                            f"Skipping malformed JSON in {filepath}:{line_num}: {e}",
+                            filepath=str(filepath),
+                            line_num=line_num,
+                        )
+                        continue
 
-                # Apply filters
-                if data.get("visits", 0) < self._config.min_visits:
-                    continue
+                    # Apply filters
+                    if data.get("visits", 0) < self._config.min_visits:
+                        continue
 
-                if self._config.exclude_root_nodes and data.get("depth", 0) == 0:
-                    continue
+                    if self._config.exclude_root_nodes and data.get("depth", 0) == 0:
+                        continue
 
-                example = RawExample(
-                    state_code=data.get("state_code", ""),
-                    state_problem=data.get("state_problem", ""),
-                    state_hash=data.get("state_hash", ""),
-                    depth=data.get("depth", 0),
-                    llm_action_probs=data.get("llm_action_probs", {}),
-                    mcts_action_probs=data.get("mcts_action_probs", {}),
-                    llm_value_estimate=data.get("llm_value_estimate", 0.5),
-                    outcome=data.get("outcome", 0.0),
-                    episode_id=data.get("episode_id", ""),
-                    visits=data.get("visits", 0),
-                    q_value=data.get("q_value", 0.0),
-                )
-                examples.append(example)
+                    example = RawExample(
+                        state_code=data.get("state_code", ""),
+                        state_problem=data.get("state_problem", ""),
+                        state_hash=data.get("state_hash", ""),
+                        depth=data.get("depth", 0),
+                        llm_action_probs=data.get("llm_action_probs", {}),
+                        mcts_action_probs=data.get("mcts_action_probs", {}),
+                        llm_value_estimate=data.get("llm_value_estimate", 0.5),
+                        outcome=data.get("outcome", 0.0),
+                        episode_id=data.get("episode_id", ""),
+                        visits=data.get("visits", 0),
+                        q_value=data.get("q_value", 0.0),
+                    )
+                    examples.append(example)
+        except OSError as e:
+            logger.error(f"Failed to read split file {filepath}: {e}")
 
         return examples
 
