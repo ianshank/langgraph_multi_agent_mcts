@@ -319,7 +319,7 @@ class HRMAdapter:
         self._logger.info(f"Hot-reloading HRM from {model_path}")
         self._hrm_agent = create_hrm_agent(config, device=device)
 
-        state_dict = torch.load(model_path, map_location=device)
+        state_dict = torch.load(model_path, map_location=device, weights_only=True)
         self._hrm_agent.load_state_dict(state_dict)
         self._hrm_agent.eval()
 
@@ -514,7 +514,7 @@ class TRMAdapter:
         self._logger.info(f"Hot-reloading TRM from {model_path}")
         self._trm_agent = create_trm_agent(config, device=device)
 
-        state_dict = torch.load(model_path, map_location=device)
+        state_dict = torch.load(model_path, map_location=device, weights_only=True)
         self._trm_agent.load_state_dict(state_dict)
         self._trm_agent.eval()
 
@@ -973,8 +973,8 @@ class UnifiedSearchOrchestrator:
             if data_collector:
                 try:
                     data_collector.finalize_episode(outcome=-1.0)
-                except:
-                    pass
+                except Exception:
+                    pass  # Best-effort cleanup, don't mask original error
             raise e
 
         execution_time_ms = (time.perf_counter() - start_time) * 1000

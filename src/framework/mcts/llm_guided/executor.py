@@ -412,13 +412,27 @@ class CodeExecutor:
         timed_out = False
         syntax_error = False
 
-        # Set up timeout
+        # Set up timeout - uses signal on Unix, threading on Windows
         old_handler = None
+        timeout_timer = None
+        timeout_event = None
+        
+        def _thread_timeout_handler():
+            """Thread-based timeout handler for Windows."""
+            nonlocal timed_out
+            timed_out = True
+        
         try:
-            # Only use signal-based timeout on Unix
+            # Prefer signal-based timeout on Unix (more reliable)
             if hasattr(signal, "SIGALRM"):
                 old_handler = signal.signal(signal.SIGALRM, _timeout_handler)
                 signal.alarm(int(self.timeout_seconds + 1))
+            else:
+                # Use threading-based timeout on Windows
+                import threading
+                timeout_timer = threading.Timer(self.timeout_seconds, _thread_timeout_handler)
+                timeout_timer.daemon = True
+                timeout_timer.start()
         except (ValueError, OSError):
             # Cannot use signals (e.g., not on main thread)
             pass
@@ -427,7 +441,7 @@ class CodeExecutor:
             with redirect_stdout(stdout_capture), redirect_stderr(stderr_capture):
                 # Execute the code
                 try:
-                    exec(code, exec_globals)
+                    exec(code, exec_globals)  # nosec B102 - intentional sandboxed execution
                 except SyntaxError as e:
                     syntax_error = True
                     errors.append(f"Syntax error: {e}")
@@ -442,7 +456,7 @@ class CodeExecutor:
                     for i, test in enumerate(test_cases):
                         test_result = {"test_index": i, "test_code": test, "passed": False}
                         try:
-                            exec(test, exec_globals)
+                            exec(test, exec_globals)  # nosec B102 - intentional sandboxed test
                             test_result["passed"] = True
                         except AssertionError as e:
                             test_result["error"] = f"AssertionError: {e}"
@@ -463,13 +477,15 @@ class CodeExecutor:
         except Exception as e:
             errors.append(f"Unexpected error: {type(e).__name__}: {e}")
         finally:
-            # Clear timeout
+            # Clear timeout - handles both signal and threading-based timeouts
             if old_handler is not None:
                 try:
                     signal.alarm(0)
                     signal.signal(signal.SIGALRM, old_handler)
                 except (ValueError, OSError):
                     pass
+            if timeout_timer is not None:
+                timeout_timer.cancel()
 
         execution_time_ms = (time.perf_counter() - start_time) * 1000
         num_tests_passed = sum(1 for r in test_results if r["passed"])
