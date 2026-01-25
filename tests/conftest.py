@@ -69,6 +69,11 @@ def is_cuda_architecture_supported() -> tuple[bool, str]:
 
     Returns:
         Tuple of (is_supported, reason_message)
+
+    Note:
+        This function catches ALL CUDA RuntimeErrors to prevent pytest from
+        crashing during test collection. Any CUDA issue results in skipping
+        rather than failing the entire test suite.
     """
     try:
         import torch
@@ -82,14 +87,23 @@ def is_cuda_architecture_supported() -> tuple[bool, str]:
             del test_tensor
             return True, "CUDA architecture supported"
         except RuntimeError as e:
+            # Catch ALL RuntimeErrors to prevent pytest import failures.
+            # This includes architecture mismatches, driver issues, OOM, etc.
             error_msg = str(e)
-            if "no kernel image is available" in error_msg or "CUDA capability" in error_msg:
-                # Get device name for better error message
+            try:
                 device_name = torch.cuda.get_device_name(0) if torch.cuda.device_count() > 0 else "Unknown"
+            except Exception:
+                device_name = "Unknown"
+
+            if "no kernel image is available" in error_msg or "CUDA capability" in error_msg:
                 return False, f"CUDA architecture not supported: {device_name}"
-            raise
+            # For any other CUDA RuntimeError, still skip rather than crash
+            return False, f"CUDA error on {device_name}: {error_msg[:100]}"
     except ImportError:
         return True, "PyTorch not installed"
+    except Exception as e:
+        # Catch-all: any unexpected error during detection should not crash pytest
+        return True, f"CUDA detection failed ({type(e).__name__}), assuming CPU mode"
 
 
 CUDA_SUPPORTED, CUDA_SKIP_REASON = is_cuda_architecture_supported()
