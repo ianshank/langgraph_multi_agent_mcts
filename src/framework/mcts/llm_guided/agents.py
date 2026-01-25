@@ -275,7 +275,11 @@ class GeneratorAgent(BaseAgent):
                     )
                 return GeneratorOutput(variants=variants)
         except (json.JSONDecodeError, ValueError, KeyError) as e:
-            self._logger.warning(f"Failed to parse JSON response: {e}")
+            self._logger.warning(
+                "Failed to parse JSON response",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
 
         # Fallback: try to extract code blocks
         code_blocks = re.findall(r"```python\n([\s\S]*?)```", response)
@@ -332,7 +336,11 @@ class GeneratorAgent(BaseAgent):
             return output
 
         except Exception as e:
-            self._logger.error(f"Generator failed: {e}")
+            self._logger.error(
+                "Generator failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             # Return empty output on failure
             return GeneratorOutput(variants=[])
 
@@ -440,7 +448,11 @@ class ReflectorAgent(BaseAgent):
                     suggestions=data.get("suggestions", []),
                 )
         except (json.JSONDecodeError, ValueError, KeyError) as e:
-            self._logger.warning(f"Failed to parse JSON response: {e}")
+            self._logger.warning(
+                "Failed to parse JSON response",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
 
         # Fallback: try to extract value from text
         value = 0.5
@@ -502,7 +514,11 @@ class ReflectorAgent(BaseAgent):
             return output
 
         except Exception as e:
-            self._logger.error(f"Reflector failed: {e}")
+            self._logger.error(
+                "Reflector failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             # Return neutral output on failure
             return ReflectorOutput(
                 value=0.5,
