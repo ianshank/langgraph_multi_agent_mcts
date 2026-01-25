@@ -21,7 +21,24 @@ Phase 2 Components:
 - rag/: RAG context provider and enhanced prompts
 """
 
-from .agents import GeneratorAgent, GeneratorOutput, ReflectorAgent, ReflectorOutput
+from .agents import (
+    GeneratorAgent,
+    GeneratorOutput,
+    ReflectorAgent,
+    ReflectorOutput,
+)
+from .benchmark import (  # noqa: F401 - re-exports
+    BenchmarkMetrics,
+    BenchmarkReport,
+    BenchmarkRunner,
+    BenchmarkRunnerConfig,
+    HumanEvalBenchmark,
+    HumanEvalProblem,
+    ProblemResult,
+    compute_pass_at_k,
+    load_humaneval_problems,
+    run_benchmark,
+)
 from .config import (
     GeneratorConfig,
     LLMGuidedMCTSConfig,
@@ -51,56 +68,41 @@ from .integration import (
     create_unified_orchestrator,
 )
 from .node import LLMGuidedMCTSNode, NodeState
+from .rag import (  # noqa: F401 - re-exports
+    RAGContext,
+    RAGContextProvider,
+    RAGContextProviderConfig,
+    RAGPromptBuilder,
+    build_generator_prompt_with_rag,
+    build_reflector_prompt_with_rag,
+    create_rag_provider,
+)
 
 # Phase 2: Training module (optional, requires PyTorch)
+_TRAINING_AVAILABLE = False
 try:
-    from .training import (
-        MCTSDataset,
-        MCTSDatasetConfig,
-        TrainingBatch,
-        create_dataloaders,
-        PolicyNetwork,
-        PolicyNetworkConfig,
-        ValueNetwork,
-        ValueNetworkConfig,
-        create_policy_network,
-        create_value_network,
+    from .training import (  # noqa: F401 - re-exports
         DistillationTrainer,
         DistillationTrainerConfig,
-        TrainingCheckpoint,
-        create_trainer,
-        TrainingMetrics,
         EvaluationMetrics,
+        MCTSDataset,
+        MCTSDatasetConfig,
+        PolicyNetwork,
+        PolicyNetworkConfig,
+        TrainingBatch,
+        TrainingCheckpoint,
+        TrainingMetrics,
+        ValueNetwork,
+        ValueNetworkConfig,
+        create_dataloaders,
+        create_policy_network,
+        create_trainer,
+        create_value_network,
     )
 
     _TRAINING_AVAILABLE = True
 except ImportError:
-    _TRAINING_AVAILABLE = False
-
-# Phase 2: Benchmark module
-from .benchmark import (
-    HumanEvalProblem,
-    HumanEvalBenchmark,
-    load_humaneval_problems,
-    BenchmarkMetrics,
-    ProblemResult,
-    compute_pass_at_k,
-    BenchmarkRunner,
-    BenchmarkRunnerConfig,
-    BenchmarkReport,
-    run_benchmark,
-)
-
-# Phase 2: RAG module
-from .rag import (
-    RAGContextProvider,
-    RAGContextProviderConfig,
-    RAGContext,
-    create_rag_provider,
-    RAGPromptBuilder,
-    build_generator_prompt_with_rag,
-    build_reflector_prompt_with_rag,
-)
+    pass
 
 __all__ = [
     # Config
@@ -163,21 +165,23 @@ __all__ = [
 
 # Add training exports if available
 if _TRAINING_AVAILABLE:
-    __all__.extend([
-        "MCTSDataset",
-        "MCTSDatasetConfig",
-        "TrainingBatch",
-        "create_dataloaders",
-        "PolicyNetwork",
-        "PolicyNetworkConfig",
-        "ValueNetwork",
-        "ValueNetworkConfig",
-        "create_policy_network",
-        "create_value_network",
-        "DistillationTrainer",
-        "DistillationTrainerConfig",
-        "TrainingCheckpoint",
-        "create_trainer",
-        "TrainingMetrics",
-        "EvaluationMetrics",
-    ])
+    __all__.extend(
+        [
+            "MCTSDataset",
+            "MCTSDatasetConfig",
+            "TrainingBatch",
+            "create_dataloaders",
+            "PolicyNetwork",
+            "PolicyNetworkConfig",
+            "ValueNetwork",
+            "ValueNetworkConfig",
+            "create_policy_network",
+            "create_value_network",
+            "DistillationTrainer",
+            "DistillationTrainerConfig",
+            "TrainingCheckpoint",
+            "create_trainer",
+            "TrainingMetrics",
+            "EvaluationMetrics",
+        ]
+    )
