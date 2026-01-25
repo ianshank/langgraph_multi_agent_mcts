@@ -1,11 +1,11 @@
 """
-LLM-Guided MCTS Module - Phase 1 Prototype.
+LLM-Guided MCTS Module - Phase 2 Implementation.
 
 This module implements the LLM-guided Monte Carlo Tree Search system
-for code generation with training data collection for future neural
-network distillation.
+for code generation with integrated training data collection for
+neural network distillation.
 
-Components:
+Phase 1 Components:
 - LLMGuidedMCTSConfig: Configuration for the LLM-guided MCTS
 - LLMGuidedMCTSNode: Enhanced MCTS node with data collection fields
 - TrainingDataCollector: Collects (state, action, value) tuples
@@ -14,6 +14,11 @@ Components:
 - CodeExecutor: Safe code execution sandbox
 - LLMGuidedMCTSEngine: Main orchestrator
 - UnifiedSearchOrchestrator: Integration with HRM, TRM, Meta-Controller
+
+Phase 2 Components:
+- training/: PyTorch Dataset, PolicyNetwork, ValueNetwork, DistillationTrainer
+- benchmark/: HumanEval benchmark loader and runner with pass@k metrics
+- rag/: RAG context provider and enhanced prompts
 """
 
 from .agents import GeneratorAgent, GeneratorOutput, ReflectorAgent, ReflectorOutput
@@ -46,6 +51,56 @@ from .integration import (
     create_unified_orchestrator,
 )
 from .node import LLMGuidedMCTSNode, NodeState
+
+# Phase 2: Training module (optional, requires PyTorch)
+try:
+    from .training import (
+        MCTSDataset,
+        MCTSDatasetConfig,
+        TrainingBatch,
+        create_dataloaders,
+        PolicyNetwork,
+        PolicyNetworkConfig,
+        ValueNetwork,
+        ValueNetworkConfig,
+        create_policy_network,
+        create_value_network,
+        DistillationTrainer,
+        DistillationTrainerConfig,
+        TrainingCheckpoint,
+        create_trainer,
+        TrainingMetrics,
+        EvaluationMetrics,
+    )
+
+    _TRAINING_AVAILABLE = True
+except ImportError:
+    _TRAINING_AVAILABLE = False
+
+# Phase 2: Benchmark module
+from .benchmark import (
+    HumanEvalProblem,
+    HumanEvalBenchmark,
+    load_humaneval_problems,
+    BenchmarkMetrics,
+    ProblemResult,
+    compute_pass_at_k,
+    BenchmarkRunner,
+    BenchmarkRunnerConfig,
+    BenchmarkReport,
+    run_benchmark,
+)
+
+# Phase 2: RAG module
+from .rag import (
+    RAGContextProvider,
+    RAGContextProviderConfig,
+    RAGContext,
+    create_rag_provider,
+    RAGPromptBuilder,
+    build_generator_prompt_with_rag,
+    build_reflector_prompt_with_rag,
+)
 
 __all__ = [
     # Config
@@ -85,4 +140,44 @@ __all__ = [
     "UnifiedSearchOrchestrator",
     "UnifiedSearchResult",
     "create_unified_orchestrator",
+    # Phase 2: Benchmark
+    "HumanEvalProblem",
+    "HumanEvalBenchmark",
+    "load_humaneval_problems",
+    "BenchmarkMetrics",
+    "ProblemResult",
+    "compute_pass_at_k",
+    "BenchmarkRunner",
+    "BenchmarkRunnerConfig",
+    "BenchmarkReport",
+    "run_benchmark",
+    # Phase 2: RAG
+    "RAGContextProvider",
+    "RAGContextProviderConfig",
+    "RAGContext",
+    "create_rag_provider",
+    "RAGPromptBuilder",
+    "build_generator_prompt_with_rag",
+    "build_reflector_prompt_with_rag",
 ]
+
+# Add training exports if available
+if _TRAINING_AVAILABLE:
+    __all__.extend([
+        "MCTSDataset",
+        "MCTSDatasetConfig",
+        "TrainingBatch",
+        "create_dataloaders",
+        "PolicyNetwork",
+        "PolicyNetworkConfig",
+        "ValueNetwork",
+        "ValueNetworkConfig",
+        "create_policy_network",
+        "create_value_network",
+        "DistillationTrainer",
+        "DistillationTrainerConfig",
+        "TrainingCheckpoint",
+        "create_trainer",
+        "TrainingMetrics",
+        "EvaluationMetrics",
+    ])
