@@ -135,7 +135,7 @@ class BenchmarkReport:
         with open(filepath, "w") as f:
             json.dump(self.to_dict(), f, indent=2)
 
-        logger.info(f"Saved benchmark report to {filepath}")
+        logger.info("Saved benchmark report", filepath=str(filepath))
 
     @classmethod
     def load(cls, filepath: str | Path) -> BenchmarkReport:
@@ -256,14 +256,22 @@ class BenchmarkRunner:
             # Sequential execution
             for i, problem in enumerate(problems):
                 if self._config.verbose:
-                    logger.info(f"[{i + 1}/{len(problems)}] Solving {problem.task_id}")
+                    logger.info(
+                        "Solving problem",
+                        progress=f"{i + 1}/{len(problems)}",
+                        task_id=problem.task_id,
+                    )
 
                 result = await self._solve_problem(problem)
                 self._results.append(result)
 
                 if self._config.verbose:
                     status = "SOLVED" if result.solved else "FAILED"
-                    logger.info(f"  {status} in {result.total_time_ms:.0f}ms")
+                    logger.info(
+                        "Problem complete",
+                        status=status,
+                        time_ms=round(result.total_time_ms),
+                    )
         else:
             # Concurrent execution
             semaphore = asyncio.Semaphore(self._config.max_concurrent)

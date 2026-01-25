@@ -187,7 +187,10 @@ class HumanEvalBenchmark:
         assert self._data_path is not None, "Data path must be set to load problems"
 
         if not self._data_path.exists():
-            logger.warning(f"HumanEval data not found: {self._data_path}")
+            logger.warning(
+                "HumanEval data not found, creating sample problems",
+                data_path=str(self._data_path),
+            )
             self._create_sample_problems()
             return
 

@@ -475,7 +475,12 @@ class LLMGuidedMCTSEngine:
                     )
 
         except Exception as e:
-            logger.error(f"Search failed: {e}", exc_info=True)
+            logger.error(
+                "Search failed",
+                error=str(e),
+                error_type=type(e).__name__,
+                exc_info=True,
+            )
 
         # Compute MCTS policies for training
         if self._config.save_mcts_policy:

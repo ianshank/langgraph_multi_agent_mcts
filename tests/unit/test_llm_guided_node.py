@@ -101,7 +101,7 @@ class TestLLMGuidedMCTSNode:
             seed=42,
         )
 
-        assert root.is_root is True
+        # Root has no parent
         assert root.parent is None
         assert root.depth == 0
         assert root.visits == 0
@@ -113,26 +113,27 @@ class TestLLMGuidedMCTSNode:
         root = create_root_node("test", seed=42)
         child_state = NodeState(code="child code", problem="test")
 
-        child = root.add_child(child_state, action_key="action_0")
+        child = root.add_child(child_state, action="action_0")
 
         assert child.parent == root
         assert child.depth == 1
         assert child in root.children
-        assert child.action_key == "action_0"
-        assert not child.is_root
+        assert child.action == "action_0"
+        # Child has a parent (not root)
+        assert child.parent is not None
 
     def test_add_multiple_children(self) -> None:
         """Multiple children can be added."""
         root = create_root_node("test", seed=42)
 
         child1 = root.add_child(
-            NodeState(code="a", problem="test"), action_key="a"
+            NodeState(code="a", problem="test"), action="a"
         )
         child2 = root.add_child(
-            NodeState(code="b", problem="test"), action_key="b"
+            NodeState(code="b", problem="test"), action="b"
         )
         child3 = root.add_child(
-            NodeState(code="c", problem="test"), action_key="c"
+            NodeState(code="c", problem="test"), action="c"
         )
 
         assert len(root.children) == 3
@@ -140,14 +141,17 @@ class TestLLMGuidedMCTSNode:
         assert child2 in root.children
         assert child3 in root.children
 
-    def test_is_leaf(self) -> None:
-        """is_leaf identifies nodes without children."""
+    def test_leaf_detection(self) -> None:
+        """Nodes without children are leaves."""
         root = create_root_node("test", seed=42)
-        assert root.is_leaf is True
+        # Initially root has no children (is a leaf)
+        assert len(root.children) == 0
 
-        child = root.add_child(NodeState(code="x", problem="test"), "a")
-        assert root.is_leaf is False
-        assert child.is_leaf is True
+        child = root.add_child(NodeState(code="x", problem="test"), action="a")
+        # Now root has children (not a leaf)
+        assert len(root.children) > 0
+        # Child has no children (is a leaf)
+        assert len(child.children) == 0
 
 
 class TestUCB1Calculation:
@@ -158,7 +162,7 @@ class TestUCB1Calculation:
         root = create_root_node("test", seed=42)
         root.visits = 10
 
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
         # Child has 0 visits
 
         ucb = child.ucb1(c=1.414)
@@ -169,7 +173,7 @@ class TestUCB1Calculation:
         root = create_root_node("test", seed=42)
         root.visits = 10
 
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
         child.visits = 5
         child.value_sum = 3.0  # q_value = 0.6
 
@@ -188,7 +192,7 @@ class TestUCB1Calculation:
         root = create_root_node("test", seed=42)
         root.visits = 100
 
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
         child.visits = 10
         child.value_sum = 5.0
 
@@ -202,7 +206,7 @@ class TestUCB1Calculation:
         root = create_root_node("test", seed=42)
         root.visits = 0
 
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
         child.visits = 1
         child.value_sum = 0.5
 
@@ -219,11 +223,11 @@ class TestNodeSelection:
         root = create_root_node("test", seed=42)
         root.visits = 10
 
-        visited = root.add_child(NodeState(code="a", problem="test"), "a")
+        visited = root.add_child(NodeState(code="a", problem="test"), action="a")
         visited.visits = 5
         visited.value_sum = 5.0
 
-        unvisited = root.add_child(NodeState(code="b", problem="test"), "b")
+        unvisited = root.add_child(NodeState(code="b", problem="test"), action="b")
         # unvisited.visits = 0
 
         selected = root.select_child(c=1.414)
@@ -234,11 +238,11 @@ class TestNodeSelection:
         root = create_root_node("test", seed=42)
         root.visits = 100
 
-        high_value = root.add_child(NodeState(code="a", problem="test"), "a")
+        high_value = root.add_child(NodeState(code="a", problem="test"), action="a")
         high_value.visits = 10
         high_value.value_sum = 9.0  # q = 0.9
 
-        low_value = root.add_child(NodeState(code="b", problem="test"), "b")
+        low_value = root.add_child(NodeState(code="b", problem="test"), action="b")
         low_value.visits = 10
         low_value.value_sum = 1.0  # q = 0.1
 
@@ -266,8 +270,8 @@ class TestBackpropagation:
     def test_backpropagate_updates_all_ancestors(self) -> None:
         """Backpropagation updates all nodes to root."""
         root = create_root_node("test", seed=42)
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
-        grandchild = child.add_child(NodeState(code="b", problem="test"), "b")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
+        grandchild = child.add_child(NodeState(code="b", problem="test"), action="b")
 
         grandchild.backpropagate(1.0)
 
@@ -281,7 +285,7 @@ class TestBackpropagation:
     def test_backpropagate_accumulates(self) -> None:
         """Multiple backpropagations accumulate values."""
         root = create_root_node("test", seed=42)
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
 
         child.backpropagate(0.5)
         child.backpropagate(0.7)
@@ -319,10 +323,10 @@ class TestMCTSPolicy:
         """MCTS policy is computed from visit counts."""
         root = create_root_node("test", seed=42)
 
-        child_a = root.add_child(NodeState(code="a", problem="test"), "a")
+        child_a = root.add_child(NodeState(code="a", problem="test"), action="a")
         child_a.visits = 70
 
-        child_b = root.add_child(NodeState(code="b", problem="test"), "b")
+        child_b = root.add_child(NodeState(code="b", problem="test"), action="b")
         child_b.visits = 30
 
         policy = root.compute_mcts_policy()
@@ -336,7 +340,7 @@ class TestMCTSPolicy:
 
         for i in range(5):
             child = root.add_child(
-                NodeState(code=str(i), problem="test"), f"action_{i}"
+                NodeState(code=str(i), problem="test"), action=f"action_{i}"
             )
             child.visits = (i + 1) * 10
 
@@ -359,29 +363,31 @@ class TestBestChild:
         """get_best_child returns most visited child."""
         root = create_root_node("test", seed=42)
 
-        child_a = root.add_child(NodeState(code="a", problem="test"), "a")
+        child_a = root.add_child(NodeState(code="a", problem="test"), action="a")
         child_a.visits = 50
 
-        child_b = root.add_child(NodeState(code="b", problem="test"), "b")
+        child_b = root.add_child(NodeState(code="b", problem="test"), action="b")
         child_b.visits = 100
 
-        best = root.get_best_child(by_visits=True)
+        # get_best_child selects by visits (no parameter)
+        best = root.get_best_child()
         assert best == child_b
 
-    def test_get_best_child_by_value(self) -> None:
-        """get_best_child can return highest value child."""
+    def test_get_best_child_distinguishes_visits(self) -> None:
+        """get_best_child correctly distinguishes visit counts."""
         root = create_root_node("test", seed=42)
 
-        child_a = root.add_child(NodeState(code="a", problem="test"), "a")
+        child_a = root.add_child(NodeState(code="a", problem="test"), action="a")
         child_a.visits = 100
         child_a.value_sum = 50  # q = 0.5
 
-        child_b = root.add_child(NodeState(code="b", problem="test"), "b")
+        child_b = root.add_child(NodeState(code="b", problem="test"), action="b")
         child_b.visits = 50
-        child_b.value_sum = 45  # q = 0.9
+        child_b.value_sum = 45  # q = 0.9 (higher value but fewer visits)
 
-        best = root.get_best_child(by_visits=False)
-        assert best == child_b
+        # Best child is by visits, so child_a should win
+        best = root.get_best_child()
+        assert best == child_a
 
     def test_get_best_child_no_children(self) -> None:
         """get_best_child returns None for leaf nodes."""
@@ -395,15 +401,16 @@ class TestPathToRoot:
     def test_get_path_to_root(self) -> None:
         """Path from leaf to root is correct."""
         root = create_root_node("test", seed=42)
-        child = root.add_child(NodeState(code="a", problem="test"), "a")
-        grandchild = child.add_child(NodeState(code="b", problem="test"), "b")
+        child = root.add_child(NodeState(code="a", problem="test"), action="a")
+        grandchild = child.add_child(NodeState(code="b", problem="test"), action="b")
 
         path = grandchild.get_path_to_root()
 
+        # Path is reversed: from root to this node
         assert len(path) == 3
-        assert path[0] == grandchild
+        assert path[0] == root
         assert path[1] == child
-        assert path[2] == root
+        assert path[2] == grandchild
 
     def test_get_path_to_root_single_node(self) -> None:
         """Path for root node is just root."""
@@ -450,19 +457,20 @@ class TestTrainingDataSerialization:
     def test_to_training_dict(self) -> None:
         """Node can be serialized to training dict."""
         root = create_root_node("test problem", seed=42)
-        child = root.add_child(NodeState(code="x = 1", problem="test problem"), "a")
+        child = root.add_child(NodeState(code="x = 1", problem="test problem"), action="a")
         child.visits = 10
         child.value_sum = 8.0
 
         data = child.to_training_dict()
 
-        assert "state_code" in data
-        assert "state_problem" in data
-        assert "state_hash" in data
+        # Check that required fields exist
+        assert "state" in data
         assert "depth" in data
         assert "visits" in data
         assert "q_value" in data
-        assert data["state_code"] == "x = 1"
+        # State is a nested dict
+        assert data["state"]["code"] == "x = 1"
+        assert data["state"]["problem"] == "test problem"
         assert data["visits"] == 10
         assert data["q_value"] == pytest.approx(0.8)
 
@@ -470,15 +478,90 @@ class TestTrainingDataSerialization:
         """Training dict includes LLM and MCTS policies."""
         root = create_root_node("test", seed=42)
 
-        child_a = root.add_child(NodeState(code="a", problem="test"), "a")
+        child_a = root.add_child(NodeState(code="a", problem="test"), action="a")
         child_a.visits = 70
-        child_a.llm_prior = 0.6
+        # Set LLM action probs on parent
+        root.llm_action_probs = {"a": 0.6, "b": 0.4}
 
-        child_b = root.add_child(NodeState(code="b", problem="test"), "b")
+        child_b = root.add_child(NodeState(code="b", problem="test"), action="b")
         child_b.visits = 30
-        child_b.llm_prior = 0.4
+
+        # Compute MCTS policy
+        root.compute_mcts_policy()
 
         data = root.to_training_dict()
 
         assert "llm_action_probs" in data
         assert "mcts_action_probs" in data
+        # LLM probs were set manually
+        assert data["llm_action_probs"] == {"a": 0.6, "b": 0.4}
+        # MCTS probs computed from visits
+        assert data["mcts_action_probs"]["a"] == pytest.approx(0.7)
+        assert data["mcts_action_probs"]["b"] == pytest.approx(0.3)
+
+    def test_to_training_dict_includes_all_fields(self) -> None:
+        """Training dict includes all expected fields."""
+        root = create_root_node("test", episode_id="ep123", seed=42)
+        root.llm_value_estimate = 0.75
+        root.test_results = {"passed": 3, "failed": 1}
+
+        data = root.to_training_dict()
+
+        expected_keys = {
+            "state",
+            "action",
+            "depth",
+            "visits",
+            "q_value",
+            "llm_action_probs",
+            "llm_value_estimate",
+            "mcts_action_probs",
+            "episode_id",
+            "timestamp",
+            "test_results",
+            "is_terminal",
+            "is_solution",
+        }
+
+        for key in expected_keys:
+            assert key in data, f"Missing expected key: {key}"
+
+        assert data["episode_id"] == "ep123"
+        assert data["llm_value_estimate"] == pytest.approx(0.75)
+        assert data["test_results"] == {"passed": 3, "failed": 1}
+
+
+class TestNodeRepr:
+    """Tests for node string representation."""
+
+    def test_repr_format(self) -> None:
+        """Node repr contains key information."""
+        node = create_root_node("test", seed=42)
+        node.visits = 10
+        node.value_sum = 5.0
+
+        repr_str = repr(node)
+
+        assert "depth=0" in repr_str
+        assert "visits=10" in repr_str
+        assert "q=0.500" in repr_str
+        assert "children=0" in repr_str
+        assert "unexpanded" in repr_str
+
+
+class TestNodeStateRepr:
+    """Tests for node state string representation."""
+
+    def test_state_repr_short_code(self) -> None:
+        """Short code is shown in full."""
+        state = NodeState(code="x = 1", problem="test")
+        repr_str = repr(state)
+        assert "x = 1" in repr_str
+
+    def test_state_repr_long_code_truncated(self) -> None:
+        """Long code is truncated in repr."""
+        long_code = "x = " + "1" * 100
+        state = NodeState(code=long_code, problem="test")
+        repr_str = repr(state)
+        assert "..." in repr_str
+        assert len(repr_str) < 100

@@ -231,7 +231,11 @@ class RAGContextProvider:
             return None
 
         except Exception as e:
-            logger.warning(f"Failed to initialize vector store: {e}")
+            logger.warning(
+                "Failed to initialize vector store",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             return None
 
     async def get_context(

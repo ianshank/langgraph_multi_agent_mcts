@@ -495,7 +495,12 @@ class TrainingDataCollector:
             try:
                 episodes.append(self.load_episode(filepath))
             except Exception as e:
-                logger.warning(f"Failed to load {filepath}: {e}")
+                logger.warning(
+                    "Failed to load episode",
+                    filepath=str(filepath),
+                    error=str(e),
+                    error_type=type(e).__name__,
+                )
 
         return episodes
 

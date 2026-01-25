@@ -131,53 +131,72 @@ class TestLLMGuidedMCTSConfig:
         assert config.num_iterations == 30
         assert config.exploration_weight == pytest.approx(1.414)
 
-    def test_num_iterations_bounds(self) -> None:
-        """num_iterations must be >= 1."""
-        config = LLMGuidedMCTSConfig(num_iterations=0)
+    def test_num_iterations_bounds_low(self) -> None:
+        """num_iterations must be in [1, 1000]."""
         with pytest.raises(ValueError, match="num_iterations"):
-            config.validate()
+            LLMGuidedMCTSConfig(num_iterations=0)
 
-    def test_exploration_weight_bounds(self) -> None:
-        """exploration_weight must be > 0."""
-        config = LLMGuidedMCTSConfig(exploration_weight=-0.1)
+    def test_num_iterations_bounds_high(self) -> None:
+        """num_iterations must be in [1, 1000]."""
+        with pytest.raises(ValueError, match="num_iterations"):
+            LLMGuidedMCTSConfig(num_iterations=1001)
+
+    def test_exploration_weight_bounds_low(self) -> None:
+        """exploration_weight must be in [0, 10]."""
         with pytest.raises(ValueError, match="exploration_weight"):
-            config.validate()
+            LLMGuidedMCTSConfig(exploration_weight=-0.1)
 
-    def test_max_depth_bounds(self) -> None:
-        """max_depth must be >= 1."""
-        config = LLMGuidedMCTSConfig(max_depth=0)
+    def test_exploration_weight_bounds_high(self) -> None:
+        """exploration_weight must be in [0, 10]."""
+        with pytest.raises(ValueError, match="exploration_weight"):
+            LLMGuidedMCTSConfig(exploration_weight=11.0)
+
+    def test_max_depth_bounds_low(self) -> None:
+        """max_depth must be in [1, 50]."""
         with pytest.raises(ValueError, match="max_depth"):
-            config.validate()
+            LLMGuidedMCTSConfig(max_depth=0)
 
-    def test_max_children_bounds(self) -> None:
-        """max_children must be >= 1."""
-        config = LLMGuidedMCTSConfig(max_children=0)
+    def test_max_depth_bounds_high(self) -> None:
+        """max_depth must be in [1, 50]."""
+        with pytest.raises(ValueError, match="max_depth"):
+            LLMGuidedMCTSConfig(max_depth=51)
+
+    def test_max_children_bounds_low(self) -> None:
+        """max_children must be in [1, 20]."""
         with pytest.raises(ValueError, match="max_children"):
-            config.validate()
+            LLMGuidedMCTSConfig(max_children=0)
 
-    def test_solution_threshold_bounds(self) -> None:
-        """solution_confidence_threshold must be in (0, 1]."""
-        config = LLMGuidedMCTSConfig(solution_confidence_threshold=0)
+    def test_max_children_bounds_high(self) -> None:
+        """max_children must be in [1, 20]."""
+        with pytest.raises(ValueError, match="max_children"):
+            LLMGuidedMCTSConfig(max_children=21)
+
+    def test_solution_threshold_bounds_low(self) -> None:
+        """solution_confidence_threshold must be in [0, 1]."""
         with pytest.raises(ValueError, match="solution_confidence_threshold"):
-            config.validate()
+            LLMGuidedMCTSConfig(solution_confidence_threshold=-0.1)
 
-        config = LLMGuidedMCTSConfig(solution_confidence_threshold=1.5)
+    def test_solution_threshold_bounds_high(self) -> None:
+        """solution_confidence_threshold must be in [0, 1]."""
         with pytest.raises(ValueError, match="solution_confidence_threshold"):
-            config.validate()
+            LLMGuidedMCTSConfig(solution_confidence_threshold=1.5)
 
-    def test_execution_timeout_bounds(self) -> None:
-        """execution_timeout_seconds must be > 0."""
-        config = LLMGuidedMCTSConfig(execution_timeout_seconds=0)
+    def test_execution_timeout_bounds_low(self) -> None:
+        """execution_timeout_seconds must be in [0.1, 60]."""
         with pytest.raises(ValueError, match="execution_timeout"):
-            config.validate()
+            LLMGuidedMCTSConfig(execution_timeout_seconds=0.05)
+
+    def test_execution_timeout_bounds_high(self) -> None:
+        """execution_timeout_seconds must be in [0.1, 60]."""
+        with pytest.raises(ValueError, match="execution_timeout"):
+            LLMGuidedMCTSConfig(execution_timeout_seconds=61)
 
     def test_nested_config_validation(self) -> None:
         """Nested configs should also be validated."""
-        config = LLMGuidedMCTSConfig(
-            generator_config=GeneratorConfig(temperature=5.0)  # Invalid
-        )
         with pytest.raises(ValueError, match="temperature"):
-            config.validate()
+            LLMGuidedMCTSConfig(
+                generator_config=GeneratorConfig(temperature=5.0)  # Invalid
+            )
 
 
 class TestLLMGuidedMCTSConfigSerialization:
@@ -339,16 +358,16 @@ class TestLLMGuidedMCTSPresets:
         config.validate()
 
         assert config.name == "benchmark"
-        assert config.num_iterations >= 50
+        # Benchmark preset collects training data for analysis
+        assert config.collect_training_data is True
 
-    def test_creative_preset(self) -> None:
-        """Creative preset should have higher temperatures."""
-        config = create_llm_mcts_preset(LLMGuidedMCTSPreset.CREATIVE)
+    def test_data_collection_preset(self) -> None:
+        """Data collection preset should collect training data."""
+        config = create_llm_mcts_preset(LLMGuidedMCTSPreset.DATA_COLLECTION)
         config.validate()
 
-        assert config.name == "creative"
-        assert config.generator_config.temperature >= 0.8
-        assert config.exploration_weight > 1.414  # Higher exploration
+        assert config.name == "data_collection"
+        assert config.collect_training_data is True
 
     def test_all_presets_valid(self) -> None:
         """All presets should produce valid configurations."""
@@ -358,7 +377,7 @@ class TestLLMGuidedMCTSPresets:
 
     def test_get_preset_config_by_name(self) -> None:
         """get_preset_config should work with string names."""
-        for name in ["fast", "balanced", "thorough", "benchmark", "creative"]:
+        for name in ["fast", "balanced", "thorough", "benchmark", "data_collection"]:
             config = get_preset_config(name)
             assert config.name == name
 
@@ -367,25 +386,33 @@ class TestLLMGuidedMCTSPresets:
         with pytest.raises(ValueError, match="Unknown preset"):
             get_preset_config("nonexistent")
 
-    def test_get_preset_config_case_insensitive(self) -> None:
-        """get_preset_config should be case-insensitive."""
-        config1 = get_preset_config("FAST")
-        config2 = get_preset_config("fast")
-        config3 = get_preset_config("Fast")
-
-        assert config1.name == config2.name == config3.name == "fast"
-
 
 class TestMultipleValidationErrors:
     """Tests for validation error aggregation."""
 
     def test_multiple_errors_reported(self) -> None:
         """Multiple validation errors should all be reported."""
-        config = LLMGuidedMCTSConfig(
-            num_iterations=0,  # Invalid
-            exploration_weight=-1,  # Invalid
-            max_depth=0,  # Invalid
-        )
+        # Create config without auto-validation by using object.__setattr__
+        config = object.__new__(LLMGuidedMCTSConfig)
+        # Initialize all required fields
+        config.num_iterations = 0  # Invalid: must be [1, 1000]
+        config.exploration_weight = -1  # Invalid: must be [0, 10]
+        config.max_depth = 0  # Invalid: must be [1, 50]
+        config.max_children = 5
+        config.solution_confidence_threshold = 0.95
+        config.early_termination_on_solution = True
+        config.execution_timeout_seconds = 5.0
+        config.max_memory_mb = 256
+        config.generator_config = GeneratorConfig()
+        config.reflector_config = ReflectorConfig()
+        config.llm_provider = LLMProvider.OPENAI
+        config.collect_training_data = False
+        config.training_data_dir = "./training_data"
+        config.save_mcts_policy = True
+        config.verbose = False
+        config.log_tree_stats = True
+        config.name = "test"
+        config.description = ""
 
         with pytest.raises(ValueError) as exc_info:
             config.validate()

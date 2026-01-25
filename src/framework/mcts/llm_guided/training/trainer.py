@@ -486,7 +486,11 @@ class DistillationTrainer:
                 else:
                     self._early_stopping_counter += 1
                     if self._early_stopping_counter >= self._config.early_stopping_patience:
-                        logger.info(f"Early stopping triggered at epoch {epoch + 1}")
+                        logger.info(
+                            "Early stopping triggered",
+                            epoch=epoch + 1,
+                            patience=self._config.early_stopping_patience,
+                        )
                         break
 
         except KeyboardInterrupt:
@@ -754,7 +758,11 @@ class DistillationTrainer:
         if checkpoint.value_state_dict and self._value_network is not None:
             self._value_network.load_state_dict(checkpoint.value_state_dict)
 
-        logger.info(f"Resumed from checkpoint at epoch {self._current_epoch}")
+        logger.info(
+            "Resumed from checkpoint",
+            epoch=self._current_epoch,
+            step=self._global_step,
+        )
 
     def _cleanup_old_checkpoints(self) -> None:
         """Remove old checkpoints, keeping only the most recent."""
@@ -764,7 +772,7 @@ class DistillationTrainer:
         if len(checkpoints) > self._config.keep_last_n_checkpoints:
             for ckpt in checkpoints[: -self._config.keep_last_n_checkpoints]:
                 ckpt.unlink()
-                logger.debug(f"Removed old checkpoint: {ckpt}")
+                logger.debug("Removed old checkpoint", checkpoint_path=str(ckpt))
 
 
 def create_trainer(
