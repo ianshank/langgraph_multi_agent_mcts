@@ -218,6 +218,8 @@ training/models/
 # Temporary files
 nul
 _ul
+.claude/
+.claude-agents-temp/
 
 # Docker build logs
 docker_build.log
@@ -225,3 +227,10 @@ docker_rebuild.log
 docker_final_build.log
 docker_correct_build.log
 data/test_*.json
+
+# Local reports and DBs
+bandit-report*.json
+registry.db
+pytest_result.txt
+test_results.txt
+

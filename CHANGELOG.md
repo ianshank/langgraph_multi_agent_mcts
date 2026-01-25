@@ -10,39 +10,67 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 #### Production Training Pipeline
+
 - **Dockerized Workflow**: End-to-end training orchestration with `scripts/run_production_training.sh` and `Dockerfile.train`.
 - **Synthetic Data Generation**: LLM-powered generator creating high-quality Q&A pairs, automatically merged with DABStep dataset.
 - **Research Corpus Integration**: Automated arXiv paper fetching and indexing for RAG knowledge base.
 - **Model Integration**: CLI tool `training.cli integrate` to export optimized production models.
 
 #### Neural Architecture Updates
+
 - **HRM/TRM Enhancements**: Updated model dimensions to 768 (DeBERTa-v3-base) and added LoRA support.
 - **Robust Loading**: Implemented safe PyTorch loading with `weights_only=True` and numpy type allowlisting.
 - **Production Config**: Generated optimized configuration `training/configs/production_config.yaml`.
 
 #### Testing & Verification
+
 - **Integration Tests**: Added `tests/integration/test_deployed_models.py` verifying model loading, inference, and configuration.
 - **Demo Pipeline**: Validated full training cycle with mock data achieving 100% accuracy on test set.
 
 ### Fixed
+
 - **TRM Dimension Mismatch (Fix #20)**: Resolved tensor shape alignment issues in Task Refinement Model.
 - **HRM Config Passing**: Fixed configuration propagation in HRM trainer initialization.
 - **W&B Integration**: Added graceful handling of missing API keys in production scripts.
 - **Data Pipeline**: Fixed `TaskSample` object handling in evaluation CLI.
 
 ### Documentation
+
 - **Architecture Guide**: Updated `docs/C4_ARCHITECTURE.md` with comprehensive C4 diagrams (Context, Container, Component, Code).
 - **README Overhaul**: Rewrote `README.md` to feature production capabilities and usage instructions.
+
+## [0.3.0] - Chess & Continuous Learning Release
+
+### Added
+
+- **Chess Domain Expansion**: Pure AlphaZero approach for Chess integration with specialized board encoders.
+- **Continuous Learning Loop**: Iterative self-play pipeline with automated model distillation.
+- **Model Registry**: SQLModel-based registry for tracking model versions, metadata, and performance metrics.
+- **CodeBERT Integration**: Semantic code understanding via CodeBERT adapters for improved coding task performance.
+- **Ensemble Retrieval**: Hybrid RAG combining vector search with semantic code analysis.
+
+### Fixed
+
+- **Agent Stats Reset**: Fixed issue where meta-controller stats were not resetting between test runs.
+- **MetaControllerFeatures Regression**: Resolved test failures in MetaControllerFeatures component.
+- **Cleanup**: Removed unused imports and mocks across the codebase.
+
+### Documentation
+
+- **C4 Architecture Update**: Reflected Continuous Learning and Chess components in Level 2 and Level 3 diagrams.
+- **README Updates**: Added Chess and Continuous Learning features to system overview.
 
 ## [Unreleased]
 
 ### Added
 
 #### Comprehensive Test Suite
+
 - **563 new unit tests** bringing total to 734 passing tests
 - **Test coverage improved from 22.49% to 49.65%** (more than doubled)
 
 ##### New Test Files
+
 - `tests/unit/test_mcts_framework.py` - 96 tests for MCTS core engine
   - MCTSState hashability and feature vectors
   - MCTSNode UCB1 selection and child management
@@ -82,6 +110,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Secret masking in logs
 
 ##### Coverage Improvements by Module
+
 | Module | Before | After | Improvement |
 |--------|--------|-------|-------------|
 | `framework/mcts/core.py` | 0% | 96.11% | +96% |
@@ -97,6 +126,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 | `storage/s3_client.py` | 27.55% | 63.78% | +36% |
 
 #### Enhanced Architecture Documentation
+
 - **REST API Endpoints Section** - Complete documentation of `/health`, `/ready`, `/query`, `/stats`, `/metrics` endpoints with request/response schemas
 - **Data Models Section** - AgentState TypedDict, MCTSNode structures, Vector storage schema (10D features for Pinecone), API models
 - **Configuration Architecture** - Environment variable hierarchy, Settings.py integration, optional dependency flags
@@ -106,11 +136,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 #### Test Failures Resolved
+
 1. **`test_llm_invalid_response_handling`** - Fixed mock to properly trigger exception handler and fallback path
 2. **`test_large_context_handling`** - Corrected assertion to use `>= 100000` instead of `> 100000`
 3. **`test_maximum_throughput`** - Adjusted threshold from 10 req/s to 1 req/s for realistic test environment expectations
 
 #### Bug Fixes
+
 - Fixed `HTTPXClientInstrumentation` to `HTTPXClientInstrumentor` in tracing module (correct OpenTelemetry class name)
 
 ### Changed
@@ -128,6 +160,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0] - Initial Release
 
 ### Added
+
 - Multi-Agent Framework with MCTS Integration
 - LangGraph state machine architecture
 - Neural meta-controller (RNN and BERT-based)

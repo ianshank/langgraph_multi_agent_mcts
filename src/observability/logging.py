@@ -526,9 +526,22 @@ class StructuredLogger:
             message: Log message
             **extra: Additional structured data to include
         """
+        # Extract standard logging kwargs
+        exc_info = extra.pop("exc_info", None)
+        stack_info = extra.pop("stack_info", None)
+        stacklevel = extra.pop("stacklevel", 1)
+        
         extra["correlation_id"] = get_correlation_id()
         sanitized_extra = sanitize_dict(extra) if extra else {}
-        self._logger.log(level, sanitize_message(message), extra=sanitized_extra)
+        
+        self._logger.log(
+            level, 
+            sanitize_message(message), 
+            extra=sanitized_extra,
+            exc_info=exc_info,
+            stack_info=stack_info,
+            stacklevel=stacklevel
+        )
 
     def debug(self, message: str, **extra) -> None:
         """Log debug message with structured data."""

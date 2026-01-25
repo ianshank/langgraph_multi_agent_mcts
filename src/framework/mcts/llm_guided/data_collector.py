@@ -150,6 +150,9 @@ class EpisodeMetadata:
 
     config_name: str = ""
     """Configuration name used."""
+    
+    agent_strategy: str = "LLM_MCTS"
+    """Agent/Strategy selected for this episode."""
 
     correlation_id: str = ""
     """Correlation ID for tracing."""
@@ -220,6 +223,7 @@ class TrainingDataCollector:
         problem_type: str = "code_generation",
         difficulty: str = "medium",
         config_name: str = "",
+        agent_strategy: str = "LLM_MCTS",
     ) -> None:
         """
         Initialize a new episode.
@@ -229,6 +233,7 @@ class TrainingDataCollector:
             problem_type: Type of problem
             difficulty: Problem difficulty
             config_name: Configuration name
+            agent_strategy: The agent strategy used (HRM, TRM, LLM_MCTS)
         """
         self.current_episode = []
         self.episode_metadata = EpisodeMetadata(
@@ -237,6 +242,7 @@ class TrainingDataCollector:
             difficulty=difficulty,
             start_time=time.time(),
             config_name=config_name,
+            agent_strategy=agent_strategy,
             correlation_id=get_correlation_id(),
         )
 
@@ -286,6 +292,85 @@ class TrainingDataCollector:
             parent_visits=node.parent.visits if node.parent else 0,
         )
 
+        self.current_episode.append(example)
+
+    def record_decomposition(
+        self,
+        problem: str,
+        decomposition: dict[str, Any],
+        outcome: float = 1.0,
+    ) -> None:
+        """
+        Record a problem decomposition for HRM training.
+
+        Args:
+            problem: The problem statement
+            decomposition: The decomposition structure
+            outcome: Outcome confidence (default 1.0 for teacher forcing)
+        """
+        if self.episode_metadata is None:
+            return
+
+        example = TrainingExample(
+            state_code="",  # No code for decomposition
+            state_problem=problem,
+            state_hash=str(hash(problem)),
+            depth=0,
+            llm_action_probs={},
+            mcts_action_probs={},
+            llm_value_estimate=outcome,
+            outcome=outcome,
+            episode_id=self.episode_metadata.episode_id,
+            timestamp=time.time(),
+            visits=0,
+            q_value=0.0,
+            action="decompose",
+            test_results={"decomposition": decomposition},
+        )
+        self.current_episode.append(example)
+
+    def record_refinement(
+        self,
+        initial_code: str,
+        refined_code: str,
+        problem: str,
+        outcome: float = 1.0,
+        metadata: dict[str, Any] | None = None,
+    ) -> None:
+        """
+        Record a code refinement for TRM training.
+
+        Args:
+            initial_code: Code before refinement
+            refined_code: Code after refinement
+            problem: Problem description
+            outcome: Success metric
+            metadata: Additional metadata (iterations, etc.)
+        """
+        if self.episode_metadata is None:
+            return
+
+        meta = metadata or {}
+        
+        example = TrainingExample(
+            state_code=initial_code,
+            state_problem=problem,
+            state_hash=str(hash(initial_code)),
+            depth=0,
+            llm_action_probs={},
+            mcts_action_probs={},
+            llm_value_estimate=outcome,
+            outcome=outcome,
+            episode_id=self.episode_metadata.episode_id,
+            timestamp=time.time(),
+            visits=0,
+            q_value=0.0,
+            action="refine",
+            test_results={
+                "refined_code": refined_code,
+                "refinement_metadata": meta
+            },
+        )
         self.current_episode.append(example)
 
     def record_mcts_policy(self, node: LLMGuidedMCTSNode) -> None:

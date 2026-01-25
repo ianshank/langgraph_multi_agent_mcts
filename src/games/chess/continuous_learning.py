@@ -477,6 +477,11 @@ class ContinuousLearningSession:
         Returns:
             GameRecord with game details
         """
+        # Ensure session is marked as running for the duration of the game
+        # if called directly outside of run_session
+        was_running = self.is_running
+        self.is_running = True
+
         state = ChessGameState.initial()
         moves: list[str] = []
         positions: list[str] = [state.fen]
@@ -604,6 +609,9 @@ class ContinuousLearningSession:
             final_fen=state.fen,
             termination_reason=termination,
         )
+
+        # Restore running state
+        self.is_running = was_running
 
         return record
 

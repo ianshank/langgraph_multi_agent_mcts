@@ -382,6 +382,8 @@ class LLMGuidedMCTSEngine:
         problem: str,
         test_cases: list[str],
         initial_code: str = "",
+        episode_id: str | None = None,
+        finalize: bool = True,
     ) -> MCTSSearchResult:
         """
         Run MCTS search to find solution code.
@@ -390,12 +392,14 @@ class LLMGuidedMCTSEngine:
             problem: Problem description
             test_cases: List of test case assertions
             initial_code: Optional starting code
+            episode_id: Optional episode identifier
+            finalize: Whether to finalize the episode (save data)
 
         Returns:
             MCTSSearchResult with best code and statistics
         """
         start_time = time.perf_counter()
-        episode_id = str(uuid.uuid4())
+        episode_id = episode_id or str(uuid.uuid4())
 
         # Reset agent statistics for this search
         self._generator.reset_stats()
@@ -509,7 +513,7 @@ class LLMGuidedMCTSEngine:
             )
 
         # Finalize data collection
-        if self._data_collector:
+        if self._data_collector and finalize:
             self._data_collector.finalize_episode(
                 outcome=1.0 if solution_found else -1.0,
                 solution_found=solution_found,

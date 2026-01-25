@@ -84,6 +84,7 @@ graph TB
             DataGen[Synthetic Generator<br/>Python/LLM<br/><br/>Generates training data]
             CorpusBuilder[Corpus Builder<br/>Python<br/><br/>Fetches & indexes papers]
             Monitor[Performance Monitor<br/>Python<br/><br/>Tracks metrics]
+            CLManager[Continuous Learning Manager<br/>Python<br/><br/>Manages iterative self-play]
         end
 
         subgraph "Core Models"
@@ -93,6 +94,7 @@ graph TB
             MetaController[Meta Controller<br/>PyTorch GRU<br/><br/>Agent routing]
             ParallelMCTS[Parallel MCTS<br/>AsyncIO/PyTorch<br/><br/>Virtual loss parallelization]
             PVNet[Policy-Value Network<br/>PyTorch ResNet<br/><br/>Action probabilities + value]
+            CodeBERT[CodeBERT Adapter<br/>PyTorch/Transformers<br/><br/>Semantic code understanding]
         end
 
         subgraph "Inference System"
@@ -104,6 +106,7 @@ graph TB
             ReplayBuffer[Replay Buffer<br/>Python/NumPy<br/><br/>Experience storage]
             Cache[Evaluation Cache<br/>Python Dict<br/><br/>MCTS caching]
             VectorStore[Vector Store<br/>Pinecone<br/><br/>RAG Knowledge Base]
+            ModelRegistry[Model Registry<br/>SQLModel/SQLite<br/><br/>Model versioning & metadata]
         end
     end
 
@@ -119,11 +122,15 @@ graph TB
 
     Orchestrator -->|Orchestrates| DataGen
     Orchestrator -->|Orchestrates| CorpusBuilder
+    Orchestrator -->|Uses| CLManager
     Orchestrator -->|Trains| HRM
     Orchestrator -->|Trains| TRM
     Orchestrator -->|Trains| PVNet
     Orchestrator -->|Trains| MetaController
     Orchestrator -->|Uses| Monitor
+
+    CLManager -->|Runs| SelfPlay
+    CLManager -->|Registries versions| ModelRegistry
 
     DataGen -->|Uses| LLMProvider
     DataGen -->|Stores| ReplayBuffer
@@ -134,6 +141,7 @@ graph TB
     MCTS -->|Guided by| HRM
     MCTS -->|Refines with| TRM
     MCTS -->|Retrieves from| VectorStore
+    MCTS -->|Encodes with| CodeBERT
 
     MetaController -->|Routes to| HRM
     MetaController -->|Routes to| TRM
@@ -149,15 +157,20 @@ graph TB
     Monitor -->|Exports to| Prometheus
     Orchestrator -->|Saves checkpoints| S3
     ReplayBuffer -->|Persists to| S3
+    ModelRegistry -->|Syncs to| S3
 
     style Orchestrator fill:#E74C3C,stroke:#922B21,stroke-width:2px,color:#fff
     style DataGen fill:#E74C3C,stroke:#922B21,stroke-width:2px,color:#fff
+    style CLManager fill:#E74C3C,stroke:#922B21,stroke-width:2px,color:#fff
     style HRM fill:#3498DB,stroke:#1F618D,stroke-width:2px,color:#fff
     style TRM fill:#3498DB,stroke:#1F618D,stroke-width:2px,color:#fff
     style MCTS fill:#3498DB,stroke:#1F618D,stroke-width:2px,color:#fff
+    style CodeBERT fill:#3498DB,stroke:#1F618D,stroke-width:2px,color:#fff
     style MetaController fill:#3498DB,stroke:#1F618D,stroke-width:2px,color:#fff
     style API fill:#2ECC71,stroke:#1E8449,stroke-width:2px,color:#fff
     style VectorStore fill:#F39C12,stroke:#B9770E,stroke-width:2px
+    style ModelRegistry fill:#F39C12,stroke:#B9770E,stroke-width:2px
+
 ```
 
 ### Container Descriptions
@@ -190,6 +203,7 @@ graph TB
             OrcMain[UnifiedTrainingOrchestrator<br/><br/>Main coordinator]
             PhaseMgr[Phase Manager<br/><br/>Curriculum control]
             EvalMgr[Evaluation Manager<br/><br/>Model evaluation]
+            CLManager[Continuous Learning Manager<br/><br/>Iterative self-play]
         end
 
         subgraph "Model Training"
@@ -218,6 +232,7 @@ graph TB
             CheckpointMgr[Checkpoint Manager<br/><br/>Save/load models]
             ConfigMgr[Config Manager<br/><br/>System configuration]
             ModelIntegrator[Model Integrator<br/><br/>Deployment]
+            Registry[Model Registry<br/><br/>Versioning & metadata]
         end
 
         subgraph "Monitoring"
@@ -228,12 +243,16 @@ graph TB
 
     OrcMain -->|Manages| PhaseMgr
     OrcMain -->|Uses| EvalMgr
+    OrcMain -->|Coordinates| CLManager
 
     PhaseMgr -->|Phase 1| RAGBuilder
     PhaseMgr -->|Phase 2| HRMTrainer
     PhaseMgr -->|Phase 3| TRMTrainer
-    PhaseMgr -->|Phase 4| SelfPlay
+    PhaseMgr -->|Phase 4| CLManager
     PhaseMgr -->|Phase 5| MetaTrainer
+
+    CLManager -->|Runs| SelfPlay
+    CLManager -->|Saves to| Registry
 
     SelfPlay -->|Feeds| PVTrainer
     DataOrch -->|Feeds| HRMTrainer
@@ -274,6 +293,7 @@ graph TB
 
         subgraph "Neural MCTS"
             StateEnc[State Encoder<br/><br/>Feature extraction]
+            CodeBERT[CodeBERT Adapter<br/><br/>Semantic coding features]
             PolicyNet[Policy Head<br/><br/>Action probabilities]
             ValueNet[Value Head<br/><br/>Position evaluation]
         end
@@ -294,6 +314,7 @@ graph TB
 
     StateEnc -->|Shared| PolicyNet
     StateEnc -->|Shared| ValueNet
+    CodeBERT -->|Provides features| StateEnc
 
     FeatureExt -->|Feeds| RouterNet
 
@@ -352,19 +373,19 @@ graph TB
 
 This updated C4 architecture reflects the **current state** of the application, incorporating:
 
-1.  **Neural Networks**: Explicit integration of HRM, TRM, MCTS, and Meta-Controller models with LoRA adapters.
-2.  **Training Pipeline**: Comprehensive orchestration including synthetic data generation and corpus building.
-3.  **RAG Integration**: Pinecone vector database for retrieval-augmented generation.
-4.  **Docker Deployment**: Containerized training and inference workflows.
-5.  **External Services**: Integration with W&B, S3, and ArXiv.
+1. **Neural Networks**: Explicit integration of HRM, TRM, MCTS, and Meta-Controller models with LoRA adapters.
+2. **Training Pipeline**: Comprehensive orchestration including synthetic data generation and corpus building.
+3. **RAG Integration**: Pinecone vector database for retrieval-augmented generation.
+4. **Docker Deployment**: Containerized training and inference workflows.
+5. **External Services**: Integration with W&B, S3, and ArXiv.
 
 ### Technology Stack
 
 | Layer | Technologies |
 |-------|-------------|
 | **Core ML** | PyTorch 2.1+, Transformers, PEFT, NumPy |
-| **Models** | DeBERTa-v3, ResNet, GRU |
+| **Models** | DeBERTa-v3, CodeBERT, ResNet, GRU |
 | **Orchestration** | Python AsyncIO, LangGraph |
-| **Data** | Pinecone, ArXiv API, OpenAI API |
+| **Data** | Pinecone, SQLModel, SQLite, ArXiv API |
 | **Monitoring** | Weights & Biases, Prometheus |
 | **Deployment** | Docker, Docker Compose |

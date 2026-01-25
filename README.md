@@ -9,25 +9,33 @@ This framework implements a state-of-the-art multi-agent system combining hierar
 ## 🚀 Key Features
 
 ### 🧠 Core Architecture
+
 - **HRM (Hierarchical Reasoning Module)**: DeBERTa-based agent for complex problem decomposition.
 - **TRM (Task Refinement Module)**: Iterative agent for refining and optimizing solutions.
 - **Neural MCTS**: AlphaZero-style tree search guided by policy/value networks.
 - **Meta-Controller**: Neural router (GRU/BERT) that dynamically assigns tasks to the best agent.
+- **Chess Domain Expansion**: Pure AlphaZero approach for strategic games (Chess).
+- **Continuous Learning Loop**: Iterative self-play and model distillation pipeline.
 
 ### 🛠️ Training Pipeline
+
 - **End-to-End Orchestration**: Automated multi-stage training (Pre-training → Fine-tuning → Self-Play).
 - **Synthetic Data Generation**: LLM-powered generator for creating high-quality training datasets.
 - **Research Corpus Builder**: Automated fetching and indexing of arXiv papers for RAG.
+- **Model Registry**: SQLModel-based registry for versioning and metadata management.
 - **Docker Support**: Fully containerized training and inference environments.
 
 ### 📊 Observability & RAG
+
 - **RAG Integration**: Pinecone vector database for retrieving domain knowledge.
 - **Experiment Tracking**: Full integration with Weights & Biases.
 - **Production Monitoring**: Prometheus/Grafana metrics for latency, memory, and model performance.
+- **Semantic Caching**: Efficient retrieval of previously computed results.
 
 ## 📦 Installation
 
 ### Prerequisites
+
 - Python 3.11+
 - Docker & Docker Compose (for containerized workflow)
 - NVIDIA GPU (recommended for training)
@@ -35,18 +43,21 @@ This framework implements a state-of-the-art multi-agent system combining hierar
 ### Quick Start
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/ianshank/langgraph_multi_agent_mcts.git
    cd langgraph_multi_agent_mcts
    ```
 
 2. **Set up environment variables:**
+
    ```bash
    cp .env.example .env
    # Edit .env with your API keys (OpenAI, Pinecone, W&B)
    ```
 
 3. **Run with Docker (Recommended):**
+
    ```bash
    # Run the demo pipeline (builds image, generates data, trains models)
    bash scripts/run_docker_training.sh
@@ -56,19 +67,22 @@ This framework implements a state-of-the-art multi-agent system combining hierar
 
 The framework supports a comprehensive training lifecycle:
 
-1.  **Data Generation**:
+1. **Data Generation**:
+
     ```bash
     # Generate synthetic Q&A pairs
     python -m scripts.generate_synthetic_training_data --num-samples 1000
     ```
 
-2.  **Corpus Building**:
+2. **Corpus Building**:
+
     ```bash
     # Fetch and index arXiv papers
     python -m training.examples.build_arxiv_corpus --mode keywords --max-papers 200
     ```
 
-3.  **Production Training**:
+3. **Production Training**:
+
     ```bash
     # Run full training pipeline
     bash scripts/run_production_training.sh
