@@ -540,6 +540,8 @@ class CombinedNetwork(nn.Module if _TORCH_AVAILABLE else object):
         max_actions: int = 10,
         hidden_dim: int = 256,
         dropout: float = 0.1,
+        min_value: float = -1.0,
+        max_value: float = 1.0,
     ):
         """
         Initialize combined network.
@@ -549,6 +551,8 @@ class CombinedNetwork(nn.Module if _TORCH_AVAILABLE else object):
             max_actions: Maximum number of actions
             hidden_dim: Hidden dimension for heads
             dropout: Dropout rate
+            min_value: Minimum value output bound
+            max_value: Maximum value output bound
         """
         _check_torch()
         super().__init__()
@@ -556,6 +560,8 @@ class CombinedNetwork(nn.Module if _TORCH_AVAILABLE else object):
         self._encoder_config = encoder_config or CodeEncoderConfig()
         self._max_actions = max_actions
         self._hidden_dim = hidden_dim
+        self._min_value = min_value
+        self._max_value = max_value
 
         # Shared encoders
         self.code_encoder = CodeEncoder(self._encoder_config)
@@ -615,8 +621,10 @@ class CombinedNetwork(nn.Module if _TORCH_AVAILABLE else object):
             logits = logits.masked_fill(action_mask == 0, float("-inf"))
         log_probs = F.log_softmax(logits, dim=-1)
 
-        # Value
+        # Value - apply tanh then scale to configured bounds
         value = torch.tanh(self.value_head(combined).squeeze(-1))
+        value_range = self._max_value - self._min_value
+        value = value * (value_range / 2) + (self._min_value + value_range / 2)
 
         return log_probs, value
 

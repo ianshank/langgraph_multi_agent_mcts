@@ -7,6 +7,7 @@ to augment LLM prompts during MCTS search.
 
 from __future__ import annotations
 
+import copy
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -253,7 +254,8 @@ class RAGContextProvider:
             cached_context, cached_time = self._cache[cache_key]
             if time.time() - cached_time < self._config.cache_ttl_seconds:
                 logger.debug("Returning cached RAG context")
-                return cached_context
+                # Return a deep copy to prevent mutation of cached data
+                return copy.deepcopy(cached_context)
 
         # Build query
         query = self._build_query(problem, current_code)
@@ -268,7 +270,8 @@ class RAGContextProvider:
             except Exception as e:
                 logger.error(
                     f"Vector store retrieval failed, using fallback context: {e}",
-                    extra={"error_type": type(e).__name__, "query_preview": query[:100]},
+                    error_type=type(e).__name__,
+                    query_preview=query[:100],
                 )
                 # Explicitly use fallback on error
                 context = self._get_fallback_context(problem)

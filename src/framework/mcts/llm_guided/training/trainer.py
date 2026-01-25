@@ -123,6 +123,22 @@ class DistillationTrainerConfig:
         if self.policy_loss_weight < 0 or self.value_loss_weight < 0:
             errors.append("loss weights must be >= 0")
 
+        # Validate early_stopping_metric is a valid TrainingMetrics attribute
+        valid_metrics = {
+            "policy_loss",
+            "value_loss",
+            "total_loss",
+            "policy_accuracy",
+            "policy_top3_accuracy",
+            "policy_kl_divergence",
+            "policy_entropy",
+            "value_mse",
+            "value_mae",
+            "value_correlation",
+        }
+        if self.early_stopping_metric not in valid_metrics:
+            errors.append(f"early_stopping_metric must be one of: {', '.join(sorted(valid_metrics))}")
+
         if errors:
             raise ValueError("Invalid DistillationTrainerConfig:\n" + "\n".join(f"  - {e}" for e in errors))
 
@@ -185,11 +201,18 @@ class TrainingCheckpoint:
 
     @classmethod
     def load(cls, filepath: str | Path) -> TrainingCheckpoint:
-        """Load checkpoint from file."""
+        """
+        Load checkpoint from file.
+
+        Note: Only load checkpoints from trusted sources. The checkpoint format
+        uses pickle which can execute arbitrary code during loading.
+        """
         if not _TORCH_AVAILABLE:
             raise ImportError("PyTorch is required")
 
-        data = torch.load(filepath, map_location="cpu")
+        # Note: weights_only=False is required for loading full checkpoints with
+        # optimizer state dicts and other non-tensor data. Only load from trusted sources.
+        data = torch.load(filepath, map_location="cpu", weights_only=False)
 
         return cls(
             epoch=data["epoch"],
@@ -235,20 +258,19 @@ class LoggingCallback(TrainingCallback):
         """Log epoch start."""
         logger.info(
             "Starting epoch",
-            extra={"epoch": epoch + 1, "total_epochs": trainer._config.num_epochs},
+            epoch=epoch + 1,
+            total_epochs=trainer._config.num_epochs,
         )
 
     def on_epoch_end(self, epoch: int, metrics: TrainingMetrics, trainer: DistillationTrainer) -> None:
         """Log epoch metrics."""
         logger.info(
             "Epoch complete",
-            extra={
-                "epoch": epoch + 1,
-                "policy_loss": round(metrics.policy_loss, 4),
-                "value_loss": round(metrics.value_loss, 4),
-                "policy_accuracy": round(metrics.policy_accuracy, 4),
-                "value_mse": round(metrics.value_mse, 4),
-            },
+            epoch=epoch + 1,
+            policy_loss=round(metrics.policy_loss, 4),
+            value_loss=round(metrics.value_loss, 4),
+            policy_accuracy=round(metrics.policy_accuracy, 4),
+            value_mse=round(metrics.value_mse, 4),
         )
 
     def on_batch_end(self, step: int, metrics: TrainingMetrics, trainer: DistillationTrainer) -> None:
@@ -256,18 +278,17 @@ class LoggingCallback(TrainingCallback):
         if step % trainer._config.log_every_steps == 0:
             logger.info(
                 "Training step",
-                extra={
-                    "step": step,
-                    "total_loss": round(metrics.total_loss, 4),
-                    "learning_rate": metrics.learning_rate,
-                },
+                step=step,
+                total_loss=round(metrics.total_loss, 4),
+                learning_rate=metrics.learning_rate,
             )
 
     def on_training_end(self, trainer: DistillationTrainer) -> None:
         """Log training completion."""
         logger.info(
             "Training complete",
-            extra={"total_steps": trainer._global_step, "epochs": trainer._current_epoch + 1},
+            total_steps=trainer._global_step,
+            epochs=trainer._current_epoch + 1,
         )
 
 
@@ -325,7 +346,7 @@ class DistillationTrainer:
         if self._config.use_amp and not self._use_amp:
             logger.warning(
                 "AMP requested but device is not CUDA, disabling AMP",
-                extra={"device": str(self._device)},
+                device=str(self._device),
             )
 
         # Callbacks
