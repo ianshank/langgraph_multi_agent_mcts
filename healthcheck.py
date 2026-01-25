@@ -534,9 +534,7 @@ class HealthChecker:
         for name, check_coro, critical, timeout in checks_to_run:
             result = await check_coro
             check_results.append(result)
-            logger.info(
-                f"Check '{result.name}': {result.status.value} - {result.message} ({result.duration_ms:.2f}ms)"
-            )
+            logger.info(f"Check '{result.name}': {result.status.value} - {result.message} ({result.duration_ms:.2f}ms)")
 
         # Determine overall status based on check results
         critical_failures = [c for c in check_results if c.critical and c.status == HealthStatus.UNHEALTHY]

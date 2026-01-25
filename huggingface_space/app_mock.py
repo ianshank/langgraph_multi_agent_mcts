@@ -185,7 +185,9 @@ class MultiAgentFrameworkDemo:
         start = time.perf_counter()
 
         # MCTSDemo.search is now async and uses the production framework
-        result = await self.mcts.search(query=query, iterations=iterations, exploration_weight=exploration_weight, seed=seed)
+        result = await self.mcts.search(
+            query=query, iterations=iterations, exploration_weight=exploration_weight, seed=seed
+        )
 
         elapsed = (time.perf_counter() - start) * 1000
         result["execution_time_ms"] = round(elapsed, 2)

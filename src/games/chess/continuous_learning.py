@@ -11,10 +11,11 @@ import asyncio
 import logging
 import random
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
 import torch
@@ -101,10 +102,7 @@ class ScoreCard:
 
         # Update averages
         self.avg_game_length = self.total_moves / self.total_games
-        self.avg_game_time_ms = (
-            (self.avg_game_time_ms * (self.total_games - 1) + game_time_ms)
-            / self.total_games
-        )
+        self.avg_game_time_ms = (self.avg_game_time_ms * (self.total_games - 1) + game_time_ms) / self.total_games
 
         # Update win/loss/draw counts
         if result == GameResult.WHITE_WIN:
@@ -303,7 +301,7 @@ class OnlineLearner:
 
         # Trim buffer if too large
         if len(self.experience_buffer) > self.max_buffer_size:
-            self.experience_buffer = self.experience_buffer[-self.max_buffer_size:]
+            self.experience_buffer = self.experience_buffer[-self.max_buffer_size :]
 
     def add_game_experience(
         self,
@@ -361,9 +359,7 @@ class OnlineLearner:
         policy_logits, values = self.network(states)
 
         # Calculate losses
-        policy_loss = -torch.mean(
-            torch.sum(target_policies * F.log_softmax(policy_logits, dim=-1), dim=-1)
-        )
+        policy_loss = -torch.mean(torch.sum(target_policies * F.log_softmax(policy_logits, dim=-1), dim=-1))
         value_loss = F.mse_loss(values, target_values)
         total_loss = policy_loss + value_loss
 
@@ -425,10 +421,11 @@ class ContinuousLearningSession:
         self.current_game_id_display: str = ""
 
     @property
-    def agent(self) -> "ChessEnsembleAgent":
+    def agent(self) -> ChessEnsembleAgent:
         """Lazy load the ensemble agent."""
         if self._agent is None:
             from src.games.chess.ensemble_agent import ChessEnsembleAgent
+
             self._agent = ChessEnsembleAgent(self.chess_config)
             self.learner.set_network(self._agent.policy_value_net)
         return self._agent
@@ -449,9 +446,7 @@ class ContinuousLearningSession:
 
         elif config.temperature_schedule == "linear_decay":
             progress = min(1.0, game_number / config.temperature_decay_games)
-            return config.initial_temperature - progress * (
-                config.initial_temperature - config.final_temperature
-            )
+            return config.initial_temperature - progress * (config.initial_temperature - config.final_temperature)
 
         elif config.temperature_schedule == "step":
             if game_number < config.temperature_decay_games // 2:
@@ -504,7 +499,7 @@ class ContinuousLearningSession:
             # For now, we rely on the positions list but this is O(N) checking per move which is slow for long games
             # Optimization: Use a localized counter if needed, but for < 150 moves list scan is acceptable for now
             # Actually, let's implement a proper counter
-            
+
             # (Note: This is just a placeholder comment for the thought process, implementing below)
 
             move_start = time.time()

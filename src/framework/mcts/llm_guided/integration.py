@@ -26,7 +26,6 @@ from .config import LLMGuidedMCTSConfig
 from .engine import LLMGuidedMCTSEngine, MCTSSearchResult
 
 if TYPE_CHECKING:
-
     from src.agents.hrm_agent import HRMAgent
     from src.agents.meta_controller.base import (
         AbstractMetaController,
@@ -745,7 +744,7 @@ class UnifiedSearchOrchestrator:
         if self._config.use_meta_controller:
             routing_decision = self._router.route(problem, ctx)
             self._logger.info(
-                f"Routed to {routing_decision.selected_agent.value} " f"(confidence: {routing_decision.confidence:.2f})"
+                f"Routed to {routing_decision.selected_agent.value} (confidence: {routing_decision.confidence:.2f})"
             )
         else:
             routing_decision = RoutingDecision(

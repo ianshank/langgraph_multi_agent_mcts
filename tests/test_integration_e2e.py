@@ -80,6 +80,10 @@ def multiple_features() -> list:
     ]
 
 
+from tests.conftest import skip_if_cuda_unsupported
+
+
+@skip_if_cuda_unsupported
 class TestEndToEndRNNPipeline:
     """End-to-end tests for RNN meta-controller pipeline."""
 
@@ -542,6 +546,7 @@ class TestPineconeIntegration:
             assert vector == vector2
 
 
+@skip_if_cuda_unsupported
 class TestFullIntegration:
     """Full system integration tests."""
 
