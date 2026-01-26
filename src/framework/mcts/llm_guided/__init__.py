@@ -103,7 +103,8 @@ try:
 
     _TRAINING_AVAILABLE = True
 except ImportError:
-    pass
+    # Optional training dependencies (e.g., PyTorch) not available; training remains disabled
+    _TRAINING_AVAILABLE = False
 
 __all__ = [
     # Config
