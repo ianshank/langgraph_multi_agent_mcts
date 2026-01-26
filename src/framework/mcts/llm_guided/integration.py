@@ -296,7 +296,11 @@ class HRMAdapter:
                 confidences=result.get("confidences", [0.8]),
             )
         except Exception as e:
-            self._logger.error(f"LLM decomposition failed: {e}")
+            self._logger.error(
+                "LLM decomposition failed",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             return SubProblemDecomposition(
                 original_problem=problem,
                 subproblems=[problem],
@@ -466,7 +470,12 @@ class TRMAdapter:
                 current_code = new_code
 
             except Exception as e:
-                self._logger.error(f"LLM refinement iteration {iteration} failed: {e}")
+                self._logger.error(
+                    "LLM refinement iteration failed",
+                    iteration=iteration,
+                    error=str(e),
+                    error_type=type(e).__name__,
+                )
                 break
 
         return RefinementResult(
@@ -745,7 +754,9 @@ class UnifiedSearchOrchestrator:
         if self._config.use_meta_controller:
             routing_decision = self._router.route(problem, ctx)
             self._logger.info(
-                f"Routed to {routing_decision.selected_agent.value} " f"(confidence: {routing_decision.confidence:.2f})"
+                "Routed to agent",
+                agent=routing_decision.selected_agent.value,
+                confidence=round(routing_decision.confidence, 2),
             )
         else:
             routing_decision = RoutingDecision(
@@ -766,7 +777,10 @@ class UnifiedSearchOrchestrator:
                 # Use leaf problems for search
                 leaf_problems = decomposition.get_leaf_problems()
                 search_problems = [(sp, test_cases) for sp in leaf_problems]
-                self._logger.info(f"Decomposed into {len(search_problems)} subproblems")
+                self._logger.info(
+                    "Decomposed into subproblems",
+                    num_subproblems=len(search_problems),
+                )
 
         # Step 3: Run MCTS search on each subproblem
         mcts_results = []
@@ -802,7 +816,11 @@ class UnifiedSearchOrchestrator:
 
             if refinement.improvement_score > 0:
                 final_code = refinement.refined_code
-                self._logger.info(f"Refined solution with {refinement.num_iterations} iterations")
+                self._logger.info(
+                    "Refined solution",
+                    num_iterations=refinement.num_iterations,
+                    improvement_score=round(refinement.improvement_score, 4),
+                )
 
         execution_time_ms = (time.perf_counter() - start_time) * 1000
 
@@ -869,7 +887,12 @@ class UnifiedSearchOrchestrator:
                     result = await search_with_agent(agent_type)
                     results.append(result)
                 except Exception as e:
-                    self._logger.error(f"Agent {agent_type.value} failed: {e}")
+                    self._logger.error(
+                        "Agent failed",
+                        agent_type=agent_type.value,
+                        error=str(e),
+                        error_type=type(e).__name__,
+                    )
 
         return results
 

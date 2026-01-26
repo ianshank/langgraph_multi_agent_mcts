@@ -29,7 +29,7 @@ from tenacity import (
     wait_exponential,
 )
 
-from src.observability.logging import get_logger
+from src.observability.logging import get_structured_logger
 
 
 @dataclass
@@ -78,7 +78,7 @@ class S3StorageClient:
             config: S3 configuration (uses environment variables if not provided)
         """
         self.config = config or S3Config()
-        self.logger = get_logger("storage.s3")
+        self.logger = get_structured_logger("storage.s3")
         self._session: aioboto3.Session | None = None
         self._initialized = False
 
@@ -97,7 +97,7 @@ class S3StorageClient:
 
         self._session = aioboto3.Session()
         self._initialized = True
-        self.logger.info(f"S3 client initialized for bucket: {self.config.bucket_name}")
+        self.logger.info("S3 client initialized", bucket_name=self.config.bucket_name)
 
     async def close(self) -> None:
         """Close the client (cleanup if needed)."""
@@ -198,11 +198,9 @@ class S3StorageClient:
 
             self.logger.debug(
                 "Uploaded object to S3",
-                extra={
-                    "s3_key": key,
-                    "size_bytes": len(body),
-                    "etag": response.get("ETag"),
-                },
+                s3_key=key,
+                size_bytes=len(body),
+                etag=response.get("ETag"),
             )
 
             return {
@@ -236,10 +234,8 @@ class S3StorageClient:
 
             self.logger.debug(
                 "Downloaded object from S3",
-                extra={
-                    "s3_key": key,
-                    "size_bytes": len(data),
-                },
+                s3_key=key,
+                size_bytes=len(data),
             )
 
             return data
@@ -286,7 +282,11 @@ class S3StorageClient:
             metadata["session_id"] = session_id
 
         result = await self._put_object_with_retry(key, body, content_type, metadata)
-        self.logger.info(f"Stored config '{config_name}' to S3: {key}")
+        self.logger.info(
+            "Stored config to S3",
+            config_name=config_name,
+            s3_key=key,
+        )
         return result
 
     async def store_mcts_stats(
@@ -335,7 +335,12 @@ class S3StorageClient:
             metadata["iteration"] = str(iteration)
 
         result = await self._put_object_with_retry(key, body, content_type, metadata)
-        self.logger.info(f"Stored MCTS stats for session '{session_id}' to S3: {key}")
+        self.logger.info(
+            "Stored MCTS stats to S3",
+            session_id=session_id,
+            s3_key=key,
+            iteration=iteration,
+        )
         return result
 
     async def store_traces(
@@ -376,7 +381,11 @@ class S3StorageClient:
         }
 
         result = await self._put_object_with_retry(key, body, content_type, metadata)
-        self.logger.info(f"Stored traces for session '{session_id}' to S3: {key}")
+        self.logger.info(
+            "Stored traces to S3",
+            session_id=session_id,
+            s3_key=key,
+        )
         return result
 
     async def store_logs(
@@ -420,7 +429,12 @@ class S3StorageClient:
         }
 
         result = await self._put_object_with_retry(key, body, content_type, metadata)
-        self.logger.info(f"Stored {len(log_entries)} log entries for session '{session_id}' to S3: {key}")
+        self.logger.info(
+            "Stored log entries to S3",
+            session_id=session_id,
+            entry_count=len(log_entries),
+            s3_key=key,
+        )
         return result
 
     async def store_checkpoint(
@@ -464,7 +478,12 @@ class S3StorageClient:
         }
 
         result = await self._put_object_with_retry(key, body, content_type, metadata)
-        self.logger.info(f"Stored checkpoint '{checkpoint_name}' for session '{session_id}' to S3: {key}")
+        self.logger.info(
+            "Stored checkpoint to S3",
+            checkpoint_name=checkpoint_name,
+            session_id=session_id,
+            s3_key=key,
+        )
         return result
 
     async def retrieve_object(self, key: str) -> bytes:
@@ -555,7 +574,7 @@ class S3StorageClient:
                 Key=key,
             )
 
-            self.logger.info(f"Deleted object from S3: {key}")
+            self.logger.info("Deleted object from S3", s3_key=key)
 
             return {
                 "key": key,

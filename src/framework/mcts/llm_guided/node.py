@@ -18,6 +18,8 @@ from typing import Any
 
 import numpy as np
 
+from . import constants as C
+
 
 class NodeStatus(Enum):
     """Status of a node in the search tree."""
@@ -188,7 +190,7 @@ class LLMGuidedMCTSNode:
         """Check if node has been expanded."""
         return self.status != NodeStatus.UNEXPANDED
 
-    def ucb1(self, c: float = 1.414) -> float:
+    def ucb1(self, c: float = C.UCB1_EXPLORATION_CONSTANT) -> float:
         """
         Calculate UCB1 score for node selection.
 
@@ -208,7 +210,7 @@ class LLMGuidedMCTSNode:
         exploration = c * math.sqrt(math.log(self.parent.visits) / self.visits)
         return exploitation + exploration
 
-    def select_child(self, c: float = 1.414) -> LLMGuidedMCTSNode | None:
+    def select_child(self, c: float = C.UCB1_EXPLORATION_CONSTANT) -> LLMGuidedMCTSNode | None:
         """
         Select best child using UCB1.
 

@@ -19,6 +19,8 @@ from typing import Any
 
 from src.config.settings import LLMProvider
 
+from . import constants as C
+
 
 class LLMGuidedMCTSPreset(Enum):
     """Preset configurations for LLM-guided MCTS."""
@@ -35,20 +37,20 @@ class GeneratorConfig:
     """Configuration for the Generator agent."""
 
     # Model settings
-    model: str = "gpt-4o"
+    model: str = C.DEFAULT_GENERATOR_MODEL
     """LLM model to use for generation."""
 
-    temperature: float = 0.7
+    temperature: float = C.DEFAULT_GENERATOR_TEMPERATURE
     """Temperature for generation (higher = more diverse)."""
 
-    max_tokens: int = 2000
+    max_tokens: int = C.DEFAULT_GENERATOR_MAX_TOKENS
     """Maximum tokens for generated code."""
 
     # Generation behavior
-    num_variants: int = 3
+    num_variants: int = C.DEFAULT_NUM_VARIANTS
     """Number of code variants to generate per expansion."""
 
-    top_p: float = 0.95
+    top_p: float = C.DEFAULT_TOP_P
     """Nucleus sampling parameter."""
 
     # Prompt settings
@@ -69,14 +71,14 @@ class GeneratorConfig:
         """Validate configuration parameters."""
         errors = []
 
-        if self.temperature < 0 or self.temperature > 2:
-            errors.append("temperature must be in [0, 2]")
-        if self.max_tokens < 1 or self.max_tokens > 8000:
-            errors.append("max_tokens must be in [1, 8000]")
-        if self.num_variants < 1 or self.num_variants > 10:
-            errors.append("num_variants must be in [1, 10]")
-        if self.top_p < 0 or self.top_p > 1:
-            errors.append("top_p must be in [0, 1]")
+        if self.temperature < C.TEMPERATURE_MIN or self.temperature > C.TEMPERATURE_MAX:
+            errors.append(f"temperature must be in [{C.TEMPERATURE_MIN}, {C.TEMPERATURE_MAX}]")
+        if self.max_tokens < C.MAX_TOKENS_MIN or self.max_tokens > C.MAX_TOKENS_MAX:
+            errors.append(f"max_tokens must be in [{C.MAX_TOKENS_MIN}, {C.MAX_TOKENS_MAX}]")
+        if self.num_variants < C.NUM_VARIANTS_MIN or self.num_variants > C.NUM_VARIANTS_MAX:
+            errors.append(f"num_variants must be in [{C.NUM_VARIANTS_MIN}, {C.NUM_VARIANTS_MAX}]")
+        if self.top_p < C.TOP_P_MIN or self.top_p > C.TOP_P_MAX:
+            errors.append(f"top_p must be in [{C.TOP_P_MIN}, {C.TOP_P_MAX}]")
         if self.max_previous_attempts < 0:
             errors.append("max_previous_attempts must be >= 0")
 
@@ -89,13 +91,13 @@ class ReflectorConfig:
     """Configuration for the Reflector agent."""
 
     # Model settings
-    model: str = "gpt-4o"
+    model: str = C.DEFAULT_REFLECTOR_MODEL
     """LLM model to use for reflection."""
 
-    temperature: float = 0.3
+    temperature: float = C.DEFAULT_REFLECTOR_TEMPERATURE
     """Temperature for reflection (lower = more deterministic)."""
 
-    max_tokens: int = 1000
+    max_tokens: int = C.DEFAULT_REFLECTOR_MAX_TOKENS
     """Maximum tokens for reflection output."""
 
     # Evaluation settings
@@ -120,10 +122,10 @@ class ReflectorConfig:
         """Validate configuration parameters."""
         errors = []
 
-        if self.temperature < 0 or self.temperature > 2:
-            errors.append("temperature must be in [0, 2]")
-        if self.max_tokens < 1 or self.max_tokens > 4000:
-            errors.append("max_tokens must be in [1, 4000]")
+        if self.temperature < C.TEMPERATURE_MIN or self.temperature > C.TEMPERATURE_MAX:
+            errors.append(f"temperature must be in [{C.TEMPERATURE_MIN}, {C.TEMPERATURE_MAX}]")
+        if self.max_tokens < C.MAX_TOKENS_MIN or self.max_tokens > C.REFLECTOR_MAX_TOKENS_MAX:
+            errors.append(f"max_tokens must be in [{C.MAX_TOKENS_MIN}, {C.REFLECTOR_MAX_TOKENS_MAX}]")
         if self.min_score >= self.max_score:
             errors.append("min_score must be < max_score")
 
@@ -140,27 +142,27 @@ class LLMGuidedMCTSConfig:
     """
 
     # MCTS Core Parameters
-    num_iterations: int = 30
+    num_iterations: int = C.DEFAULT_ITERATIONS_BALANCED
     """Number of MCTS iterations to run."""
 
-    seed: int = 42
+    seed: int = C.DEFAULT_SEED
     """Random seed for reproducibility."""
 
-    exploration_weight: float = 1.414
+    exploration_weight: float = C.UCB1_EXPLORATION_CONSTANT
     """UCB1 exploration constant (c). Higher = more exploration."""
 
     # Tree Structure
-    max_depth: int = 10
+    max_depth: int = C.DEFAULT_MAX_DEPTH
     """Maximum depth of MCTS tree."""
 
-    max_children: int = 5
+    max_children: int = C.DEFAULT_MAX_CHILDREN
     """Maximum children per node (branching factor)."""
 
     # Early Termination
     early_termination_on_solution: bool = True
     """Stop search when a solution is found."""
 
-    solution_confidence_threshold: float = 0.95
+    solution_confidence_threshold: float = C.DEFAULT_SOLUTION_CONFIDENCE_THRESHOLD
     """Confidence threshold to accept a solution."""
 
     # Agent Configurations
@@ -174,17 +176,17 @@ class LLMGuidedMCTSConfig:
     collect_training_data: bool = True
     """Enable training data collection for neural network training."""
 
-    training_data_dir: str = "./training_data"
+    training_data_dir: str = C.DEFAULT_TRAINING_DATA_DIR
     """Directory to save training data."""
 
     save_mcts_policy: bool = True
     """Save MCTS visit distribution as improved policy target."""
 
     # Code Execution
-    execution_timeout_seconds: float = 5.0
+    execution_timeout_seconds: float = C.DEFAULT_EXECUTION_TIMEOUT
     """Timeout for code execution in seconds."""
 
-    max_memory_mb: int = 256
+    max_memory_mb: int = C.DEFAULT_MAX_MEMORY_MB
     """Maximum memory for code execution in MB."""
 
     allow_network: bool = False
@@ -222,24 +224,24 @@ class LLMGuidedMCTSConfig:
         errors = []
 
         # MCTS parameters
-        if self.num_iterations < 1 or self.num_iterations > 1000:
-            errors.append("num_iterations must be in [1, 1000]")
-        if self.exploration_weight < 0 or self.exploration_weight > 10:
-            errors.append("exploration_weight must be in [0, 10]")
-        if self.max_depth < 1 or self.max_depth > 50:
-            errors.append("max_depth must be in [1, 50]")
-        if self.max_children < 1 or self.max_children > 20:
-            errors.append("max_children must be in [1, 20]")
+        if self.num_iterations < C.ITERATIONS_MIN or self.num_iterations > C.ITERATIONS_MAX:
+            errors.append(f"num_iterations must be in [{C.ITERATIONS_MIN}, {C.ITERATIONS_MAX}]")
+        if self.exploration_weight < C.EXPLORATION_WEIGHT_MIN or self.exploration_weight > C.EXPLORATION_WEIGHT_MAX:
+            errors.append(f"exploration_weight must be in [{C.EXPLORATION_WEIGHT_MIN}, {C.EXPLORATION_WEIGHT_MAX}]")
+        if self.max_depth < C.MIN_DEPTH or self.max_depth > C.MAX_DEPTH_LIMIT:
+            errors.append(f"max_depth must be in [{C.MIN_DEPTH}, {C.MAX_DEPTH_LIMIT}]")
+        if self.max_children < C.MIN_CHILDREN or self.max_children > C.MAX_CHILDREN_LIMIT:
+            errors.append(f"max_children must be in [{C.MIN_CHILDREN}, {C.MAX_CHILDREN_LIMIT}]")
 
         # Early termination
-        if self.solution_confidence_threshold < 0 or self.solution_confidence_threshold > 1:
-            errors.append("solution_confidence_threshold must be in [0, 1]")
+        if self.solution_confidence_threshold < C.CONFIDENCE_MIN or self.solution_confidence_threshold > C.CONFIDENCE_MAX:
+            errors.append(f"solution_confidence_threshold must be in [{C.CONFIDENCE_MIN}, {C.CONFIDENCE_MAX}]")
 
         # Code execution
-        if self.execution_timeout_seconds < 0.1 or self.execution_timeout_seconds > 60:
-            errors.append("execution_timeout_seconds must be in [0.1, 60]")
-        if self.max_memory_mb < 32 or self.max_memory_mb > 2048:
-            errors.append("max_memory_mb must be in [32, 2048]")
+        if self.execution_timeout_seconds < C.EXECUTION_TIMEOUT_MIN or self.execution_timeout_seconds > C.EXECUTION_TIMEOUT_MAX:
+            errors.append(f"execution_timeout_seconds must be in [{C.EXECUTION_TIMEOUT_MIN}, {C.EXECUTION_TIMEOUT_MAX}]")
+        if self.max_memory_mb < C.MAX_MEMORY_MIN_MB or self.max_memory_mb > C.MAX_MEMORY_MAX_MB:
+            errors.append(f"max_memory_mb must be in [{C.MAX_MEMORY_MIN_MB}, {C.MAX_MEMORY_MAX_MB}]")
 
         # Validate nested configs
         try:
@@ -324,18 +326,18 @@ def create_llm_mcts_preset(preset: LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         return LLMGuidedMCTSConfig(
             name="fast",
             description="Fast search for quick iteration",
-            num_iterations=10,
+            num_iterations=C.DEFAULT_ITERATIONS_FAST,
             max_depth=5,
             max_children=3,
-            exploration_weight=1.414,
+            exploration_weight=C.UCB1_EXPLORATION_CONSTANT,
             generator_config=GeneratorConfig(
-                model="gpt-4o-mini",
-                temperature=0.7,
+                model=C.DEFAULT_GENERATOR_MODEL_FAST,
+                temperature=C.DEFAULT_GENERATOR_TEMPERATURE,
                 num_variants=2,
             ),
             reflector_config=ReflectorConfig(
-                model="gpt-4o-mini",
-                temperature=0.3,
+                model=C.DEFAULT_REFLECTOR_MODEL_FAST,
+                temperature=C.DEFAULT_REFLECTOR_TEMPERATURE,
             ),
             collect_training_data=False,
             verbose=False,
@@ -345,18 +347,18 @@ def create_llm_mcts_preset(preset: LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         return LLMGuidedMCTSConfig(
             name="balanced",
             description="Balanced search for typical use cases",
-            num_iterations=30,
-            max_depth=10,
-            max_children=5,
-            exploration_weight=1.414,
+            num_iterations=C.DEFAULT_ITERATIONS_BALANCED,
+            max_depth=C.DEFAULT_MAX_DEPTH,
+            max_children=C.DEFAULT_MAX_CHILDREN,
+            exploration_weight=C.UCB1_EXPLORATION_CONSTANT,
             generator_config=GeneratorConfig(
-                model="gpt-4o",
-                temperature=0.7,
-                num_variants=3,
+                model=C.DEFAULT_GENERATOR_MODEL,
+                temperature=C.DEFAULT_GENERATOR_TEMPERATURE,
+                num_variants=C.DEFAULT_NUM_VARIANTS,
             ),
             reflector_config=ReflectorConfig(
-                model="gpt-4o",
-                temperature=0.3,
+                model=C.DEFAULT_REFLECTOR_MODEL,
+                temperature=C.DEFAULT_REFLECTOR_TEMPERATURE,
             ),
             collect_training_data=True,
             verbose=False,
@@ -366,19 +368,19 @@ def create_llm_mcts_preset(preset: LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         return LLMGuidedMCTSConfig(
             name="thorough",
             description="Thorough search for difficult problems",
-            num_iterations=100,
+            num_iterations=C.DEFAULT_ITERATIONS_THOROUGH,
             max_depth=15,
-            max_children=5,
+            max_children=C.DEFAULT_MAX_CHILDREN,
             exploration_weight=2.0,
             generator_config=GeneratorConfig(
-                model="gpt-4o",
+                model=C.DEFAULT_GENERATOR_MODEL,
                 temperature=0.8,
                 num_variants=4,
                 include_previous_attempts=True,
                 max_previous_attempts=5,
             ),
             reflector_config=ReflectorConfig(
-                model="gpt-4o",
+                model=C.DEFAULT_REFLECTOR_MODEL,
                 temperature=0.2,
             ),
             collect_training_data=True,
@@ -390,20 +392,20 @@ def create_llm_mcts_preset(preset: LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         return LLMGuidedMCTSConfig(
             name="data_collection",
             description="Optimized for training data collection",
-            num_iterations=50,
-            max_depth=10,
-            max_children=5,
+            num_iterations=C.DEFAULT_ITERATIONS_BENCHMARK,
+            max_depth=C.DEFAULT_MAX_DEPTH,
+            max_children=C.DEFAULT_MAX_CHILDREN,
             exploration_weight=1.5,
             early_termination_on_solution=False,  # Keep exploring for more data
             generator_config=GeneratorConfig(
-                model="gpt-4o",
-                temperature=0.7,
-                num_variants=3,
+                model=C.DEFAULT_GENERATOR_MODEL,
+                temperature=C.DEFAULT_GENERATOR_TEMPERATURE,
+                num_variants=C.DEFAULT_NUM_VARIANTS,
                 include_previous_attempts=True,
             ),
             reflector_config=ReflectorConfig(
-                model="gpt-4o",
-                temperature=0.3,
+                model=C.DEFAULT_REFLECTOR_MODEL,
+                temperature=C.DEFAULT_REFLECTOR_TEMPERATURE,
             ),
             collect_training_data=True,
             save_mcts_policy=True,
@@ -414,19 +416,19 @@ def create_llm_mcts_preset(preset: LLMGuidedMCTSPreset) -> LLMGuidedMCTSConfig:
         return LLMGuidedMCTSConfig(
             name="benchmark",
             description="Configuration for HumanEval benchmarking",
-            num_iterations=30,
-            max_depth=10,
-            max_children=5,
-            exploration_weight=1.414,
+            num_iterations=C.DEFAULT_ITERATIONS_BALANCED,
+            max_depth=C.DEFAULT_MAX_DEPTH,
+            max_children=C.DEFAULT_MAX_CHILDREN,
+            exploration_weight=C.UCB1_EXPLORATION_CONSTANT,
             execution_timeout_seconds=10.0,
             generator_config=GeneratorConfig(
-                model="gpt-4o",
-                temperature=0.7,
-                num_variants=3,
+                model=C.DEFAULT_GENERATOR_MODEL,
+                temperature=C.DEFAULT_GENERATOR_TEMPERATURE,
+                num_variants=C.DEFAULT_NUM_VARIANTS,
             ),
             reflector_config=ReflectorConfig(
-                model="gpt-4o",
-                temperature=0.3,
+                model=C.DEFAULT_REFLECTOR_MODEL,
+                temperature=C.DEFAULT_REFLECTOR_TEMPERATURE,
             ),
             collect_training_data=True,
             save_mcts_policy=True,
