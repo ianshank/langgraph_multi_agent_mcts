@@ -3,8 +3,9 @@ Configuration constants for application settings.
 
 Centralizes default values and validation bounds to ensure
 consistency and ease of customization across the application.
-These constants provide shared defaults and bounds for
-configuration-related code throughout the project.
+
+These constants are intended to provide shared defaults and bounds
+for configuration-related code throughout the project.
 """
 
 from __future__ import annotations
