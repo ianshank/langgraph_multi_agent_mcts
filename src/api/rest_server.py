@@ -257,11 +257,19 @@ This API provides access to a sophisticated multi-agent reasoning framework that
     lifespan=lifespan,
 )
 
-# CORS middleware
+# CORS middleware - configured from settings
+# Note: CORS_ALLOWED_ORIGINS is loaded dynamically in lifespan
+# Empty list defaults to ["*"] for development; set explicitly for production
+_cors_settings = get_settings()
+_cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
+if not _cors_origins:
+    logger.warning("CORS_ALLOWED_ORIGINS not set. Defaulting to allow all origins (not recommended for production).")
+    _cors_origins = ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_settings.CORS_ALLOW_CREDENTIALS,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -309,8 +317,10 @@ async def verify_api_key(x_api_key: str = Header(..., description="API key for a
     except RateLimitError as e:
         if PROMETHEUS_AVAILABLE:
             ERROR_COUNT.labels(error_type="rate_limit").inc()
+        settings = get_settings()
+        retry_after = e.retry_after_seconds or settings.RATE_LIMIT_RETRY_AFTER_SECONDS
         raise HTTPException(
-            status_code=429, detail=e.user_message, headers={"Retry-After": str(e.retry_after_seconds or 60)}
+            status_code=429, detail=e.user_message, headers={"Retry-After": str(retry_after)}
         ) from e
 
 

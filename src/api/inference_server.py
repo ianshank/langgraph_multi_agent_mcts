@@ -7,6 +7,7 @@ Provides REST API for:
 - Health checks and monitoring
 """
 
+import logging
 import time
 from typing import Any
 
@@ -16,6 +17,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
+# Configure module logger
+logger = logging.getLogger(__name__)
+
+from ..config.settings import get_settings
 from ..framework.mcts.neural_mcts import NeuralMCTS
 from ..training.performance_monitor import PerformanceMonitor
 from ..training.system_config import SystemConfig
@@ -121,11 +126,13 @@ class InferenceServer:
             version="1.0.0",
         )
 
-        # CORS middleware
+        # CORS middleware - configured from settings
+        settings = get_settings()
+        cors_origins = settings.CORS_ALLOWED_ORIGINS or ["*"]
         self.app.add_middleware(
             CORSMiddleware,
-            allow_origins=["*"],
-            allow_credentials=True,
+            allow_origins=cors_origins,
+            allow_credentials=settings.CORS_ALLOW_CREDENTIALS,
             allow_methods=["*"],
             allow_headers=["*"],
         )
@@ -136,10 +143,17 @@ class InferenceServer:
     def _load_models(
         self, checkpoint_path: str, config: SystemConfig | None
     ) -> tuple[SystemConfig, dict[str, torch.nn.Module]]:
-        """Load models from checkpoint."""
-        print(f"Loading models from {checkpoint_path}...")
+        """Load models from checkpoint with error handling."""
+        logger.info("Loading models from %s...", checkpoint_path)
 
-        checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        try:
+            checkpoint = torch.load(checkpoint_path, map_location="cpu", weights_only=True)
+        except FileNotFoundError as e:
+            logger.error("Checkpoint file not found: %s", checkpoint_path)
+            raise RuntimeError(f"Checkpoint file not found: {checkpoint_path}") from e
+        except RuntimeError as e:
+            logger.error("Failed to load checkpoint (possibly corrupted): %s", e)
+            raise RuntimeError(f"Failed to load checkpoint: {e}") from e
 
         # Load config
         if config is None:
@@ -179,7 +193,7 @@ class InferenceServer:
             device=device,
         )
 
-        print(f"✓ Models loaded successfully on {device}")
+        logger.info("Models loaded successfully on %s", device)
 
         return config, models
 
@@ -224,8 +238,16 @@ class InferenceServer:
             try:
                 start_time = time.perf_counter()
 
-                # Convert state to tensor
-                state_tensor = torch.tensor(request.state, dtype=torch.float32).unsqueeze(0)
+                # Validate and convert state to tensor with proper error handling
+                if not request.state:
+                    raise HTTPException(status_code=400, detail="State cannot be empty")
+
+                try:
+                    state_tensor = torch.tensor(request.state, dtype=torch.float32).unsqueeze(0)
+                except (TypeError, ValueError) as e:
+                    logger.warning("Invalid state format: %s", e)
+                    raise HTTPException(status_code=400, detail=f"Invalid state format: {e}") from e
+
                 state_tensor = state_tensor.to(self.device)
 
                 results = {}
@@ -281,7 +303,17 @@ class InferenceServer:
                     performance_stats=perf_stats,
                 )
 
+            except HTTPException:
+                # Re-raise HTTP exceptions (from validation above)
+                raise
+            except torch.cuda.OutOfMemoryError as e:
+                logger.error("GPU out of memory during inference: %s", e)
+                raise HTTPException(status_code=503, detail="GPU out of memory. Try a smaller state.") from e
+            except RuntimeError as e:
+                logger.error("Runtime error during inference: %s", e)
+                raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}") from e
             except Exception as e:
+                logger.exception("Unexpected error during inference: %s", e)
                 raise HTTPException(status_code=500, detail=f"Inference failed: {str(e)}") from e
 
         @self.app.post("/policy-value", response_model=PolicyValueResponse)
@@ -294,8 +326,16 @@ class InferenceServer:
             try:
                 start_time = time.perf_counter()
 
-                # Convert state to tensor
-                state_tensor = torch.tensor(request.state, dtype=torch.float32).unsqueeze(0)
+                # Validate and convert state to tensor
+                if not request.state:
+                    raise HTTPException(status_code=400, detail="State cannot be empty")
+
+                try:
+                    state_tensor = torch.tensor(request.state, dtype=torch.float32).unsqueeze(0)
+                except (TypeError, ValueError) as e:
+                    logger.warning("Invalid state format for policy-value: %s", e)
+                    raise HTTPException(status_code=400, detail=f"Invalid state format: {e}") from e
+
                 state_tensor = state_tensor.to(self.device)
 
                 # Get predictions
@@ -311,7 +351,16 @@ class InferenceServer:
                     inference_time_ms=elapsed_ms,
                 )
 
+            except HTTPException:
+                raise
+            except torch.cuda.OutOfMemoryError as e:
+                logger.error("GPU out of memory during policy-value inference: %s", e)
+                raise HTTPException(status_code=503, detail="GPU out of memory. Try a smaller state.") from e
+            except RuntimeError as e:
+                logger.error("Runtime error during policy-value inference: %s", e)
+                raise HTTPException(status_code=500, detail=f"Policy-value inference failed: {str(e)}") from e
             except Exception as e:
+                logger.exception("Unexpected error during policy-value inference: %s", e)
                 raise HTTPException(status_code=500, detail=f"Policy-value inference failed: {str(e)}") from e
 
         @self.app.get("/stats")
@@ -327,13 +376,13 @@ class InferenceServer:
 
     def run(self):
         """Start the inference server."""
-        print(f"\n{'=' * 80}")
-        print("Starting LangGraph Multi-Agent MCTS Inference Server")
-        print(f"{'=' * 80}")
-        print(f"Host: {self.host}:{self.port}")
-        print(f"Device: {self.device}")
-        print(f"Checkpoint: {self.checkpoint_path}")
-        print(f"{'=' * 80}\n")
+        logger.info("=" * 80)
+        logger.info("Starting LangGraph Multi-Agent MCTS Inference Server")
+        logger.info("=" * 80)
+        logger.info("Host: %s:%d", self.host, self.port)
+        logger.info("Device: %s", self.device)
+        logger.info("Checkpoint: %s", self.checkpoint_path)
+        logger.info("=" * 80)
 
         uvicorn.run(self.app, host=self.host, port=self.port)
 

@@ -152,6 +152,39 @@ class Settings(BaseSettings):
 
     HTTP_MAX_RETRIES: int = Field(default=3, ge=0, le=10, description="Maximum HTTP request retries")
 
+    # LLM Provider-Specific Timeouts (seconds)
+    OPENAI_TIMEOUT: float = Field(
+        default=60.0, ge=1.0, le=600.0, description="OpenAI API request timeout in seconds"
+    )
+
+    ANTHROPIC_TIMEOUT: float = Field(
+        default=120.0, ge=1.0, le=600.0, description="Anthropic API request timeout in seconds"
+    )
+
+    LMSTUDIO_TIMEOUT: float = Field(
+        default=300.0, ge=1.0, le=600.0, description="LMStudio local inference timeout in seconds"
+    )
+
+    # Circuit Breaker Settings
+    CIRCUIT_BREAKER_RESET_SECONDS: float = Field(
+        default=60.0, ge=10.0, le=600.0, description="Circuit breaker reset time in seconds"
+    )
+
+    # CORS Configuration (security)
+    CORS_ALLOWED_ORIGINS: list[str] = Field(
+        default_factory=list,
+        description="Allowed CORS origins. Empty list means allow all (dev only).",
+    )
+
+    CORS_ALLOW_CREDENTIALS: bool = Field(
+        default=True, description="Allow credentials in CORS requests"
+    )
+
+    # Rate Limit Response Configuration
+    RATE_LIMIT_RETRY_AFTER_SECONDS: int = Field(
+        default=60, ge=1, le=3600, description="Default Retry-After header value for rate limit responses"
+    )
+
     # Security Settings
     MAX_QUERY_LENGTH: int = Field(
         default=10000, ge=1, le=100000, description="Maximum allowed query length in characters"
