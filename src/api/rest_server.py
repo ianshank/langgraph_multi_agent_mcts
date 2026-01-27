@@ -257,7 +257,11 @@ This API provides access to a sophisticated multi-agent reasoning framework that
     lifespan=lifespan,
 )
 
-# CORS middleware - configured from settings at import time
+# CORS middleware - configured from settings at app creation time
+# Note: CORS settings are read once when the module is imported. Changes to
+# CORS_ALLOWED_ORIGINS or CORS_ALLOW_CREDENTIALS environment variables require
+# a server restart to take effect. For testing, use reset_settings() before
+# importing this module, or mock the middleware directly.
 # If CORS_ALLOWED_ORIGINS is empty/falsy, default to ["*"] for development
 # Security: Credentials are disabled when using wildcard origins
 _cors_settings = get_settings()

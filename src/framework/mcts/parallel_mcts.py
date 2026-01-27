@@ -132,6 +132,8 @@ class ParallelMCTSConfig:
             errors.append("collision_history_size must be >= 1")
         if self.exploration_weight < 0:
             errors.append("exploration_weight must be >= 0")
+        if self.lock_timeout_seconds is not None and self.lock_timeout_seconds <= 0:
+            errors.append("lock_timeout_seconds must be None or > 0")
 
         if errors:
             raise ValueError(

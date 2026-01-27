@@ -96,6 +96,26 @@ class TestParallelMCTSConfig:
         with pytest.raises(ValueError, match="exploration_weight must be >= 0"):
             config.validate()
 
+    def test_validation_fails_for_invalid_lock_timeout(self):
+        """Test validation fails for non-positive lock timeout."""
+        config = ParallelMCTSConfig(lock_timeout_seconds=0)
+        with pytest.raises(ValueError, match="lock_timeout_seconds must be None or > 0"):
+            config.validate()
+
+        config_negative = ParallelMCTSConfig(lock_timeout_seconds=-1.0)
+        with pytest.raises(ValueError, match="lock_timeout_seconds must be None or > 0"):
+            config_negative.validate()
+
+    def test_validation_passes_for_none_lock_timeout(self):
+        """Test validation passes when lock_timeout_seconds is None."""
+        config = ParallelMCTSConfig(lock_timeout_seconds=None)
+        config.validate()  # Should not raise
+
+    def test_validation_passes_for_positive_lock_timeout(self):
+        """Test validation passes for positive lock timeout."""
+        config = ParallelMCTSConfig(lock_timeout_seconds=5.0)
+        config.validate()  # Should not raise
+
 
 class TestParallelMCTSStats:
     """Tests for ParallelMCTSStats dataclass."""
