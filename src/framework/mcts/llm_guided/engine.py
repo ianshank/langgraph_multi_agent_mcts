@@ -734,9 +734,12 @@ class LLMGuidedMCTSEngine:
         )
 
         # Build and compile graph
+        # Note: We don't use MemorySaver here because LLMGuidedMCTSNode
+        # contains circular references (parent/children) and numpy RNG
+        # which aren't serializable by msgpack. The MCTS tree is already
+        # in-memory and doesn't need checkpoint persistence.
         graph = self.build_langgraph()
-        memory = MemorySaver() if MemorySaver else None
-        app = graph.compile(checkpointer=memory) if memory else graph.compile()
+        app = graph.compile()
 
         # Initial state
         initial_state: TreeState = {

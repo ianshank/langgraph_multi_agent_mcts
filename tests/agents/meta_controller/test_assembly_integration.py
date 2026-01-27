@@ -4,6 +4,10 @@ Tests for Assembly Theory integration in meta-controller (Stories 2.2, 2.3).
 
 import pytest
 
+# Skip if dependencies not available
+pytest.importorskip("torch", reason="PyTorch required for meta-controller tests")
+pytest.importorskip("networkx", reason="networkx required for assembly tests")
+
 from src.agents.meta_controller import (
     AssemblyRouter,
     HybridMetaController,

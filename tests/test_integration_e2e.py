@@ -15,7 +15,8 @@ from pathlib import Path
 from typing import Any
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="PyTorch required")
 
 from src.agents.meta_controller.base import (
     MetaControllerFeatures,

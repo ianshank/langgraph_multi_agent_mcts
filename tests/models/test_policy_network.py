@@ -1,7 +1,8 @@
 """Tests for policy network implementation."""
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="PyTorch required")
 
 from src.models.policy_network import (
     ActionSelection,

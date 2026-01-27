@@ -2,8 +2,9 @@
 Tests for Concept Extractor (Story 1.2).
 """
 
-import networkx as nx
 import pytest
+
+nx = pytest.importorskip("networkx", reason="networkx required for assembly tests")
 
 from src.framework.assembly.concept_extractor import ConceptExtractor
 

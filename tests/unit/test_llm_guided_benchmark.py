@@ -450,6 +450,11 @@ class TestBenchmarkRunner:
         engine._config = MagicMock()
         engine._config.name = "test_config"
 
+        # Set up _llm_client with a serializable model name to avoid
+        # MagicMock being serialized to JSON when saving report
+        engine._llm_client = MagicMock()
+        engine._llm_client.model = "test-model"
+
         return engine
 
     @pytest.mark.asyncio

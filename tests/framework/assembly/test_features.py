@@ -5,6 +5,9 @@ Tests for Assembly Feature Extraction (Story 2.1).
 import numpy as np
 import pytest
 
+# Skip if networkx not available (required for assembly module)
+pytest.importorskip("networkx", reason="networkx required for assembly tests")
+
 from src.framework.assembly.features import AssemblyFeatureExtractor, AssemblyFeatures
 
 

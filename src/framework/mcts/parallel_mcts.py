@@ -380,7 +380,7 @@ class ParallelMCTSEngine:
         # 3. SIMULATION (lock-free, fully parallel)
         rng = self._worker_rngs[worker_id]
         value = await rollout_policy.evaluate(
-            current.state,
+            state=current.state,
             rng=rng,
             max_depth=max_rollout_depth,
         )
@@ -659,7 +659,7 @@ class LeafParallelMCTSEngine:
         # Create rollout tasks
         rollout_rngs = [np.random.default_rng(self.seed + i) for i in range(self.num_parallel_rollouts)]
 
-        rollout_tasks = [rollout_policy.evaluate(node.state, rng=rng, max_depth=max_depth) for rng in rollout_rngs]
+        rollout_tasks = [rollout_policy.evaluate(state=node.state, rng=rng, max_depth=max_depth) for rng in rollout_rngs]
 
         # Run rollouts concurrently
         values = await asyncio.gather(*rollout_tasks)

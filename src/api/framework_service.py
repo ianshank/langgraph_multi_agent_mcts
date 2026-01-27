@@ -630,7 +630,8 @@ class LightweightFramework:
         """Process query with lightweight implementation."""
         correlation_id = get_correlation_id()
 
-        if _HAS_STRUCTURED_LOGGING:
+        # Use try/except to handle both structured and standard loggers
+        try:
             self._logger.info(
                 "Processing query (lightweight mode)",
                 correlation_id=correlation_id,
@@ -638,7 +639,7 @@ class LightweightFramework:
                 use_rag=use_rag,
                 use_mcts=use_mcts,
             )
-        else:
+        except TypeError:
             self._logger.info(f"Processing query (lightweight mode): {query[:50]}...")
 
         # Retrieve RAG context if available
@@ -650,19 +651,25 @@ class LightweightFramework:
                     top_k=self._config.top_k_retrieval,
                 )
                 rag_context = retrieval_result.context
-                if _HAS_STRUCTURED_LOGGING:
+                try:
                     self._logger.debug(
                         "RAG context retrieved for lightweight processing",
                         correlation_id=correlation_id,
                         documents=len(retrieval_result.documents),
                     )
+                except TypeError:
+                    self._logger.debug(f"RAG context retrieved: {len(retrieval_result.documents)} documents")
             except Exception as e:
-                if _HAS_STRUCTURED_LOGGING:
+                # Use try/except to handle both structured and standard loggers
+                try:
                     self._logger.warning(
                         "RAG retrieval failed in lightweight mode",
                         correlation_id=correlation_id,
                         error=str(e),
                     )
+                except TypeError:
+                    # Fall back to standard logging if structured logging not supported
+                    self._logger.warning(f"RAG retrieval failed in lightweight mode: {e}")
 
         # Build prompt with optional context
         if rag_context:
@@ -687,13 +694,13 @@ Provide a comprehensive and accurate answer:"""
             # Higher confidence when RAG context is used
             confidence = 0.8 if rag_context else 0.7
         except Exception as e:
-            if _HAS_STRUCTURED_LOGGING:
+            try:
                 self._logger.warning(
                     "LLM call failed in lightweight mode",
                     correlation_id=correlation_id,
                     error=str(e),
                 )
-            else:
+            except TypeError:
                 self._logger.warning(f"LLM call failed: {e}")
             response_text = f"Unable to process query: {query[:100]}"
             confidence = 0.3
