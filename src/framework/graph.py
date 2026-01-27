@@ -312,8 +312,20 @@ class GraphBuilder:
         return workflow
 
     def _entry_node(self, state: AgentState) -> dict:
-        """Initialize state and parse query."""
-        self.logger.info(f"Entry node: {state['query'][:100]}")
+        """Initialize state and parse query with validation."""
+        query = state.get("query", "")
+
+        # Validate query input
+        if not query or not isinstance(query, str):
+            raise ValueError("Query must be a non-empty string")
+
+        query = query.strip()
+        if not query:
+            raise ValueError("Query cannot be empty or whitespace only")
+
+        # Log truncated query for privacy
+        self.logger.info(f"Entry node: {query[:100]}{'...' if len(query) > 100 else ''}")
+
         return {
             "iteration": 0,
             "agent_outputs": [],
@@ -321,24 +333,32 @@ class GraphBuilder:
         }
 
     def _retrieve_context_node(self, state: AgentState) -> dict:
-        """Retrieve context from vector store using RAG."""
+        """Retrieve context from vector store using RAG with error handling."""
         if not state.get("use_rag", True) or not self.vector_store:
-            return {"rag_context": ""}
+            return {"rag_context": "", "retrieved_docs": []}
 
-        query = state["query"]
+        query = state.get("query", "")
+        if not query:
+            self.logger.warning("Empty query in retrieve_context_node")
+            return {"rag_context": "", "retrieved_docs": []}
 
-        # Retrieve documents
-        docs = self.vector_store.similarity_search(query, k=self.top_k_retrieval)
+        try:
+            # Retrieve documents with error handling
+            docs = self.vector_store.similarity_search(query, k=self.top_k_retrieval)
 
-        # Format context
-        context = "\n\n".join([doc.page_content for doc in docs])
+            # Format context
+            context = "\n\n".join([doc.page_content for doc in docs])
 
-        self.logger.info(f"Retrieved {len(docs)} documents")
+            self.logger.info(f"Retrieved {len(docs)} documents")
 
-        return {
-            "rag_context": context,
-            "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
-        }
+            return {
+                "rag_context": context,
+                "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
+            }
+        except Exception as e:
+            self.logger.error(f"RAG retrieval failed: {e}")
+            # Graceful degradation - continue without RAG context
+            return {"rag_context": "", "retrieved_docs": []}
 
     def _route_decision_node(self, _state: AgentState) -> dict:
         """Prepare routing decision."""
