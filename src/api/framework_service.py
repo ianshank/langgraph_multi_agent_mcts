@@ -97,7 +97,8 @@ class FrameworkConfig:
     """
     Configuration for the framework service.
 
-    All values are loaded from Settings - no hardcoded defaults.
+    Core values are loaded from Settings via from_settings(). Additional fields
+    have defaults for backwards compatibility but can be overridden via Settings.
     """
 
     mcts_enabled: bool
