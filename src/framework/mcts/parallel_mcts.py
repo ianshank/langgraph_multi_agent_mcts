@@ -324,30 +324,6 @@ class ParallelMCTSEngine:
             for i in range(self.num_workers)
         }
 
-    async def _acquire_lock_with_timeout(self) -> bool:
-        """
-        Acquire tree lock with optional timeout.
-
-        Returns:
-            True if lock was acquired successfully.
-
-        Raises:
-            asyncio.TimeoutError: If timeout is configured and exceeded.
-        """
-        if self._config.lock_timeout_seconds is None:
-            await self._tree_lock.acquire()
-            return True
-
-        try:
-            await asyncio.wait_for(
-                self._tree_lock.acquire(),
-                timeout=self._config.lock_timeout_seconds,
-            )
-            return True
-        except asyncio.TimeoutError:
-            self.stats.collision_count += 1
-            raise
-
     async def parallel_search(
         self,
         root: VirtualLossNode,
