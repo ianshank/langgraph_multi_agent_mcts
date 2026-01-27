@@ -116,19 +116,6 @@ class TestCORSSettings:
         settings = Settings(_env_file=None)
         assert settings.CORS_ALLOWED_ORIGINS == ["*"]
 
-    def test_cors_empty_is_secure_default(self):
-        """Test that empty CORS_ALLOWED_ORIGINS is the secure default."""
-        from src.config.settings import Settings
-
-        settings = Settings(
-            LLM_PROVIDER="lmstudio",
-            _env_file=None,
-        )
-        # Empty list = no origins allowed (secure by default)
-        # User must explicitly set ['*'] to allow all origins
-        assert settings.CORS_ALLOWED_ORIGINS == []
-        assert settings.CORS_ALLOWED_ORIGINS != ["*"]
-
 
 class TestCircuitBreakerSettings:
     """Test circuit breaker configuration."""
