@@ -299,6 +299,9 @@ class ParallelMCTSEngine:
                 seed=seed if seed is not None else 42,
             )
 
+        # Validate config to catch invalid values early
+        config.validate()
+
         self._config = config
         self.num_workers = config.num_workers
         self.virtual_loss_value = config.virtual_loss_value
@@ -324,7 +327,7 @@ class ParallelMCTSEngine:
         Acquire tree lock with optional timeout.
 
         Returns:
-            True if lock acquired, False if timeout occurred.
+            True if lock was acquired successfully.
 
         Raises:
             asyncio.TimeoutError: If timeout is configured and exceeded.

@@ -138,7 +138,8 @@ class TestRetrieveContextNodeErrorHandling:
         # Should return empty context, not raise
         assert result["rag_context"] == ""
         assert result["retrieved_docs"] == []
-        mock_graph_builder_with_vector_store.logger.error.assert_called_once()
+        # Uses logger.exception for better traceback logging
+        mock_graph_builder_with_vector_store.logger.exception.assert_called_once()
 
     def test_rag_disabled_returns_empty(self, mock_graph_builder_with_vector_store):
         """Test that disabling RAG returns empty context."""

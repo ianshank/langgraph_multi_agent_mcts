@@ -355,8 +355,8 @@ class GraphBuilder:
                 "rag_context": context,
                 "retrieved_docs": [{"content": doc.page_content, "metadata": doc.metadata} for doc in docs],
             }
-        except Exception as e:
-            self.logger.error(f"RAG retrieval failed: {e}")
+        except Exception:
+            self.logger.exception("RAG retrieval failed")
             # Graceful degradation - continue without RAG context
             return {"rag_context": "", "retrieved_docs": []}
 

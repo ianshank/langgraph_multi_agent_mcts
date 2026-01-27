@@ -146,11 +146,13 @@ if TYPE_CHECKING:
             one_hot_encode_agent,
         )
     except ImportError:
+        # Optional dependencies not required at runtime; imports are for type checking only
         pass
 
     try:
         from src.agents.meta_controller.bert_controller import BERTMetaController
     except ImportError:
+        # Optional transformers/peft dependencies not installed
         pass
 
     try:
@@ -159,6 +161,7 @@ if TYPE_CHECKING:
             HybridPrediction,
         )
     except ImportError:
+        # Optional hybrid controller dependencies not installed
         pass
 
     try:
@@ -168,6 +171,7 @@ if TYPE_CHECKING:
             FeatureExtractorConfig,
         )
     except ImportError:
+        # Optional feature extractor dependencies not installed
         pass
 
     try:
@@ -176,4 +180,5 @@ if TYPE_CHECKING:
             RoutingDecision,
         )
     except ImportError:
+        # Optional networkx dependency not installed
         pass

@@ -10,13 +10,13 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any, Protocol, runtime_checkable
 
 
 def _utc_now() -> datetime:
-    """Get current UTC time (Python 3.12+ compatible)."""
-    return datetime.now(UTC)
+    """Get current UTC time (Python 3.10+ compatible)."""
+    return datetime.now(timezone.utc)
 
 
 @dataclass

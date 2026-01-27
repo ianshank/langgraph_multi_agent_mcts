@@ -23,7 +23,7 @@ import os
 import secrets
 import time
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
@@ -259,13 +259,19 @@ This API provides access to a sophisticated multi-agent reasoning framework that
 
 # CORS middleware - configured from settings at import time
 # If CORS_ALLOWED_ORIGINS is empty/falsy, default to ["*"] for development
+# Security: Credentials are disabled when using wildcard origins
 _cors_settings = get_settings()
 _cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
+_cors_allow_credentials = (
+    _cors_settings.CORS_ALLOW_CREDENTIALS
+    if _cors_origins != ["*"]
+    else False  # Credentials not allowed with wildcard origins
+)
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_credentials=_cors_settings.CORS_ALLOW_CREDENTIALS,
+    allow_credentials=_cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -357,7 +363,7 @@ async def health_check():
 
     return HealthResponse(
         status=status,
-        timestamp=datetime.now(UTC).isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         version="1.0.0",
         uptime_seconds=time.time() - start_time,
     )
