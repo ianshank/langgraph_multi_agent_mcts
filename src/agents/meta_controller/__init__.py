@@ -131,28 +131,49 @@ except ImportError:
     _logger.debug("Assembly router not available - networkx not installed")
 
 # TYPE_CHECKING imports for static analysis
+# Note: These are guarded with try/except to handle cases where
+# dependencies are not installed but type checking is still run
 if TYPE_CHECKING:
-    from src.agents.meta_controller.rnn_controller import (
-        RNNMetaController,
-        RNNMetaControllerModel,
-    )
-    from src.agents.meta_controller.utils import (
-        features_to_tensor,
-        features_to_text,
-        normalize_features,
-        one_hot_encode_agent,
-    )
-    from src.agents.meta_controller.bert_controller import BERTMetaController
-    from src.agents.meta_controller.hybrid_controller import (
-        HybridMetaController,
-        HybridPrediction,
-    )
-    from src.agents.meta_controller.feature_extractor import (
-        EmbeddingBackend,
-        FeatureExtractor,
-        FeatureExtractorConfig,
-    )
-    from src.agents.meta_controller.assembly_router import (
-        AssemblyRouter,
-        RoutingDecision,
-    )
+    try:
+        from src.agents.meta_controller.rnn_controller import (
+            RNNMetaController,
+            RNNMetaControllerModel,
+        )
+        from src.agents.meta_controller.utils import (
+            features_to_tensor,
+            features_to_text,
+            normalize_features,
+            one_hot_encode_agent,
+        )
+    except ImportError:
+        pass
+
+    try:
+        from src.agents.meta_controller.bert_controller import BERTMetaController
+    except ImportError:
+        pass
+
+    try:
+        from src.agents.meta_controller.hybrid_controller import (
+            HybridMetaController,
+            HybridPrediction,
+        )
+    except ImportError:
+        pass
+
+    try:
+        from src.agents.meta_controller.feature_extractor import (
+            EmbeddingBackend,
+            FeatureExtractor,
+            FeatureExtractorConfig,
+        )
+    except ImportError:
+        pass
+
+    try:
+        from src.agents.meta_controller.assembly_router import (
+            AssemblyRouter,
+            RoutingDecision,
+        )
+    except ImportError:
+        pass
