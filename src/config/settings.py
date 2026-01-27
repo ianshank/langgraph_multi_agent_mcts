@@ -173,7 +173,9 @@ class Settings(BaseSettings):
     # CORS Configuration (security)
     CORS_ALLOWED_ORIGINS: list[str] = Field(
         default_factory=list,
-        description="Allowed CORS origins. Empty list means allow all (dev only).",
+        description="Allowed CORS origins. Empty list means no origins allowed (secure default). "
+        "Use ['*'] to explicitly allow all origins (dev only). "
+        "Example: ['https://app.example.com', 'https://admin.example.com']",
     )
 
     CORS_ALLOW_CREDENTIALS: bool = Field(

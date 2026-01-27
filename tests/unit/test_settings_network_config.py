@@ -72,13 +72,14 @@ class TestCORSSettings:
     """Test CORS configuration settings."""
 
     def test_default_cors_origins_empty(self):
-        """Test default CORS origins is empty list."""
+        """Test default CORS origins is empty list (secure default)."""
         from src.config.settings import Settings
 
         settings = Settings(
             LLM_PROVIDER="lmstudio",
             _env_file=None,
         )
+        # Empty list means no origins allowed (secure by default)
         assert settings.CORS_ALLOWED_ORIGINS == []
 
     def test_default_cors_allow_credentials(self):
@@ -103,6 +104,17 @@ class TestCORSSettings:
         settings = Settings(_env_file=None)
         assert "https://example.com" in settings.CORS_ALLOWED_ORIGINS
         assert "https://app.example.com" in settings.CORS_ALLOWED_ORIGINS
+
+    def test_cors_explicit_wildcard_from_env(self, monkeypatch):
+        """Test explicit wildcard CORS configuration from environment."""
+        from src.config.settings import Settings, reset_settings
+
+        reset_settings()
+        monkeypatch.setenv("CORS_ALLOWED_ORIGINS", '["*"]')
+        monkeypatch.setenv("LLM_PROVIDER", "lmstudio")
+
+        settings = Settings(_env_file=None)
+        assert settings.CORS_ALLOWED_ORIGINS == ["*"]
 
 
 class TestCircuitBreakerSettings:

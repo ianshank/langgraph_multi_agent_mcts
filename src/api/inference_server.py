@@ -127,9 +127,11 @@ class InferenceServer:
         )
 
         # CORS middleware - configured from settings
-        # Security: Credentials are disabled when using wildcard origins
+        # Security: Empty CORS_ALLOWED_ORIGINS means no origins allowed (secure default)
+        # To allow all origins, explicitly set CORS_ALLOWED_ORIGINS=['*'] in environment
+        # Credentials are disabled when using wildcard origins
         settings = get_settings()
-        cors_origins = settings.CORS_ALLOWED_ORIGINS or ["*"]
+        cors_origins = settings.CORS_ALLOWED_ORIGINS  # Use as-is, empty list = no origins
         cors_allow_credentials = (
             settings.CORS_ALLOW_CREDENTIALS
             if cors_origins != ["*"]
