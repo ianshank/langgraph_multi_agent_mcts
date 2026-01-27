@@ -34,6 +34,7 @@ except ImportError:
 
 from src.observability.logging import get_structured_logger
 
+from . import constants as C
 from .agents import GeneratorAgent, LLMClientProtocol, ReflectorAgent
 from .config import LLMGuidedMCTSConfig, LLMGuidedMCTSPreset, create_llm_mcts_preset
 from .data_collector import TrainingDataCollector
@@ -357,7 +358,8 @@ class LLMGuidedMCTSEngine:
             return 1.0, True
 
         # Return value as reward (can be negative for very bad code)
-        reward = reflection_output.value * 2 - 1  # Scale [0, 1] to [-1, 1]
+        # Scale [0, 1] to [-1, 1] using configurable constants
+        reward = reflection_output.value * C.REWARD_SCALING_FACTOR - C.REWARD_OFFSET
         return reward, False
 
     def _backpropagate(self, node: LLMGuidedMCTSNode, reward: float) -> None:
@@ -577,7 +579,7 @@ class LLMGuidedMCTSEngine:
 
             if node.visits > 0 and node.state.code:
                 # Score combines value and visit count
-                score = node.q_value + 0.1 * math.log1p(node.visits)
+                score = node.q_value + C.BEST_NODE_VISIT_WEIGHT * math.log1p(node.visits)
                 if score > best_score:
                     best_score = score
                     best_node = node
@@ -688,7 +690,7 @@ class LLMGuidedMCTSEngine:
         """LangGraph node for backpropagation phase."""
         node = state["current_node"]
         if node:
-            reward = node.llm_value_estimate * 2 - 1
+            reward = node.llm_value_estimate * C.REWARD_SCALING_FACTOR - C.REWARD_OFFSET
             self._backpropagate(node, reward)
 
         return {"iteration": state["iteration"] + 1}
