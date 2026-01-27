@@ -258,27 +258,31 @@ This API provides access to a sophisticated multi-agent reasoning framework that
 )
 
 # CORS middleware - configured from settings at app creation time
+# Security: Requires explicit configuration. Use CORS_ALLOWED_ORIGINS=['*'] for development.
 # Note: CORS settings are read once when the module is imported. Changes to
 # CORS_ALLOWED_ORIGINS or CORS_ALLOW_CREDENTIALS environment variables require
 # a server restart to take effect. For testing, use reset_settings() before
 # importing this module, or mock the middleware directly.
-# If CORS_ALLOWED_ORIGINS is empty/falsy, default to ["*"] for development
-# Security: Credentials are disabled when using wildcard origins
+# Credentials are disabled when using wildcard origins per CORS spec.
 _cors_settings = get_settings()
-_cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
-_cors_allow_credentials = (
-    _cors_settings.CORS_ALLOW_CREDENTIALS
-    if _cors_origins != ["*"]
-    else False  # Credentials not allowed with wildcard origins
-)
+if _cors_settings.CORS_ALLOWED_ORIGINS is not None:
+    _cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS
+    _cors_allow_credentials = (
+        _cors_settings.CORS_ALLOW_CREDENTIALS
+        if _cors_origins != ["*"]
+        else False  # Credentials not allowed with wildcard origins per CORS spec
+    )
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=_cors_origins,
-    allow_credentials=_cors_allow_credentials,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=_cors_origins,
+        allow_credentials=_cors_allow_credentials,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+    logger.info("CORS enabled with origins: %s", _cors_origins)
+else:
+    logger.info("CORS disabled - no origins configured")
 
 
 # Middleware for metrics

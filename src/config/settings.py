@@ -171,13 +171,22 @@ class Settings(BaseSettings):
     )
 
     # CORS Configuration (security)
-    CORS_ALLOWED_ORIGINS: list[str] = Field(
-        default_factory=list,
-        description="Allowed CORS origins. Empty list means allow all (dev only).",
+    CORS_ALLOWED_ORIGINS: list[str] | None = Field(
+        default=None,
+        description=(
+            "Allowed CORS origins for API endpoints. "
+            "Set to ['*'] explicitly for development to allow all origins. "
+            "Set to specific origins (e.g., ['https://app.example.com']) for production. "
+            "If not set (None), CORS will be disabled and all cross-origin requests will be rejected."
+        ),
     )
 
     CORS_ALLOW_CREDENTIALS: bool = Field(
-        default=True, description="Allow credentials in CORS requests"
+        default=True,
+        description=(
+            "Allow credentials (cookies, authorization headers) in CORS requests. "
+            "Automatically disabled when using wildcard origins (['*']) for security."
+        ),
     )
 
     # Rate Limit Response Configuration
