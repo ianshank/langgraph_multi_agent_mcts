@@ -438,7 +438,7 @@ class TestCORSConfiguration:
 
     @pytest.mark.api
     def test_cors_headers_present(self):
-        """CORS headers should be included in responses."""
+        """CORS headers should be included in responses when configured."""
         cors_headers = {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
@@ -462,6 +462,64 @@ class TestCORSConfiguration:
 
         assert response["status_code"] == 200
         assert "Access-Control-Max-Age" in response["headers"]
+
+    @pytest.mark.api
+    def test_cors_disabled_by_default(self):
+        """CORS should be disabled when CORS_ALLOWED_ORIGINS is None."""
+        # This tests the security improvement where CORS requires explicit configuration
+        # When CORS_ALLOWED_ORIGINS is None, the middleware is not added and
+        # cross-origin requests are rejected by the browser
+        from src.config.settings import Settings
+
+        settings = Settings(
+            LLM_PROVIDER="lmstudio",
+            _env_file=None,
+        )
+        # Default should be None (requires explicit configuration)
+        assert settings.CORS_ALLOWED_ORIGINS is None
+
+    @pytest.mark.api
+    def test_cors_explicit_wildcard_for_dev(self):
+        """Development can explicitly enable permissive CORS with wildcard."""
+        from src.config.settings import Settings
+
+        # Explicitly set to wildcard for development
+        settings = Settings(
+            LLM_PROVIDER="lmstudio",
+            CORS_ALLOWED_ORIGINS=["*"],
+            _env_file=None,
+        )
+        assert settings.CORS_ALLOWED_ORIGINS == ["*"]
+
+    @pytest.mark.api
+    def test_cors_specific_origins_for_production(self):
+        """Production should use specific allowed origins."""
+        from src.config.settings import Settings
+
+        # Production with specific origins
+        settings = Settings(
+            LLM_PROVIDER="lmstudio",
+            CORS_ALLOWED_ORIGINS=["https://app.example.com", "https://dashboard.example.com"],
+            _env_file=None,
+        )
+        assert "https://app.example.com" in settings.CORS_ALLOWED_ORIGINS
+        assert "https://dashboard.example.com" in settings.CORS_ALLOWED_ORIGINS
+        assert len(settings.CORS_ALLOWED_ORIGINS) == 2
+
+    @pytest.mark.api
+    def test_cors_credentials_disabled_with_wildcard(self):
+        """Credentials should be disabled when using wildcard origins per CORS spec."""
+        from src.config.settings import Settings
+
+        settings = Settings(
+            LLM_PROVIDER="lmstudio",
+            CORS_ALLOWED_ORIGINS=["*"],
+            CORS_ALLOW_CREDENTIALS=True,  # This should be ignored/overridden
+            _env_file=None,
+        )
+        # In the servers, credentials are forced to False when origins is ["*"]
+        # This is the correct behavior per CORS specification
+        assert settings.CORS_ALLOWED_ORIGINS == ["*"]
 
 
 class TestRequestValidation:

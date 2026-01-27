@@ -127,21 +127,26 @@ class InferenceServer:
         )
 
         # CORS middleware - configured from settings
-        # Security: Credentials are disabled when using wildcard origins
+        # Security: Requires explicit configuration. Use CORS_ALLOWED_ORIGINS=['*'] for development.
+        # Credentials are disabled when using wildcard origins.
         settings = get_settings()
-        cors_origins = settings.CORS_ALLOWED_ORIGINS or ["*"]
-        cors_allow_credentials = (
-            settings.CORS_ALLOW_CREDENTIALS
-            if cors_origins != ["*"]
-            else False  # Credentials not allowed with wildcard origins
-        )
-        self.app.add_middleware(
-            CORSMiddleware,
-            allow_origins=cors_origins,
-            allow_credentials=cors_allow_credentials,
-            allow_methods=["*"],
-            allow_headers=["*"],
-        )
+        if settings.CORS_ALLOWED_ORIGINS is not None:
+            cors_origins = settings.CORS_ALLOWED_ORIGINS
+            cors_allow_credentials = (
+                settings.CORS_ALLOW_CREDENTIALS
+                if cors_origins != ["*"]
+                else False  # Credentials not allowed with wildcard origins per CORS spec
+            )
+            self.app.add_middleware(
+                CORSMiddleware,
+                allow_origins=cors_origins,
+                allow_credentials=cors_allow_credentials,
+                allow_methods=["*"],
+                allow_headers=["*"],
+            )
+            logger.info("CORS enabled with origins: %s", cors_origins)
+        else:
+            logger.info("CORS disabled - no origins configured")
 
         # Setup routes
         self._setup_routes()
