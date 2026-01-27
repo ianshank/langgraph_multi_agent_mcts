@@ -17,13 +17,13 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# Configure module logger
-logger = logging.getLogger(__name__)
-
 from ..config.settings import get_settings
 from ..framework.mcts.neural_mcts import NeuralMCTS
 from ..training.performance_monitor import PerformanceMonitor
 from ..training.system_config import SystemConfig
+
+# Configure module logger
+logger = logging.getLogger(__name__)
 
 
 # Request/Response Models

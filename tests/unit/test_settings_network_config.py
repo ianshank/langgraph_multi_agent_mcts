@@ -8,10 +8,6 @@ Tests the new settings for:
 - Circuit breaker settings
 """
 
-import os
-
-import pytest
-
 
 class TestLLMTimeoutSettings:
     """Test LLM provider-specific timeout settings."""

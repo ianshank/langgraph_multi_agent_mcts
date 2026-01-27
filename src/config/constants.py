@@ -1,11 +1,10 @@
 """
-Configuration Constants for Settings Module.
+Configuration constants for application settings.
 
-Centralizes all default values and validation bounds to ensure
+Centralizes default values and validation bounds to ensure
 consistency and ease of customization across the application.
-
-These constants are used by src/config/settings.py to define
-field defaults and validation bounds.
+These constants provide shared defaults and bounds for
+configuration-related code throughout the project.
 """
 
 from __future__ import annotations

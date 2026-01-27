@@ -142,12 +142,11 @@ class FrameworkConfig:
             top_k_retrieval=settings.FRAMEWORK_TOP_K_RETRIEVAL,
             enable_parallel_agents=settings.FRAMEWORK_ENABLE_PARALLEL_AGENTS,
             timeout_seconds=float(settings.HTTP_TIMEOUT_SECONDS),
-            # Use settings values if available, otherwise use defaults
-            llm_temperature=getattr(settings, 'LLM_TEMPERATURE', 0.7),
-            confidence_with_rag=getattr(settings, 'CONFIDENCE_WITH_RAG', 0.8),
-            confidence_without_rag=getattr(settings, 'CONFIDENCE_WITHOUT_RAG', 0.7),
-            confidence_on_error=getattr(settings, 'CONFIDENCE_ON_ERROR', 0.3),
-            error_query_preview_length=getattr(settings, 'ERROR_QUERY_PREVIEW_LENGTH', 100),
+            llm_temperature=settings.LLM_TEMPERATURE,
+            confidence_with_rag=settings.CONFIDENCE_WITH_RAG,
+            confidence_without_rag=settings.CONFIDENCE_WITHOUT_RAG,
+            confidence_on_error=settings.CONFIDENCE_ON_ERROR,
+            error_query_preview_length=settings.ERROR_QUERY_PREVIEW_LENGTH,
         )
 
 

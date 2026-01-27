@@ -211,6 +211,29 @@ class Settings(BaseSettings):
         default=True, description="Enable parallel agent execution"
     )
 
+    # LLM Generation Configuration
+    LLM_TEMPERATURE: float = Field(
+        default=0.7, ge=0.0, le=2.0, description="Temperature for LLM generation"
+    )
+
+    # Confidence Thresholds
+    CONFIDENCE_WITH_RAG: float = Field(
+        default=0.8, ge=0.0, le=1.0, description="Confidence score when RAG context is used"
+    )
+
+    CONFIDENCE_WITHOUT_RAG: float = Field(
+        default=0.7, ge=0.0, le=1.0, description="Confidence score when RAG is disabled"
+    )
+
+    CONFIDENCE_ON_ERROR: float = Field(
+        default=0.3, ge=0.0, le=1.0, description="Confidence score on error responses"
+    )
+
+    # Error Response Configuration
+    ERROR_QUERY_PREVIEW_LENGTH: int = Field(
+        default=100, ge=10, le=1000, description="Length of query preview in error logs"
+    )
+
     # HRM Agent Configuration
     HRM_H_DIM: int = Field(
         default=512, ge=1, le=4096, description="HRM high-level hidden dimension"

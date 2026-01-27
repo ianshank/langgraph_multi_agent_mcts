@@ -257,14 +257,10 @@ This API provides access to a sophisticated multi-agent reasoning framework that
     lifespan=lifespan,
 )
 
-# CORS middleware - configured from settings
-# Note: CORS_ALLOWED_ORIGINS is loaded dynamically in lifespan
-# Empty list defaults to ["*"] for development; set explicitly for production
+# CORS middleware - configured from settings at import time
+# If CORS_ALLOWED_ORIGINS is empty/falsy, default to ["*"] for development
 _cors_settings = get_settings()
 _cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
-if not _cors_origins:
-    logger.warning("CORS_ALLOWED_ORIGINS not set. Defaulting to allow all origins (not recommended for production).")
-    _cors_origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,

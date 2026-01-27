@@ -22,7 +22,6 @@ import numpy as np
 
 # LangGraph imports
 try:
-    from langgraph.checkpoint.memory import MemorySaver
     from langgraph.graph import END, StateGraph
 
     _LANGGRAPH_AVAILABLE = True
@@ -30,7 +29,6 @@ except ImportError:
     _LANGGRAPH_AVAILABLE = False
     StateGraph = None
     END = "END"
-    MemorySaver = None
 
 from src.observability.logging import get_structured_logger
 
@@ -735,11 +733,7 @@ class LLMGuidedMCTSEngine:
             seed=self._config.seed,
         )
 
-        # Build and compile graph
-        # Note: We don't use MemorySaver here because LLMGuidedMCTSNode
-        # contains circular references (parent/children) and numpy RNG
-        # which aren't serializable by msgpack. The MCTS tree is already
-        # in-memory and doesn't need checkpoint persistence.
+        # Build and compile graph (no checkpointing - MCTS tree is in-memory)
         graph = self.build_langgraph()
         app = graph.compile()
 
