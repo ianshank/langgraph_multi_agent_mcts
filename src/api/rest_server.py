@@ -267,10 +267,8 @@ This API provides access to a sophisticated multi-agent reasoning framework that
 _cors_settings = get_settings()
 _cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
 _cors_allow_credentials = (
-    _cors_settings.CORS_ALLOW_CREDENTIALS
-    if _cors_origins != ["*"]
-    else False  # Credentials not allowed with wildcard origins
-)
+    _cors_settings.CORS_ALLOW_CREDENTIALS if _cors_origins != ["*"] else False
+)  # Credentials not allowed with wildcard origins
 
 app.add_middleware(
     CORSMiddleware,
@@ -367,7 +365,7 @@ async def health_check():
 
     return HealthResponse(
         status=status,
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),  # noqa: UP017 - Python 3.10 compatibility
         version="1.0.0",
         uptime_seconds=time.time() - start_time,
     )
