@@ -19,6 +19,8 @@ The Multi-Agent MCTS Platform delivers **measurable business value** through:
 **Projected ROI**: 250-400% over 3 years
 **Payback Period**: 6-12 months
 
+> **Disclaimer**: All ROI projections, cost savings, and financial estimates presented in this document are illustrative projections based on industry benchmarks, internal modeling assumptions, and comparable technology deployments. Actual results will vary based on organization size, implementation scope, usage patterns, and market conditions. These figures should be validated against your organization's specific context before making investment decisions.
+
 ---
 
 ## Table of Contents

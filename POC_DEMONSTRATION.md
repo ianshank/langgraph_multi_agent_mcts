@@ -214,140 +214,147 @@ mindmap
 
 ## C4 Architecture
 
+> For complete C4 architecture diagrams, see [docs/C4_MERMAID_ARCHITECTURE.md](docs/C4_MERMAID_ARCHITECTURE.md)
+
 ### Level 1: System Context
 
 ```mermaid
-C4Context
-    title System Context Diagram - Multi-Agent MCTS Platform
+flowchart TB
+    subgraph Users["Users"]
+        USER[("End User<br/>Data scientist, analyst, developer")]
+        ADMIN[("Administrator<br/>Platform operator")]
+    end
 
-    Person(user, "End User", "Data scientist, analyst, or developer")
-    Person(admin, "Administrator", "Platform operator")
+    PLATFORM[["Multi-Agent MCTS Platform<br/>Orchestrates intelligent agents<br/>for complex reasoning tasks"]]
 
-    System(multiagent, "Multi-Agent MCTS Platform", "Orchestrates intelligent agents for complex reasoning tasks")
+    subgraph External["External Systems"]
+        OPENAI[("OpenAI API")]
+        ANTHROPIC[("Anthropic API")]
+        PINECONE[("Pinecone")]
+        WANDB[("W&B")]
+        PROM[("Prometheus")]
+    end
 
-    System_Ext(openai, "OpenAI API", "GPT-4 language model")
-    System_Ext(anthropic, "Anthropic API", "Claude language model")
-    System_Ext(pinecone, "Pinecone", "Vector database for RAG")
-    System_Ext(wandb, "Weights & Biases", "Experiment tracking")
-    System_Ext(prometheus, "Prometheus/Grafana", "Monitoring stack")
+    USER -->|"Queries"| PLATFORM
+    ADMIN -->|"Configure"| PLATFORM
+    PLATFORM -->|"LLM calls"| OPENAI
+    PLATFORM -->|"LLM calls"| ANTHROPIC
+    PLATFORM -->|"Vector search"| PINECONE
+    PLATFORM -->|"Experiments"| WANDB
+    PLATFORM -->|"Metrics"| PROM
 
-    Rel(user, multiagent, "Submits queries, receives responses", "REST/gRPC")
-    Rel(admin, multiagent, "Configures, monitors, trains", "Admin API")
-    Rel(multiagent, openai, "LLM inference", "HTTPS")
-    Rel(multiagent, anthropic, "LLM inference", "HTTPS")
-    Rel(multiagent, pinecone, "Vector search", "HTTPS")
-    Rel(multiagent, wandb, "Logs experiments", "HTTPS")
-    Rel(multiagent, prometheus, "Exports metrics", "HTTP")
+    style PLATFORM fill:#1168bd,stroke:#0b4884,color:#fff
 ```
 
 ### Level 2: Container Diagram
 
 ```mermaid
-C4Container
-    title Container Diagram - Multi-Agent MCTS Platform
+flowchart TB
+    USER[("User")]
 
-    Person(user, "User")
+    subgraph Platform["Multi-Agent Platform"]
+        API[REST API<br/>FastAPI]
+        ORCH[LangGraph<br/>Orchestrator]
+        AGENTS[Agent Pool<br/>HRM, TRM, Hybrid]
+        MCTS[MCTS Engine]
+        META[Meta-Controller<br/>Neural Routing]
+        RAG[RAG Retriever]
+        CACHE[(Redis Cache)]
+        MODELS[(Model Store)]
+    end
 
-    Container_Boundary(platform, "Multi-Agent Platform") {
-        Container(api, "REST API Server", "FastAPI", "Exposes inference endpoints")
-        Container(orchestrator, "LangGraph Orchestrator", "Python", "State machine for agent coordination")
-        Container(agents, "Agent Pool", "Python", "HRM, TRM, Symbolic, Hybrid agents")
-        Container(mcts, "MCTS Engine", "Python", "Monte Carlo Tree Search")
-        Container(meta, "Meta-Controller", "PyTorch", "Neural routing decisions")
-        Container(rag, "RAG Retriever", "Python", "Context retrieval from vector DB")
-        Container(training, "Training Pipeline", "Python/PyTorch", "Continuous model improvement")
-        ContainerDb(cache, "Redis Cache", "Redis", "LRU simulation cache")
-        ContainerDb(models, "Model Store", "S3/Local", "Trained model artifacts")
-    }
+    LLM[("LLM Providers")]
+    VECTORDB[("Vector DB")]
 
-    System_Ext(llm, "LLM Providers", "OpenAI/Anthropic")
-    System_Ext(vectordb, "Vector DB", "Pinecone")
+    USER --> API
+    API --> ORCH
+    ORCH --> AGENTS
+    ORCH --> MCTS
+    ORCH --> META
+    ORCH --> RAG
+    AGENTS --> LLM
+    RAG --> VECTORDB
+    MCTS --> CACHE
+    META --> MODELS
 
-    Rel(user, api, "HTTP/REST")
-    Rel(api, orchestrator, "Process query")
-    Rel(orchestrator, agents, "Execute agent")
-    Rel(orchestrator, mcts, "Strategic planning")
-    Rel(orchestrator, meta, "Route decision")
-    Rel(orchestrator, rag, "Retrieve context")
-    Rel(agents, llm, "LLM inference")
-    Rel(rag, vectordb, "Vector search")
-    Rel(mcts, cache, "Cache simulations")
-    Rel(training, models, "Store/load models")
-    Rel(meta, models, "Load trained models")
+    style Platform fill:#e3f2fd
 ```
 
 ### Level 3: Component Diagram - MCTS Engine
 
 ```mermaid
-C4Component
-    title Component Diagram - MCTS Engine
+flowchart TB
+    subgraph MCTSEngine["MCTS Engine"]
+        CORE[MCTSCore<br/>Main Algorithm]
+        NODE[MCTSNode<br/>Tree Node + UCB1]
+        STATE[MCTSState<br/>Hashable State]
+        POLICIES[Policies<br/>Selection, Rollout]
+        PARALLEL[ParallelMCTS<br/>AsyncIO]
+        LLMGUIDED[LLM-Guided<br/>Enhanced Heuristics]
+        SIMCACHE[SimulationCache<br/>LRU]
+    end
 
-    Container_Boundary(mcts, "MCTS Engine") {
-        Component(core, "MCTSCore", "Python", "Main search algorithm")
-        Component(node, "MCTSNode", "Python", "Tree node with UCB1")
-        Component(state, "MCTSState", "Python", "Hashable state representation")
-        Component(policies, "Policies", "Python", "Selection, expansion, rollout")
-        Component(parallel, "ParallelMCTS", "AsyncIO", "Concurrent simulations")
-        Component(llm_guided, "LLMGuidedMCTS", "Python", "LLM-enhanced heuristics")
-        Component(cache, "SimulationCache", "LRU", "Result caching")
-    }
+    CORE --> NODE
+    CORE --> STATE
+    CORE --> POLICIES
+    PARALLEL --> CORE
+    LLMGUIDED --> CORE
+    CORE --> SIMCACHE
 
-    Rel(core, node, "Creates/traverses")
-    Rel(core, state, "Manages state")
-    Rel(core, policies, "Applies policies")
-    Rel(parallel, core, "Distributes search")
-    Rel(llm_guided, core, "Guides expansion")
-    Rel(core, cache, "Caches results")
+    style MCTSEngine fill:#e8f5e9
 ```
 
 ### Level 3: Component Diagram - Agent Layer
 
 ```mermaid
-C4Component
-    title Component Diagram - Agent Layer
+flowchart TB
+    subgraph AgentLayer["Agent Layer"]
+        FACTORY[Agent Factory]
+        HRM[HRM Agent<br/>Hierarchical]
+        TRM[TRM Agent<br/>Refinement]
+        HYBRID[Hybrid Agent<br/>LLM + Neural]
+        SYMBOLIC[Symbolic Agent]
+        PROTOCOL[Agent Protocol<br/>Interface]
+    end
 
-    Container_Boundary(agents, "Agent Layer") {
-        Component(hrm, "HRM Agent", "Python", "Hierarchical Reasoning Module")
-        Component(trm, "TRM Agent", "Python", "Task Refinement Module")
-        Component(hybrid, "Hybrid Agent", "Python", "LLM + Neural hybrid")
-        Component(symbolic, "Symbolic Agent", "Python", "Neuro-symbolic reasoning")
-        Component(factory, "Agent Factory", "Python", "Creates configured agents")
-        Component(base, "Agent Protocol", "Protocol", "Common interface")
-    }
+    subgraph HRMDetail["HRM Details"]
+        HMOD[H-Module<br/>Planning]
+        LMOD[L-Module<br/>Execution]
+        ACT[ACT Controller]
+    end
 
-    Component(hmodule, "H-Module", "Python", "High-level planning")
-    Component(lmodule, "L-Module", "Python", "Low-level execution")
-    Component(act, "ACT Controller", "Python", "Adaptive Computation Time")
+    FACTORY --> HRM
+    FACTORY --> TRM
+    FACTORY --> HYBRID
+    FACTORY --> SYMBOLIC
+    HRM --> PROTOCOL
+    TRM --> PROTOCOL
+    HRM --> HMOD
+    HRM --> LMOD
+    HRM --> ACT
 
-    Rel(hrm, hmodule, "Decomposes")
-    Rel(hrm, lmodule, "Executes")
-    Rel(hrm, act, "Controls depth")
-    Rel(factory, hrm, "Creates")
-    Rel(factory, trm, "Creates")
-    Rel(factory, hybrid, "Creates")
-    Rel(factory, symbolic, "Creates")
-    Rel(hrm, base, "Implements")
-    Rel(trm, base, "Implements")
+    style AgentLayer fill:#fff3e0
 ```
 
 ### Level 3: Component Diagram - Meta-Controller
 
 ```mermaid
-C4Component
-    title Component Diagram - Neural Meta-Controller
+flowchart TB
+    subgraph MetaController["Meta-Controller"]
+        HYBRIDCTRL[Hybrid Controller]
+        RNN[RNN Controller<br/>GRU]
+        BERT[BERT Controller<br/>DeBERTa+LoRA]
+        FEATURES[Feature Extractor]
+        ENSEMBLE[Ensemble Layer]
+    end
 
-    Container_Boundary(meta, "Meta-Controller") {
-        Component(hybrid_ctrl, "Hybrid Controller", "PyTorch", "Combines RNN + BERT")
-        Component(rnn, "RNN Controller", "GRU", "Sequential pattern recognition")
-        Component(bert, "BERT Controller", "DeBERTa+LoRA", "Semantic understanding")
-        Component(features, "Feature Extractor", "Python", "Query feature extraction")
-        Component(ensemble, "Ensemble Layer", "Python", "Weighted combination")
-    }
+    HYBRIDCTRL --> RNN
+    HYBRIDCTRL --> BERT
+    HYBRIDCTRL --> FEATURES
+    RNN --> ENSEMBLE
+    BERT --> ENSEMBLE
 
-    Rel(hybrid_ctrl, rnn, "Sequential features")
-    Rel(hybrid_ctrl, bert, "Semantic features")
-    Rel(hybrid_ctrl, features, "Extracts features")
-    Rel(hybrid_ctrl, ensemble, "Combines predictions")
+    style MetaController fill:#fce4ec
 ```
 
 ### Level 4: Code Diagram - MCTS Node
