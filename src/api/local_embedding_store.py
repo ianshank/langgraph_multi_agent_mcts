@@ -384,16 +384,20 @@ class LocalEmbeddingStore:
         """
         Remove a document by ID.
 
+        Thread-safe operation with atomic check-and-remove pattern.
+
         Args:
             doc_id: Document ID to remove
 
         Returns:
             True if document was removed, False otherwise
         """
-        if doc_id not in self._document_ids:
-            return False
-
         with self._lock:
+            # Check inside lock to avoid TOCTOU race condition
+            if doc_id not in self._document_ids:
+                self._log_debug("Document not found for removal", doc_id=doc_id)
+                return False
+
             # Find document index
             idx: int | None = None
             for i, doc in enumerate(self._documents):
@@ -402,6 +406,12 @@ class LocalEmbeddingStore:
                     break
 
             if idx is None:
+                # This should not happen if _document_ids and _documents are in sync
+                self._log_warning(
+                    "Document ID in set but not in list - inconsistent state",
+                    doc_id=doc_id,
+                )
+                self._document_ids.discard(doc_id)
                 return False
 
             # Remove from documents list

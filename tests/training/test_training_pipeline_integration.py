@@ -14,7 +14,6 @@ Best Practices:
 - Proper cleanup and isolation
 """
 
-import tempfile
 from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -95,8 +94,18 @@ def initial_state_fn(mock_game_state):
 
 
 @pytest.fixture
-def system_config():
-    """Create minimal system configuration for testing."""
+def system_config(tmp_path):
+    """Create minimal system configuration for testing.
+
+    Uses pytest's tmp_path fixture for automatic cleanup after tests.
+    This avoids disk space leaks from orphaned temp directories.
+
+    Args:
+        tmp_path: Pytest-provided temporary directory (auto-cleaned)
+
+    Returns:
+        SystemConfig with test-appropriate settings
+    """
     from src.training.system_config import (
         HRMConfig,
         MCTSConfig,
@@ -106,7 +115,8 @@ def system_config():
         TRMConfig,
     )
 
-    temp_dir = tempfile.mkdtemp()
+    # Use pytest's tmp_path for automatic cleanup
+    temp_dir = str(tmp_path)
 
     return SystemConfig(
         # Minimal sizes for testing

@@ -165,29 +165,58 @@ class TestLocalEmbeddingStoreInit:
         assert result2 is True
 
     def test_initialize_thread_safe(self, local_store):
-        """Test thread-safe initialization with concurrent calls."""
+        """Test thread-safe initialization with concurrent calls.
+
+        Verifies:
+        1. All concurrent calls complete successfully
+        2. The store is in a valid initialized state
+        3. Only one model instance is created (double-checked locking works)
+        """
         import concurrent.futures
         import threading
 
-        init_count = 0
-        init_lock = threading.Lock()
+        # Track how many times SentenceTransformer constructor is called
+        model_init_count = 0
+        model_init_lock = threading.Lock()
 
-        original_init = local_store.initialize
+        # Get reference to original SentenceTransformer
+        from sentence_transformers import SentenceTransformer as OriginalST
 
-        def tracked_init():
-            nonlocal init_count
-            result = original_init()
-            with init_lock:
-                init_count += 1
-            return result
+        class TrackedSentenceTransformer(OriginalST):
+            """SentenceTransformer that tracks instantiation count."""
 
-        with patch.object(local_store, "initialize", tracked_init):
-            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
-                futures = [executor.submit(local_store.initialize) for _ in range(10)]
+            def __init__(self, *args, **kwargs):
+                nonlocal model_init_count
+                with model_init_lock:
+                    model_init_count += 1
+                super().__init__(*args, **kwargs)
+
+        # Patch SentenceTransformer in the module under test
+        with patch(
+            "src.api.local_embedding_store.SentenceTransformer",
+            TrackedSentenceTransformer,
+        ):
+            # Create a fresh store for this test
+            from src.api.local_embedding_store import LocalEmbeddingStore
+
+            test_store = LocalEmbeddingStore()
+
+            # Run concurrent initializations
+            with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+                futures = [executor.submit(test_store.initialize) for _ in range(20)]
                 results = [f.result() for f in futures]
 
-        # All should succeed
-        assert all(results)
+        # All calls should succeed
+        assert all(results), "All initialization calls should succeed"
+
+        # Store should be initialized
+        assert test_store.is_available, "Store should be available after initialization"
+
+        # Model should only be created once (double-checked locking)
+        assert model_init_count == 1, (
+            f"Model should be created exactly once, but was created {model_init_count} times. "
+            "This indicates a race condition in initialization."
+        )
 
 
 class TestLocalEmbeddingStoreDocuments:
@@ -555,6 +584,87 @@ class TestThreadSafety:
 
             # Verify all completed
             assert all(f.done() for f in all_futures)
+
+    def test_concurrent_remove_same_document(self, initialized_store):
+        """Test concurrent removal of the same document (TOCTOU race condition fix).
+
+        This test verifies that when multiple threads try to remove the same
+        document concurrently, exactly one succeeds and the others fail gracefully.
+        This tests the fix for the TOCTOU race condition where the check was
+        outside the lock.
+        """
+        import concurrent.futures
+
+        # Add a document that we'll try to remove concurrently
+        initialized_store.add_documents([{"content": "Document to remove", "id": "remove-me"}])
+        assert initialized_store.document_count == 1
+
+        # Try to remove the same document from multiple threads
+        def remove_doc() -> bool:
+            return initialized_store.remove_document("remove-me")
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            futures = [executor.submit(remove_doc) for _ in range(20)]
+            results = [f.result() for f in futures]
+
+        # Exactly one thread should succeed, all others should return False
+        success_count = sum(1 for r in results if r is True)
+        failure_count = sum(1 for r in results if r is False)
+
+        assert success_count == 1, (
+            f"Exactly one thread should successfully remove the document, "
+            f"but {success_count} succeeded. This may indicate a race condition."
+        )
+        assert failure_count == 19, f"Expected 19 failures, got {failure_count}"
+
+        # Document should be removed
+        assert initialized_store.document_count == 0
+
+    def test_concurrent_add_and_remove(self, initialized_store):
+        """Test concurrent adds and removes maintain consistency."""
+        import concurrent.futures
+        import threading
+
+        # Track operations for verification
+        operations_completed = 0
+        ops_lock = threading.Lock()
+
+        def add_doc(doc_id: int) -> int:
+            nonlocal operations_completed
+            result = initialized_store.add_documents([
+                {"content": f"Add-remove doc {doc_id}", "id": f"ar-{doc_id}"}
+            ])
+            with ops_lock:
+                operations_completed += 1
+            return result
+
+        def remove_doc(doc_id: int) -> bool:
+            nonlocal operations_completed
+            result = initialized_store.remove_document(f"ar-{doc_id}")
+            with ops_lock:
+                operations_completed += 1
+            return result
+
+        # Run adds and removes concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            add_futures = [executor.submit(add_doc, i) for i in range(10)]
+            remove_futures = [executor.submit(remove_doc, i) for i in range(10)]
+
+            all_futures = add_futures + remove_futures
+            concurrent.futures.wait(all_futures, timeout=30)
+
+        # All operations should complete
+        assert all(f.done() for f in all_futures), "All operations should complete"
+
+        # Document count should be consistent (either 0 or positive integer)
+        count = initialized_store.document_count
+        assert count >= 0, f"Document count should be non-negative, got {count}"
+
+        # Verify internal consistency: document_ids set should match documents list
+        assert len(initialized_store._document_ids) == len(initialized_store._documents), (
+            f"Internal inconsistency: {len(initialized_store._document_ids)} IDs "
+            f"but {len(initialized_store._documents)} documents"
+        )
 
 
 class TestEdgeCases:

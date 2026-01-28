@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import asyncio
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any, Final, Protocol, runtime_checkable
@@ -158,8 +159,11 @@ class RAGRetriever:
         self._is_initialized = False
         self._available_backends: list[str] = []
 
-        # Async lock for thread-safe initialization
+        # Async lock for thread-safe async initialization
         self._init_lock = asyncio.Lock()
+
+        # Threading lock for thread-safe synchronous operations
+        self._sync_lock = threading.RLock()
 
         # Configuration from settings with defaults
         self._top_k_default = getattr(
@@ -527,6 +531,8 @@ class RAGRetriever:
         """
         Add documents to a backend store.
 
+        Thread-safe operation with proper locking for backend list modifications.
+
         Args:
             documents: List of documents with 'content' and optional 'metadata'
             backend: Backend to add to ('local' or 'pinecone')
@@ -535,20 +541,29 @@ class RAGRetriever:
             Number of documents added
         """
         if backend == "local":
-            if self._local_store is None:
-                # Try to create local store
-                try:
-                    from .local_embedding_store import create_local_embedding_store
+            # Thread-safe creation of local store if needed
+            with self._sync_lock:
+                if self._local_store is None:
+                    # Try to create local store
+                    try:
+                        from .local_embedding_store import create_local_embedding_store
 
-                    self._local_store = create_local_embedding_store(auto_initialize=True)
-                    if self._local_store is not None and "local" not in self._available_backends:
-                        self._available_backends.append("local")
-                except ImportError:
-                    self._log_warning("Cannot create local store - module not available")
-                    return 0
+                        self._local_store = create_local_embedding_store(auto_initialize=True)
+                        if self._local_store is not None and "local" not in self._available_backends:
+                            self._available_backends.append("local")
+                            self._log_debug(
+                                "Created local store and added to backends",
+                                backends=self._available_backends,
+                            )
+                    except ImportError:
+                        self._log_warning("Cannot create local store - module not available")
+                        return 0
 
-            if self._local_store is not None:
-                return self._local_store.add_documents(documents)
+                local_store = self._local_store
+
+            # Add documents outside the lock (LocalEmbeddingStore has its own locking)
+            if local_store is not None:
+                return local_store.add_documents(documents)
 
         elif backend == "pinecone":
             self._log_warning("Adding documents to Pinecone not implemented")
