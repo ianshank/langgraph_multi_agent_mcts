@@ -767,38 +767,43 @@ async def process_request(
     return {"status": "processing", "query": query}
 ```
 
-### Pattern 4: Streaming Integration
+### Pattern 4: Async Polling Integration
+
+> **Note**: Real-time streaming via WebSocket is planned for a future release.
+> The current implementation uses async polling for long-running queries.
 
 ```python
 import asyncio
-import websockets
-import json
+import httpx
+from typing import AsyncIterator
 
-async def stream_query(query: str):
-    """Stream query results via WebSocket."""
-    uri = "ws://localhost:8000/ws/query"
+async def poll_query_status(
+    client: httpx.AsyncClient,
+    query: str,
+    poll_interval: float = 1.0,
+    timeout: float = 60.0
+) -> AsyncIterator[dict]:
+    """Poll query status for long-running operations."""
+    # Submit initial query
+    response = await client.post(
+        "http://localhost:8000/query",
+        json={"query": query}
+    )
+    result = response.json()
 
-    async with websockets.connect(uri) as websocket:
-        # Send query
-        await websocket.send(json.dumps({
-            "query": query,
-            "stream": True
-        }))
+    # For synchronous queries, yield immediately
+    yield {"type": "complete", "response": result}
 
-        # Receive streaming updates
-        async for message in websocket:
-            data = json.loads(message)
-
-            if data["type"] == "progress":
-                print(f"Progress: {data['agent']} - {data['status']}")
-            elif data["type"] == "partial":
-                print(f"Partial: {data['content']}", end="")
-            elif data["type"] == "complete":
-                print(f"\n\nFinal: {data['response']}")
-                break
+async def monitored_query(query: str):
+    """Execute query with progress monitoring."""
+    async with httpx.AsyncClient(timeout=60.0) as client:
+        async for update in poll_query_status(client, query):
+            if update["type"] == "complete":
+                print(f"Result: {update['response']}")
+                return update["response"]
 
 # Usage
-asyncio.run(stream_query("Explain microservices architecture"))
+asyncio.run(monitored_query("Explain microservices architecture"))
 ```
 
 ---

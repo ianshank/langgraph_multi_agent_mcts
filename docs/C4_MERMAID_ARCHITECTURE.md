@@ -791,7 +791,7 @@ sequenceDiagram
     participant LLM as LLM Provider
     participant Cache as Redis Cache
 
-    User->>API: POST /api/v1/query
+    User->>API: POST /query
     API->>API: Validate request
     API->>Graph: process(query, config)
 
