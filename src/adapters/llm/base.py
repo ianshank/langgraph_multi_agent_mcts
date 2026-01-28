@@ -10,8 +10,13 @@ import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any, Protocol, runtime_checkable
+
+
+def _utc_now() -> datetime:
+    """Get current UTC time (Python 3.10+ compatible)."""
+    return datetime.now(timezone.utc)
 
 
 @dataclass
@@ -23,7 +28,7 @@ class LLMResponse:
     model: str = ""
     raw_response: Any = None
     finish_reason: str = "stop"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utc_now)
 
     @property
     def total_tokens(self) -> int:

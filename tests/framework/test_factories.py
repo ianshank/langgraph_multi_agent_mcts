@@ -27,6 +27,9 @@ class TestLLMClientFactory:
         settings.LLM_MODEL = "gpt-4"
         settings.ANTHROPIC_API_KEY = "test-key"
         settings.OPENAI_API_KEY = "test-key"
+        settings.HTTP_TIMEOUT_SECONDS = 60.0
+        settings.HTTP_MAX_RETRIES = 3
+        settings.get_api_key.return_value = "test-key"
         return settings
 
     @pytest.fixture
@@ -147,11 +150,24 @@ class TestLLMClientFactory:
 class TestFactoryIntegration:
     """Integration tests for factory patterns."""
 
+    @pytest.fixture
+    def mock_settings_integration(self):
+        """Create mock settings for integration tests."""
+        settings = Mock(spec=Settings)
+        settings.LLM_PROVIDER = "openai"
+        settings.LLM_MODEL = "gpt-4"
+        settings.ANTHROPIC_API_KEY = "test-key"
+        settings.OPENAI_API_KEY = "test-key"
+        settings.HTTP_TIMEOUT_SECONDS = 60.0
+        settings.HTTP_MAX_RETRIES = 3
+        settings.get_api_key.return_value = "test-key"
+        return settings
+
     @pytest.mark.integration
     @patch("src.adapters.llm.create_client")
-    def test_factory_creates_different_providers(self, mock_create_client):
+    def test_factory_creates_different_providers(self, mock_create_client, mock_settings_integration):
         """Test factory can create clients for different providers."""
-        factory = LLMClientFactory()
+        factory = LLMClientFactory(settings=mock_settings_integration)
 
         providers = ["openai", "anthropic", "lmstudio"]
         for provider in providers:
@@ -165,9 +181,9 @@ class TestFactoryIntegration:
             assert call_kwargs["provider"] == provider
 
     @pytest.mark.integration
-    def test_factory_error_handling(self):
+    def test_factory_error_handling(self, mock_settings_integration):
         """Test factory handles invalid configurations gracefully."""
-        factory = LLMClientFactory()
+        factory = LLMClientFactory(settings=mock_settings_integration)
 
         with patch("src.adapters.llm.create_client") as mock_create:
             mock_create.side_effect = ValueError("Invalid provider")
@@ -199,6 +215,9 @@ class TestFactoryComponentLevel:
         settings = Mock(spec=Settings)
         settings.LLM_PROVIDER = "openai"
         settings.LLM_MODEL = "gpt-3.5-turbo"
+        settings.HTTP_TIMEOUT_SECONDS = 60.0
+        settings.HTTP_MAX_RETRIES = 3
+        settings.get_api_key.return_value = "test-key"
 
         factory = LLMClientFactory(settings=settings)
         mock_create_client.return_value = Mock()

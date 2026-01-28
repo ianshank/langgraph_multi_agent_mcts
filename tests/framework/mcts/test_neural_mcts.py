@@ -14,7 +14,9 @@ Tests cover:
 
 import numpy as np
 import pytest
-import torch
+
+# Skip entire module if torch not available
+torch = pytest.importorskip("torch", reason="PyTorch required for neural MCTS tests")
 import torch.nn as nn
 
 from src.framework.mcts.neural_mcts import (

@@ -1,7 +1,8 @@
 """Tests for value network implementation."""
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="PyTorch required")
 
 from src.models.value_network import (
     EnsembleValueNetwork,

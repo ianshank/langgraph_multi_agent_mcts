@@ -13,7 +13,7 @@ import secrets
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from src.api.exceptions import (
     AuthenticationError,
@@ -22,14 +22,19 @@ from src.api.exceptions import (
 )
 
 
+def _utc_now() -> datetime:
+    """Get current UTC time (Python 3.10+ compatible)."""
+    return datetime.now(timezone.utc)
+
+
 @dataclass
 class ClientInfo:
     """Information about an authenticated client."""
 
     client_id: str
     roles: set[str] = field(default_factory=lambda: {"user"})
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    last_access: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=_utc_now)
+    last_access: datetime = field(default_factory=_utc_now)
     request_count: int = 0
 
 
@@ -124,7 +129,7 @@ class APIKeyAuthenticator:
             )
 
         client_info = self._key_to_client[key_hash]
-        client_info.last_access = datetime.utcnow()
+        client_info.last_access = _utc_now()
         client_info.request_count += 1
 
         # Check rate limits
@@ -333,7 +338,7 @@ class JWTAuthenticator:
         except ImportError as e:
             raise ImportError("PyJWT library required for JWT authentication. Install with: pip install PyJWT") from e
 
-        now = datetime.utcnow()
+        now = _utc_now()
         payload = {
             "sub": client_id,
             "roles": list(roles),

@@ -1,7 +1,8 @@
 """Tests for neural network trainer."""
 
 import pytest
-import torch
+
+torch = pytest.importorskip("torch", reason="PyTorch required")
 from torch.utils.data import DataLoader
 
 from src.models.policy_network import PolicyLoss, PolicyNetwork

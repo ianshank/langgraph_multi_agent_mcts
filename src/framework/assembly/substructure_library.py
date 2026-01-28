@@ -7,11 +7,14 @@ reasoning subsequences.
 
 import hashlib
 import json
+import logging
 import pickle
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -396,7 +399,7 @@ class SubstructureLibrary:
                 pickle.dump(data, f)
 
         except Exception as e:
-            print(f"Warning: Failed to save substructure library: {e}")
+            logger.warning("Failed to save substructure library: %s", e)
 
     def _load_from_disk(self) -> None:
         """Load library from disk."""
@@ -426,7 +429,7 @@ class SubstructureLibrary:
             # self.similarity_threshold = data.get('similarity_threshold', self.similarity_threshold)
 
         except Exception as e:
-            print(f"Warning: Failed to load substructure library: {e}")
+            logger.warning("Failed to load substructure library: %s", e)
             self._patterns = {}
             self._hash_index = {}
 

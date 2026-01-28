@@ -49,6 +49,98 @@ class ParallelMCTSStats:
     effective_parallelism: float = 0.0
 
     def to_dict(self) -> dict[str, Any]:
+        """Convert stats to dictionary for serialization."""
+        return {
+            "total_simulations": self.total_simulations,
+            "total_duration": self.total_duration,
+            "thread_simulations": dict(self.thread_simulations),
+            "collision_count": self.collision_count,
+            "lock_wait_time": self.lock_wait_time,
+            "avg_tree_depth": self.avg_tree_depth,
+            "effective_parallelism": self.effective_parallelism,
+        }
+
+
+@dataclass
+class ParallelMCTSConfig:
+    """
+    Configuration for Parallel MCTS with Virtual Loss.
+
+    Centralizes all tunable parameters to avoid hardcoded values.
+    All parameters can be adjusted via settings or dependency injection.
+    """
+
+    # Worker configuration
+    num_workers: int = 4
+    """Number of parallel worker threads."""
+
+    # Virtual loss configuration
+    virtual_loss_value: float = 3.0
+    """Initial virtual loss value applied during selection."""
+
+    adaptive_virtual_loss: bool = True
+    """Whether to adapt VL based on collision rate."""
+
+    virtual_loss_min: float = 1.0
+    """Minimum virtual loss value when adapting."""
+
+    virtual_loss_max: float = 10.0
+    """Maximum virtual loss value when adapting."""
+
+    virtual_loss_increase_rate: float = 1.1
+    """Multiplier for increasing virtual loss (on high collision)."""
+
+    virtual_loss_decrease_rate: float = 0.9
+    """Multiplier for decreasing virtual loss (on low collision)."""
+
+    # Collision detection thresholds
+    collision_history_size: int = 100
+    """Number of recent operations to track for collision rate."""
+
+    collision_rate_high_threshold: float = 0.3
+    """Collision rate above which to increase virtual loss."""
+
+    collision_rate_low_threshold: float = 0.1
+    """Collision rate below which to decrease virtual loss."""
+
+    # Search parameters
+    exploration_weight: float = 1.414
+    """UCB1 exploration constant (c). Higher = more exploration."""
+
+    seed: int = 42
+    """Random seed for deterministic behavior."""
+
+    # Lock configuration
+    lock_timeout_seconds: float | None = None
+    """Timeout for acquiring tree lock. None means no timeout."""
+
+    def validate(self) -> None:
+        """Validate configuration parameters."""
+        errors = []
+
+        if self.num_workers < 1:
+            errors.append("num_workers must be >= 1")
+        if self.virtual_loss_value < 0:
+            errors.append("virtual_loss_value must be >= 0")
+        if self.virtual_loss_min < 0:
+            errors.append("virtual_loss_min must be >= 0")
+        if self.virtual_loss_max < self.virtual_loss_min:
+            errors.append("virtual_loss_max must be >= virtual_loss_min")
+        if not 0 <= self.collision_rate_low_threshold < self.collision_rate_high_threshold <= 1:
+            errors.append("collision thresholds must be: 0 <= low < high <= 1")
+        if self.collision_history_size < 1:
+            errors.append("collision_history_size must be >= 1")
+        if self.exploration_weight < 0:
+            errors.append("exploration_weight must be >= 0")
+        if self.lock_timeout_seconds is not None and self.lock_timeout_seconds <= 0:
+            errors.append("lock_timeout_seconds must be None or > 0")
+
+        if errors:
+            raise ValueError(
+                "Invalid ParallelMCTSConfig:\n" + "\n".join(f"  - {e}" for e in errors)
+            )
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert stats to dictionary."""
         return {
             "total_simulations": self.total_simulations,
@@ -175,27 +267,49 @@ class ParallelMCTSEngine:
 
     def __init__(
         self,
-        num_workers: int = 4,
-        virtual_loss_value: float = 3.0,
-        adaptive_virtual_loss: bool = True,
-        exploration_weight: float = 1.414,
-        seed: int = 42,
+        config: ParallelMCTSConfig | None = None,
+        *,
+        # Backwards-compatible individual parameters (deprecated)
+        num_workers: int | None = None,
+        virtual_loss_value: float | None = None,
+        adaptive_virtual_loss: bool | None = None,
+        exploration_weight: float | None = None,
+        seed: int | None = None,
     ):
         """
         Initialize parallel MCTS engine.
 
         Args:
-            num_workers: Number of parallel worker threads
-            virtual_loss_value: Initial virtual loss value
-            adaptive_virtual_loss: Whether to adapt VL based on collisions
-            exploration_weight: UCB1 exploration constant
-            seed: Random seed for deterministic behavior
+            config: Configuration object (preferred).
+            num_workers: Number of parallel worker threads (deprecated, use config).
+            virtual_loss_value: Initial virtual loss value (deprecated, use config).
+            adaptive_virtual_loss: Whether to adapt VL based on collisions (deprecated).
+            exploration_weight: UCB1 exploration constant (deprecated, use config).
+            seed: Random seed for deterministic behavior (deprecated, use config).
+
+        Note:
+            Prefer using the `config` parameter. Individual parameters are
+            deprecated and will be removed in a future version.
         """
-        self.num_workers = num_workers
-        self.virtual_loss_value = virtual_loss_value
-        self.adaptive_virtual_loss = adaptive_virtual_loss
-        self.exploration_weight = exploration_weight
-        self.seed = seed
+        # Use config or create from individual parameters for backwards compatibility
+        if config is None:
+            config = ParallelMCTSConfig(
+                num_workers=num_workers if num_workers is not None else 4,
+                virtual_loss_value=virtual_loss_value if virtual_loss_value is not None else 3.0,
+                adaptive_virtual_loss=adaptive_virtual_loss if adaptive_virtual_loss is not None else True,
+                exploration_weight=exploration_weight if exploration_weight is not None else 1.414,
+                seed=seed if seed is not None else 42,
+            )
+
+        # Validate config to catch invalid values early
+        config.validate()
+
+        self._config = config
+        self.num_workers = config.num_workers
+        self.virtual_loss_value = config.virtual_loss_value
+        self.adaptive_virtual_loss = config.adaptive_virtual_loss
+        self.exploration_weight = config.exploration_weight
+        self.seed = config.seed
 
         # Shared lock for tree modifications
         self._tree_lock = asyncio.Lock()
@@ -205,7 +319,10 @@ class ParallelMCTSEngine:
         self._collision_history: list[bool] = []
 
         # Worker-specific RNGs for deterministic parallel behavior
-        self._worker_rngs = {i: np.random.default_rng(seed + i) for i in range(num_workers)}
+        self._worker_rngs = {
+            i: np.random.default_rng(self.seed + i)
+            for i in range(self.num_workers)
+        }
 
     async def parallel_search(
         self,
@@ -357,7 +474,7 @@ class ParallelMCTSEngine:
         # Track collision for adaptive VL
         if self.adaptive_virtual_loss:
             self._collision_history.append(collision_detected)
-            if len(self._collision_history) > 100:
+            if len(self._collision_history) > self._config.collision_history_size:
                 self._collision_history.pop(0)
                 self._adapt_virtual_loss()
 
@@ -380,7 +497,7 @@ class ParallelMCTSEngine:
         # 3. SIMULATION (lock-free, fully parallel)
         rng = self._worker_rngs[worker_id]
         value = await rollout_policy.evaluate(
-            current.state,
+            state=current.state,
             rng=rng,
             max_depth=max_rollout_depth,
         )
@@ -397,18 +514,24 @@ class ParallelMCTSEngine:
                 value = -value  # Flip for opponent perspective
 
     def _adapt_virtual_loss(self) -> None:
-        """Adapt virtual loss value based on collision rate."""
+        """Adapt virtual loss value based on collision rate using config thresholds."""
         if not self._collision_history:
             return
 
         collision_rate = sum(self._collision_history) / len(self._collision_history)
 
         # Increase VL if high collision rate
-        if collision_rate > 0.3:
-            self.virtual_loss_value = min(10.0, self.virtual_loss_value * 1.1)
+        if collision_rate > self._config.collision_rate_high_threshold:
+            self.virtual_loss_value = min(
+                self._config.virtual_loss_max,
+                self.virtual_loss_value * self._config.virtual_loss_increase_rate,
+            )
         # Decrease VL if low collision rate
-        elif collision_rate < 0.1:
-            self.virtual_loss_value = max(1.0, self.virtual_loss_value * 0.9)
+        elif collision_rate < self._config.collision_rate_low_threshold:
+            self.virtual_loss_value = max(
+                self._config.virtual_loss_min,
+                self.virtual_loss_value * self._config.virtual_loss_decrease_rate,
+            )
 
     def _select_best_action(self, root: VirtualLossNode) -> str | None:
         """
@@ -659,7 +782,7 @@ class LeafParallelMCTSEngine:
         # Create rollout tasks
         rollout_rngs = [np.random.default_rng(self.seed + i) for i in range(self.num_parallel_rollouts)]
 
-        rollout_tasks = [rollout_policy.evaluate(node.state, rng=rng, max_depth=max_depth) for rng in rollout_rngs]
+        rollout_tasks = [rollout_policy.evaluate(state=node.state, rng=rng, max_depth=max_depth) for rng in rollout_rngs]
 
         # Run rollouts concurrently
         values = await asyncio.gather(*rollout_tasks)

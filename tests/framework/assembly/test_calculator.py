@@ -2,8 +2,9 @@
 Tests for Assembly Index Calculator (Story 1.1).
 """
 
-import networkx as nx
 import pytest
+
+nx = pytest.importorskip("networkx", reason="networkx required for assembly tests")
 
 from src.framework.assembly.calculator import AssemblyIndexCalculator
 

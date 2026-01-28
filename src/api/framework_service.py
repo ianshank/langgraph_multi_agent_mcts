@@ -44,6 +44,44 @@ except ImportError:
         pass
 
 
+class FlexibleLogger:
+    """
+    Wrapper that handles both structured and standard logging gracefully.
+
+    Eliminates repetitive try/except or if/else patterns by automatically
+    falling back to standard logging when structured logging isn't supported.
+    """
+
+    def __init__(self, logger: logging.Logger):
+        self._logger = logger
+
+    def _log(
+        self,
+        level: int,
+        msg: str,
+        fallback_msg: str | None = None,
+        **kwargs: Any,
+    ) -> None:
+        """Log with structured kwargs, falling back to simple message if unsupported."""
+        try:
+            self._logger.log(level, msg, **kwargs)
+        except TypeError:
+            # Logger doesn't support kwargs - use fallback or plain message
+            self._logger.log(level, fallback_msg or msg)
+
+    def debug(self, msg: str, fallback_msg: str | None = None, **kwargs: Any) -> None:
+        self._log(logging.DEBUG, msg, fallback_msg, **kwargs)
+
+    def info(self, msg: str, fallback_msg: str | None = None, **kwargs: Any) -> None:
+        self._log(logging.INFO, msg, fallback_msg, **kwargs)
+
+    def warning(self, msg: str, fallback_msg: str | None = None, **kwargs: Any) -> None:
+        self._log(logging.WARNING, msg, fallback_msg, **kwargs)
+
+    def error(self, msg: str, fallback_msg: str | None = None, **kwargs: Any) -> None:
+        self._log(logging.ERROR, msg, fallback_msg, **kwargs)
+
+
 class FrameworkState(Enum):
     """Framework lifecycle states."""
 
@@ -59,7 +97,8 @@ class FrameworkConfig:
     """
     Configuration for the framework service.
 
-    All values are loaded from Settings - no hardcoded defaults.
+    Core values are loaded from Settings via from_settings(). Additional fields
+    have defaults for backwards compatibility but can be overridden via Settings.
     """
 
     mcts_enabled: bool
@@ -71,6 +110,24 @@ class FrameworkConfig:
     top_k_retrieval: int
     enable_parallel_agents: bool
     timeout_seconds: float
+
+    # LLM generation parameters
+    llm_temperature: float = 0.7
+    """Temperature for LLM generation."""
+
+    # Confidence thresholds
+    confidence_with_rag: float = 0.8
+    """Confidence score when RAG context is available."""
+
+    confidence_without_rag: float = 0.7
+    """Confidence score when RAG context is not available."""
+
+    confidence_on_error: float = 0.3
+    """Confidence score when an error occurs."""
+
+    # Error response limits
+    error_query_preview_length: int = 100
+    """Maximum characters of query to include in error messages."""
 
     @classmethod
     def from_settings(cls, settings: Settings | None = None) -> FrameworkConfig:
@@ -86,6 +143,11 @@ class FrameworkConfig:
             top_k_retrieval=settings.FRAMEWORK_TOP_K_RETRIEVAL,
             enable_parallel_agents=settings.FRAMEWORK_ENABLE_PARALLEL_AGENTS,
             timeout_seconds=float(settings.HTTP_TIMEOUT_SECONDS),
+            llm_temperature=settings.LLM_TEMPERATURE,
+            confidence_with_rag=settings.CONFIDENCE_WITH_RAG,
+            confidence_without_rag=settings.CONFIDENCE_WITHOUT_RAG,
+            confidence_on_error=settings.CONFIDENCE_ON_ERROR,
+            error_query_preview_length=settings.ERROR_QUERY_PREVIEW_LENGTH,
         )
 
 
@@ -449,7 +511,10 @@ class FrameworkService:
                 config["mcts_iterations"] = mcts_iterations
 
             # Process with timeout
-            assert self._framework is not None
+            if self._framework is None:
+                raise RuntimeError(
+                    "Framework not initialized. Call initialize() before processing queries."
+                )
 
             framework_start = time.perf_counter()
             result = await asyncio.wait_for(
@@ -617,7 +682,7 @@ class LightweightFramework:
     ):
         self._llm_client = llm_client
         self._config = config
-        self._logger = logger
+        self._logger = FlexibleLogger(logger)
         self._rag_retriever = rag_retriever
 
     async def process(
@@ -630,16 +695,14 @@ class LightweightFramework:
         """Process query with lightweight implementation."""
         correlation_id = get_correlation_id()
 
-        if _HAS_STRUCTURED_LOGGING:
-            self._logger.info(
-                "Processing query (lightweight mode)",
-                correlation_id=correlation_id,
-                query_length=len(query),
-                use_rag=use_rag,
-                use_mcts=use_mcts,
-            )
-        else:
-            self._logger.info(f"Processing query (lightweight mode): {query[:50]}...")
+        self._logger.info(
+            "Processing query (lightweight mode)",
+            fallback_msg=f"Processing query (lightweight mode): {query[:50]}...",
+            correlation_id=correlation_id,
+            query_length=len(query),
+            use_rag=use_rag,
+            use_mcts=use_mcts,
+        )
 
         # Retrieve RAG context if available
         rag_context = ""
@@ -650,19 +713,19 @@ class LightweightFramework:
                     top_k=self._config.top_k_retrieval,
                 )
                 rag_context = retrieval_result.context
-                if _HAS_STRUCTURED_LOGGING:
-                    self._logger.debug(
-                        "RAG context retrieved for lightweight processing",
-                        correlation_id=correlation_id,
-                        documents=len(retrieval_result.documents),
-                    )
+                self._logger.debug(
+                    "RAG context retrieved for lightweight processing",
+                    fallback_msg=f"RAG context retrieved: {len(retrieval_result.documents)} documents",
+                    correlation_id=correlation_id,
+                    documents=len(retrieval_result.documents),
+                )
             except Exception as e:
-                if _HAS_STRUCTURED_LOGGING:
-                    self._logger.warning(
-                        "RAG retrieval failed in lightweight mode",
-                        correlation_id=correlation_id,
-                        error=str(e),
-                    )
+                self._logger.warning(
+                    "RAG retrieval failed in lightweight mode",
+                    fallback_msg=f"RAG retrieval failed in lightweight mode: {e}",
+                    correlation_id=correlation_id,
+                    error=str(e),
+                )
 
         # Build prompt with optional context
         if rag_context:
@@ -681,22 +744,25 @@ Provide a comprehensive and accurate answer:"""
         try:
             response = await self._llm_client.generate(
                 prompt=prompt,
-                temperature=0.7,
+                temperature=self._config.llm_temperature,
             )
             response_text = response.text
             # Higher confidence when RAG context is used
-            confidence = 0.8 if rag_context else 0.7
+            confidence = (
+                self._config.confidence_with_rag
+                if rag_context
+                else self._config.confidence_without_rag
+            )
         except Exception as e:
-            if _HAS_STRUCTURED_LOGGING:
-                self._logger.warning(
-                    "LLM call failed in lightweight mode",
-                    correlation_id=correlation_id,
-                    error=str(e),
-                )
-            else:
-                self._logger.warning(f"LLM call failed: {e}")
-            response_text = f"Unable to process query: {query[:100]}"
-            confidence = 0.3
+            self._logger.warning(
+                "LLM call failed in lightweight mode",
+                fallback_msg=f"LLM call failed: {e}",
+                correlation_id=correlation_id,
+                error=str(e),
+            )
+            preview_length = self._config.error_query_preview_length
+            response_text = f"Unable to process query: {query[:preview_length]}"
+            confidence = self._config.confidence_on_error
 
         # Build mock MCTS stats if requested
         mcts_stats = None

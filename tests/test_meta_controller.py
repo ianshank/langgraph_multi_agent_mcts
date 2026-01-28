@@ -11,8 +11,9 @@ Tests the core components:
 from dataclasses import fields
 
 import pytest
-import torch
-import torch.nn as nn
+
+torch = pytest.importorskip("torch", reason="PyTorch required")
+nn = torch.nn
 
 from src.agents.meta_controller.base import (
     AbstractMetaController,

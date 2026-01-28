@@ -8,6 +8,9 @@ from pathlib import Path
 
 import pytest
 
+# Skip if networkx not available (required for assembly module)
+pytest.importorskip("networkx", reason="networkx required for assembly module")
+
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 from scripts.generate_meta_controller_training_data import (

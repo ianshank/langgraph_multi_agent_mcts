@@ -13,8 +13,9 @@ import asyncio
 
 import numpy as np
 import pytest
-import torch
-import torch.nn as nn
+
+torch = pytest.importorskip("torch", reason="PyTorch required")
+nn = torch.nn
 
 from src.agents.hrm_agent import HRMAgent, HRMLoss, create_hrm_agent
 from src.agents.trm_agent import TRMAgent, create_trm_agent

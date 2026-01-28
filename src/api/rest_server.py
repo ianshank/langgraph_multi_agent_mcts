@@ -23,7 +23,7 @@ import os
 import secrets
 import time
 from contextlib import asynccontextmanager
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
@@ -257,11 +257,27 @@ This API provides access to a sophisticated multi-agent reasoning framework that
     lifespan=lifespan,
 )
 
-# CORS middleware
+# CORS middleware - configured from settings at app creation time
+# Note: CORS settings are read once when the module is imported. Changes to
+# CORS_ALLOWED_ORIGINS or CORS_ALLOW_CREDENTIALS environment variables require
+# a server restart to take effect. For testing, use reset_settings() before
+# importing this module, or mock the middleware directly.
+# If CORS_ALLOWED_ORIGINS is empty/falsy, default to ["*"] for development
+# Security: Credentials are disabled whenever wildcard origins are used
+_cors_settings = get_settings()
+_cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
+_has_wildcard_origin = "*" in _cors_origins
+if _has_wildcard_origin:
+    # Normalize to explicit wildcard-only configuration and disable credentials
+    _cors_origins = ["*"]
+    _cors_allow_credentials = False
+else:
+    _cors_allow_credentials = _cors_settings.CORS_ALLOW_CREDENTIALS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Configure appropriately for production
-    allow_credentials=True,
+    allow_origins=_cors_origins,
+    allow_credentials=_cors_allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -309,8 +325,10 @@ async def verify_api_key(x_api_key: str = Header(..., description="API key for a
     except RateLimitError as e:
         if PROMETHEUS_AVAILABLE:
             ERROR_COUNT.labels(error_type="rate_limit").inc()
+        settings = get_settings()
+        retry_after = e.retry_after_seconds or settings.RATE_LIMIT_RETRY_AFTER_SECONDS
         raise HTTPException(
-            status_code=429, detail=e.user_message, headers={"Retry-After": str(e.retry_after_seconds or 60)}
+            status_code=429, detail=e.user_message, headers={"Retry-After": str(retry_after)}
         ) from e
 
 
@@ -351,7 +369,7 @@ async def health_check():
 
     return HealthResponse(
         status=status,
-        timestamp=datetime.now(UTC).isoformat(),
+        timestamp=datetime.now(timezone.utc).isoformat(),
         version="1.0.0",
         uptime_seconds=time.time() - start_time,
     )
