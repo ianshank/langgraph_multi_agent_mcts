@@ -683,7 +683,7 @@ journey
 
 ```bash
 # 1. Clone and setup
-git clone https://github.com/your-org/langgraph_multi_agent_mcts.git
+git clone https://github.com/ianshank/langgraph_multi_agent_mcts.git
 cd langgraph_multi_agent_mcts
 
 # 2. Create virtual environment
@@ -709,26 +709,40 @@ python app.py  # Opens Gradio interface at http://localhost:7860
 
 ```python
 import asyncio
-from src.framework.graph import GraphBuilder
+import logging
+from src.framework.graph import IntegratedFramework
+from src.framework.factories import LLMClientFactory
 from src.config.settings import get_settings
 
 async def main():
-    # Initialize
+    # Initialize components using factory pattern
     settings = get_settings()
-    graph = GraphBuilder(settings)
+    logger = logging.getLogger(__name__)
+
+    # Create LLM client via factory (supports OpenAI, Anthropic, LMStudio)
+    llm_factory = LLMClientFactory(settings=settings)
+    llm_client = llm_factory.create_from_settings()
+
+    # Initialize integrated framework (backwards-compatible API)
+    framework = IntegratedFramework(
+        model_adapter=llm_client,
+        logger=logger,
+        max_iterations=3,
+        consensus_threshold=0.75,
+        enable_parallel_agents=True,
+    )
 
     # Process query
-    result = await graph.process(
+    result = await framework.process(
         query="Explain the trade-offs between microservices and monolithic architectures",
         use_mcts=True,
-        use_rag=True
+        use_rag=False  # Set True if vector store configured
     )
 
     # Access results
-    print(f"Response: {result['final_response']}")
-    print(f"Confidence: {result['metadata']['confidence']:.2%}")
-    print(f"Agents used: {result['metadata']['agents_used']}")
-    print(f"MCTS iterations: {result['mcts_stats']['iterations']}")
+    print(f"Response: {result['response']}")
+    print(f"Confidence: {result['metadata'].get('confidence', 'N/A')}")
+    print(f"Agents used: {result['metadata'].get('agents_used', [])}")
 
 asyncio.run(main())
 ```
@@ -739,18 +753,21 @@ asyncio.run(main())
 # Start server
 uvicorn src.api.rest_server:app --host 0.0.0.0 --port 8000
 
-# Query endpoint
-curl -X POST http://localhost:8000/api/v1/query \
+# Query endpoint (note: no /api/v1 prefix in current implementation)
+curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
   -d '{
     "query": "Design a caching strategy for a social media feed",
     "use_mcts": true,
-    "use_rag": false,
-    "max_iterations": 3
+    "use_rag": false
   }'
 
 # Health check
 curl http://localhost:8000/health
+
+# Readiness check
+curl http://localhost:8000/ready
 
 # Metrics (Prometheus format)
 curl http://localhost:8000/metrics
@@ -878,7 +895,8 @@ python app.py
 
 ```bash
 docker build -t multiagent-mcts .
-docker run -p 8000:8000 -e OPENAI_API_KEY=sk-... multiagent-mcts
+# Use environment file for secure API key management
+docker run -p 8000:8000 --env-file .env multiagent-mcts
 ```
 
 ### Option 3: Docker Compose (Full Stack)
@@ -897,8 +915,9 @@ kubectl apply -f kubernetes/
 
 ### Option 5: HuggingFace Spaces (Demo)
 
-- Pre-deployed at: `https://huggingface.co/spaces/your-org/multiagent-mcts`
+- Deploy using the `huggingface_space/` directory
 - Gradio interface with trained models
+- See `huggingface_space/README.md` for deployment instructions
 
 ---
 
@@ -971,10 +990,16 @@ See `src/config/settings.py` for all available settings.
 
 ### D. Troubleshooting Guide
 
-See `docs/TROUBLESHOOTING.md`.
+Common issues and solutions:
+- **API Key Errors**: Ensure `.env` file has valid `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+- **Import Errors**: Run `pip install -e ".[dev]"` to install all dependencies
+- **MCTS Slow**: Reduce `MCTS_ITERATIONS` or enable GPU acceleration
+- **Rate Limiting**: Check `RATE_LIMIT_REQUESTS_PER_MINUTE` in settings
+
+See `docs/E2E_USER_JOURNEYS.md` for detailed troubleshooting commands.
 
 ---
 
 *Document generated: January 2026*
 *Framework version: 0.1.0*
-*Contact: team@example.com*
+*Repository: https://github.com/ianshank/langgraph_multi_agent_mcts*

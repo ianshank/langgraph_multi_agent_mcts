@@ -9,7 +9,7 @@
 
 The Multi-Agent MCTS Platform delivers **measurable business value** through:
 
-- **33% reduction** in LLM API costs via intelligent routing
+- **30-40% reduction** in LLM API costs via intelligent routing
 - **87.5% faster** time-to-insight for complex analysis tasks
 - **17% improvement** in task success rates over single-model approaches
 - **100% reproducibility** enabling regulatory compliance
@@ -134,6 +134,8 @@ mindmap
 
 **Monthly Savings**: $180 (37.5%)
 **Annual Savings**: $2,160
+
+*Note: Above example assumes 13M tokens/month baseline. Enterprise deployments with higher volumes see proportionally larger savings. The 3-year financial model below assumes enterprise-scale usage.*
 
 ### Personnel Costs
 

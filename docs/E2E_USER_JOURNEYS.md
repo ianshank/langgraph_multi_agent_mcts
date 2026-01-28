@@ -415,7 +415,7 @@ journey
 
 ```bash
 # Quick diagnosis query
-curl -X POST http://localhost:8000/api/v1/query \
+curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
   -d '{
     "query": "API response times increased 3x in the last hour. What could be causing this?",
@@ -428,7 +428,7 @@ curl -X POST http://localhost:8000/api/v1/query \
   }'
 
 # Get remediation suggestions
-curl -X POST http://localhost:8000/api/v1/query \
+curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
   -d '{
     "query": "Suggest remediation steps for database connection pool exhaustion",
@@ -680,7 +680,7 @@ async def query_multiagent(query: str, use_mcts: bool = True) -> dict:
     """Integrate with Multi-Agent MCTS via REST API."""
     async with httpx.AsyncClient() as client:
         response = await client.post(
-            "http://localhost:8000/api/v1/query",
+            "http://localhost:8000/query",
             json={
                 "query": query,
                 "use_mcts": use_mcts,
@@ -753,7 +753,7 @@ async def process_request(
         # Call multi-agent system
         async with httpx.AsyncClient() as client:
             result = await client.post(
-                "http://multiagent:8000/api/v1/query",
+                "http://multiagent:8000/query",
                 json={"query": query}
             )
 
@@ -820,7 +820,7 @@ async def test_developer_architecture_journey():
     async with AsyncClient(base_url="http://localhost:8000") as client:
         # Submit architecture query
         response = await client.post(
-            "/api/v1/query",
+            "/query",
             json={
                 "query": "Design a microservices architecture for e-commerce",
                 "use_mcts": True,
@@ -843,7 +843,7 @@ async def test_multi_agent_consensus_journey():
     """Test multi-agent consensus workflow."""
     async with AsyncClient(base_url="http://localhost:8000") as client:
         response = await client.post(
-            "/api/v1/query",
+            "/query",
             json={
                 "query": "Compare REST vs GraphQL for mobile backend",
                 "use_mcts": True,
@@ -865,7 +865,7 @@ async def test_error_handling_journey():
     async with AsyncClient(base_url="http://localhost:8000") as client:
         # Test invalid input
         response = await client.post(
-            "/api/v1/query",
+            "/query",
             json={"query": ""}  # Empty query
         )
 
@@ -873,7 +873,7 @@ async def test_error_handling_journey():
 
         # Test timeout handling
         response = await client.post(
-            "/api/v1/query",
+            "/query",
             json={
                 "query": "Complex query requiring long processing",
                 "timeout_seconds": 1  # Very short timeout
@@ -901,7 +901,7 @@ class MultiAgentUser(HttpUser):
     def simple_query(self):
         """Simple query - most common."""
         self.client.post(
-            "/api/v1/query",
+            "/query",
             json={
                 "query": "What is dependency injection?",
                 "use_mcts": False
@@ -912,7 +912,7 @@ class MultiAgentUser(HttpUser):
     def mcts_query(self):
         """MCTS-enabled query - medium frequency."""
         self.client.post(
-            "/api/v1/query",
+            "/query",
             json={
                 "query": "Design a caching strategy",
                 "use_mcts": True
@@ -923,7 +923,7 @@ class MultiAgentUser(HttpUser):
     def complex_query(self):
         """Complex multi-agent query - less frequent."""
         self.client.post(
-            "/api/v1/query",
+            "/query",
             json={
                 "query": "Compare microservices vs monolithic architectures with trade-offs",
                 "use_mcts": True,
@@ -954,21 +954,23 @@ class MultiAgentUser(HttpUser):
 # Check system health
 curl http://localhost:8000/health
 
-# View detailed metrics
+# Check readiness (dependencies)
+curl http://localhost:8000/ready
+
+# View detailed metrics (Prometheus format)
 curl http://localhost:8000/metrics | grep multiagent
 
-# Test individual agents
-curl -X POST http://localhost:8000/api/v1/debug/agent \
-  -H "Content-Type: application/json" \
-  -d '{"agent": "hrm", "query": "test"}'
+# Get service statistics
+curl http://localhost:8000/stats
 
-# Check meta-controller routing
-curl -X POST http://localhost:8000/api/v1/debug/route \
+# Test query endpoint with minimal payload
+curl -X POST http://localhost:8000/query \
   -H "Content-Type: application/json" \
-  -d '{"query": "test query"}'
+  -H "X-API-Key: your-api-key" \
+  -d '{"query": "test query", "use_mcts": false}'
 
-# View recent traces
-curl http://localhost:8000/api/v1/debug/traces?limit=10
+# View OpenAPI documentation
+# Navigate to http://localhost:8000/docs in browser
 ```
 
 ### Debug Mode
