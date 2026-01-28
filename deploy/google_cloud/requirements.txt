@@ -1,0 +1,52 @@
+# LangGraph Multi-Agent MCTS - Google Cloud Requirements
+# Optimized for Vertex AI and Cloud Run deployment
+
+# Core Frameworks
+fastapi>=0.104.0
+uvicorn[standard]>=0.24.0
+pydantic>=2.0.0
+
+# Google Cloud AI Platform
+google-cloud-aiplatform[agent_engines,langchain]>=1.93.0
+google-genai>=0.1.0
+
+# Google ADK (Agent Development Kit)
+google-adk>=1.14
+
+# LangChain/LangGraph Integration
+langgraph>=0.0.1
+langchain>=0.1.0
+langchain-core>=0.1.0
+langchain-google-vertexai>=1.0.0
+
+# Machine Learning - Neural Models
+torch>=2.1.0
+transformers>=4.40.0,<4.46.0
+peft==0.10.0
+accelerate>=0.26.0
+sentence-transformers>=2.2.0
+
+# Numerical computation
+numpy>=1.24.0,<2.0.0
+
+# Configuration
+pyyaml>=6.0
+python-dotenv>=1.0.1
+
+# Observability
+opentelemetry-api>=1.20.0
+opentelemetry-sdk>=1.20.0
+opentelemetry-exporter-gcp-trace>=1.6.0
+opentelemetry-exporter-otlp-proto-http>=1.36.0
+
+# Additional Google Cloud dependencies
+google-cloud-logging>=3.9.0
+google-cloud-secret-manager>=2.18.0
+
+# Data processing
+pandas>=2.0.0
+tabulate>=0.9.0
+
+# HTTP client
+httpx>=0.25.0
+tenacity>=8.2.0

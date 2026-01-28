@@ -11,6 +11,10 @@ Available Agents:
 - AcademicResearchAgent: Research paper analysis and citation discovery
 - DataEngineeringAgent: Dataform pipeline development and management
 - DeepSearchAgent: Production-ready research with human-in-the-loop
+
+AI Studio Integration:
+- AIStudioClient: Client for Google AI Studio / Gemini API
+- AIStudioConfig: Configuration for AI Studio client
 """
 
 from .agents.academic_research import AcademicResearchAgent
@@ -18,11 +22,18 @@ from .agents.data_engineering import DataEngineeringAgent
 from .agents.data_science import DataScienceAgent
 from .agents.deep_search import DeepSearchAgent
 from .agents.ml_engineering import MLEngineeringAgent
+from .ai_studio_client import AIStudioClient, AIStudioConfig, GeminiModel
 from .base import ADKAgentAdapter, ADKConfig
 
 __all__ = [
+    # Base adapters
     "ADKAgentAdapter",
     "ADKConfig",
+    # AI Studio client
+    "AIStudioClient",
+    "AIStudioConfig",
+    "GeminiModel",
+    # Specialized agents
     "MLEngineeringAgent",
     "DataScienceAgent",
     "AcademicResearchAgent",
@@ -30,4 +41,4 @@ __all__ = [
     "DeepSearchAgent",
 ]
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"

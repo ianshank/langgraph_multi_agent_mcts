@@ -106,12 +106,11 @@ class DABStepLoader(DatasetLoader):
             List of DatasetSample objects
         """
         try:
-            from datasets import load_dataset
-
             logger.info(f"Loading DABStep dataset (split={split})")
 
             dataset = load_dataset(
                 self.DATASET_NAME,
+                split=split,
                 cache_dir=self.cache_dir,
             )
 
@@ -237,8 +236,6 @@ class PRIMUSLoader(DatasetLoader):
             List of DatasetSample objects
         """
         try:
-            from datasets import load_dataset
-
             dataset_name = self.SEED_DATASET if dataset_type == "seed" else self.INSTRUCT_DATASET
 
             logger.info(f"Loading PRIMUS {dataset_type} dataset")
@@ -250,7 +247,8 @@ class PRIMUSLoader(DatasetLoader):
                 logger.info(f"Using streaming mode (max_samples={max_samples})")
                 dataset = load_dataset(
                     dataset_name,
-                    "default",
+                    split="default",
+                    name="default",
                     streaming=True,
                     cache_dir=self.cache_dir,
                 )
@@ -259,6 +257,7 @@ class PRIMUSLoader(DatasetLoader):
             else:
                 dataset = load_dataset(
                     dataset_name,
+                    split=split,
                     cache_dir=self.cache_dir,
                 )
 
