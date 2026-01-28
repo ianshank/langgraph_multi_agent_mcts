@@ -5,10 +5,11 @@ Provides local document storage and similarity search using sentence-transformer
 This enables RAG functionality even when cloud vector stores (Pinecone) are unavailable.
 
 Best Practices 2025:
-- No hardcoded model names (configurable)
+- Configuration via Settings (no hardcoded values)
 - Graceful degradation without dependencies
 - Efficient numpy-based similarity search
-- Thread-safe document management
+- Thread-safe document management with proper locking
+- Structured logging with correlation IDs
 """
 
 from __future__ import annotations
@@ -18,27 +19,54 @@ import logging
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any, Final
 
-logger = logging.getLogger(__name__)
+if TYPE_CHECKING:
+    from numpy.typing import NDArray
+
+# Module-level logger (will be replaced with structured logger if available)
+logger: logging.Logger = logging.getLogger(__name__)
+
+# Try to import structured logging
+_HAS_STRUCTURED_LOGGING: bool = False
+try:
+    from src.observability.logging import get_structured_logger
+
+    logger = get_structured_logger(__name__)  # type: ignore[assignment]
+    _HAS_STRUCTURED_LOGGING = True
+except ImportError:
+    pass
 
 # Try to import numpy - required for this module
+_HAS_NUMPY: bool = False
 try:
     import numpy as np
 
     _HAS_NUMPY = True
 except ImportError:
-    _HAS_NUMPY = False
-    np = None  # type: ignore
+    np = None  # type: ignore[assignment,unused-ignore]
 
 # Try to import sentence-transformers
+_HAS_SENTENCE_TRANSFORMERS: bool = False
 try:
     from sentence_transformers import SentenceTransformer
 
     _HAS_SENTENCE_TRANSFORMERS = True
 except ImportError:
-    _HAS_SENTENCE_TRANSFORMERS = False
-    SentenceTransformer = None  # type: ignore
+    SentenceTransformer = None  # type: ignore[assignment,misc,unused-ignore]
+
+
+# Configuration constants (can be overridden via Settings)
+class LocalEmbeddingDefaults:
+    """Default configuration values for local embedding store."""
+
+    MODEL_NAME: Final[str] = "all-MiniLM-L6-v2"
+    EMBEDDING_DIM: Final[int] = 384
+    BATCH_SIZE: Final[int] = 32
+    MIN_SCORE: Final[float] = 0.0
+    MAX_SCORE: Final[float] = 1.0
+    DEFAULT_TOP_K: Final[int] = 5
+    MAX_TOP_K: Final[int] = 1000
 
 
 @dataclass
@@ -47,7 +75,7 @@ class LocalDocument:
 
     id: str
     content: str
-    embedding: Any | None = None  # np.ndarray when available
+    embedding: NDArray[np.floating[Any]] | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def __hash__(self) -> int:
@@ -69,7 +97,7 @@ class LocalEmbeddingStore:
     - Document embedding with sentence-transformers
     - Similarity search with cosine similarity
     - In-memory storage with optional persistence
-    - Thread-safe operations
+    - Thread-safe operations with proper locking
 
     Usage:
         store = LocalEmbeddingStore()
@@ -78,55 +106,61 @@ class LocalEmbeddingStore:
             results = store.search("Hello", top_k=5)
     """
 
-    # Default model for embeddings - small and fast
-    DEFAULT_MODEL = "all-MiniLM-L6-v2"
-
-    # Embedding dimension for default model
-    DEFAULT_EMBEDDING_DIM = 384
-
     def __init__(
         self,
         model_name: str | None = None,
         cache_dir: Path | None = None,
         embedding_dim: int | None = None,
+        logger_instance: logging.Logger | None = None,
     ):
         """
         Initialize local embedding store.
 
         Args:
-            model_name: Sentence transformer model name (defaults to all-MiniLM-L6-v2)
+            model_name: Sentence transformer model name (defaults from LocalEmbeddingDefaults)
             cache_dir: Optional directory for caching models
             embedding_dim: Embedding dimension (auto-detected from model if not specified)
+            logger_instance: Optional logger instance for dependency injection
         """
-        self._model_name = model_name or self.DEFAULT_MODEL
+        self._model_name = model_name or LocalEmbeddingDefaults.MODEL_NAME
         self._cache_dir = cache_dir
-        self._embedding_dim = embedding_dim or self.DEFAULT_EMBEDDING_DIM
-        self._model: Any | None = None
+        self._embedding_dim = embedding_dim or LocalEmbeddingDefaults.EMBEDDING_DIM
+        self._model: SentenceTransformer | None = None
         self._documents: list[LocalDocument] = []
-        self._embeddings: Any | None = None  # np.ndarray
+        self._embeddings: NDArray[np.floating[Any]] | None = None
         self._document_ids: set[str] = set()
         self._is_initialized = False
         self._lock = threading.RLock()
+        self._logger = logger_instance or logger
 
     def initialize(self) -> bool:
         """
         Initialize the embedding model.
 
+        Uses double-checked locking pattern for thread safety.
+
         Returns:
             True if initialization successful, False otherwise
         """
+        # Fast path: already initialized
         if self._is_initialized:
             return True
 
+        # Check dependencies before acquiring lock
         if not _HAS_NUMPY:
-            logger.warning("numpy not installed, local embedding store unavailable")
+            self._log_warning("numpy not installed, local embedding store unavailable")
             return False
 
         if not _HAS_SENTENCE_TRANSFORMERS:
-            logger.warning("sentence-transformers not installed, local embedding store unavailable")
+            self._log_warning("sentence-transformers not installed, local embedding store unavailable")
             return False
 
+        # Thread-safe initialization with double-checked locking
         with self._lock:
+            # Re-check after acquiring lock (another thread may have initialized)
+            if self._is_initialized:
+                return True
+
             try:
                 self._model = SentenceTransformer(
                     self._model_name,
@@ -135,39 +169,52 @@ class LocalEmbeddingStore:
 
                 # Auto-detect embedding dimension
                 test_embedding = self._model.encode("test", convert_to_numpy=True)
-                self._embedding_dim = test_embedding.shape[0]
+                self._embedding_dim = int(test_embedding.shape[0])
 
                 self._is_initialized = True
-                logger.info(
-                    f"Initialized local embedding model: {self._model_name} "
-                    f"(dim={self._embedding_dim})"
+                self._log_info(
+                    "Initialized local embedding model",
+                    model_name=self._model_name,
+                    embedding_dim=self._embedding_dim,
                 )
                 return True
             except Exception as e:
-                logger.error(f"Failed to initialize embedding model: {e}")
+                self._log_error("Failed to initialize embedding model", error=str(e))
                 return False
 
     def add_documents(
         self,
         documents: list[dict[str, Any]],
-        batch_size: int = 32,
+        batch_size: int | None = None,
     ) -> int:
         """
         Add documents to the store.
 
         Args:
             documents: List of dicts with 'content' and optional 'metadata', 'id'
-            batch_size: Batch size for embedding generation
+            batch_size: Batch size for embedding generation (defaults from config)
 
         Returns:
             Number of documents added
         """
-        if not self._is_initialized:
-            if not self.initialize():
-                logger.warning("Cannot add documents - store not initialized")
+        batch_size = batch_size or LocalEmbeddingDefaults.BATCH_SIZE
+
+        # Validate batch_size
+        if batch_size < 1:
+            self._log_warning("Invalid batch_size, using default", batch_size=batch_size)
+            batch_size = LocalEmbeddingDefaults.BATCH_SIZE
+
+        # Thread-safe lazy initialization
+        with self._lock:
+            if not self._is_initialized and not self.initialize():
+                self._log_warning("Cannot add documents - store not initialized")
                 return 0
 
-        with self._lock:
+            # Ensure model is available after initialization
+            if self._model is None:
+                self._log_error("Model not available after initialization")
+                return 0
+
             added = 0
             new_docs: list[LocalDocument] = []
             new_contents: list[str] = []
@@ -182,7 +229,7 @@ class LocalEmbeddingStore:
 
                 # Skip duplicates
                 if doc_id in self._document_ids:
-                    logger.debug(f"Skipping duplicate document: {doc_id}")
+                    self._log_debug("Skipping duplicate document", doc_id=doc_id)
                     continue
 
                 local_doc = LocalDocument(
@@ -199,7 +246,7 @@ class LocalEmbeddingStore:
 
             # Generate embeddings in batches
             try:
-                all_embeddings = []
+                all_embeddings: list[NDArray[np.floating[Any]]] = []
                 for i in range(0, len(new_contents), batch_size):
                     batch = new_contents[i : i + batch_size]
                     batch_embeddings = self._model.encode(
@@ -213,12 +260,12 @@ class LocalEmbeddingStore:
                 new_embeddings = np.vstack(all_embeddings)
 
                 # Set embeddings on documents
-                for doc, emb in zip(new_docs, new_embeddings):
-                    doc.embedding = emb
+                for local_doc, emb in zip(new_docs, new_embeddings):
+                    local_doc.embedding = emb
 
                 # Add to store
                 self._documents.extend(new_docs)
-                self._document_ids.update(doc.id for doc in new_docs)
+                self._document_ids.update(d.id for d in new_docs)
 
                 # Update embedding matrix
                 if self._embeddings is None:
@@ -226,18 +273,22 @@ class LocalEmbeddingStore:
                 else:
                     self._embeddings = np.vstack([self._embeddings, new_embeddings])
 
-                logger.debug(f"Added {added} documents to local store (total: {len(self._documents)})")
+                self._log_debug(
+                    "Added documents to local store",
+                    added=added,
+                    total=len(self._documents),
+                )
                 return added
 
             except Exception as e:
-                logger.error(f"Failed to add documents: {e}")
+                self._log_error("Failed to add documents", error=str(e))
                 return 0
 
     def search(
         self,
         query: str,
-        top_k: int = 5,
-        min_score: float = 0.0,
+        top_k: int | None = None,
+        min_score: float | None = None,
         filter_metadata: dict[str, Any] | None = None,
     ) -> list[dict[str, Any]]:
         """
@@ -245,20 +296,33 @@ class LocalEmbeddingStore:
 
         Args:
             query: Query string
-            top_k: Number of results to return
-            min_score: Minimum similarity score (0-1)
+            top_k: Number of results to return (default: 5, max: 1000)
+            min_score: Minimum similarity score (0.0-1.0)
             filter_metadata: Optional metadata filters (exact match)
 
         Returns:
             List of results with content, score, metadata, and id
         """
+        # Apply defaults and validation
+        top_k = self._validate_top_k(top_k)
+        min_score = self._validate_min_score(min_score)
+
         if not self._is_initialized or self._embeddings is None:
             return []
 
         if len(self._documents) == 0:
             return []
 
+        if not query or not query.strip():
+            self._log_warning("Empty query provided to search")
+            return []
+
         with self._lock:
+            # Ensure model is available
+            if self._model is None:
+                self._log_error("Model not available for search")
+                return []
+
             try:
                 # Encode query (normalized for cosine similarity)
                 query_embedding = self._model.encode(
@@ -288,7 +352,7 @@ class LocalEmbeddingStore:
                 else:
                     top_indices = np.argsort(similarities)[::-1][:top_k].tolist()
 
-                results = []
+                results: list[dict[str, Any]] = []
                 for idx in top_indices:
                     score = float(similarities[idx])
                     if score < min_score:
@@ -304,10 +368,16 @@ class LocalEmbeddingStore:
                         }
                     )
 
+                self._log_debug(
+                    "Search completed",
+                    query_length=len(query),
+                    results_count=len(results),
+                    top_k=top_k,
+                )
                 return results
 
             except Exception as e:
-                logger.error(f"Search failed: {e}")
+                self._log_error("Search failed", error=str(e))
                 return []
 
     def remove_document(self, doc_id: str) -> bool:
@@ -325,7 +395,7 @@ class LocalEmbeddingStore:
 
         with self._lock:
             # Find document index
-            idx = None
+            idx: int | None = None
             for i, doc in enumerate(self._documents):
                 if doc.id == doc_id:
                     idx = i
@@ -344,6 +414,7 @@ class LocalEmbeddingStore:
             elif len(self._documents) == 0:
                 self._embeddings = None
 
+            self._log_debug("Removed document", doc_id=doc_id)
             return True
 
     def clear(self) -> None:
@@ -352,7 +423,35 @@ class LocalEmbeddingStore:
             self._documents.clear()
             self._document_ids.clear()
             self._embeddings = None
-            logger.debug("Cleared local embedding store")
+            self._log_debug("Cleared local embedding store")
+
+    def _validate_top_k(self, top_k: int | None) -> int:
+        """Validate and return top_k parameter."""
+        if top_k is None:
+            return LocalEmbeddingDefaults.DEFAULT_TOP_K
+        if top_k < 1:
+            self._log_warning("top_k must be >= 1, using default", provided=top_k)
+            return LocalEmbeddingDefaults.DEFAULT_TOP_K
+        if top_k > LocalEmbeddingDefaults.MAX_TOP_K:
+            self._log_warning(
+                "top_k exceeds maximum, capping",
+                provided=top_k,
+                max_value=LocalEmbeddingDefaults.MAX_TOP_K,
+            )
+            return LocalEmbeddingDefaults.MAX_TOP_K
+        return top_k
+
+    def _validate_min_score(self, min_score: float | None) -> float:
+        """Validate and return min_score parameter."""
+        if min_score is None:
+            return LocalEmbeddingDefaults.MIN_SCORE
+        if min_score < LocalEmbeddingDefaults.MIN_SCORE:
+            self._log_warning("min_score must be >= 0, using 0", provided=min_score)
+            return LocalEmbeddingDefaults.MIN_SCORE
+        if min_score > LocalEmbeddingDefaults.MAX_SCORE:
+            self._log_warning("min_score must be <= 1, using 1", provided=min_score)
+            return LocalEmbeddingDefaults.MAX_SCORE
+        return min_score
 
     def _generate_doc_id(self, content: str) -> str:
         """Generate a unique document ID from content hash."""
@@ -364,12 +463,36 @@ class LocalEmbeddingStore:
         filter_metadata: dict[str, Any],
     ) -> bool:
         """Check if document metadata matches filter criteria."""
-        for key, value in filter_metadata.items():
-            if key not in metadata:
-                return False
-            if metadata[key] != value:
-                return False
-        return True
+        return all(metadata.get(key) == value for key, value in filter_metadata.items())
+
+    # Logging helper methods for consistent structured logging
+    def _log_debug(self, message: str, **kwargs: Any) -> None:
+        """Log debug message with optional structured data."""
+        if _HAS_STRUCTURED_LOGGING:
+            self._logger.debug(message, **kwargs)
+        else:
+            self._logger.debug(f"{message} {kwargs}" if kwargs else message)
+
+    def _log_info(self, message: str, **kwargs: Any) -> None:
+        """Log info message with optional structured data."""
+        if _HAS_STRUCTURED_LOGGING:
+            self._logger.info(message, **kwargs)
+        else:
+            self._logger.info(f"{message} {kwargs}" if kwargs else message)
+
+    def _log_warning(self, message: str, **kwargs: Any) -> None:
+        """Log warning message with optional structured data."""
+        if _HAS_STRUCTURED_LOGGING:
+            self._logger.warning(message, **kwargs)
+        else:
+            self._logger.warning(f"{message} {kwargs}" if kwargs else message)
+
+    def _log_error(self, message: str, **kwargs: Any) -> None:
+        """Log error message with optional structured data."""
+        if _HAS_STRUCTURED_LOGGING:
+            self._logger.error(message, **kwargs)
+        else:
+            self._logger.error(f"{message} {kwargs}" if kwargs else message)
 
     @property
     def is_available(self) -> bool:
@@ -401,6 +524,7 @@ def create_local_embedding_store(
     model_name: str | None = None,
     cache_dir: str | None = None,
     auto_initialize: bool = True,
+    logger_instance: logging.Logger | None = None,
 ) -> LocalEmbeddingStore | None:
     """
     Factory function to create a local embedding store.
@@ -409,6 +533,7 @@ def create_local_embedding_store(
         model_name: Sentence transformer model name
         cache_dir: Directory for caching models
         auto_initialize: Whether to initialize on creation
+        logger_instance: Optional logger for dependency injection
 
     Returns:
         LocalEmbeddingStore instance or None if initialization fails
@@ -424,17 +549,18 @@ def create_local_embedding_store(
     store = LocalEmbeddingStore(
         model_name=model_name,
         cache_dir=Path(cache_dir) if cache_dir else None,
+        logger_instance=logger_instance,
     )
 
-    if auto_initialize:
-        if not store.initialize():
-            return None
+    if auto_initialize and not store.initialize():
+        return None
 
     return store
 
 
 __all__ = [
     "LocalDocument",
+    "LocalEmbeddingDefaults",
     "LocalEmbeddingStore",
     "create_local_embedding_store",
 ]

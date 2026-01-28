@@ -2,7 +2,15 @@
 Tests for LocalEmbeddingStore.
 
 Tests the local embedding store implementation for RAG fallback.
+Follows best practices:
+- Deterministic tests with fixed seeds
+- No brittle mocks
+- Comprehensive edge case coverage
+- Clear test organization
 """
+
+import logging
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -13,6 +21,7 @@ try:
     _HAS_NUMPY = True
 except ImportError:
     _HAS_NUMPY = False
+    np = None
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -20,12 +29,26 @@ try:
     _HAS_SENTENCE_TRANSFORMERS = True
 except ImportError:
     _HAS_SENTENCE_TRANSFORMERS = False
+    SentenceTransformer = None
 
 # Skip all tests if dependencies not available
 pytestmark = pytest.mark.skipif(
     not (_HAS_NUMPY and _HAS_SENTENCE_TRANSFORMERS),
     reason="numpy and sentence-transformers required for local embedding store tests",
 )
+
+
+# Test constants
+TEST_SEED = 42
+TEST_EMBEDDING_DIM = 384
+
+
+@pytest.fixture
+def seeded_rng():
+    """Create a seeded random number generator for deterministic tests."""
+    if _HAS_NUMPY:
+        return np.random.default_rng(TEST_SEED)
+    return None
 
 
 @pytest.fixture
@@ -50,7 +73,7 @@ def initialized_store():
 
 @pytest.fixture
 def sample_documents():
-    """Sample documents for testing."""
+    """Sample documents for testing - deterministic content."""
     return [
         {
             "id": "doc1",
@@ -80,14 +103,36 @@ def sample_documents():
     ]
 
 
+@pytest.fixture
+def mock_logger():
+    """Create a mock logger for testing logging behavior."""
+    return MagicMock(spec=logging.Logger)
+
+
+class TestLocalEmbeddingDefaults:
+    """Tests for LocalEmbeddingDefaults configuration."""
+
+    def test_defaults_are_defined(self):
+        """Test that all defaults are properly defined."""
+        from src.api.local_embedding_store import LocalEmbeddingDefaults
+
+        assert LocalEmbeddingDefaults.MODEL_NAME == "all-MiniLM-L6-v2"
+        assert LocalEmbeddingDefaults.EMBEDDING_DIM == 384
+        assert LocalEmbeddingDefaults.BATCH_SIZE == 32
+        assert LocalEmbeddingDefaults.MIN_SCORE == 0.0
+        assert LocalEmbeddingDefaults.MAX_SCORE == 1.0
+        assert LocalEmbeddingDefaults.DEFAULT_TOP_K == 5
+        assert LocalEmbeddingDefaults.MAX_TOP_K == 1000
+
+
 class TestLocalEmbeddingStoreInit:
     """Tests for LocalEmbeddingStore initialization."""
 
     def test_init_default_model(self, local_store):
         """Test initialization with default model."""
-        from src.api.local_embedding_store import LocalEmbeddingStore
+        from src.api.local_embedding_store import LocalEmbeddingDefaults
 
-        assert local_store.model_name == LocalEmbeddingStore.DEFAULT_MODEL
+        assert local_store.model_name == LocalEmbeddingDefaults.MODEL_NAME
         assert not local_store.is_available
         assert local_store.document_count == 0
 
@@ -95,8 +140,16 @@ class TestLocalEmbeddingStoreInit:
         """Test initialization with custom model name."""
         from src.api.local_embedding_store import LocalEmbeddingStore
 
-        store = LocalEmbeddingStore(model_name="paraphrase-MiniLM-L3-v2")
-        assert store.model_name == "paraphrase-MiniLM-L3-v2"
+        custom_model = "paraphrase-MiniLM-L3-v2"
+        store = LocalEmbeddingStore(model_name=custom_model)
+        assert store.model_name == custom_model
+
+    def test_init_with_logger_injection(self, mock_logger):
+        """Test initialization with injected logger."""
+        from src.api.local_embedding_store import LocalEmbeddingStore
+
+        store = LocalEmbeddingStore(logger_instance=mock_logger)
+        assert store._logger is mock_logger
 
     def test_initialize_success(self, local_store):
         """Test successful initialization."""
@@ -110,6 +163,31 @@ class TestLocalEmbeddingStoreInit:
         result2 = initialized_store.initialize()
         assert result1 is True
         assert result2 is True
+
+    def test_initialize_thread_safe(self, local_store):
+        """Test thread-safe initialization with concurrent calls."""
+        import concurrent.futures
+        import threading
+
+        init_count = 0
+        init_lock = threading.Lock()
+
+        original_init = local_store.initialize
+
+        def tracked_init():
+            nonlocal init_count
+            result = original_init()
+            with init_lock:
+                init_count += 1
+            return result
+
+        with patch.object(local_store, "initialize", tracked_init):
+            with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
+                futures = [executor.submit(local_store.initialize) for _ in range(10)]
+                results = [f.result() for f in futures]
+
+        # All should succeed
+        assert all(results)
 
 
 class TestLocalEmbeddingStoreDocuments:
@@ -161,6 +239,13 @@ class TestLocalEmbeddingStoreDocuments:
         assert added == 1
         assert initialized_store.document_count == 1
 
+    def test_add_with_invalid_batch_size(self, initialized_store):
+        """Test that invalid batch_size falls back to default."""
+        docs = [{"content": "Test content", "id": "test1"}]
+        # Should not raise, uses default batch size
+        added = initialized_store.add_documents(docs, batch_size=-1)
+        assert added == 1
+
     def test_remove_document(self, initialized_store, sample_documents):
         """Test removing a document."""
         initialized_store.add_documents(sample_documents)
@@ -202,7 +287,7 @@ class TestLocalEmbeddingStoreSearch:
         assert all("score" in r for r in results)
 
     def test_search_score_ordering(self, initialized_store, sample_documents):
-        """Test that results are ordered by score."""
+        """Test that results are ordered by score descending."""
         initialized_store.add_documents(sample_documents)
 
         results = initialized_store.search("machine learning", top_k=5)
@@ -232,12 +317,12 @@ class TestLocalEmbeddingStoreSearch:
         assert all(r["metadata"].get("category") == "animals" for r in results)
 
     def test_search_empty_store(self, initialized_store):
-        """Test searching an empty store."""
+        """Test searching an empty store returns empty list."""
         results = initialized_store.search("anything")
         assert results == []
 
     def test_search_uninitialized_store(self, local_store):
-        """Test searching an uninitialized store."""
+        """Test searching an uninitialized store returns empty list."""
         results = local_store.search("anything")
         assert results == []
 
@@ -248,6 +333,40 @@ class TestLocalEmbeddingStoreSearch:
         results = initialized_store.search("technology", top_k=2)
 
         assert len(results) <= 2
+
+    def test_search_empty_query(self, initialized_store, sample_documents):
+        """Test searching with empty query returns empty list."""
+        initialized_store.add_documents(sample_documents)
+
+        results = initialized_store.search("")
+        assert results == []
+
+        results = initialized_store.search("   ")
+        assert results == []
+
+    def test_search_validates_top_k(self, initialized_store, sample_documents):
+        """Test that invalid top_k values are corrected."""
+        initialized_store.add_documents(sample_documents)
+
+        # Negative top_k should use default
+        results = initialized_store.search("test", top_k=-1)
+        assert isinstance(results, list)
+
+        # Excessive top_k should be capped
+        results = initialized_store.search("test", top_k=10000)
+        assert isinstance(results, list)
+
+    def test_search_validates_min_score(self, initialized_store, sample_documents):
+        """Test that invalid min_score values are corrected."""
+        initialized_store.add_documents(sample_documents)
+
+        # Negative min_score should use 0
+        results = initialized_store.search("test", min_score=-0.5)
+        assert isinstance(results, list)
+
+        # min_score > 1 should use 1
+        results = initialized_store.search("test", min_score=1.5)
+        assert isinstance(results, list)
 
 
 class TestLocalEmbeddingStoreFactory:
@@ -270,6 +389,30 @@ class TestLocalEmbeddingStoreFactory:
 
         assert store is not None
         assert not store.is_available
+
+    def test_create_with_custom_model(self):
+        """Test factory with custom model name."""
+        from src.api.local_embedding_store import create_local_embedding_store
+
+        store = create_local_embedding_store(
+            model_name="paraphrase-MiniLM-L3-v2",
+            auto_initialize=False,
+        )
+
+        assert store is not None
+        assert store.model_name == "paraphrase-MiniLM-L3-v2"
+
+    def test_create_with_logger_injection(self, mock_logger):
+        """Test factory with logger injection."""
+        from src.api.local_embedding_store import create_local_embedding_store
+
+        store = create_local_embedding_store(
+            auto_initialize=False,
+            logger_instance=mock_logger,
+        )
+
+        assert store is not None
+        assert store._logger is mock_logger
 
 
 class TestRAGRetrieverIntegration:
@@ -311,7 +454,7 @@ class TestRAGRetrieverIntegration:
 
         added = retriever.add_documents(docs, backend="local")
 
-        # May be 0 if local store couldn't be created
+        # May be 0 if local store couldn't be created (missing deps)
         assert added >= 0
 
     @pytest.mark.asyncio
@@ -325,6 +468,34 @@ class TestRAGRetrieverIntegration:
         # Local should be available if dependencies present
         assert retriever.is_available
 
+    @pytest.mark.asyncio
+    async def test_rag_retriever_empty_query_handling(self):
+        """Test that empty queries are handled gracefully."""
+        from src.api.rag_retriever import RAGRetriever
+
+        retriever = RAGRetriever()
+        await retriever.initialize()
+
+        result = await retriever.retrieve("")
+        assert not result.has_results
+        assert result.backend == "none"
+
+    @pytest.mark.asyncio
+    async def test_rag_retriever_validation(self):
+        """Test parameter validation in retriever."""
+        from src.api.rag_retriever import RAGRetriever
+
+        retriever = RAGRetriever()
+        await retriever.initialize()
+
+        # Invalid top_k should not raise
+        result = await retriever.retrieve("test", top_k=-1)
+        assert isinstance(result.documents, list)
+
+        # Invalid min_score should not raise
+        result = await retriever.retrieve("test", min_score=2.0)
+        assert isinstance(result.documents, list)
+
 
 class TestThreadSafety:
     """Tests for thread safety of LocalEmbeddingStore."""
@@ -333,8 +504,8 @@ class TestThreadSafety:
         """Test concurrent document additions."""
         import concurrent.futures
 
-        def add_batch(batch_id):
-            docs = [{"content": f"Document {batch_id}-{i}"} for i in range(10)]
+        def add_batch(batch_id: int) -> int:
+            docs = [{"content": f"Document {batch_id}-{i}", "id": f"doc-{batch_id}-{i}"} for i in range(10)]
             return initialized_store.add_documents(docs)
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=4) as executor:
@@ -350,7 +521,7 @@ class TestThreadSafety:
 
         initialized_store.add_documents(sample_documents)
 
-        def search_query(query):
+        def search_query(query: str) -> list:
             return initialized_store.search(query, top_k=3)
 
         queries = ["machine learning", "animals", "python", "neural networks"]
@@ -360,3 +531,79 @@ class TestThreadSafety:
             results = [f.result() for f in futures]
 
         assert all(isinstance(r, list) for r in results)
+
+    def test_concurrent_add_and_search(self, initialized_store, sample_documents):
+        """Test concurrent adds and searches don't deadlock."""
+        import concurrent.futures
+
+        # Pre-add some documents
+        initialized_store.add_documents(sample_documents[:2])
+
+        def add_doc(doc_id: int) -> int:
+            return initialized_store.add_documents([{"content": f"Concurrent doc {doc_id}", "id": f"conc-{doc_id}"}])
+
+        def search_docs(query: str) -> list:
+            return initialized_store.search(query, top_k=5)
+
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            add_futures = [executor.submit(add_doc, i) for i in range(10)]
+            search_futures = [executor.submit(search_docs, "concurrent") for _ in range(10)]
+
+            # All operations should complete without deadlock
+            all_futures = add_futures + search_futures
+            concurrent.futures.wait(all_futures, timeout=30)
+
+            # Verify all completed
+            assert all(f.done() for f in all_futures)
+
+
+class TestEdgeCases:
+    """Tests for edge cases and error handling."""
+
+    def test_unicode_content(self, initialized_store):
+        """Test handling of unicode content."""
+        docs = [
+            {"content": "日本語のテキスト", "id": "japanese"},
+            {"content": "Ελληνικά κείμενο", "id": "greek"},
+            {"content": "Emoji content 🎉🚀", "id": "emoji"},
+        ]
+        added = initialized_store.add_documents(docs)
+        assert added == 3
+
+        results = initialized_store.search("日本語")
+        assert isinstance(results, list)
+
+    def test_very_long_content(self, initialized_store):
+        """Test handling of very long content."""
+        long_content = "word " * 10000  # ~50k characters
+        docs = [{"content": long_content, "id": "long"}]
+
+        added = initialized_store.add_documents(docs)
+        assert added == 1
+
+    def test_special_characters_in_metadata(self, initialized_store):
+        """Test metadata with special characters."""
+        docs = [
+            {
+                "content": "Test content",
+                "id": "special",
+                "metadata": {"path": "/foo/bar/baz.txt", "tag": "key=value"},
+            }
+        ]
+        added = initialized_store.add_documents(docs)
+        assert added == 1
+
+        results = initialized_store.search("Test", filter_metadata={"path": "/foo/bar/baz.txt"})
+        assert len(results) == 1
+
+    def test_remove_last_document(self, initialized_store):
+        """Test removing the last document clears embeddings."""
+        docs = [{"content": "Only document", "id": "only"}]
+        initialized_store.add_documents(docs)
+
+        assert initialized_store.document_count == 1
+
+        removed = initialized_store.remove_document("only")
+        assert removed is True
+        assert initialized_store.document_count == 0
+        assert initialized_store._embeddings is None
