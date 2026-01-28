@@ -17,9 +17,12 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Protocol, runtime_checkable
+from typing import TYPE_CHECKING, Any, Protocol, runtime_checkable
 
 from src.config.settings import Settings, get_settings
+
+if TYPE_CHECKING:
+    from .local_embedding_store import LocalEmbeddingStore
 
 # Try to import structured logging (optional dependency)
 try:
@@ -107,7 +110,7 @@ class RAGRetriever:
 
     Supports:
     - Pinecone vector store
-    - Local embedding fallback
+    - Local embedding fallback (sentence-transformers + numpy)
     - Graceful degradation when backends unavailable
     """
 
@@ -116,6 +119,7 @@ class RAGRetriever:
         settings: Settings | None = None,
         pinecone_store: Any | None = None,
         embedding_model: Any | None = None,
+        local_store: LocalEmbeddingStore | None = None,
     ):
         """
         Initialize RAG retriever.
@@ -124,10 +128,12 @@ class RAGRetriever:
             settings: Application settings (uses global if None)
             pinecone_store: Optional Pinecone store instance
             embedding_model: Optional embedding model for queries
+            local_store: Optional local embedding store for fallback
         """
         self._settings = settings or get_settings()
         self._pinecone_store = pinecone_store
         self._embedding_model = embedding_model
+        self._local_store = local_store
         self._logger = logging.getLogger(__name__)
         self._is_initialized = False
         self._available_backends: list[str] = []
@@ -183,16 +189,62 @@ class RAGRetriever:
                 else:
                     logger.warning(f"Pinecone backend check failed: {e}")
 
-        # Check for local embedding fallback
-        if self._embedding_model is not None:
-            self._available_backends.append("local")
-            if _HAS_STRUCTURED_LOGGING:
-                logger.info(
-                    "Local embedding backend available",
-                    correlation_id=correlation_id,
-                )
-            else:
-                logger.info("Local embedding backend available")
+        # Check for local embedding store
+        if self._local_store is not None:
+            try:
+                if hasattr(self._local_store, "is_available") and self._local_store.is_available:
+                    self._available_backends.append("local")
+                    if _HAS_STRUCTURED_LOGGING:
+                        logger.info(
+                            "Local embedding store available",
+                            correlation_id=correlation_id,
+                            document_count=getattr(self._local_store, "document_count", 0),
+                        )
+                    else:
+                        logger.info("Local embedding store available")
+                elif hasattr(self._local_store, "initialize"):
+                    # Try to initialize the store
+                    if self._local_store.initialize():
+                        self._available_backends.append("local")
+                        if _HAS_STRUCTURED_LOGGING:
+                            logger.info(
+                                "Local embedding store initialized",
+                                correlation_id=correlation_id,
+                            )
+                        else:
+                            logger.info("Local embedding store initialized")
+            except Exception as e:
+                if _HAS_STRUCTURED_LOGGING:
+                    logger.warning(
+                        "Local embedding store check failed",
+                        correlation_id=correlation_id,
+                        error=str(e),
+                    )
+                else:
+                    logger.warning(f"Local embedding store check failed: {e}")
+        elif self._embedding_model is not None:
+            # Legacy path: try to create local store from embedding model
+            try:
+                from .local_embedding_store import create_local_embedding_store
+
+                self._local_store = create_local_embedding_store(auto_initialize=True)
+                if self._local_store is not None:
+                    self._available_backends.append("local")
+                    if _HAS_STRUCTURED_LOGGING:
+                        logger.info(
+                            "Local embedding backend created from model",
+                            correlation_id=correlation_id,
+                        )
+                    else:
+                        logger.info("Local embedding backend created from model")
+            except ImportError:
+                if _HAS_STRUCTURED_LOGGING:
+                    logger.debug(
+                        "Local embedding store module not available",
+                        correlation_id=correlation_id,
+                    )
+                else:
+                    logger.debug("Local embedding store module not available")
 
         self._is_initialized = True
         init_time = (time.perf_counter() - init_start) * 1000
@@ -400,11 +452,96 @@ class RAGRetriever:
         filter_metadata: dict[str, Any] | None,
         min_score: float,
     ) -> tuple[list[RetrievedDocument], str]:
-        """Retrieve using local embeddings (fallback)."""
-        # This would use a local embedding model and in-memory index
-        # For now, return empty as this requires additional setup
-        logger.debug("Local retrieval not fully implemented")
-        return [], "local"
+        """Retrieve using local embeddings."""
+        if self._local_store is None:
+            logger.debug("Local store not available")
+            return [], "none"
+
+        if not getattr(self._local_store, "is_available", False):
+            logger.debug("Local store not initialized")
+            return [], "none"
+
+        if not getattr(self._local_store, "has_documents", False):
+            logger.debug("Local store has no documents")
+            return [], "local"
+
+        try:
+            # Search local store
+            results = self._local_store.search(
+                query=query,
+                top_k=top_k,
+                min_score=min_score,
+                filter_metadata=filter_metadata,
+            )
+
+            documents = []
+            for result in results:
+                documents.append(
+                    RetrievedDocument(
+                        content=result.get("content", ""),
+                        score=result.get("score", 0.0),
+                        metadata=result.get("metadata", {}),
+                        source="local",
+                    )
+                )
+
+            if _HAS_STRUCTURED_LOGGING:
+                logger.debug(
+                    "Local retrieval completed",
+                    documents_found=len(documents),
+                    query_length=len(query),
+                )
+            else:
+                logger.debug(f"Local retrieval found {len(documents)} documents")
+
+            return documents, "local"
+
+        except Exception as e:
+            if _HAS_STRUCTURED_LOGGING:
+                logger.warning(
+                    "Local retrieval failed",
+                    error=str(e),
+                )
+            else:
+                logger.warning(f"Local retrieval failed: {e}")
+            return [], "none"
+
+    def add_documents(
+        self,
+        documents: list[dict[str, Any]],
+        backend: str = "local",
+    ) -> int:
+        """
+        Add documents to a backend store.
+
+        Args:
+            documents: List of documents with 'content' and optional 'metadata'
+            backend: Backend to add to ('local' or 'pinecone')
+
+        Returns:
+            Number of documents added
+        """
+        if backend == "local":
+            if self._local_store is None:
+                # Try to create local store
+                try:
+                    from .local_embedding_store import create_local_embedding_store
+
+                    self._local_store = create_local_embedding_store(auto_initialize=True)
+                    if self._local_store is not None and "local" not in self._available_backends:
+                        self._available_backends.append("local")
+                except ImportError:
+                    logger.warning("Cannot create local store - module not available")
+                    return 0
+
+            if self._local_store is not None:
+                return self._local_store.add_documents(documents)
+
+        elif backend == "pinecone":
+            logger.warning("Adding documents to Pinecone not implemented")
+            return 0
+
+        return 0
 
     def format_context(
         self,
@@ -460,6 +597,8 @@ def create_rag_retriever(
     settings: Settings | None = None,
     pinecone_api_key: str | None = None,
     pinecone_host: str | None = None,
+    enable_local_fallback: bool = True,
+    local_model_name: str | None = None,
 ) -> RAGRetriever:
     """
     Factory function to create a RAG retriever with proper configuration.
@@ -468,6 +607,8 @@ def create_rag_retriever(
         settings: Application settings
         pinecone_api_key: Override Pinecone API key
         pinecone_host: Override Pinecone host
+        enable_local_fallback: Whether to create local embedding store as fallback
+        local_model_name: Model name for local embeddings (default: all-MiniLM-L6-v2)
 
     Returns:
         Configured RAGRetriever instance
@@ -495,9 +636,27 @@ def create_rag_retriever(
     except Exception as e:
         logger.warning(f"Failed to create Pinecone store: {e}")
 
+    # Try to create local embedding store as fallback
+    local_store = None
+    if enable_local_fallback:
+        try:
+            from .local_embedding_store import create_local_embedding_store
+
+            local_store = create_local_embedding_store(
+                model_name=local_model_name,
+                auto_initialize=True,
+            )
+            if local_store is not None:
+                logger.info("Local embedding store created for RAG retriever")
+        except ImportError:
+            logger.debug("Local embedding store not available (missing dependencies)")
+        except Exception as e:
+            logger.warning(f"Failed to create local embedding store: {e}")
+
     return RAGRetriever(
         settings=settings,
         pinecone_store=pinecone_store,
+        local_store=local_store,
     )
 
 
