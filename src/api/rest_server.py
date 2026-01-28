@@ -263,14 +263,16 @@ This API provides access to a sophisticated multi-agent reasoning framework that
 # a server restart to take effect. For testing, use reset_settings() before
 # importing this module, or mock the middleware directly.
 # If CORS_ALLOWED_ORIGINS is empty/falsy, default to ["*"] for development
-# Security: Credentials are disabled when using wildcard origins
+# Security: Credentials are disabled whenever wildcard origins are used
 _cors_settings = get_settings()
 _cors_origins = _cors_settings.CORS_ALLOWED_ORIGINS or ["*"]
-_cors_allow_credentials = (
-    _cors_settings.CORS_ALLOW_CREDENTIALS
-    if _cors_origins != ["*"]
-    else False  # Credentials not allowed with wildcard origins
-)
+_has_wildcard_origin = "*" in _cors_origins
+if _has_wildcard_origin:
+    # Normalize to explicit wildcard-only configuration and disable credentials
+    _cors_origins = ["*"]
+    _cors_allow_credentials = False
+else:
+    _cors_allow_credentials = _cors_settings.CORS_ALLOW_CREDENTIALS
 
 app.add_middleware(
     CORSMiddleware,
