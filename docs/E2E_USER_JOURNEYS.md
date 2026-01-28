@@ -1,7 +1,7 @@
 # End-to-End Workflows & User Journeys
 
 > Comprehensive documentation of user journeys, E2E workflows, and practical scenarios
-> Version: 2.0 | Last Updated: January 2026
+> Version: 2.0 | Last Updated: January 28, 2026
 
 ---
 

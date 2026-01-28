@@ -1,7 +1,7 @@
 # C4 Architecture Diagrams - Multi-Agent MCTS Platform
 
 > Complete C4 model representation using Mermaid diagrams
-> Version: 2.0 | Last Updated: January 2026
+> Version: 2.0 | Last Updated: January 28, 2026
 
 ---
 
@@ -44,7 +44,7 @@ flowchart TB
         S3[("S3/MinIO<br/>Model Storage")]
     end
 
-    DEV -->|REST API, gRPC| PLATFORM
+    DEV -->|REST API| PLATFORM
     DS -->|Training API| PLATFORM
     ANALYST -->|Web UI, CLI| PLATFORM
     ADMIN -->|Admin API| PLATFORM
@@ -136,7 +136,6 @@ flowchart TB
 
     subgraph API["API Layer"]
         FASTAPI[FastAPI Server<br/>REST Endpoints<br/>Port 8000]
-        GRPC[gRPC Server<br/>High-performance<br/>Port 50051]
     end
 
     subgraph Orchestration["Orchestration Layer"]
@@ -182,10 +181,8 @@ flowchart TB
     GRADIO --> FASTAPI
     RESTCLIENT --> FASTAPI
     JUPYTER --> FASTAPI
-    RESTCLIENT --> GRPC
 
     FASTAPI --> LANGGRAPH
-    GRPC --> LANGGRAPH
     LANGGRAPH --> SCHEDULER
 
     SCHEDULER --> HRM
@@ -229,7 +226,6 @@ flowchart LR
     subgraph Sync["Synchronous Communication"]
         direction TB
         HTTP[HTTP/REST<br/>JSON Payloads]
-        GRPC_SYNC[gRPC<br/>Protobuf]
     end
 
     subgraph Async["Asynchronous Communication"]
@@ -246,7 +242,6 @@ flowchart LR
     end
 
     API_SVC[API Services] --> HTTP
-    API_SVC --> GRPC_SYNC
     API_SVC --> WEBSOCKET
 
     AGENTS_SVC[Agent Services] --> QUEUE

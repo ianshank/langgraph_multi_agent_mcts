@@ -1,7 +1,7 @@
 # Business Value & ROI Analysis
 
 > Comprehensive business case for Multi-Agent MCTS Platform
-> Version: 2.0 | Last Updated: January 2026
+> Version: 2.0 | Last Updated: January 28, 2026
 
 ---
 
@@ -135,7 +135,7 @@ mindmap
 **Monthly Savings**: $180 (37.5%)
 **Annual Savings**: $2,160
 
-*Note: Above example assumes 13M tokens/month baseline. Enterprise deployments with higher volumes see proportionally larger savings. The 3-year financial model below assumes enterprise-scale usage.*
+*Note: The tables above use a 13M tokens/month baseline as a small-team illustrative example (~$480/month pre-optimization, ~$300/month post-optimization). The 3-year financial model below assumes enterprise-scale usage of roughly 10x this volume (~130M-160M tokens/month), which corresponds to API costs of $36,000-$44,000 per year after optimization. Volumes and costs scale approximately linearly with token usage.*
 
 ### Personnel Costs
 
@@ -165,21 +165,27 @@ mindmap
 
 ### 3-Year Financial Model
 
+*Model assumptions:*
+- *COSTS reflect the WITH-platform scenario (reduced headcount of 1.75 FTE)*
+- *BENEFITS reflect cost avoidance vs. the WITHOUT-platform baseline (4.0 FTE)*
+- *Labor Savings = baseline personnel cost ($600K) minus with-platform personnel cost ($262.5K)*
+- *This is not double-counting: Personnel is the actual cost; Labor Savings is the avoided cost*
+
 ```
                         Year 1      Year 2      Year 3      Total
 ─────────────────────────────────────────────────────────────────
-COSTS
+COSTS (With Platform)
   Infrastructure        $27,000     $30,000     $33,000     $90,000
   API Costs             $36,000     $40,000     $44,000    $120,000
   Implementation        $50,000          $0          $0     $50,000
   Training/Support      $20,000     $15,000     $10,000     $45,000
-  Personnel            $262,500    $275,000    $290,000    $827,500
+  Personnel (1.75 FTE) $262,500    $275,000    $290,000    $827,500
 ─────────────────────────────────────────────────────────────────
   Total Costs          $395,500    $360,000    $377,000  $1,132,500
 
-BENEFITS
+BENEFITS (vs. Without Platform)
   API Savings           $25,920     $30,240     $35,280     $91,440
-  Labor Savings        $337,500    $350,000    $365,000  $1,052,500
+  Labor Savings*       $337,500    $350,000    $365,000  $1,052,500
   Productivity Gains   $100,000    $150,000    $200,000    $450,000
   Error Reduction       $50,000     $75,000    $100,000    $225,000
   Compliance Savings    $25,000     $30,000     $35,000     $90,000
@@ -190,6 +196,8 @@ NET BENEFIT            $142,920    $275,240    $358,280    $776,440
 CUMULATIVE             $142,920    $418,160    $776,440
 ROI (Cumulative)           36%         74%        137%
 ```
+
+*\*Labor Savings = Baseline 4.0 FTE cost - With-platform 1.75 FTE cost*
 
 ### ROI by Scenario
 

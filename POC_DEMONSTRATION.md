@@ -1,7 +1,7 @@
 # LangGraph Multi-Agent MCTS: Proof of Concept Demonstration
 
-> **Version**: 2.0 | **Last Updated**: January 2026
-> **Status**: Production-Ready PoC | **Coverage**: 88.4%
+> **Version**: 2.0 | **Last Updated**: January 28, 2026
+> **Status**: Production-Ready PoC | **Coverage**: ~46% overall (82-87% for core RL modules)
 
 ---
 
@@ -57,6 +57,8 @@ A **production-ready, DeepMind-inspired multi-agent AI system** that combines:
 | Cost per Complex Query           | $0.12            | $0.08 (-33%)      |
 +----------------------------------+------------------+-------------------+
 ```
+
+*Note: The metrics in this table are illustrative projections for this proof-of-concept demonstration and are not derived from controlled benchmark experiments. Actual results will vary based on use case, query complexity, and configuration.*
 
 ---
 
