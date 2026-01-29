@@ -196,12 +196,16 @@ BENEFITS (vs. Without Platform)
 
 NET BENEFIT            $142,920    $275,240    $358,280    $776,440
 CUMULATIVE             $142,920    $418,160    $776,440
-ROI (Cumulative)           36%         74%        137%
+ROI (Cumulative)           36%         55%         69%
 ```
 
 *\*Labor Savings = Baseline 4.0 FTE cost - With-platform 1.75 FTE cost*
 
+*ROI Formula: Cumulative Net Benefit / Cumulative Cost*
+
 ### ROI by Scenario
+
+*ROI Formula for scenarios: (3-Year Benefit - Investment) / Investment*
 
 | Scenario | Investment | 3-Year Benefit | ROI | Payback |
 |----------|-----------|----------------|-----|---------|
@@ -608,6 +612,6 @@ def calculate_tco(
 
 ---
 
-*Document generated: January 2026*
+*Document generated: January 28, 2026*
 *Version: 2.0*
 *Contact: business@multiagent-mcts.ai*

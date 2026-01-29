@@ -991,5 +991,5 @@ logging.getLogger("multiagent_mcts").setLevel(logging.DEBUG)
 
 ---
 
-*Document generated: January 2026*
+*Document generated: January 28, 2026*
 *Framework: Multi-Agent MCTS v0.1.0*

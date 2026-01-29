@@ -1009,6 +1009,6 @@ See `docs/E2E_USER_JOURNEYS.md` for detailed troubleshooting commands.
 
 ---
 
-*Document generated: January 2026*
+*Document generated: January 28, 2026*
 *Framework version: 0.1.0*
 *Repository: https://github.com/ianshank/langgraph_multi_agent_mcts*

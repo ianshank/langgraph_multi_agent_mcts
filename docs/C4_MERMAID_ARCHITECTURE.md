@@ -221,6 +221,8 @@ flowchart TB
 
 ### Container Communication Matrix
 
+> **Note**: WebSocket streaming is planned for a future release. The current implementation uses HTTP/REST with async polling for long-running queries.
+
 ```mermaid
 flowchart LR
     subgraph Sync["Synchronous Communication"]
@@ -228,9 +230,9 @@ flowchart LR
         HTTP[HTTP/REST<br/>JSON Payloads]
     end
 
-    subgraph Async["Asynchronous Communication"]
+    subgraph Async["Asynchronous Communication (Planned)"]
         direction TB
-        WEBSOCKET[WebSocket<br/>Streaming]
+        WEBSOCKET[WebSocket<br/>Streaming ⏳]
         QUEUE[Message Queue<br/>Redis Pub/Sub]
     end
 
@@ -242,7 +244,7 @@ flowchart LR
     end
 
     API_SVC[API Services] --> HTTP
-    API_SVC --> WEBSOCKET
+    API_SVC -.-> WEBSOCKET
 
     AGENTS_SVC[Agent Services] --> QUEUE
     TRAINING_SVC[Training Services] --> QUEUE
@@ -1334,5 +1336,5 @@ flowchart TB
 
 ---
 
-*Generated: January 2026*
+*Generated: January 28, 2026*
 *Framework: Multi-Agent MCTS v0.1.0*
