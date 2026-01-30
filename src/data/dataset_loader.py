@@ -482,11 +482,171 @@ class CombinedDatasetLoader:
                         "metadata": sample.metadata,
                     }
                     f.write(json.dumps(record) + "\n")
+
+        elif format == "csv":
+            self._export_csv(output_file)
+
+        elif format == "parquet":
+            self._export_parquet(output_file)
+
         else:
-            raise NotImplementedError(f"Format {format} not yet supported")
+            supported = ["jsonl", "csv", "parquet"]
+            raise NotImplementedError(f"Format {format} not supported. Supported formats: {supported}")
 
         logger.info(f"Exported {len(self._all_samples)} samples to {output_file}")
         return str(output_file)
+
+    def _export_csv(self, output_file: Path) -> None:
+        """
+        Export dataset to CSV format.
+
+        Args:
+            output_file: Path to output file
+        """
+        import csv
+        import json
+
+        with open(output_file, "w", newline="", encoding="utf-8") as f:
+            fieldnames = ["id", "text", "domain", "difficulty", "labels", "metadata"]
+            writer = csv.DictWriter(f, fieldnames=fieldnames, quoting=csv.QUOTE_MINIMAL)
+            writer.writeheader()
+
+            for sample in self._all_samples:
+                writer.writerow(
+                    {
+                        "id": sample.id,
+                        "text": sample.text,
+                        "domain": sample.domain or "",
+                        "difficulty": sample.difficulty or "",
+                        "labels": json.dumps(sample.labels) if sample.labels else "",
+                        "metadata": json.dumps(sample.metadata) if sample.metadata else "",
+                    }
+                )
+
+        logger.debug(f"Exported {len(self._all_samples)} samples to CSV: {output_file}")
+
+    def _export_parquet(self, output_file: Path) -> None:
+        """
+        Export dataset to Parquet format.
+
+        Requires pyarrow to be installed.
+
+        Args:
+            output_file: Path to output file
+
+        Raises:
+            ImportError: If pyarrow is not installed
+        """
+        try:
+            import pyarrow as pa
+            import pyarrow.parquet as pq
+        except ImportError as e:
+            raise ImportError(
+                "pyarrow is required for Parquet export. "
+                "Install with: pip install pyarrow"
+            ) from e
+
+        import json
+
+        # Prepare data as columns
+        data = {
+            "id": [s.id for s in self._all_samples],
+            "text": [s.text for s in self._all_samples],
+            "domain": [s.domain or "" for s in self._all_samples],
+            "difficulty": [s.difficulty or "" for s in self._all_samples],
+            "labels": [json.dumps(s.labels) if s.labels else "" for s in self._all_samples],
+            "metadata": [json.dumps(s.metadata) if s.metadata else "" for s in self._all_samples],
+        }
+
+        # Create PyArrow table
+        table = pa.Table.from_pydict(data)
+
+        # Write to Parquet with compression
+        pq.write_table(table, output_file, compression="snappy")
+
+        logger.debug(f"Exported {len(self._all_samples)} samples to Parquet: {output_file}")
+
+    @staticmethod
+    def load_from_csv(file_path: str | Path) -> list[DatasetSample]:
+        """
+        Load dataset samples from CSV file.
+
+        Args:
+            file_path: Path to CSV file
+
+        Returns:
+            List of DatasetSample objects
+        """
+        import csv
+        import json
+
+        samples = []
+        with open(file_path, encoding="utf-8") as f:
+            reader = csv.DictReader(f)
+            for row in reader:
+                labels = json.loads(row.get("labels", "[]")) if row.get("labels") else []
+                metadata = json.loads(row.get("metadata", "{}")) if row.get("metadata") else {}
+
+                sample = DatasetSample(
+                    id=row.get("id", ""),
+                    text=row.get("text", ""),
+                    domain=row.get("domain") or None,
+                    difficulty=row.get("difficulty") or None,
+                    labels=labels,
+                    metadata=metadata,
+                )
+                samples.append(sample)
+
+        logger.info(f"Loaded {len(samples)} samples from CSV: {file_path}")
+        return samples
+
+    @staticmethod
+    def load_from_parquet(file_path: str | Path) -> list[DatasetSample]:
+        """
+        Load dataset samples from Parquet file.
+
+        Args:
+            file_path: Path to Parquet file
+
+        Returns:
+            List of DatasetSample objects
+
+        Raises:
+            ImportError: If pyarrow is not installed
+        """
+        try:
+            import pyarrow.parquet as pq
+        except ImportError as e:
+            raise ImportError(
+                "pyarrow is required for Parquet import. "
+                "Install with: pip install pyarrow"
+            ) from e
+
+        import json
+
+        table = pq.read_table(file_path)
+        df_dict = table.to_pydict()
+
+        samples = []
+        for i in range(len(df_dict["id"])):
+            labels_str = df_dict.get("labels", [""])[i]
+            metadata_str = df_dict.get("metadata", [""])[i]
+
+            labels = json.loads(labels_str) if labels_str else []
+            metadata = json.loads(metadata_str) if metadata_str else {}
+
+            sample = DatasetSample(
+                id=df_dict["id"][i],
+                text=df_dict["text"][i],
+                domain=df_dict.get("domain", [None])[i] or None,
+                difficulty=df_dict.get("difficulty", [None])[i] or None,
+                labels=labels,
+                metadata=metadata,
+            )
+            samples.append(sample)
+
+        logger.info(f"Loaded {len(samples)} samples from Parquet: {file_path}")
+        return samples
 
 
 def load_dataset(
