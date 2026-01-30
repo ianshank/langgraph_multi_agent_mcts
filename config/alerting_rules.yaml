@@ -1,0 +1,438 @@
+# Alerting rules for LangGraph Multi-Agent MCTS Framework
+#
+# These rules define Prometheus alerting conditions for monitoring
+# the health and performance of the MCTS framework.
+#
+# Based on: MULTI_AGENT_MCTS_TEMPLATE.md Section 11
+# Version: 1.0.0
+
+groups:
+  # ============================================================================
+  # MCTS Performance Alerts
+  # ============================================================================
+  - name: mcts_alerts
+    interval: 30s
+    rules:
+      - alert: MCTSSearchTimeout
+        expr: mcts_search_duration_seconds > 60
+        for: 1m
+        labels:
+          severity: warning
+          component: mcts
+        annotations:
+          summary: "MCTS search taking too long"
+          description: "Search duration {{ $value | humanizeDuration }} exceeds 60s threshold on {{ $labels.instance }}"
+          runbook_url: "https://docs.example.com/runbooks/mcts-timeout"
+
+      - alert: MCTSSearchTimeoutCritical
+        expr: mcts_search_duration_seconds > 120
+        for: 30s
+        labels:
+          severity: critical
+          component: mcts
+        annotations:
+          summary: "MCTS search critically slow"
+          description: "Search duration {{ $value | humanizeDuration }} exceeds 120s on {{ $labels.instance }}"
+
+      - alert: MCTSCacheHitRateLow
+        expr: mcts_cache_hit_rate < 0.3
+        for: 5m
+        labels:
+          severity: info
+          component: mcts
+        annotations:
+          summary: "MCTS cache hit rate below 30%"
+          description: "Cache may need tuning. Current hit rate: {{ $value | humanizePercentage }}"
+
+      - alert: MCTSCacheEvictionsHigh
+        expr: rate(mcts_cache_evictions_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: mcts
+        annotations:
+          summary: "High MCTS cache eviction rate"
+          description: "Eviction rate: {{ $value }}/s. Consider increasing cache size."
+
+      - alert: MCTSTreeDepthExcessive
+        expr: mcts_tree_depth > 50
+        for: 2m
+        labels:
+          severity: warning
+          component: mcts
+        annotations:
+          summary: "MCTS tree depth exceeds 50 levels"
+          description: "Tree depth: {{ $value }}. May indicate runaway search."
+
+      - alert: MCTSIterationsLow
+        expr: mcts_iterations_completed < mcts_iterations_requested * 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: mcts
+        annotations:
+          summary: "MCTS completing fewer iterations than requested"
+          description: "Completed {{ $value }} iterations, less than 50% of requested."
+
+  # ============================================================================
+  # LLM Provider Alerts
+  # ============================================================================
+  - name: llm_alerts
+    interval: 30s
+    rules:
+      - alert: LLMProviderErrorRate
+        expr: rate(llm_requests_failed_total[5m]) / rate(llm_requests_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: llm
+        annotations:
+          summary: "LLM provider error rate exceeds 10%"
+          description: "Error rate: {{ $value | humanizePercentage }} for provider {{ $labels.provider }}"
+
+      - alert: LLMProviderDown
+        expr: up{job="llm_client"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: llm
+        annotations:
+          summary: "LLM provider connection lost"
+          description: "Cannot connect to LLM provider {{ $labels.provider }}"
+
+      - alert: LLMRateLimited
+        expr: rate(llm_rate_limited_total[5m]) > 0.5
+        for: 1m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "LLM rate limiting detected"
+          description: "Rate limit hits: {{ $value }}/s for provider {{ $labels.provider }}"
+
+      - alert: LLMRateLimitedCritical
+        expr: rate(llm_rate_limited_total[1m]) > 5
+        for: 30s
+        labels:
+          severity: critical
+          component: llm
+        annotations:
+          summary: "Severe LLM rate limiting"
+          description: "Rate limit hits: {{ $value }}/s. Service degraded."
+
+      - alert: LLMLatencyHigh
+        expr: histogram_quantile(0.95, rate(llm_request_duration_seconds_bucket[5m])) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "LLM P95 latency exceeds 10 seconds"
+          description: "P95 latency: {{ $value | humanizeDuration }} for {{ $labels.provider }}"
+
+      - alert: LLMLatencyCritical
+        expr: histogram_quantile(0.95, rate(llm_request_duration_seconds_bucket[5m])) > 30
+        for: 2m
+        labels:
+          severity: critical
+          component: llm
+        annotations:
+          summary: "LLM P95 latency exceeds 30 seconds"
+          description: "P95 latency: {{ $value | humanizeDuration }}. User experience severely degraded."
+
+      - alert: LLMTokenBudgetExhausted
+        expr: llm_token_budget_remaining < 1000
+        for: 1m
+        labels:
+          severity: warning
+          component: llm
+        annotations:
+          summary: "LLM token budget nearly exhausted"
+          description: "Only {{ $value }} tokens remaining in budget."
+
+  # ============================================================================
+  # Agent Performance Alerts
+  # ============================================================================
+  - name: agent_alerts
+    interval: 30s
+    rules:
+      - alert: AgentConsensusFailure
+        expr: rate(agent_consensus_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: info
+          component: agents
+        annotations:
+          summary: "Agent consensus failures increasing"
+          description: "Consensus failure rate: {{ $value }}/s. Agents may be disagreeing frequently."
+
+      - alert: AgentConsensusFailureCritical
+        expr: rate(agent_consensus_failures_total[5m]) > 0.5
+        for: 2m
+        labels:
+          severity: warning
+          component: agents
+        annotations:
+          summary: "High agent consensus failure rate"
+          description: "Consensus failure rate: {{ $value }}/s. May indicate misconfiguration."
+
+      - alert: MetaControllerRoutingError
+        expr: rate(meta_controller_errors_total[5m]) > 0.05
+        for: 3m
+        labels:
+          severity: warning
+          component: meta_controller
+        annotations:
+          summary: "Meta-controller routing errors"
+          description: "Error rate: {{ $value }}/s for error type {{ $labels.error_type }}"
+
+      - alert: HRMAgentTimeout
+        expr: histogram_quantile(0.95, rate(hrm_agent_duration_seconds_bucket[5m])) > 30
+        for: 5m
+        labels:
+          severity: warning
+          component: hrm_agent
+        annotations:
+          summary: "HRM agent P95 latency exceeds 30s"
+          description: "HRM agent is slow. P95: {{ $value | humanizeDuration }}"
+
+      - alert: TRMAgentConvergenceFailure
+        expr: rate(trm_convergence_failures_total[5m]) > 0.1
+        for: 5m
+        labels:
+          severity: info
+          component: trm_agent
+        annotations:
+          summary: "TRM agent convergence failures"
+          description: "TRM is not converging. Failure rate: {{ $value }}/s"
+
+      - alert: HybridAgentCostSpike
+        expr: rate(hybrid_agent_cost_usd[5m]) * 3600 > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: hybrid_agent
+        annotations:
+          summary: "Hybrid agent cost spike"
+          description: "Projected hourly cost: ${{ $value | printf \"%.2f\" }}"
+
+  # ============================================================================
+  # Infrastructure Alerts
+  # ============================================================================
+  - name: infrastructure_alerts
+    interval: 30s
+    rules:
+      - alert: HealthCheckFailing
+        expr: health_check_status == 0
+        for: 30s
+        labels:
+          severity: critical
+          component: health
+        annotations:
+          summary: "Health check failing"
+          description: "Component {{ $labels.component }} is unhealthy"
+
+      - alert: HighMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 2
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High memory usage (>2GB)"
+          description: "Memory usage: {{ $value | humanize1024 }}B"
+
+      - alert: CriticalMemoryUsage
+        expr: process_resident_memory_bytes / 1024 / 1024 / 1024 > 4
+        for: 2m
+        labels:
+          severity: critical
+          component: infrastructure
+        annotations:
+          summary: "Critical memory usage (>4GB)"
+          description: "Memory usage: {{ $value | humanize1024 }}B. Risk of OOM."
+
+      - alert: HighCPUUsage
+        expr: process_cpu_percent > 80
+        for: 5m
+        labels:
+          severity: warning
+          component: infrastructure
+        annotations:
+          summary: "High CPU usage (>80%)"
+          description: "CPU usage: {{ $value }}%"
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) / rate(http_requests_total[5m]) > 0.1
+        for: 2m
+        labels:
+          severity: critical
+          component: api
+        annotations:
+          summary: "High 5xx error rate (>10%)"
+          description: "Error rate: {{ $value | humanizePercentage }}"
+
+      - alert: APILatencyHigh
+        expr: histogram_quantile(0.95, rate(http_request_duration_seconds_bucket[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: api
+        annotations:
+          summary: "API P95 latency exceeds 5 seconds"
+          description: "P95 latency: {{ $value | humanizeDuration }}"
+
+  # ============================================================================
+  # Cache Alerts
+  # ============================================================================
+  - name: cache_alerts
+    interval: 60s
+    rules:
+      - alert: QueryCacheEvictionHigh
+        expr: rate(query_cache_evictions_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "High query cache eviction rate"
+          description: "Eviction rate: {{ $value }}/s. Consider increasing cache size."
+
+      - alert: CacheHitRateLow
+        expr: query_cache_hit_rate < 0.5
+        for: 10m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Query cache hit rate below 50%"
+          description: "Hit rate: {{ $value | humanizePercentage }}. Cache may be undersized."
+
+  # ============================================================================
+  # Training Alerts (if training is enabled)
+  # ============================================================================
+  - name: training_alerts
+    interval: 60s
+    rules:
+      - alert: TrainingLossNotDecreasing
+        expr: increase(training_loss[30m]) >= 0
+        for: 30m
+        labels:
+          severity: warning
+          component: training
+        annotations:
+          summary: "Training loss not decreasing"
+          description: "Training loss has not decreased in 30 minutes. May need hyperparameter tuning."
+
+      - alert: TrainingGPUMemoryHigh
+        expr: gpu_memory_used_bytes / gpu_memory_total_bytes > 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: training
+        annotations:
+          summary: "GPU memory usage exceeds 95%"
+          description: "GPU memory: {{ $value | humanizePercentage }}. Risk of OOM."
+
+  # ============================================================================
+  # Enterprise Use Case Alerts
+  # ============================================================================
+  - name: enterprise_alerts
+    interval: 60s
+    rules:
+      - alert: MADueDiligenceTimeout
+        expr: ma_due_diligence_analysis_duration_seconds > 300
+        for: 2m
+        labels:
+          severity: warning
+          component: enterprise
+          use_case: ma_due_diligence
+        annotations:
+          summary: "M&A due diligence analysis timeout"
+          description: "Analysis taking {{ $value | humanizeDuration }}. May need optimization."
+
+      - alert: ClinicalTrialValidationFailure
+        expr: rate(clinical_trial_validation_failures_total[10m]) > 0.1
+        for: 5m
+        labels:
+          severity: warning
+          component: enterprise
+          use_case: clinical_trial
+        annotations:
+          summary: "Clinical trial validation failures"
+          description: "Validation failure rate: {{ $value }}/s"
+
+      - alert: RegulatoryComplianceGapDetected
+        expr: regulatory_compliance_gap_count > 0
+        for: 1m
+        labels:
+          severity: warning
+          component: enterprise
+          use_case: regulatory_compliance
+        annotations:
+          summary: "Regulatory compliance gap detected"
+          description: "{{ $value }} compliance gaps detected. Review required."
+
+# ============================================================================
+# Inhibition Rules
+# ============================================================================
+# These rules prevent alert storms by suppressing less severe alerts
+# when more severe ones are already firing.
+
+inhibit_rules:
+  # Inhibit warning if critical is firing for same component
+  - source_match:
+      severity: critical
+    target_match:
+      severity: warning
+    equal:
+      - component
+      - instance
+
+  # Inhibit info if warning is firing for same component
+  - source_match:
+      severity: warning
+    target_match:
+      severity: info
+    equal:
+      - component
+      - instance
+
+# ============================================================================
+# Recording Rules
+# ============================================================================
+# Pre-computed metrics for efficient alerting and dashboards
+
+recording_rules:
+  - name: mcts_recording
+    interval: 30s
+    rules:
+      - record: mcts:search_success_rate:5m
+        expr: rate(mcts_searches_successful_total[5m]) / rate(mcts_searches_total[5m])
+
+      - record: mcts:avg_iterations:5m
+        expr: rate(mcts_iterations_total[5m]) / rate(mcts_searches_total[5m])
+
+      - record: mcts:cache_hit_rate:5m
+        expr: rate(mcts_cache_hits_total[5m]) / (rate(mcts_cache_hits_total[5m]) + rate(mcts_cache_misses_total[5m]))
+
+  - name: llm_recording
+    interval: 30s
+    rules:
+      - record: llm:error_rate:5m
+        expr: rate(llm_requests_failed_total[5m]) / rate(llm_requests_total[5m])
+
+      - record: llm:avg_latency:5m
+        expr: rate(llm_request_duration_seconds_sum[5m]) / rate(llm_request_duration_seconds_count[5m])
+
+      - record: llm:token_rate:5m
+        expr: rate(llm_tokens_used_total[5m])
+
+  - name: agent_recording
+    interval: 30s
+    rules:
+      - record: agent:consensus_rate:5m
+        expr: 1 - (rate(agent_consensus_failures_total[5m]) / rate(agent_consensus_attempts_total[5m]))
+
+      - record: agent:avg_confidence:5m
+        expr: rate(agent_confidence_sum[5m]) / rate(agent_executions_total[5m])
