@@ -11,10 +11,7 @@ import asyncio
 import functools
 import time
 from collections.abc import Callable
-from typing import TYPE_CHECKING, Any, TypeVar
-
-if TYPE_CHECKING:
-    pass
+from typing import Any, TypeVar
 
 from src.games.chess.constants import truncate_fen
 from src.games.chess.observability.logger import get_chess_logger

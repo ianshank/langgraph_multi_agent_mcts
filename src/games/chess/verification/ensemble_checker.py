@@ -16,7 +16,16 @@ if TYPE_CHECKING:
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
 from src.games.chess.config import AgentType, GamePhase
-from src.games.chess.constants import STARTING_FEN, get_routing_scores, truncate_fen
+from src.games.chess.constants import (
+    DEFAULT_AGREEMENT_THRESHOLD,
+    DEFAULT_CONFIDENCE,
+    DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD,
+    DEFAULT_ROUTING_THRESHOLD,
+    DEFAULT_VALUE_DIVERGENCE_THRESHOLD,
+    STARTING_FEN,
+    get_routing_scores,
+    truncate_fen,
+)
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.types import (
     EnsembleConsistencyResult,
@@ -62,23 +71,33 @@ class EnsembleCheckerConfig:
 
             if self.agreement_threshold is None:
                 self.agreement_threshold = getattr(
-                    settings, "CHESS_VERIFICATION_AGREEMENT_THRESHOLD", 0.6
+                    settings,
+                    "CHESS_VERIFICATION_AGREEMENT_THRESHOLD",
+                    DEFAULT_AGREEMENT_THRESHOLD,
                 )
             if self.confidence_divergence_threshold is None:
                 self.confidence_divergence_threshold = getattr(
-                    settings, "CHESS_VERIFICATION_DIVERGENCE_THRESHOLD", 0.3
+                    settings,
+                    "CHESS_VERIFICATION_DIVERGENCE_THRESHOLD",
+                    DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD,
                 )
             if self.routing_threshold is None:
                 self.routing_threshold = getattr(
-                    settings, "CHESS_VERIFICATION_ROUTING_THRESHOLD", 0.5
+                    settings,
+                    "CHESS_VERIFICATION_ROUTING_THRESHOLD",
+                    DEFAULT_ROUTING_THRESHOLD,
                 )
             if self.value_divergence_threshold is None:
                 self.value_divergence_threshold = getattr(
-                    settings, "CHESS_VERIFICATION_VALUE_DIVERGENCE_THRESHOLD", 0.2
+                    settings,
+                    "CHESS_VERIFICATION_VALUE_DIVERGENCE_THRESHOLD",
+                    DEFAULT_VALUE_DIVERGENCE_THRESHOLD,
                 )
             if self.default_confidence is None:
                 self.default_confidence = getattr(
-                    settings, "CHESS_VERIFICATION_DEFAULT_CONFIDENCE", 0.5
+                    settings,
+                    "CHESS_VERIFICATION_DEFAULT_CONFIDENCE",
+                    DEFAULT_CONFIDENCE,
                 )
         except (ImportError, RuntimeError, OSError):
             # Fallback to defaults if settings unavailable
@@ -86,15 +105,15 @@ class EnsembleCheckerConfig:
             # RuntimeError: settings validation failed
             # OSError: .env file issues
             if self.agreement_threshold is None:
-                self.agreement_threshold = 0.6
+                self.agreement_threshold = DEFAULT_AGREEMENT_THRESHOLD
             if self.confidence_divergence_threshold is None:
-                self.confidence_divergence_threshold = 0.3
+                self.confidence_divergence_threshold = DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD
             if self.routing_threshold is None:
-                self.routing_threshold = 0.5
+                self.routing_threshold = DEFAULT_ROUTING_THRESHOLD
             if self.value_divergence_threshold is None:
-                self.value_divergence_threshold = 0.2
+                self.value_divergence_threshold = DEFAULT_VALUE_DIVERGENCE_THRESHOLD
             if self.default_confidence is None:
-                self.default_confidence = 0.5
+                self.default_confidence = DEFAULT_CONFIDENCE
 
 
 class EnsembleConsistencyChecker:
@@ -461,7 +480,7 @@ class EnsembleConsistencyChecker:
             move_matches = 1.0 if agent_move == ensemble_move else 0.0
 
             # Confidence component (use config default if not provided)
-            default_conf = self._config.default_confidence or 0.5
+            default_conf = self._config.default_confidence or DEFAULT_CONFIDENCE
             confidence = agent_confidences.get(agent_name, default_conf)
 
             # Divergence: high when agent is confident but wrong

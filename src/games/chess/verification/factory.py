@@ -14,8 +14,7 @@ if TYPE_CHECKING:
 
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
-from src.config.settings import Settings, get_settings
-from src.observability.logging import StructuredLogger, get_structured_logger
+from src.config.settings import LogLevel, Settings, get_settings
 from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import ChessActionSpaceConfig, ChessConfig
 from src.games.chess.verification.ensemble_checker import (
@@ -30,6 +29,7 @@ from src.games.chess.verification.move_validator import (
     MoveValidator,
     MoveValidatorConfig,
 )
+from src.observability.logging import StructuredLogger, get_structured_logger
 
 
 class ChessVerificationFactory:
@@ -49,7 +49,7 @@ class ChessVerificationFactory:
         self,
         settings: Settings | None = None,
         chess_config: ChessConfig | None = None,
-        logger: "StructuredLogger | logging.Logger | None" = None,
+        logger: StructuredLogger | logging.Logger | None = None,
     ) -> None:
         """Initialize the verification factory.
 
@@ -110,7 +110,7 @@ class ChessVerificationFactory:
             validator_config = MoveValidatorConfig(
                 validate_encoding=True,
                 validate_legality=True,
-                log_validations=self._settings.LOG_LEVEL == "DEBUG",
+                log_validations=self._settings.LOG_LEVEL == LogLevel.DEBUG,
             )
 
         self._logger.debug(
@@ -159,7 +159,7 @@ class ChessVerificationFactory:
 
     def create_ensemble_checker(
         self,
-        ensemble_agent: "ChessEnsembleAgent | None" = None,
+        ensemble_agent: ChessEnsembleAgent | None = None,
         checker_config: EnsembleCheckerConfig | None = None,
     ) -> EnsembleConsistencyChecker:
         """Create an EnsembleConsistencyChecker instance.
@@ -186,7 +186,7 @@ class ChessVerificationFactory:
 
     def create_all_verifiers(
         self,
-        ensemble_agent: "ChessEnsembleAgent | None" = None,
+        ensemble_agent: ChessEnsembleAgent | None = None,
     ) -> dict[str, Any]:
         """Create all verification components.
 
@@ -235,7 +235,7 @@ class VerificationBuilder:
         self._agreement_threshold: float = 0.6
         self._divergence_threshold: float = 0.3
 
-    def with_settings(self, settings: Settings) -> "VerificationBuilder":
+    def with_settings(self, settings: Settings) -> VerificationBuilder:
         """Set the settings instance.
 
         Args:
@@ -247,7 +247,7 @@ class VerificationBuilder:
         self._settings = settings
         return self
 
-    def with_chess_config(self, config: ChessConfig) -> "VerificationBuilder":
+    def with_chess_config(self, config: ChessConfig) -> VerificationBuilder:
         """Set the chess configuration.
 
         Args:
@@ -259,7 +259,7 @@ class VerificationBuilder:
         self._chess_config = config
         return self
 
-    def with_encoding_validation(self, enabled: bool) -> "VerificationBuilder":
+    def with_encoding_validation(self, enabled: bool) -> VerificationBuilder:
         """Enable or disable encoding validation.
 
         Args:
@@ -271,7 +271,7 @@ class VerificationBuilder:
         self._validate_encoding = enabled
         return self
 
-    def with_legality_validation(self, enabled: bool) -> "VerificationBuilder":
+    def with_legality_validation(self, enabled: bool) -> VerificationBuilder:
         """Enable or disable legality validation.
 
         Args:
@@ -283,7 +283,7 @@ class VerificationBuilder:
         self._validate_legality = enabled
         return self
 
-    def with_terminal_verification(self, enabled: bool) -> "VerificationBuilder":
+    def with_terminal_verification(self, enabled: bool) -> VerificationBuilder:
         """Enable or disable terminal state verification.
 
         Args:
@@ -295,7 +295,7 @@ class VerificationBuilder:
         self._verify_terminal = enabled
         return self
 
-    def with_result_verification(self, enabled: bool) -> "VerificationBuilder":
+    def with_result_verification(self, enabled: bool) -> VerificationBuilder:
         """Enable or disable result verification.
 
         Args:
@@ -307,7 +307,7 @@ class VerificationBuilder:
         self._verify_result = enabled
         return self
 
-    def with_stop_on_first_error(self, enabled: bool) -> "VerificationBuilder":
+    def with_stop_on_first_error(self, enabled: bool) -> VerificationBuilder:
         """Enable or disable stopping on first error.
 
         Args:
@@ -319,7 +319,7 @@ class VerificationBuilder:
         self._stop_on_first_error = enabled
         return self
 
-    def with_logging(self, enabled: bool) -> "VerificationBuilder":
+    def with_logging(self, enabled: bool) -> VerificationBuilder:
         """Enable or disable validation logging.
 
         Args:
@@ -331,7 +331,7 @@ class VerificationBuilder:
         self._log_validations = enabled
         return self
 
-    def with_agreement_threshold(self, threshold: float) -> "VerificationBuilder":
+    def with_agreement_threshold(self, threshold: float) -> VerificationBuilder:
         """Set the agreement threshold for ensemble checking.
 
         Args:
@@ -343,7 +343,7 @@ class VerificationBuilder:
         self._agreement_threshold = threshold
         return self
 
-    def with_divergence_threshold(self, threshold: float) -> "VerificationBuilder":
+    def with_divergence_threshold(self, threshold: float) -> VerificationBuilder:
         """Set the divergence threshold for ensemble checking.
 
         Args:
@@ -403,7 +403,7 @@ class VerificationBuilder:
 
     def build_ensemble_checker(
         self,
-        ensemble_agent: "ChessEnsembleAgent | None" = None,
+        ensemble_agent: ChessEnsembleAgent | None = None,
     ) -> EnsembleConsistencyChecker:
         """Build an EnsembleConsistencyChecker with current configuration.
 

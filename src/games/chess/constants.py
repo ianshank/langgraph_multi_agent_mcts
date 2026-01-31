@@ -47,6 +47,17 @@ EN_PASSANT_RANKS: dict[bool, int] = {
     False: 2,  # Black: rank 3 (0-indexed as 2) - where White pawn was captured
 }
 
+# UUID short length for game IDs
+# Using 8 characters provides ~4 billion unique IDs before 50% collision probability
+UUID_SHORT_LENGTH: int = 8
+
+# Default verification thresholds (used when settings unavailable)
+DEFAULT_AGREEMENT_THRESHOLD: float = 0.6
+DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD: float = 0.3
+DEFAULT_ROUTING_THRESHOLD: float = 0.5
+DEFAULT_VALUE_DIVERGENCE_THRESHOLD: float = 0.2
+DEFAULT_CONFIDENCE: float = 0.5
+
 
 def get_fen_truncate_length(settings: Settings | None = None) -> int:
     """Get the FEN truncation length from settings or default.
@@ -187,6 +198,12 @@ __all__ = [
     "DEFAULT_STOCKFISH_EXECUTABLES",
     "CASTLING_MOVES",
     "EN_PASSANT_RANKS",
+    "UUID_SHORT_LENGTH",
+    "DEFAULT_AGREEMENT_THRESHOLD",
+    "DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD",
+    "DEFAULT_ROUTING_THRESHOLD",
+    "DEFAULT_VALUE_DIVERGENCE_THRESHOLD",
+    "DEFAULT_CONFIDENCE",
     "get_fen_truncate_length",
     "truncate_fen",
     "get_piece_values",

@@ -9,10 +9,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    from src.games.chess.config import AgentType, GamePhase
+from src.games.chess.constants import STARTING_FEN
 
 
 class MoveType(Enum):
@@ -204,7 +203,7 @@ class GameVerificationResult:
     move_sequence_result: MoveSequenceResult | None = None
 
     # Game metadata
-    initial_fen: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    initial_fen: str = STARTING_FEN
     final_fen: str | None = None
     total_moves: int = 0
     total_plies: int = 0
@@ -278,11 +277,7 @@ class EnsembleConsistencyResult:
         """Get list of agents that disagree with the ensemble decision."""
         if not self.ensemble_move:
             return []
-        return [
-            agent
-            for agent, move in self.agent_moves.items()
-            if move != self.ensemble_move
-        ]
+        return [agent for agent, move in self.agent_moves.items() if move != self.ensemble_move]
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for serialization."""

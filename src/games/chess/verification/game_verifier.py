@@ -19,7 +19,9 @@ from src.games.chess.constants import (
     EN_PASSANT_RANKS,
     INVALID_PAWN_RANKS,
     STARTING_FEN,
+    UUID_SHORT_LENGTH,
     get_piece_values,
+    truncate_fen,
 )
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.move_validator import MoveValidator, MoveValidatorConfig
@@ -127,7 +129,7 @@ class ChessGameVerifier:
             GameVerificationResult with verification details
         """
         start_time = time.perf_counter()
-        game_id = game_id or str(uuid.uuid4())[:8]
+        game_id = game_id or str(uuid.uuid4())[:UUID_SHORT_LENGTH]
         initial_fen = initial_fen or self.STARTING_FEN
         issues: list[VerificationIssue] = []
 
@@ -441,7 +443,7 @@ class ChessGameVerifier:
         """
         max_moves = max_moves or self._config.max_moves
         start_time = time.perf_counter()
-        game_id = str(uuid.uuid4())[:8]
+        game_id = str(uuid.uuid4())[:UUID_SHORT_LENGTH]
         issues: list[VerificationIssue] = []
         moves_played: list[str] = []
 
@@ -594,7 +596,7 @@ class ChessGameVerifier:
             # Invalid FEN format
             self._logger.warning(
                 "Invalid FEN when determining game result",
-                fen=final_fen[:40] if final_fen else "None",
+                fen=truncate_fen(final_fen) if final_fen else "None",
             )
             return GameResult.IN_PROGRESS
 
