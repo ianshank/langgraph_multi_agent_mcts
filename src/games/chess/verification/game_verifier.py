@@ -11,12 +11,16 @@ import logging
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    import chess
+import chess
 
-from src.games.chess.constants import STARTING_FEN, get_piece_values
+from src.games.chess.constants import (
+    EN_PASSANT_RANKS,
+    INVALID_PAWN_RANKS,
+    STARTING_FEN,
+    get_piece_values,
+)
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.move_validator import MoveValidator, MoveValidatorConfig
 from src.games.chess.verification.types import (
@@ -50,12 +54,9 @@ class GameVerifierConfig:
 
     # Logging
     log_verifications: bool = True
-    log_level: str = "INFO"
 
     # Move validator config
-    move_validator_config: MoveValidatorConfig = field(
-        default_factory=MoveValidatorConfig
-    )
+    move_validator_config: MoveValidatorConfig = field(default_factory=MoveValidatorConfig)
 
 
 class ChessGameVerifier:
@@ -161,10 +162,7 @@ class ChessGameVerifier:
                 issues.append(
                     VerificationIssue(
                         code="RESULT_MISMATCH",
-                        message=(
-                            f"Expected {expected_outcome.value}, "
-                            f"got {game_result.value}"
-                        ),
+                        message=(f"Expected {expected_outcome.value}, " f"got {game_result.value}"),
                         severity=VerificationSeverity.ERROR,
                         context={
                             "expected": expected_outcome.value,
@@ -215,8 +213,6 @@ class ChessGameVerifier:
         Returns:
             PositionVerificationResult with position validation
         """
-        import chess
-
         issues: list[VerificationIssue] = []
         extra_info: dict[str, Any] = {}
 
@@ -397,9 +393,7 @@ class ChessGameVerifier:
                 issues.append(
                     VerificationIssue(
                         code="EXCESSIVE_REPETITIONS",
-                        message=(
-                            f"Position repeated {self._config.max_repetitions} times"
-                        ),
+                        message=(f"Position repeated {self._config.max_repetitions} times"),
                         severity=VerificationSeverity.WARNING,
                         move_number=move_number,
                         fen=current_state.fen,
@@ -409,7 +403,8 @@ class ChessGameVerifier:
         validation_time_ms = (time.perf_counter() - start_time) * 1000
 
         return MoveSequenceResult(
-            is_valid=valid_moves == total_moves and not any(
+            is_valid=valid_moves == total_moves
+            and not any(
                 i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
                 for i in issues
             ),
@@ -502,7 +497,7 @@ class ChessGameVerifier:
 
     def _validate_position_checks(
         self,
-        board: "chess.Board",
+        board: chess.Board,
     ) -> dict[str, tuple[bool, str]]:
         """Run validation checks on a position.
 
@@ -512,8 +507,6 @@ class ChessGameVerifier:
         Returns:
             Dictionary of check name to (is_valid, message) tuples
         """
-        import chess
-
         checks: dict[str, tuple[bool, str]] = {}
 
         # Check king positions
@@ -532,7 +525,7 @@ class ChessGameVerifier:
         for color in [chess.WHITE, chess.BLACK]:
             for square in board.pieces(chess.PAWN, color):
                 rank = chess.square_rank(square)
-                if rank in [0, 7]:  # 1st or 8th rank
+                if rank in INVALID_PAWN_RANKS:
                     pawns_on_invalid_ranks = True
                     break
 
@@ -544,7 +537,8 @@ class ChessGameVerifier:
         # Check en passant square validity
         if board.ep_square is not None:
             ep_rank = chess.square_rank(board.ep_square)
-            expected_rank = 5 if board.turn == chess.WHITE else 2
+            is_white = board.turn == chess.WHITE
+            expected_rank = EN_PASSANT_RANKS[is_white]
             if ep_rank != expected_rank:
                 checks["en_passant"] = (
                     False,
@@ -560,19 +554,17 @@ class ChessGameVerifier:
         if board.castling_rights:
             # Check if the required pieces are in place
             if board.castling_rights & chess.BB_H1:
-                if (
-                    board.piece_at(chess.E1) != chess.Piece(chess.KING, chess.WHITE)
-                    or board.piece_at(chess.H1) != chess.Piece(chess.ROOK, chess.WHITE)
-                ):
+                if board.piece_at(chess.E1) != chess.Piece(
+                    chess.KING, chess.WHITE
+                ) or board.piece_at(chess.H1) != chess.Piece(chess.ROOK, chess.WHITE):
                     checks["castling_rights"] = (
                         False,
                         "White kingside castling rights but pieces not in place",
                     )
             if board.castling_rights & chess.BB_A1:
-                if (
-                    board.piece_at(chess.E1) != chess.Piece(chess.KING, chess.WHITE)
-                    or board.piece_at(chess.A1) != chess.Piece(chess.ROOK, chess.WHITE)
-                ):
+                if board.piece_at(chess.E1) != chess.Piece(
+                    chess.KING, chess.WHITE
+                ) or board.piece_at(chess.A1) != chess.Piece(chess.ROOK, chess.WHITE):
                     checks["castling_rights"] = (
                         False,
                         "White queenside castling rights but pieces not in place",
@@ -608,7 +600,7 @@ class ChessGameVerifier:
 
     def _get_game_result_from_board(
         self,
-        board: "chess.Board",
+        board: chess.Board,
     ) -> GameResult:
         """Get game result from a chess board.
 
@@ -618,8 +610,6 @@ class ChessGameVerifier:
         Returns:
             GameResult enum value
         """
-        import chess
-
         if not board.is_game_over():
             return GameResult.IN_PROGRESS
 
@@ -646,7 +636,7 @@ class ChessGameVerifier:
 
     def _calculate_material_balance(
         self,
-        board: "chess.Board",
+        board: chess.Board,
     ) -> int:
         """Calculate material balance from white's perspective.
 
@@ -658,8 +648,6 @@ class ChessGameVerifier:
         Returns:
             Material balance in centipawns
         """
-        import chess
-
         # Get piece values from centralized configuration
         piece_values = get_piece_values()
 

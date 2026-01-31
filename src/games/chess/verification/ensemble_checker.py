@@ -37,8 +37,9 @@ class EnsembleCheckerConfig:
     # Thresholds (defaults loaded from settings)
     agreement_threshold: float | None = None
     confidence_divergence_threshold: float | None = None
-    value_divergence_threshold: float = 0.2
+    value_divergence_threshold: float | None = None
     routing_threshold: float | None = None
+    default_confidence: float | None = None
 
     # Routing expectations by phase
     opening_expected_agent: AgentType = AgentType.HRM
@@ -51,7 +52,6 @@ class EnsembleCheckerConfig:
 
     # Logging
     log_checks: bool = True
-    log_level: str = "DEBUG"
 
     def __post_init__(self) -> None:
         """Load defaults from settings if not explicitly provided."""
@@ -72,6 +72,14 @@ class EnsembleCheckerConfig:
                 self.routing_threshold = getattr(
                     settings, "CHESS_VERIFICATION_ROUTING_THRESHOLD", 0.5
                 )
+            if self.value_divergence_threshold is None:
+                self.value_divergence_threshold = getattr(
+                    settings, "CHESS_VERIFICATION_VALUE_DIVERGENCE_THRESHOLD", 0.2
+                )
+            if self.default_confidence is None:
+                self.default_confidence = getattr(
+                    settings, "CHESS_VERIFICATION_DEFAULT_CONFIDENCE", 0.5
+                )
         except (ImportError, RuntimeError, OSError):
             # Fallback to defaults if settings unavailable
             # ImportError: settings module not found
@@ -83,6 +91,10 @@ class EnsembleCheckerConfig:
                 self.confidence_divergence_threshold = 0.3
             if self.routing_threshold is None:
                 self.routing_threshold = 0.5
+            if self.value_divergence_threshold is None:
+                self.value_divergence_threshold = 0.2
+            if self.default_confidence is None:
+                self.default_confidence = 0.5
 
 
 class EnsembleConsistencyChecker:
@@ -189,12 +201,11 @@ class EnsembleConsistencyChecker:
                 state_fen=state.fen,
                 issues=issues,
             )
-        except Exception as e:
+        except Exception:
             # Log unexpected errors for debugging and re-raise
+            # exception() automatically captures error details and traceback
             self._logger.exception(
                 "Unexpected error in ensemble execution",
-                error=str(e),
-                error_type=type(e).__name__,
                 fen=truncate_fen(state.fen),
             )
             raise
@@ -449,8 +460,9 @@ class EnsembleConsistencyChecker:
             # Move agreement component
             move_matches = 1.0 if agent_move == ensemble_move else 0.0
 
-            # Confidence component
-            confidence = agent_confidences.get(agent_name, 0.5)
+            # Confidence component (use config default if not provided)
+            default_conf = self._config.default_confidence or 0.5
+            confidence = agent_confidences.get(agent_name, default_conf)
 
             # Divergence: high when agent is confident but wrong
             if move_matches:

@@ -9,13 +9,13 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    import chess
+import chess
 
 from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import ChessActionSpaceConfig
+from src.games.chess.constants import CASTLING_MOVES
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.types import (
     MoveType,
@@ -43,7 +43,6 @@ class MoveValidatorConfig:
 
     # Logging
     log_validations: bool = False
-    log_level: str = "DEBUG"
 
 
 class MoveValidator:
@@ -103,8 +102,6 @@ class MoveValidator:
         Returns:
             MoveValidationResult with validation details
         """
-        import chess
-
         extra_info: dict[str, Any] = {}
 
         # Parse the move using centralized helper
@@ -209,26 +206,14 @@ class MoveValidator:
         Returns:
             MoveValidationResult with castling-specific validation
         """
-        import chess
-
         issues: list[VerificationIssue] = []
         extra_info: dict[str, Any] = {"castling_type": "kingside" if kingside else "queenside"}
 
-        # Determine the castling move based on side to move
-        if state.board.turn == chess.WHITE:
-            if kingside:
-                move_uci = "e1g1"
-                move = chess.Move.from_uci(move_uci)
-            else:
-                move_uci = "e1c1"
-                move = chess.Move.from_uci(move_uci)
-        else:
-            if kingside:
-                move_uci = "e8g8"
-                move = chess.Move.from_uci(move_uci)
-            else:
-                move_uci = "e8c8"
-                move = chess.Move.from_uci(move_uci)
+        # Determine the castling move using centralized constants
+        # Key is (is_white, is_kingside)
+        is_white = state.board.turn == chess.WHITE
+        move_uci = CASTLING_MOVES[(is_white, kingside)]
+        move = chess.Move.from_uci(move_uci)
 
         # Check if castling rights exist
         if kingside:
@@ -301,8 +286,6 @@ class MoveValidator:
         Returns:
             MoveValidationResult with en passant-specific validation
         """
-        import chess
-
         extra_info: dict[str, Any] = {"move_type": "en_passant"}
 
         # Parse the move using centralized helper
@@ -367,8 +350,6 @@ class MoveValidator:
         Returns:
             MoveValidationResult with promotion-specific validation
         """
-        import chess
-
         extra_info: dict[str, Any] = {"move_type": "promotion"}
 
         # Parse the move using centralized helper
@@ -577,8 +558,6 @@ class MoveValidator:
         Returns:
             Chess move or None if invalid
         """
-        import chess
-
         try:
             return chess.Move.from_uci(move_uci)
         except ValueError:
@@ -600,8 +579,6 @@ class MoveValidator:
         Returns:
             Tuple of (parsed move or None, list of issues)
         """
-        import chess
-
         issues: list[VerificationIssue] = []
         try:
             move = chess.Move.from_uci(move_uci)

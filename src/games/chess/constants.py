@@ -31,6 +31,22 @@ DEFAULT_STOCKFISH_EXECUTABLES: tuple[str, ...] = (
     "stockfish-windows-x86-64-avx2.exe",
 )
 
+# Castling move UCI strings by (color, is_kingside)
+# These are determined by standard chess rules and square positions
+CASTLING_MOVES: dict[tuple[bool, bool], str] = {
+    (True, True): "e1g1",  # White kingside (O-O)
+    (True, False): "e1c1",  # White queenside (O-O-O)
+    (False, True): "e8g8",  # Black kingside (O-O)
+    (False, False): "e8c8",  # Black queenside (O-O-O)
+}
+
+# En passant capture ranks (0-indexed)
+# These are the ranks where en passant capture squares appear
+EN_PASSANT_RANKS: dict[bool, int] = {
+    True: 5,  # White: rank 6 (0-indexed as 5) - where Black pawn was captured
+    False: 2,  # Black: rank 3 (0-indexed as 2) - where White pawn was captured
+}
+
 
 def get_fen_truncate_length(settings: Settings | None = None) -> int:
     """Get the FEN truncation length from settings or default.
@@ -169,6 +185,8 @@ __all__ = [
     "DEFAULT_FEN_LOG_TRUNCATE_LENGTH",
     "INVALID_PAWN_RANKS",
     "DEFAULT_STOCKFISH_EXECUTABLES",
+    "CASTLING_MOVES",
+    "EN_PASSANT_RANKS",
     "get_fen_truncate_length",
     "truncate_fen",
     "get_piece_values",
