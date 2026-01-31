@@ -7,6 +7,7 @@ chess gameplay operations.
 
 from __future__ import annotations
 
+import asyncio
 import functools
 import time
 from typing import TYPE_CHECKING, Any, Callable, TypeVar
@@ -16,6 +17,7 @@ if TYPE_CHECKING:
     from src.games.chess.verification import ChessVerificationFactory
 
 from src.games.chess.observability.logger import get_chess_logger
+from src.games.chess.observability.metrics import ChessMetricsCollector
 from src.observability.logging import get_correlation_id
 
 F = TypeVar("F", bound=Callable[..., Any])
@@ -123,8 +125,6 @@ def traced_move_selection(func: F) -> F:
             )
             raise
 
-    import asyncio
-
     if asyncio.iscoroutinefunction(func):
         return async_wrapper  # type: ignore
     return sync_wrapper  # type: ignore
@@ -196,8 +196,6 @@ def verified_game_play(verification_level: str = "full") -> Callable[[F], F]:
 
             return result
 
-        import asyncio
-
         if asyncio.iscoroutinefunction(func):
             return async_wrapper  # type: ignore
         return sync_wrapper  # type: ignore
@@ -229,10 +227,8 @@ def with_verification_context(
     def decorator(func: F) -> F:
         @functools.wraps(func)
         async def async_wrapper(*args: Any, **kwargs: Any) -> Any:
-            from src.games.chess.observability.metrics import ChessMetricsCollector
-
             logger = get_chess_logger("verification")
-            metrics = ChessMetricsCollector() if collect_metrics else None
+            metrics = ChessMetricsCollector.get_instance() if collect_metrics else None
 
             # Set up context
             correlation_id = get_correlation_id()
@@ -253,6 +249,20 @@ def with_verification_context(
 
                 elapsed_ms = (time.perf_counter() - start_time) * 1000
 
+                # Record metrics if enabled
+                if metrics is not None:
+                    # Try to extract game info from result
+                    game_id = getattr(result, "game_id", None) or "unknown"
+                    is_valid = getattr(result, "is_valid", True)
+                    total_moves = getattr(result, "total_moves", 0)
+
+                    metrics.record_game_verification(
+                        game_id=game_id,
+                        success=is_valid,
+                        duration_ms=elapsed_ms,
+                        moves_count=total_moves,
+                    )
+
                 logger.debug(
                     "Verification context completed",
                     function=func.__name__,
@@ -265,10 +275,15 @@ def with_verification_context(
             except Exception as e:
                 elapsed_ms = (time.perf_counter() - start_time) * 1000
 
+                # Record failure metrics
+                if metrics is not None:
+                    metrics.record_verification_error("execution_error")
+
                 logger.error(
                     "Verification context failed",
                     function=func.__name__,
                     error=str(e),
+                    error_type=type(e).__name__,
                     duration_ms=round(elapsed_ms, 2),
                     correlation_id=correlation_id,
                 )
@@ -305,8 +320,6 @@ def with_verification_context(
                     correlation_id=correlation_id,
                 )
                 raise
-
-        import asyncio
 
         if asyncio.iscoroutinefunction(func):
             return async_wrapper  # type: ignore
@@ -364,8 +377,6 @@ def timed_verification(operation_name: str | None = None) -> Callable[[F], F]:
             )
 
             return result
-
-        import asyncio
 
         if asyncio.iscoroutinefunction(func):
             return async_wrapper  # type: ignore

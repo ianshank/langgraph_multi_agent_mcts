@@ -14,8 +14,9 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    pass
+    import chess
 
+from src.games.chess.constants import STARTING_FEN, get_piece_values
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.move_validator import MoveValidator, MoveValidatorConfig
 from src.games.chess.verification.types import (
@@ -74,8 +75,8 @@ class ChessGameVerifier:
         >>> print(result.is_valid)
     """
 
-    # Starting FEN as class constant (not hardcoded in methods)
-    STARTING_FEN: str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+    # Starting FEN uses centralized constant
+    DEFAULT_STARTING_FEN: str = STARTING_FEN
 
     def __init__(
         self,
@@ -314,13 +315,15 @@ class ChessGameVerifier:
         # Create starting position
         try:
             state = ChessGameState.from_fen(initial_fen)
-        except Exception as e:
+        except ValueError as e:
+            # FEN parsing error
             issues.append(
                 VerificationIssue(
                     code="INVALID_INITIAL_FEN",
-                    message=f"Cannot create state from FEN: {e}",
+                    message=f"Invalid FEN format: {e}",
                     severity=VerificationSeverity.CRITICAL,
                     fen=initial_fen,
+                    context={"error_type": "ValueError"},
                 )
             )
             return MoveSequenceResult(
@@ -595,7 +598,12 @@ class ChessGameVerifier:
         try:
             state = ChessGameState.from_fen(final_fen)
             return self._get_game_result_from_board(state.board)
-        except Exception:
+        except ValueError:
+            # Invalid FEN format
+            self._logger.warning(
+                "Invalid FEN when determining game result",
+                fen=final_fen[:40] if final_fen else "None",
+            )
             return GameResult.IN_PROGRESS
 
     def _get_game_result_from_board(
@@ -642,6 +650,8 @@ class ChessGameVerifier:
     ) -> int:
         """Calculate material balance from white's perspective.
 
+        Uses piece values from settings for configurability.
+
         Args:
             board: Chess board
 
@@ -650,13 +660,8 @@ class ChessGameVerifier:
         """
         import chess
 
-        piece_values = {
-            chess.PAWN: 100,
-            chess.KNIGHT: 320,
-            chess.BISHOP: 330,
-            chess.ROOK: 500,
-            chess.QUEEN: 900,
-        }
+        # Get piece values from centralized configuration
+        piece_values = get_piece_values()
 
         balance = 0
         for piece_type, value in piece_values.items():

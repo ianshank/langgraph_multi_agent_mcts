@@ -391,9 +391,9 @@ class TestBuilderBenchmarks:
         """Benchmark: Position builder throughput."""
 
         def build_positions() -> None:
-            ChessPositionBuilder().opening_position().build()
-            ChessPositionBuilder().middlegame_position().build()
-            ChessPositionBuilder().endgame_position().build()
+            ChessPositionBuilder().with_initial_position().build()
+            ChessPositionBuilder().with_middlegame().build()
+            ChessPositionBuilder().with_endgame().build()
 
         stats = benchmark(build_positions, iterations=100, warmup=10)
 
@@ -408,9 +408,9 @@ class TestBuilderBenchmarks:
         """Benchmark: Sequence builder throughput."""
 
         def build_sequences() -> None:
-            ChessGameSequenceBuilder().scholars_mate().build()
-            ChessGameSequenceBuilder().fools_mate().build()
-            ChessGameSequenceBuilder().italian_game().build()
+            ChessGameSequenceBuilder().with_opening("scholars_mate").build()
+            ChessGameSequenceBuilder().with_opening("fools_mate").build()
+            ChessGameSequenceBuilder().with_opening("italian_game").build()
 
         stats = benchmark(build_sequences, iterations=100, warmup=10)
 

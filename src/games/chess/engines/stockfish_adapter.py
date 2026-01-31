@@ -7,17 +7,18 @@ for analysis and evaluation.
 
 from __future__ import annotations
 
-import logging
 import os
 import shutil
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    import logging
+
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
 from src.games.chess.state import ChessGameState
-from src.observability.logging import get_structured_logger
+from src.observability.logging import StructuredLogger, get_structured_logger
 
 
 @dataclass
@@ -123,13 +124,13 @@ class StockfishAdapter:
     def __init__(
         self,
         config: StockfishConfig | None = None,
-        logger: logging.Logger | None = None,
+        logger: "StructuredLogger | logging.Logger | None" = None,
     ) -> None:
         """Initialize the Stockfish adapter.
 
         Args:
             config: Stockfish configuration
-            logger: Optional logger instance
+            logger: Optional logger instance (StructuredLogger preferred)
         """
         self._config = config or StockfishConfig()
         self._logger = logger or get_structured_logger("chess.engines.stockfish")

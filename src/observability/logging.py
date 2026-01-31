@@ -310,6 +310,28 @@ def setup_logging(
                 "level": log_level,
                 "propagate": True,
             },
+            # Chess verification loggers
+            "chess": {
+                "handlers": ["console"],
+                "level": log_level,
+                "propagate": False,
+            },
+            "chess.verification": {
+                "level": log_level,
+                "propagate": True,
+            },
+            "chess.engines": {
+                "level": log_level,
+                "propagate": True,
+            },
+            "chess.observability": {
+                "level": log_level,
+                "propagate": True,
+            },
+            "chess.move_selection": {
+                "level": log_level,
+                "propagate": True,
+            },
             # Third-party loggers (quieter)
             "httpx": {
                 "level": "WARNING",

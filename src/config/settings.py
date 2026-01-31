@@ -343,6 +343,104 @@ class Settings(BaseSettings):
         default=50, ge=1, le=500, description="Maximum MCTS rollout depth"
     )
 
+    # ========================================
+    # Chess / Stockfish Engine Configuration
+    # ========================================
+
+    STOCKFISH_PATH: str | None = Field(
+        default=None, description="Path to Stockfish executable (auto-detected if not set)"
+    )
+
+    STOCKFISH_HASH_SIZE_MB: int = Field(
+        default=128, ge=1, le=4096, description="Stockfish hash table size in MB"
+    )
+
+    STOCKFISH_THREADS: int = Field(
+        default=1, ge=1, le=64, description="Stockfish thread count"
+    )
+
+    STOCKFISH_DEFAULT_DEPTH: int = Field(
+        default=20, ge=1, le=100, description="Stockfish default search depth"
+    )
+
+    STOCKFISH_TIME_LIMIT_MS: int = Field(
+        default=1000, ge=100, le=60000, description="Stockfish time limit per move in ms"
+    )
+
+    STOCKFISH_MULTIPV: int = Field(
+        default=1, ge=1, le=10, description="Stockfish multi-PV lines to analyze"
+    )
+
+    # ========================================
+    # Chess Verification Configuration
+    # ========================================
+
+    CHESS_VERIFICATION_AGREEMENT_THRESHOLD: float = Field(
+        default=0.6, ge=0.0, le=1.0, description="Ensemble agent agreement threshold"
+    )
+
+    CHESS_VERIFICATION_DIVERGENCE_THRESHOLD: float = Field(
+        default=0.3, ge=0.0, le=1.0, description="Agent divergence threshold"
+    )
+
+    CHESS_VERIFICATION_ROUTING_THRESHOLD: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Routing consistency threshold"
+    )
+
+    CHESS_VERIFICATION_LOG_VALIDATIONS: bool = Field(
+        default=False, description="Log individual move validations (verbose)"
+    )
+
+    # Chess Phase-Specific Routing Scores
+    CHESS_ROUTING_SCORE_MATCH: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="Score when primary agent matches expected"
+    )
+
+    CHESS_ROUTING_SCORE_MIDDLEGAME_FALLBACK: float = Field(
+        default=0.7, ge=0.0, le=1.0, description="Fallback score in middlegame"
+    )
+
+    CHESS_ROUTING_SCORE_PHASE_APPROPRIATE: float = Field(
+        default=0.8, ge=0.0, le=1.0, description="Score for phase-appropriate agent choice"
+    )
+
+    CHESS_ROUTING_SCORE_PHASE_MISMATCH: float = Field(
+        default=0.4, ge=0.0, le=1.0, description="Score for phase-mismatched agent choice"
+    )
+
+    CHESS_ROUTING_SCORE_DEFAULT: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Default routing score"
+    )
+
+    # ========================================
+    # Chess Piece Values (Centipawns)
+    # ========================================
+
+    CHESS_PIECE_VALUE_PAWN: int = Field(
+        default=100, ge=50, le=200, description="Pawn value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_KNIGHT: int = Field(
+        default=320, ge=250, le=400, description="Knight value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_BISHOP: int = Field(
+        default=330, ge=250, le=400, description="Bishop value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_ROOK: int = Field(
+        default=500, ge=400, le=600, description="Rook value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_QUEEN: int = Field(
+        default=900, ge=800, le=1100, description="Queen value in centipawns"
+    )
+
+    # Chess FEN Logging Configuration
+    CHESS_FEN_LOG_TRUNCATE_LENGTH: int = Field(
+        default=40, ge=20, le=100, description="FEN truncation length for logging"
+    )
+
     @field_validator("OPENAI_API_KEY")
     @classmethod
     def validate_openai_key_format(cls, v: SecretStr | None) -> SecretStr | None:

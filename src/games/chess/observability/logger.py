@@ -18,6 +18,7 @@ if TYPE_CHECKING:
         MoveValidationResult,
     )
 
+from src.games.chess.constants import truncate_fen
 from src.observability.logging import (
     StructuredLogger,
     get_correlation_id,
@@ -85,8 +86,8 @@ class ChessVerificationLogger(StructuredLogger):
             result: Validation result
             **extra: Additional context
         """
-        # Truncate FEN for logging
-        fen_short = state_fen[:40] + "..." if len(state_fen) > 40 else state_fen
+        # Truncate FEN for logging using centralized function
+        fen_short = truncate_fen(state_fen)
 
         self.debug(
             f"Move validation: {move}",
@@ -115,7 +116,7 @@ class ChessVerificationLogger(StructuredLogger):
             agent_responses: Responses from all agents
             **extra: Additional context
         """
-        fen_short = state_fen[:40] + "..." if len(state_fen) > 40 else state_fen
+        fen_short = truncate_fen(state_fen)
 
         agent_moves = {
             name: response.move
@@ -149,7 +150,7 @@ class ChessVerificationLogger(StructuredLogger):
             divergence_details: Details about the divergence
             **extra: Additional context
         """
-        fen_short = state_fen[:40] + "..." if len(state_fen) > 40 else state_fen
+        fen_short = truncate_fen(state_fen)
 
         self.warning(
             "Agent divergence detected",

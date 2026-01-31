@@ -7,13 +7,15 @@ in a consistent, testable, and modular way.
 
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
+    import logging
+
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
 from src.config.settings import Settings, get_settings
+from src.observability.logging import StructuredLogger, get_structured_logger
 from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import ChessActionSpaceConfig, ChessConfig
 from src.games.chess.verification.ensemble_checker import (
@@ -47,7 +49,7 @@ class ChessVerificationFactory:
         self,
         settings: Settings | None = None,
         chess_config: ChessConfig | None = None,
-        logger: logging.Logger | None = None,
+        logger: "StructuredLogger | logging.Logger | None" = None,
     ) -> None:
         """Initialize the verification factory.
 
@@ -58,7 +60,7 @@ class ChessVerificationFactory:
         """
         self._settings = settings or get_settings()
         self._chess_config = chess_config
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_structured_logger("chess.verification.factory")
 
         # Cache for reusable components
         self._action_encoder: ChessActionEncoder | None = None

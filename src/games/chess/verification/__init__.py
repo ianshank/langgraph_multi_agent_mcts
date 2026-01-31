@@ -35,6 +35,7 @@ from src.games.chess.verification.protocols import (
     ChessGameVerifierProtocol,
     EnsembleConsistencyCheckerProtocol,
     MoveValidatorProtocol,
+    SubAgentVerifierProtocol,
 )
 from src.games.chess.verification.types import (
     BatchVerificationResult,
@@ -54,6 +55,7 @@ __all__ = [
     "MoveValidatorProtocol",
     "ChessGameVerifierProtocol",
     "EnsembleConsistencyCheckerProtocol",
+    "SubAgentVerifierProtocol",  # Reserved for future use
     # Components
     "MoveValidator",
     "MoveValidatorConfig",

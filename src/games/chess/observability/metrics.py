@@ -117,21 +117,52 @@ class PhaseRoutingStats:
 class ChessMetricsCollector:
     """Extended metrics collector for chess verification.
 
+    Uses singleton pattern for consistent metrics collection across
+    the application.
+
     Collects and aggregates chess-specific metrics including:
     - Verification statistics
     - Agent routing statistics by phase
     - Performance timing
 
     Example:
-        >>> collector = ChessMetricsCollector()
+        >>> collector = ChessMetricsCollector.get_instance()
         >>> collector.record_game_verification("game_001", True, 150.0, 40)
         >>> report = collector.get_verification_report()
     """
 
+    _instance: "ChessMetricsCollector | None" = None
+
+    def __new__(cls) -> "ChessMetricsCollector":
+        """Create or return singleton instance."""
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._initialized = False
+        return cls._instance
+
     def __init__(self) -> None:
-        """Initialize the metrics collector."""
+        """Initialize the metrics collector (only once)."""
+        if getattr(self, "_initialized", False):
+            return
         self._verification_metrics = ChessVerificationMetrics()
         self._phase_routing_stats: dict[str, PhaseRoutingStats] = {}
+        self._initialized = True
+
+    @classmethod
+    def get_instance(cls) -> "ChessMetricsCollector":
+        """Get the singleton instance.
+
+        Returns:
+            ChessMetricsCollector: The singleton instance
+        """
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    @classmethod
+    def reset_instance(cls) -> None:
+        """Reset the singleton instance (useful for testing)."""
+        cls._instance = None
 
     @property
     def verification_metrics(self) -> ChessVerificationMetrics:

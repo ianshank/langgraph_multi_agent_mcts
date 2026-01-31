@@ -214,19 +214,15 @@ class TestChessGameVerifier:
         assert result.valid_moves == 1  # Only e2e4 was valid
 
     @pytest.mark.unit
-    def test_game_result_summary(self, verifier: ChessGameVerifier) -> None:
+    @pytest.mark.asyncio
+    async def test_game_result_summary(self, verifier: ChessGameVerifier) -> None:
         """Test GameVerificationResult summary generation."""
-        import asyncio
+        moves = ["e2e4", "e7e5", "g1f3"]
+        result = await verifier.verify_full_game(moves=moves)
+        summary = result.summary()
 
-        async def run_test():
-            moves = ["e2e4", "e7e5", "g1f3"]
-            result = await verifier.verify_full_game(moves=moves)
-            summary = result.summary()
-
-            assert "VALID" in summary or "INVALID" in summary
-            assert str(len(moves)) in summary
-
-        asyncio.run(run_test())
+        assert "VALID" in summary or "INVALID" in summary
+        assert str(len(moves)) in summary
 
     @pytest.mark.unit
     def test_factory_function(self) -> None:

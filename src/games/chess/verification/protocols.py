@@ -245,6 +245,11 @@ class SubAgentVerifierProtocol(Protocol):
     """Protocol for sub-agent specific verification.
 
     Implementations verify HRM, TRM, or MCTS agent behavior.
+
+    Note:
+        This protocol is designed for future use when individual
+        sub-agent verification is implemented. Currently reserved
+        for forward compatibility.
     """
 
     async def verify_agent_response(

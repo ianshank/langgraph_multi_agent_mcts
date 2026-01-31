@@ -18,6 +18,7 @@ if TYPE_CHECKING:
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
 from src.games.chess.config import AgentType, GamePhase
+from src.games.chess.constants import STARTING_FEN, get_routing_scores
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.types import (
     EnsembleConsistencyResult,
@@ -31,13 +32,15 @@ from src.observability.logging import get_structured_logger
 class EnsembleCheckerConfig:
     """Configuration for ensemble consistency checking.
 
-    All parameters are configurable - no hardcoded values.
+    All parameters are configurable via settings - no hardcoded values.
+    Defaults are loaded from settings if available.
     """
 
-    # Thresholds
-    agreement_threshold: float = 0.6
-    confidence_divergence_threshold: float = 0.3
+    # Thresholds (defaults loaded from settings)
+    agreement_threshold: float | None = None
+    confidence_divergence_threshold: float | None = None
     value_divergence_threshold: float = 0.2
+    routing_threshold: float | None = None
 
     # Routing expectations by phase
     opening_expected_agent: AgentType = AgentType.HRM
@@ -51,6 +54,33 @@ class EnsembleCheckerConfig:
     # Logging
     log_checks: bool = True
     log_level: str = "DEBUG"
+
+    def __post_init__(self) -> None:
+        """Load defaults from settings if not explicitly provided."""
+        try:
+            from src.config.settings import get_settings
+            settings = get_settings()
+
+            if self.agreement_threshold is None:
+                self.agreement_threshold = getattr(
+                    settings, "CHESS_VERIFICATION_AGREEMENT_THRESHOLD", 0.6
+                )
+            if self.confidence_divergence_threshold is None:
+                self.confidence_divergence_threshold = getattr(
+                    settings, "CHESS_VERIFICATION_DIVERGENCE_THRESHOLD", 0.3
+                )
+            if self.routing_threshold is None:
+                self.routing_threshold = getattr(
+                    settings, "CHESS_VERIFICATION_ROUTING_THRESHOLD", 0.5
+                )
+        except Exception:
+            # Fallback to defaults if settings unavailable
+            if self.agreement_threshold is None:
+                self.agreement_threshold = 0.6
+            if self.confidence_divergence_threshold is None:
+                self.confidence_divergence_threshold = 0.3
+            if self.routing_threshold is None:
+                self.routing_threshold = 0.5
 
 
 class EnsembleConsistencyChecker:
@@ -144,12 +174,14 @@ class EnsembleConsistencyChecker:
                 temperature=0.0,
                 use_ensemble=True,
             )
-        except Exception as e:
+        except (ValueError, RuntimeError, AttributeError) as e:
+            # Handle known error types specifically
             issues.append(
                 VerificationIssue(
                     code="ENSEMBLE_EXECUTION_FAILED",
                     message=f"Failed to get ensemble response: {e}",
                     severity=VerificationSeverity.ERROR,
+                    context={"error_type": type(e).__name__},
                 )
             )
             return EnsembleConsistencyResult(
@@ -157,6 +189,15 @@ class EnsembleConsistencyChecker:
                 state_fen=state.fen,
                 issues=issues,
             )
+        except Exception as e:
+            # Log unexpected errors for debugging and re-raise
+            self._logger.exception(
+                "Unexpected error in ensemble execution",
+                error=str(e),
+                error_type=type(e).__name__,
+                fen=state.fen[:40],
+            )
+            raise
 
         # Extract agent responses
         agent_moves: dict[str, str] = {}
@@ -229,8 +270,8 @@ class EnsembleConsistencyChecker:
                     )
                 )
 
-        # Check routing appropriateness
-        if routing_consistency < 0.5:
+        # Check routing appropriateness using configurable threshold
+        if routing_consistency < self._config.routing_threshold:
             issues.append(
                 VerificationIssue(
                     code="INAPPROPRIATE_ROUTING",
@@ -316,11 +357,8 @@ class EnsembleConsistencyChecker:
         Returns:
             List of EnsembleConsistencyResult for each position
         """
-        # Create states from moves
-        initial_fen = (
-            initial_fen
-            or "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-        )
+        # Create states from moves using centralized starting position
+        initial_fen = initial_fen or STARTING_FEN
         states: list[ChessGameState] = []
 
         current_state = ChessGameState.from_fen(initial_fen)
@@ -437,6 +475,8 @@ class EnsembleConsistencyChecker:
     ) -> float:
         """Check if routing decision is appropriate for position.
 
+        Uses configurable routing scores from settings.
+
         Args:
             state: Chess position
             primary_agent: Selected primary agent
@@ -446,29 +486,32 @@ class EnsembleConsistencyChecker:
         """
         game_phase = state.get_game_phase()
 
+        # Get routing scores from settings
+        scores = get_routing_scores()
+
         # Get expected agent for phase
         expected_agent = self._get_expected_agent_for_phase(game_phase)
 
         # Score based on match
         if primary_agent == expected_agent:
-            return 1.0
+            return scores["match"]
 
         # Partial credit for reasonable alternatives
         if game_phase == GamePhase.MIDDLEGAME:
             # Any agent is reasonable in middlegame
-            return 0.7
+            return scores["middlegame_fallback"]
         elif game_phase == GamePhase.OPENING:
             # HRM or MCTS are reasonable
             if primary_agent in (AgentType.HRM, AgentType.MCTS):
-                return 0.8
-            return 0.4
+                return scores["phase_appropriate"]
+            return scores["phase_mismatch"]
         elif game_phase == GamePhase.ENDGAME:
             # TRM or MCTS are reasonable
             if primary_agent in (AgentType.TRM, AgentType.MCTS):
-                return 0.8
-            return 0.4
+                return scores["phase_appropriate"]
+            return scores["phase_mismatch"]
 
-        return 0.5
+        return scores["default"]
 
     def _get_expected_agent_for_phase(
         self,
