@@ -17,6 +17,10 @@ if TYPE_CHECKING:
 from src.config.settings import LogLevel, Settings, get_settings
 from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import ChessActionSpaceConfig, ChessConfig
+from src.games.chess.constants import (
+    DEFAULT_AGREEMENT_THRESHOLD,
+    DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD,
+)
 from src.games.chess.verification.ensemble_checker import (
     EnsembleCheckerConfig,
     EnsembleConsistencyChecker,
@@ -232,8 +236,8 @@ class VerificationBuilder:
         self._verify_result: bool = True
         self._stop_on_first_error: bool = False
         self._log_validations: bool = False
-        self._agreement_threshold: float = 0.6
-        self._divergence_threshold: float = 0.3
+        self._agreement_threshold: float = DEFAULT_AGREEMENT_THRESHOLD
+        self._divergence_threshold: float = DEFAULT_CONFIDENCE_DIVERGENCE_THRESHOLD
 
     def with_settings(self, settings: Settings) -> VerificationBuilder:
         """Set the settings instance.

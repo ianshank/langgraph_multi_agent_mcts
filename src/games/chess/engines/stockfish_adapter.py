@@ -39,6 +39,7 @@ class StockfishConfig:
 
     # Analysis settings
     default_depth: int = 20
+    comparison_depth: int = 15  # Lower depth for faster agent comparison
     time_limit_ms: int = 1000
     multipv: int = 1
 
@@ -345,8 +346,10 @@ class StockfishAdapter:
                     response = await agent.get_best_move(state, temperature=0.0)
                     move = response.best_move
 
-                    # Compare with Stockfish
-                    sf_analysis = await self.analyze_position(state, depth=15)
+                    # Compare with Stockfish (using comparison_depth for faster evaluation)
+                    sf_analysis = await self.analyze_position(
+                        state, depth=self._config.comparison_depth
+                    )
                     if sf_analysis.best_move:
                         total_move_diff += abs(
                             response.value_estimate - sf_analysis.evaluation_score
@@ -363,23 +366,25 @@ class StockfishAdapter:
                 state = state.apply_action(move)
 
             # Determine game result
+            result_str = "incomplete"
             if state.is_terminal():
                 reward = state.get_reward(1 if agent_plays_white else -1)
                 if reward > 0:
                     agent_wins += 1
+                    result_str = "agent_win"
                 elif reward < 0:
                     stockfish_wins += 1
+                    result_str = "stockfish_win"
                 else:
                     draws += 1
+                    result_str = "draw"
 
             games.append(
                 {
                     "game_num": game_num,
                     "agent_color": "white" if agent_plays_white else "black",
                     "moves": game_moves,
-                    "result": (
-                        "agent_win" if reward > 0 else "stockfish_win" if reward < 0 else "draw"
-                    ),
+                    "result": result_str,
                 }
             )
 

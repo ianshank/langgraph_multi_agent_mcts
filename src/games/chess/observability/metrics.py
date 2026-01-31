@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    from src.games.chess.config import AgentType, GamePhase
+    pass
 
 
 @dataclass
@@ -131,9 +131,9 @@ class ChessMetricsCollector:
         >>> report = collector.get_verification_report()
     """
 
-    _instance: "ChessMetricsCollector | None" = None
+    _instance: ChessMetricsCollector | None = None
 
-    def __new__(cls) -> "ChessMetricsCollector":
+    def __new__(cls) -> ChessMetricsCollector:
         """Create or return singleton instance."""
         if cls._instance is None:
             cls._instance = super().__new__(cls)
@@ -149,7 +149,7 @@ class ChessMetricsCollector:
         self._initialized = True
 
     @classmethod
-    def get_instance(cls) -> "ChessMetricsCollector":
+    def get_instance(cls) -> ChessMetricsCollector:
         """Get the singleton instance.
 
         Returns:
@@ -271,6 +271,20 @@ class ChessMetricsCollector:
         """
         edge_cases = self._verification_metrics.edge_cases_tested
         edge_cases[case_type] = edge_cases.get(case_type, 0) + 1
+
+    def record_verification_error(
+        self,
+        error_type: str,
+    ) -> None:
+        """Record a verification error.
+
+        Args:
+            error_type: Type of error (execution_error, validation_error, etc.)
+        """
+        # Track errors using edge_cases dict for simplicity
+        error_key = f"error_{error_type}"
+        edge_cases = self._verification_metrics.edge_cases_tested
+        edge_cases[error_key] = edge_cases.get(error_key, 0) + 1
 
     def get_verification_report(self) -> dict[str, Any]:
         """Generate verification report.
