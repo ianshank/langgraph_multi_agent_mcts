@@ -87,7 +87,7 @@ class OperationMetrics:
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary."""
         result = {
-            "name": self.name,
+            "operation_name": self.name,  # Use operation_name to avoid LogRecord conflict
             "duration_ms": round(self.duration_ms, 3),
             "success": self.success,
             "timestamp": self.timestamp,
