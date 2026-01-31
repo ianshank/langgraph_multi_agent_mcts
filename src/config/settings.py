@@ -84,7 +84,8 @@ class Settings(BaseSettings):
     )
 
     PINECONE_HOST: str | None = Field(
-        default=None, description="Pinecone host URL (e.g., https://index.svc.environment.pinecone.io)"
+        default=None,
+        description="Pinecone host URL (e.g., https://index.svc.environment.pinecone.io)",
     )
 
     # Local LLM Configuration
@@ -92,7 +93,9 @@ class Settings(BaseSettings):
         default="http://localhost:1234/v1", description="LM Studio API base URL for local inference"
     )
 
-    LMSTUDIO_MODEL: str | None = Field(default=None, description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)")
+    LMSTUDIO_MODEL: str | None = Field(
+        default=None, description="LM Studio model identifier (e.g., liquid/lfm2-1.2b)"
+    )
 
     # MCTS Configuration with bounds validation
     MCTS_ENABLED: bool = Field(default=True, description="Enable MCTS for agent decision-making")
@@ -101,14 +104,21 @@ class Settings(BaseSettings):
         default=MCTSImplementation.BASELINE, description="MCTS implementation variant to use"
     )
 
-    MCTS_ITERATIONS: int = Field(default=100, ge=1, le=10000, description="Number of MCTS iterations (1-10000)")
+    MCTS_ITERATIONS: int = Field(
+        default=100, ge=1, le=10000, description="Number of MCTS iterations (1-10000)"
+    )
 
     MCTS_C: float = Field(
-        default=1.414, ge=0.0, le=10.0, description="MCTS exploration weight (UCB1 constant, 0.0-10.0)"
+        default=1.414,
+        ge=0.0,
+        le=10.0,
+        description="MCTS exploration weight (UCB1 constant, 0.0-10.0)",
     )
 
     # Random seed for reproducibility
-    SEED: int | None = Field(default=None, ge=0, description="Random seed for reproducibility (optional)")
+    SEED: int | None = Field(
+        default=None, ge=0, description="Random seed for reproducibility (optional)"
+    )
 
     # LangSmith Configuration for tracing and evaluation
     LANGSMITH_API_KEY: SecretStr | None = Field(
@@ -119,7 +129,9 @@ class Settings(BaseSettings):
 
     LANGCHAIN_TRACING_V2: bool = Field(default=False, description="Enable LangChain tracing v2")
 
-    LANGCHAIN_ENDPOINT: str = Field(default="https://api.smith.langchain.com", description="LangChain API endpoint")
+    LANGCHAIN_ENDPOINT: str = Field(
+        default="https://api.smith.langchain.com", description="LangChain API endpoint"
+    )
 
     # Weights & Biases Configuration for experiment tracking
     WANDB_API_KEY: SecretStr | None = Field(
@@ -143,14 +155,20 @@ class Settings(BaseSettings):
     # S3 Storage Configuration
     S3_BUCKET: str | None = Field(default=None, description="S3 bucket name for artifact storage")
 
-    S3_PREFIX: str = Field(default="mcts-artifacts", description="S3 key prefix for stored artifacts")
+    S3_PREFIX: str = Field(
+        default="mcts-artifacts", description="S3 key prefix for stored artifacts"
+    )
 
     S3_REGION: str = Field(default="us-east-1", description="AWS region for S3 bucket")
 
     # Network Configuration (security)
-    HTTP_TIMEOUT_SECONDS: int = Field(default=30, ge=1, le=300, description="HTTP request timeout in seconds")
+    HTTP_TIMEOUT_SECONDS: int = Field(
+        default=30, ge=1, le=300, description="HTTP request timeout in seconds"
+    )
 
-    HTTP_MAX_RETRIES: int = Field(default=3, ge=0, le=10, description="Maximum HTTP request retries")
+    HTTP_MAX_RETRIES: int = Field(
+        default=3, ge=0, le=10, description="Maximum HTTP request retries"
+    )
 
     # LLM Provider-Specific Timeouts (seconds)
     OPENAI_TIMEOUT: float = Field(
@@ -182,7 +200,10 @@ class Settings(BaseSettings):
 
     # Rate Limit Response Configuration
     RATE_LIMIT_RETRY_AFTER_SECONDS: int = Field(
-        default=60, ge=1, le=3600, description="Default Retry-After header value for rate limit responses"
+        default=60,
+        ge=1,
+        le=3600,
+        description="Default Retry-After header value for rate limit responses",
     )
 
     # Security Settings
@@ -239,9 +260,7 @@ class Settings(BaseSettings):
         default=512, ge=1, le=4096, description="HRM high-level hidden dimension"
     )
 
-    HRM_L_DIM: int = Field(
-        default=256, ge=1, le=4096, description="HRM low-level hidden dimension"
-    )
+    HRM_L_DIM: int = Field(default=256, ge=1, le=4096, description="HRM low-level hidden dimension")
 
     HRM_NUM_H_LAYERS: int = Field(
         default=2, ge=1, le=10, description="Number of HRM high-level layers"
@@ -260,13 +279,9 @@ class Settings(BaseSettings):
     )
 
     # TRM Agent Configuration
-    TRM_LATENT_DIM: int = Field(
-        default=256, ge=1, le=4096, description="TRM latent dimension"
-    )
+    TRM_LATENT_DIM: int = Field(default=256, ge=1, le=4096, description="TRM latent dimension")
 
-    TRM_HIDDEN_DIM: int = Field(
-        default=512, ge=1, le=4096, description="TRM hidden dimension"
-    )
+    TRM_HIDDEN_DIM: int = Field(default=512, ge=1, le=4096, description="TRM hidden dimension")
 
     TRM_NUM_RECURSIONS: int = Field(
         default=16, ge=1, le=100, description="Number of TRM recursions"
@@ -341,6 +356,110 @@ class Settings(BaseSettings):
 
     MCTS_MAX_ROLLOUT_DEPTH: int = Field(
         default=50, ge=1, le=500, description="Maximum MCTS rollout depth"
+    )
+
+    # ========================================
+    # Chess / Stockfish Engine Configuration
+    # ========================================
+
+    STOCKFISH_PATH: str | None = Field(
+        default=None, description="Path to Stockfish executable (auto-detected if not set)"
+    )
+
+    STOCKFISH_HASH_SIZE_MB: int = Field(
+        default=128, ge=1, le=4096, description="Stockfish hash table size in MB"
+    )
+
+    STOCKFISH_THREADS: int = Field(default=1, ge=1, le=64, description="Stockfish thread count")
+
+    STOCKFISH_DEFAULT_DEPTH: int = Field(
+        default=20, ge=1, le=100, description="Stockfish default search depth"
+    )
+
+    STOCKFISH_TIME_LIMIT_MS: int = Field(
+        default=1000, ge=100, le=60000, description="Stockfish time limit per move in ms"
+    )
+
+    STOCKFISH_MULTIPV: int = Field(
+        default=1, ge=1, le=10, description="Stockfish multi-PV lines to analyze"
+    )
+
+    # ========================================
+    # Chess Verification Configuration
+    # ========================================
+
+    CHESS_VERIFICATION_AGREEMENT_THRESHOLD: float = Field(
+        default=0.6, ge=0.0, le=1.0, description="Ensemble agent agreement threshold"
+    )
+
+    CHESS_VERIFICATION_DIVERGENCE_THRESHOLD: float = Field(
+        default=0.3, ge=0.0, le=1.0, description="Agent divergence threshold"
+    )
+
+    CHESS_VERIFICATION_ROUTING_THRESHOLD: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Routing consistency threshold"
+    )
+
+    CHESS_VERIFICATION_VALUE_DIVERGENCE_THRESHOLD: float = Field(
+        default=0.2, ge=0.0, le=1.0, description="Value estimation divergence threshold"
+    )
+
+    CHESS_VERIFICATION_DEFAULT_CONFIDENCE: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Default confidence when agent doesn't provide one"
+    )
+
+    CHESS_VERIFICATION_LOG_VALIDATIONS: bool = Field(
+        default=False, description="Log individual move validations (verbose)"
+    )
+
+    # Chess Phase-Specific Routing Scores
+    CHESS_ROUTING_SCORE_MATCH: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="Score when primary agent matches expected"
+    )
+
+    CHESS_ROUTING_SCORE_MIDDLEGAME_FALLBACK: float = Field(
+        default=0.7, ge=0.0, le=1.0, description="Fallback score in middlegame"
+    )
+
+    CHESS_ROUTING_SCORE_PHASE_APPROPRIATE: float = Field(
+        default=0.8, ge=0.0, le=1.0, description="Score for phase-appropriate agent choice"
+    )
+
+    CHESS_ROUTING_SCORE_PHASE_MISMATCH: float = Field(
+        default=0.4, ge=0.0, le=1.0, description="Score for phase-mismatched agent choice"
+    )
+
+    CHESS_ROUTING_SCORE_DEFAULT: float = Field(
+        default=0.5, ge=0.0, le=1.0, description="Default routing score"
+    )
+
+    # ========================================
+    # Chess Piece Values (Centipawns)
+    # ========================================
+
+    CHESS_PIECE_VALUE_PAWN: int = Field(
+        default=100, ge=50, le=200, description="Pawn value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_KNIGHT: int = Field(
+        default=320, ge=250, le=400, description="Knight value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_BISHOP: int = Field(
+        default=330, ge=250, le=400, description="Bishop value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_ROOK: int = Field(
+        default=500, ge=400, le=600, description="Rook value in centipawns"
+    )
+
+    CHESS_PIECE_VALUE_QUEEN: int = Field(
+        default=900, ge=800, le=1100, description="Queen value in centipawns"
+    )
+
+    # Chess FEN Logging Configuration
+    CHESS_FEN_LOG_TRUNCATE_LENGTH: int = Field(
+        default=40, ge=20, le=100, description="FEN truncation length for logging"
     )
 
     @field_validator("OPENAI_API_KEY")
@@ -467,7 +586,9 @@ class Settings(BaseSettings):
             if len(v) < 3 or len(v) > 63:
                 raise ValueError("S3 bucket name must be 3-63 characters long")
             if not v.replace("-", "").replace(".", "").isalnum():
-                raise ValueError("S3 bucket name can only contain lowercase letters, numbers, hyphens, and periods")
+                raise ValueError(
+                    "S3 bucket name can only contain lowercase letters, numbers, hyphens, and periods"
+                )
             if v.startswith("-") or v.endswith("-"):
                 raise ValueError("S3 bucket name cannot start or end with a hyphen")
         return v
