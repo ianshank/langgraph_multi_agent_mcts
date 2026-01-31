@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
+from src.games.chess.constants import get_stockfish_executables
 from src.games.chess.state import ChessGameState
 from src.observability.logging import StructuredLogger, get_structured_logger
 
@@ -124,7 +125,7 @@ class StockfishAdapter:
     def __init__(
         self,
         config: StockfishConfig | None = None,
-        logger: "StructuredLogger | logging.Logger | None" = None,
+        logger: StructuredLogger | logging.Logger | None = None,
     ) -> None:
         """Initialize the Stockfish adapter.
 
@@ -161,9 +162,8 @@ class StockfishAdapter:
         if self._config.stockfish_path and os.path.isfile(self._config.stockfish_path):
             return self._config.stockfish_path
 
-        # Check common paths
-        common_names = ["stockfish", "stockfish.exe", "stockfish-ubuntu-x86-64-avx2"]
-        for name in common_names:
+        # Check common paths using centralized constants
+        for name in get_stockfish_executables():
             path = shutil.which(name)
             if path:
                 return path
@@ -304,7 +304,7 @@ class StockfishAdapter:
 
     async def evaluate_vs_agent(
         self,
-        agent: "ChessEnsembleAgent",
+        agent: ChessEnsembleAgent,
         num_games: int = 10,
         max_moves_per_game: int = 100,
     ) -> EvaluationResult:
@@ -372,12 +372,16 @@ class StockfishAdapter:
                 else:
                     draws += 1
 
-            games.append({
-                "game_num": game_num,
-                "agent_color": "white" if agent_plays_white else "black",
-                "moves": game_moves,
-                "result": "agent_win" if reward > 0 else "stockfish_win" if reward < 0 else "draw",
-            })
+            games.append(
+                {
+                    "game_num": game_num,
+                    "agent_color": "white" if agent_plays_white else "black",
+                    "moves": game_moves,
+                    "result": (
+                        "agent_win" if reward > 0 else "stockfish_win" if reward < 0 else "draw"
+                    ),
+                }
+            )
 
         return EvaluationResult(
             total_games=num_games,
@@ -395,7 +399,7 @@ class StockfishAdapter:
             await self._engine.quit()
             self._engine = None
 
-    async def __aenter__(self) -> "StockfishAdapter":
+    async def __aenter__(self) -> StockfishAdapter:
         """Async context manager entry."""
         await self._ensure_engine()
         return self

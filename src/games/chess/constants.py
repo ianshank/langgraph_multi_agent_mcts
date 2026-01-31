@@ -21,8 +21,18 @@ DEFAULT_FEN_LOG_TRUNCATE_LENGTH: int = 40
 # Invalid pawn ranks (0-indexed: rank 0 = 1st rank, rank 7 = 8th rank)
 INVALID_PAWN_RANKS: frozenset[int] = frozenset({0, 7})
 
+# Stockfish executable names to search for (platform-independent)
+DEFAULT_STOCKFISH_EXECUTABLES: tuple[str, ...] = (
+    "stockfish",
+    "stockfish.exe",
+    "stockfish-ubuntu-x86-64-avx2",
+    "stockfish-ubuntu-x86-64",
+    "stockfish-macos-m1-apple-silicon",
+    "stockfish-windows-x86-64-avx2.exe",
+)
 
-def get_fen_truncate_length(settings: "Settings | None" = None) -> int:
+
+def get_fen_truncate_length(settings: Settings | None = None) -> int:
     """Get the FEN truncation length from settings or default.
 
     Args:
@@ -34,6 +44,7 @@ def get_fen_truncate_length(settings: "Settings | None" = None) -> int:
     if settings is None:
         try:
             from src.config.settings import get_settings
+
             settings = get_settings()
         except Exception:
             return DEFAULT_FEN_LOG_TRUNCATE_LENGTH
@@ -41,7 +52,7 @@ def get_fen_truncate_length(settings: "Settings | None" = None) -> int:
     return getattr(settings, "CHESS_FEN_LOG_TRUNCATE_LENGTH", DEFAULT_FEN_LOG_TRUNCATE_LENGTH)
 
 
-def truncate_fen(fen: str, length: int | None = None, settings: "Settings | None" = None) -> str:
+def truncate_fen(fen: str, length: int | None = None, settings: Settings | None = None) -> str:
     """Truncate FEN string for logging purposes.
 
     Args:
@@ -60,7 +71,7 @@ def truncate_fen(fen: str, length: int | None = None, settings: "Settings | None
     return fen
 
 
-def get_piece_values(settings: "Settings | None" = None) -> dict[int, int]:
+def get_piece_values(settings: Settings | None = None) -> dict[int, int]:
     """Get piece values from settings for material evaluation.
 
     Args:
@@ -74,6 +85,7 @@ def get_piece_values(settings: "Settings | None" = None) -> dict[int, int]:
     if settings is None:
         try:
             from src.config.settings import get_settings
+
             settings = get_settings()
         except Exception:
             # Return defaults if settings unavailable
@@ -94,7 +106,7 @@ def get_piece_values(settings: "Settings | None" = None) -> dict[int, int]:
     }
 
 
-def get_routing_scores(settings: "Settings | None" = None) -> dict[str, float]:
+def get_routing_scores(settings: Settings | None = None) -> dict[str, float]:
     """Get routing consistency scores from settings.
 
     Args:
@@ -106,6 +118,7 @@ def get_routing_scores(settings: "Settings | None" = None) -> dict[str, float]:
     if settings is None:
         try:
             from src.config.settings import get_settings
+
             settings = get_settings()
         except Exception:
             # Return defaults if settings unavailable
@@ -126,12 +139,39 @@ def get_routing_scores(settings: "Settings | None" = None) -> dict[str, float]:
     }
 
 
+def get_stockfish_executables(settings: Settings | None = None) -> tuple[str, ...]:
+    """Get Stockfish executable names to search for.
+
+    Args:
+        settings: Optional settings instance. If not provided, uses get_settings().
+
+    Returns:
+        Tuple of executable names to search for
+    """
+    if settings is None:
+        try:
+            from src.config.settings import get_settings
+
+            settings = get_settings()
+        except (ImportError, RuntimeError, OSError):
+            return DEFAULT_STOCKFISH_EXECUTABLES
+
+    # Allow custom executables from settings (comma-separated string)
+    custom_executables = getattr(settings, "STOCKFISH_EXECUTABLES", None)
+    if custom_executables:
+        return tuple(name.strip() for name in custom_executables.split(","))
+
+    return DEFAULT_STOCKFISH_EXECUTABLES
+
+
 __all__ = [
     "STARTING_FEN",
     "DEFAULT_FEN_LOG_TRUNCATE_LENGTH",
     "INVALID_PAWN_RANKS",
+    "DEFAULT_STOCKFISH_EXECUTABLES",
     "get_fen_truncate_length",
     "truncate_fen",
     "get_piece_values",
     "get_routing_scores",
+    "get_stockfish_executables",
 ]

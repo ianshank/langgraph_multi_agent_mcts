@@ -8,7 +8,7 @@ special moves (castling, en passant, promotion) and edge cases.
 from __future__ import annotations
 
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
@@ -105,21 +105,11 @@ class MoveValidator:
         """
         import chess
 
-        issues: list[VerificationIssue] = []
         extra_info: dict[str, Any] = {}
 
-        # Parse the move
-        try:
-            move = chess.Move.from_uci(move_uci)
-        except ValueError as e:
-            issues.append(
-                VerificationIssue(
-                    code="INVALID_UCI_FORMAT",
-                    message=f"Invalid UCI format: {e}",
-                    severity=VerificationSeverity.ERROR,
-                    context={"move": move_uci},
-                )
-            )
+        # Parse the move using centralized helper
+        move, issues = self._parse_uci_move(move_uci, MoveType.NORMAL)
+        if move is None:
             return MoveValidationResult(
                 is_valid=False,
                 move_uci=move_uci,
@@ -185,7 +175,8 @@ class MoveValidator:
             )
 
         return MoveValidationResult(
-            is_valid=is_legal and not any(
+            is_valid=is_legal
+            and not any(
                 i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
                 for i in issues
             ),
@@ -312,19 +303,11 @@ class MoveValidator:
         """
         import chess
 
-        issues: list[VerificationIssue] = []
         extra_info: dict[str, Any] = {"move_type": "en_passant"}
 
-        try:
-            move = chess.Move.from_uci(move_uci)
-        except ValueError as e:
-            issues.append(
-                VerificationIssue(
-                    code="INVALID_UCI_FORMAT",
-                    message=f"Invalid UCI format: {e}",
-                    severity=VerificationSeverity.ERROR,
-                )
-            )
+        # Parse the move using centralized helper
+        move, issues = self._parse_uci_move(move_uci, MoveType.EN_PASSANT)
+        if move is None:
             return MoveValidationResult(
                 is_valid=False,
                 move_uci=move_uci,
@@ -386,19 +369,11 @@ class MoveValidator:
         """
         import chess
 
-        issues: list[VerificationIssue] = []
         extra_info: dict[str, Any] = {"move_type": "promotion"}
 
-        try:
-            move = chess.Move.from_uci(move_uci)
-        except ValueError as e:
-            issues.append(
-                VerificationIssue(
-                    code="INVALID_UCI_FORMAT",
-                    message=f"Invalid UCI format: {e}",
-                    severity=VerificationSeverity.ERROR,
-                )
-            )
+        # Parse the move using centralized helper
+        move, issues = self._parse_uci_move(move_uci, MoveType.PROMOTION)
+        if move is None:
             return MoveValidationResult(
                 is_valid=False,
                 move_uci=move_uci,
@@ -489,8 +464,7 @@ class MoveValidator:
             is_valid=encoding_result.get("roundtrip_valid", False),
             move_uci=move_uci,
             move_type=self._determine_move_type(
-                state.board,
-                self._parse_move_safe(move_uci) or state.board.parse_uci(move_uci)
+                state.board, self._parse_move_safe(move_uci) or state.board.parse_uci(move_uci)
             ),
             encoded_index=encoding_result.get("encoded_index"),
             issues=issues,
@@ -558,8 +532,8 @@ class MoveValidator:
 
     def _determine_move_type(
         self,
-        board: "chess.Board",
-        move: "chess.Move",
+        board: chess.Board,
+        move: chess.Move,
     ) -> MoveType:
         """Determine the type of a chess move.
 
@@ -570,7 +544,6 @@ class MoveValidator:
         Returns:
             MoveType enum value
         """
-        import chess
 
         # Check for castling
         if board.is_castling(move):
@@ -595,7 +568,7 @@ class MoveValidator:
         # Normal move
         return MoveType.NORMAL
 
-    def _parse_move_safe(self, move_uci: str) -> "chess.Move | None":
+    def _parse_move_safe(self, move_uci: str) -> chess.Move | None:
         """Safely parse a UCI move string.
 
         Args:
@@ -610,6 +583,39 @@ class MoveValidator:
             return chess.Move.from_uci(move_uci)
         except ValueError:
             return None
+
+    def _parse_uci_move(
+        self,
+        move_uci: str,
+        move_type: MoveType = MoveType.NORMAL,
+    ) -> tuple[chess.Move | None, list[VerificationIssue]]:
+        """Parse a UCI move string with error handling.
+
+        Centralizes UCI parsing logic to avoid code duplication.
+
+        Args:
+            move_uci: Move in UCI format
+            move_type: Expected move type for error context
+
+        Returns:
+            Tuple of (parsed move or None, list of issues)
+        """
+        import chess
+
+        issues: list[VerificationIssue] = []
+        try:
+            move = chess.Move.from_uci(move_uci)
+            return move, issues
+        except ValueError as e:
+            issues.append(
+                VerificationIssue(
+                    code="INVALID_UCI_FORMAT",
+                    message=f"Invalid UCI format: {e}",
+                    severity=VerificationSeverity.ERROR,
+                    context={"move": move_uci, "expected_type": move_type.value},
+                )
+            )
+            return None, issues
 
 
 def create_move_validator(

@@ -9,16 +9,14 @@ from __future__ import annotations
 
 import logging
 import time
-from dataclasses import dataclass, field
-from typing import TYPE_CHECKING, Any
-
-import numpy as np
+from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
 from src.games.chess.config import AgentType, GamePhase
-from src.games.chess.constants import STARTING_FEN, get_routing_scores
+from src.games.chess.constants import STARTING_FEN, get_routing_scores, truncate_fen
 from src.games.chess.state import ChessGameState
 from src.games.chess.verification.types import (
     EnsembleConsistencyResult,
@@ -59,6 +57,7 @@ class EnsembleCheckerConfig:
         """Load defaults from settings if not explicitly provided."""
         try:
             from src.config.settings import get_settings
+
             settings = get_settings()
 
             if self.agreement_threshold is None:
@@ -73,8 +72,11 @@ class EnsembleCheckerConfig:
                 self.routing_threshold = getattr(
                     settings, "CHESS_VERIFICATION_ROUTING_THRESHOLD", 0.5
                 )
-        except Exception:
+        except (ImportError, RuntimeError, OSError):
             # Fallback to defaults if settings unavailable
+            # ImportError: settings module not found
+            # RuntimeError: settings validation failed
+            # OSError: .env file issues
             if self.agreement_threshold is None:
                 self.agreement_threshold = 0.6
             if self.confidence_divergence_threshold is None:
@@ -98,7 +100,7 @@ class EnsembleConsistencyChecker:
 
     def __init__(
         self,
-        ensemble_agent: "ChessEnsembleAgent | None" = None,
+        ensemble_agent: ChessEnsembleAgent | None = None,
         config: EnsembleCheckerConfig | None = None,
         logger: logging.Logger | None = None,
     ) -> None:
@@ -111,9 +113,7 @@ class EnsembleConsistencyChecker:
         """
         self._config = config or EnsembleCheckerConfig()
         self._ensemble_agent = ensemble_agent
-        self._logger = logger or get_structured_logger(
-            "chess.verification.ensemble_checker"
-        )
+        self._logger = logger or get_structured_logger("chess.verification.ensemble_checker")
 
     @property
     def config(self) -> EnsembleCheckerConfig:
@@ -121,12 +121,12 @@ class EnsembleConsistencyChecker:
         return self._config
 
     @property
-    def ensemble_agent(self) -> "ChessEnsembleAgent | None":
+    def ensemble_agent(self) -> ChessEnsembleAgent | None:
         """Get the ensemble agent."""
         return self._ensemble_agent
 
     @ensemble_agent.setter
-    def ensemble_agent(self, agent: "ChessEnsembleAgent") -> None:
+    def ensemble_agent(self, agent: ChessEnsembleAgent) -> None:
         """Set the ensemble agent."""
         self._ensemble_agent = agent
 
@@ -195,7 +195,7 @@ class EnsembleConsistencyChecker:
                 "Unexpected error in ensemble execution",
                 error=str(e),
                 error_type=type(e).__name__,
-                fen=state.fen[:40],
+                fen=truncate_fen(state.fen),
             )
             raise
 
@@ -259,8 +259,7 @@ class EnsembleConsistencyChecker:
                     VerificationIssue(
                         code="HIGH_DIVERGENCE",
                         message=(
-                            f"Agent {agent_name} divergence {divergence:.2f} "
-                            f"exceeds threshold"
+                            f"Agent {agent_name} divergence {divergence:.2f} " f"exceeds threshold"
                         ),
                         severity=VerificationSeverity.WARNING,
                         context={
@@ -275,9 +274,7 @@ class EnsembleConsistencyChecker:
             issues.append(
                 VerificationIssue(
                     code="INAPPROPRIATE_ROUTING",
-                    message=(
-                        f"Routing decision may not be optimal for game phase"
-                    ),
+                    message=(f"Routing decision may not be optimal for game phase"),
                     severity=VerificationSeverity.WARNING,
                     context={
                         "primary_agent": ensemble_response.routing_decision.primary_agent.value,
@@ -289,19 +286,16 @@ class EnsembleConsistencyChecker:
         check_time_ms = (time.perf_counter() - start_time) * 1000
 
         # Determine overall consistency
-        is_consistent = (
-            agreement_rate >= self._config.agreement_threshold
-            and not any(
-                i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
-                for i in issues
-            )
+        is_consistent = agreement_rate >= self._config.agreement_threshold and not any(
+            i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
+            for i in issues
         )
 
         # Log if enabled
         if self._config.log_checks:
             self._logger.debug(
                 "Position consistency checked",
-                fen=state.fen[:40] + "...",
+                fen=truncate_fen(state.fen),
                 is_consistent=is_consistent,
                 agreement_rate=round(agreement_rate, 3),
                 primary_agent=ensemble_response.routing_decision.primary_agent.value,
@@ -534,7 +528,7 @@ class EnsembleConsistencyChecker:
 
 
 def create_ensemble_checker(
-    ensemble_agent: "ChessEnsembleAgent | None" = None,
+    ensemble_agent: ChessEnsembleAgent | None = None,
     config: EnsembleCheckerConfig | None = None,
 ) -> EnsembleConsistencyChecker:
     """Factory function to create an EnsembleConsistencyChecker.

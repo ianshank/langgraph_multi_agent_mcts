@@ -10,12 +10,13 @@ from __future__ import annotations
 import asyncio
 import functools
 import time
-from typing import TYPE_CHECKING, Any, Callable, TypeVar
+from collections.abc import Callable
+from typing import TYPE_CHECKING, Any, TypeVar
 
 if TYPE_CHECKING:
-    from src.games.chess.state import ChessGameState
-    from src.games.chess.verification import ChessVerificationFactory
+    pass
 
+from src.games.chess.constants import truncate_fen
 from src.games.chess.observability.logger import get_chess_logger
 from src.games.chess.observability.metrics import ChessMetricsCollector
 from src.observability.logging import get_correlation_id
@@ -53,9 +54,13 @@ def traced_move_selection(func: F) -> F:
         if state is not None:
             logger.debug(
                 "Move selection started",
-                fen=state.fen[:40] + "...",
-                phase=state.get_game_phase().value if hasattr(state, "get_game_phase") else "unknown",
-                legal_moves=len(state.get_legal_actions()) if hasattr(state, "get_legal_actions") else 0,
+                fen=truncate_fen(state.fen),
+                phase=(
+                    state.get_game_phase().value if hasattr(state, "get_game_phase") else "unknown"
+                ),
+                legal_moves=(
+                    len(state.get_legal_actions()) if hasattr(state, "get_legal_actions") else 0
+                ),
                 correlation_id=correlation_id,
             )
 
@@ -70,9 +75,11 @@ def traced_move_selection(func: F) -> F:
                     "Move selected",
                     move=result.best_move,
                     confidence=getattr(result, "confidence", 0.0),
-                    routing=getattr(result.routing_decision, "primary_agent", None).value
-                    if hasattr(result, "routing_decision")
-                    else "unknown",
+                    routing=(
+                        getattr(result.routing_decision, "primary_agent", None).value
+                        if hasattr(result, "routing_decision")
+                        else "unknown"
+                    ),
                     duration_ms=round(elapsed_ms, 2),
                     correlation_id=correlation_id,
                 )
