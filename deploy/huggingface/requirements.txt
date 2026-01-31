@@ -1,0 +1,32 @@
+# LangGraph Multi-Agent MCTS - Hugging Face Spaces Requirements
+# Optimized for deployment on Hugging Face Spaces
+
+# Core UI Framework - Gradio for Hugging Face Spaces
+gradio>=4.0.0,<5.0.0
+
+# Numerical computation
+numpy>=1.24.0,<2.0.0
+
+# Machine Learning - Neural Models
+torch>=2.1.0
+transformers>=4.40.0,<4.46.0
+peft==0.10.0
+accelerate>=0.26.0
+sentence-transformers>=2.2.0
+
+# Configuration
+pyyaml>=6.0
+
+# Model Hub Integration
+huggingface_hub>=0.20.0,<0.30.0
+
+# Optional: LLM providers (uncomment if needed)
+# openai>=1.0.0
+# anthropic>=0.20.0
+
+# Optional: Experiment tracking
+# wandb>=0.16.0
+# langsmith>=0.1.40
+
+# Note: This file is optimized for Hugging Face Spaces deployment
+# Some dependencies are optional to reduce container size

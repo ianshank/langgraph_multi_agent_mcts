@@ -33,6 +33,10 @@ from .mcts.policies import (
     HybridRolloutPolicy,
 )
 
+# Adapter and Action imports
+from .adapters import NeuroSymbolicAdapter
+from .actions import ActionRegistry, Action
+
 # Neural Meta-Controller imports (optional)
 try:
     from src.agents.meta_controller.base import (
@@ -181,6 +185,12 @@ class GraphBuilder:
         self.consensus_threshold = consensus_threshold
         self.enable_parallel_agents = enable_parallel_agents
         self.adk_agents = adk_agents or {}
+
+        # Initialize Neuro-Symbolic Adapter if HRM agent is available
+        if self.hrm_agent:
+            self.hrm_adapter = NeuroSymbolicAdapter(self.hrm_agent)
+        else:
+            self.hrm_adapter = None
 
         # MCTS configuration
         self.mcts_config = mcts_config or create_preset_config(ConfigPreset.BALANCED)
@@ -655,12 +665,17 @@ class GraphBuilder:
         self.logger.info("Executing HRM and TRM agents in parallel")
 
         # Run both agents concurrently
-        hrm_task = asyncio.create_task(
-            self.hrm_agent.process(
+        if self.hrm_adapter:
+             # Use adapter-based flow for HRM if available
+             hrm_coro = self._execute_hrm_via_adapter(state)
+        else:
+             # Fallback to direct process call
+             hrm_coro = self.hrm_agent.process(
                 query=state["query"],
                 rag_context=state.get("rag_context"),
             )
-        )
+
+        hrm_task = asyncio.create_task(hrm_coro)
 
         trm_task = asyncio.create_task(
             self.trm_agent.process(
@@ -670,14 +685,22 @@ class GraphBuilder:
         )
 
         # Await both results
-        hrm_result, trm_result = await asyncio.gather(hrm_task, trm_task)
+        hrm_result_raw, trm_result = await asyncio.gather(hrm_task, trm_task)
+        
+        # Normalize HRM result structure
+        if self.hrm_adapter:
+             # _execute_hrm_via_adapter returns the full node output dict
+             # We need to extract just the result part to match structure
+             hrm_result = hrm_result_raw["hrm_results"]
+        else:
+             hrm_result = {
+                "response": hrm_result_raw["response"],
+                "metadata": hrm_result_raw["metadata"],
+             }
 
         # Combine outputs
         return {
-            "hrm_results": {
-                "response": hrm_result["response"],
-                "metadata": hrm_result["metadata"],
-            },
+            "hrm_results": hrm_result,
             "trm_results": {
                 "response": trm_result["response"],
                 "metadata": trm_result["metadata"],
@@ -696,25 +719,92 @@ class GraphBuilder:
             ],
         }
 
-    async def _hrm_agent_node(self, state: AgentState) -> dict:
-        """Execute HRM agent."""
-        self.logger.info("Executing HRM agent")
-
-        result = await self.hrm_agent.process(
+    async def _execute_hrm_via_adapter(self, state: AgentState) -> dict:
+        """Helper to execute HRM logic via adapter."""
+        # 1. Get the Neural Plan from the "Brain"
+        neural_result = await self.hrm_adapter.process_query(
             query=state["query"],
-            rag_context=state.get("rag_context"),
+            context=state.get("rag_context", "")
+        )
+        neural_plan = neural_result.get("neural_plan", [])
+        ponder_cost = neural_result.get("ponder_cost", 0.0)
+        
+        # 2. Construct prompt strategy
+        strategies = [step["strategy"] for step in neural_plan]
+        descriptions = [step["description"] for step in neural_plan]
+        
+        prompt_strategy = "Think step-by-step based on the following decomposition:\n"
+        for i, (desc, strat) in enumerate(zip(descriptions, strategies)):
+            prompt_strategy += f"{i+1}. {desc} (Strategy: {strat})\n"
+            
+        if "Deep Research" in strategies:
+                prompt_strategy += "\nNote: Some steps require deep research. Be thorough."
+
+        # 3. Execute with LLM
+        result = await self.model_adapter.generate(
+                prompt=f"{prompt_strategy}\n\nQuery: {state['query']}",
+                temperature=0.4
         )
 
         return {
             "hrm_results": {
-                "response": result["response"],
-                "metadata": result["metadata"],
+                "response": result.text,
+                "metadata": {
+                    "neural_plan": neural_plan,
+                    "ponder_cost": ponder_cost,
+                    "decomposition_quality_score": 0.85 if neural_plan else 0.5 
+                },
+            }
+        }
+
+    async def _hrm_agent_node(self, state: AgentState) -> dict:
+        """
+        Execute HRM agent via Neuro-Symbolic Adapter.
+        """
+        self.logger.info("Executing HRM agent via Neuro-Symbolic Adapter")
+        
+        if self.hrm_adapter:
+             result_dict = await self._execute_hrm_via_adapter(state)
+             # Helper returns {"hrm_results": ...}
+             # We need to add "agent_outputs"
+             hrm_results = result_dict["hrm_results"]
+             
+             return {
+                 "hrm_results": hrm_results,
+                 "agent_outputs": [
+                    {
+                        "agent": "hrm",
+                        "response": hrm_results["response"],
+                        "confidence": hrm_results["metadata"].get("decomposition_quality_score", 0.7),
+                    }
+                 ]
+             }
+        
+        # Fallback to old logic if adapter missing
+        prompt_strategy = "Think step-by-step."
+        neural_plan = []
+        ponder_cost = 0.0
+
+        # 3. Execute with LLM (The "Hands/Mouth")
+        result = await self.model_adapter.generate(
+             prompt=f"{prompt_strategy}\n\nQuery: {state['query']}",
+             temperature=0.4 # Slightly lower temp for plan execution
+        )
+
+        return {
+            "hrm_results": {
+                "response": result.text,
+                "metadata": {
+                    "neural_plan": neural_plan,
+                    "ponder_cost": ponder_cost,
+                    "decomposition_quality_score": 0.5 
+                },
             },
             "agent_outputs": [
                 {
                     "agent": "hrm",
-                    "response": result["response"],
-                    "confidence": result["metadata"].get("decomposition_quality_score", 0.7),
+                    "response": result.text,
+                    "confidence": 0.7,
                 }
             ],
         }
@@ -772,7 +862,7 @@ class GraphBuilder:
         }
 
     async def _mcts_simulator_node(self, state: AgentState) -> dict:
-        """Execute MCTS simulation using new deterministic engine."""
+        """Execute MCTS simulation using new deterministic engine and concrete Actions."""
         self.logger.info("Executing MCTS simulation with deterministic engine")
 
         start_time = time.perf_counter()
@@ -787,6 +877,8 @@ class GraphBuilder:
                 "query": state["query"][:100],  # Truncate for hashing
                 "has_hrm": "hrm_results" in state,
                 "has_trm": "trm_results" in state,
+                # Seed MCTS with HRM plan if available
+                "neural_plan_depth": len(state.get("hrm_results", {}).get("metadata", {}).get("neural_plan", []))
             },
         )
 
@@ -795,42 +887,46 @@ class GraphBuilder:
             rng=self.mcts_engine.rng,
         )
 
-        # Define action generator based on domain
+        # Define action generator based on domain using ActionRegistry
         def action_generator(mcts_state: MCTSState) -> list[str]:
-            """Generate available actions for state."""
-            depth = len(mcts_state.state_id.split("_")) - 1
+            """Generate available concrete actions for state."""
+            return ActionRegistry.get_available_actions(mcts_state)
 
-            if depth == 0:
-                # Root level actions
-                return ["action_A", "action_B", "action_C", "action_D"]
-            elif depth < self.mcts_config.max_tree_depth:
-                # Subsequent actions
-                return ["continue", "refine", "fallback", "escalate"]
-            else:
-                return []  # Terminal
-
-        # Define state transition
-        def state_transition(mcts_state: MCTSState, action: str) -> MCTSState:
+        # Define state transition using Action classes
+        def state_transition(mcts_state: MCTSState, action_name: str) -> MCTSState:
             """Compute next state from action."""
-            new_id = f"{mcts_state.state_id}_{action}"
-            new_features = mcts_state.features.copy()
-            new_features["last_action"] = action
-            new_features["depth"] = len(new_id.split("_")) - 1
-            return MCTSState(state_id=new_id, features=new_features)
+            action_obj = ActionRegistry.get_action_by_name(action_name)
+            if action_obj:
+                return action_obj.apply(mcts_state)
+            
+            # Fallback (should not happen if registry is consistent)
+            new_id = f"{mcts_state.state_id}_{action_name}"
+            return MCTSState(state_id=new_id, features=mcts_state.features.copy())
 
         # Create rollout policy using agent results
         def heuristic_fn(mcts_state: MCTSState) -> float:
             """Evaluate state using agent confidence."""
             base = 0.5
+            features = mcts_state.features
+            
+            # Bonus for completing synthesis
+            if features.get("complete"):
+                base += 0.3
 
             # Bias based on agent confidence
             if state.get("hrm_results"):
+                # Trust the neural planner
                 hrm_conf = state["hrm_results"]["metadata"].get("decomposition_quality_score", 0.5)
-                base += hrm_conf * 0.2
+                base += hrm_conf * 0.1
 
             if state.get("trm_results"):
                 trm_conf = state["trm_results"]["metadata"].get("final_quality_score", 0.5)
-                base += trm_conf * 0.2
+                base += trm_conf * 0.1
+                
+            # Deeper states in decomposition are generally better up to a point
+            depth = features.get("depth", 0)
+            if 0 < depth < 5:
+                base += 0.1
 
             return min(base, 1.0)
 
@@ -886,9 +982,8 @@ class GraphBuilder:
                 {
                     "agent": "mcts",
                     "response": (
-                        f"Simulated {stats['iterations']} scenarios with "
-                        f"seed {self.mcts_config.seed}. "
-                        f"Recommended action: {best_action} "
+                        f"Simulated {stats['iterations']} scenarios. "
+                        f"Optimal next step: {best_action}. "
                         f"(visits={stats['best_action_visits']}, "
                         f"value={stats['best_action_value']:.3f})"
                     ),
@@ -974,6 +1069,7 @@ class GraphBuilder:
         agent_outputs = state.get("agent_outputs", [])
 
         if len(agent_outputs) < 2:
+            # Only one output, assume consensus or end if max iterations
             return {
                 "consensus_reached": True,
                 "consensus_score": 1.0,
@@ -984,10 +1080,14 @@ class GraphBuilder:
         consensus_reached = avg_confidence >= self.consensus_threshold
 
         self.logger.info(f"Consensus: {consensus_reached} (score={avg_confidence:.2f})")
+        
+        # Increment iteration counter
+        current_iteration = state.get("iteration", 0)
 
         return {
             "consensus_reached": consensus_reached,
             "consensus_score": avg_confidence,
+            "iteration": current_iteration + 1
         }
 
     def _check_consensus(self, state: AgentState) -> str:
@@ -1017,6 +1117,14 @@ Agent Outputs:
 {output["response"]}
 
 """
+
+        # Include Neural Plan in synthesis context if available
+        hrm_results = state.get("hrm_results", {})
+        neural_plan = hrm_results.get("metadata", {}).get("neural_plan", [])
+        if neural_plan:
+            synthesis_prompt += "\nNeural Decomposition Plan Used:\n"
+            for step in neural_plan:
+                synthesis_prompt += f"- Level {step['level']}: {step['description']} ({step['strategy']})\n"
 
         synthesis_prompt += """
 Synthesize these outputs into a comprehensive final response.

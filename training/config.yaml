@@ -124,6 +124,93 @@ agents:
       buffer_size: 10000
       update_frequency: 10
 
+# Neuro-Symbolic Training Configuration
+# Enables PonderNet-style adaptive computation and Neural Planner training
+neuro_symbolic:
+  # Enable/disable neuro-symbolic training
+  enabled: true
+  
+  # PonderNet configuration (adaptive computation)
+  # Based on "PonderNet: Learning to Ponder" (Banino et al., 2021)
+  ponder_net:
+    # KL divergence weight for regularization
+    # Higher values encourage fewer pondering steps
+    lambda_p: 0.01
+    
+    # Geometric prior parameter (0-1)
+    # Higher values = prior expects fewer steps
+    # p=0.5 means expected ~2 steps under prior
+    geometric_prior_p: 0.5
+    
+    # Maximum pondering steps allowed
+    max_ponder_steps: 16
+    
+    # Halting threshold (confidence to stop pondering)
+    halt_threshold: 0.95
+    
+    # Epsilon for numerical stability
+    epsilon: 1e-6
+  
+  # Neural Planner configuration
+  # Transformer-based planner for strategy generation
+  neural_planner:
+    # Hidden dimension for transformer
+    hidden_dim: 512
+    
+    # Number of decomposition strategies
+    # 0: Direct Answer, 1: Deep Research, 2: Step-by-Step
+    # 3: Tool Use, 4: Delegation
+    num_strategies: 5
+    
+    # Maximum planning steps
+    max_steps: 8
+    
+    # Transformer architecture
+    num_layers: 4
+    num_heads: 8
+    dropout: 0.1
+    
+    # Learning rate for planner
+    learning_rate: 1e-4
+  
+  # Curriculum learning for PonderNet
+  # Gradually transitions from fixed to adaptive computation
+  curriculum:
+    enabled: true
+    
+    # Epochs with fixed pondering (no halting learning)
+    warmup_epochs: 5
+    
+    # Epochs to transition from fixed to adaptive
+    transition_epochs: 20
+    
+    # Initial lambda_p (0 = no halting pressure during warmup)
+    initial_lambda_p: 0.0
+    
+    # Initial max steps during warmup
+    initial_max_steps: 3
+  
+  # Loss weights
+  loss_weights:
+    task: 1.0           # Task completion loss
+    kl_divergence: 0.01 # PonderNet KL regularization
+    reconstruction: 1.0 # Per-step reconstruction loss
+    consistency: 0.1    # Convergence consistency loss
+    strategy: 1.0       # Strategy classification loss
+    confidence: 0.5     # Confidence prediction loss
+    diversity: 0.1      # Strategy diversity regularization
+  
+  # Training configuration
+  training:
+    batch_size: 32
+    epochs: 10
+    gradient_accumulation_steps: 4
+    gradient_clip_norm: 1.0
+    save_every_n_epochs: 2
+  
+  # Checkpointing
+  checkpoint_dir: "training/models/checkpoints/neuro_symbolic"
+
 rag:
   # Vector embeddings
   embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
