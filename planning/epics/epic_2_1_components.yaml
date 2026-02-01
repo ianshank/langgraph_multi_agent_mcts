@@ -1,0 +1,97 @@
+# Epic 2.1: Core Components
+# Part of Milestone 2: Core Implementation
+
+epic:
+  id: E2.1
+  name: Core Components
+  milestone: M2
+  status: completed
+  owner: coder
+
+stories:
+  - id: S2.1.1
+    name: Implement Main Agent Modules
+    status: completed
+    subagent: coder
+    description: |
+      Implement core agent modules following modular design principles
+      with proper dependency injection and JSON-structured logging.
+    acceptance_criteria:
+      - HRM Agent implemented (src/agents/hrm_agent.py)
+      - TRM Agent implemented (src/agents/trm_agent.py)
+      - Hybrid Agent implemented (src/agents/hybrid_agent.py)
+      - Meta-Controller implemented (src/agents/meta_controller/)
+      - Code is modular with clear separation of concerns
+      - 80%+ test coverage
+      - Logs are JSON-structured
+    definition_of_done:
+      - All agent classes fully implemented
+      - Factory pattern for agent creation
+      - Protocol-based interfaces
+      - Comprehensive unit tests
+    artifacts:
+      - src/agents/hrm_agent.py
+      - src/agents/trm_agent.py
+      - src/agents/hybrid_agent.py
+      - src/agents/meta_controller/
+      - tests/unit/test_hrm_agent.py
+      - tests/unit/test_trm_agent.py
+
+  - id: S2.1.2
+    name: Implement LLM Adapters
+    status: completed
+    subagent: coder
+    description: |
+      Create protocol-based LLM adapters for provider agnosticism.
+    acceptance_criteria:
+      - Base protocol defined (src/adapters/llm/base.py)
+      - OpenAI adapter implemented
+      - Anthropic adapter implemented
+      - LMStudio adapter implemented
+      - Async operations throughout
+      - Error handling with custom exceptions
+    definition_of_done:
+      - All adapters functional
+      - Unit tests with mocks
+      - Factory for adapter creation
+    artifacts:
+      - src/adapters/llm/base.py
+      - src/adapters/llm/openai_client.py
+      - src/adapters/llm/anthropic_client.py
+      - src/adapters/llm/lmstudio_client.py
+      - src/adapters/llm/exceptions.py
+
+  - id: S2.1.3
+    name: Create Integration Tests
+    status: completed
+    subagent: sge
+    description: |
+      SQE creates comprehensive integration tests covering E2E flows
+      with edge cases and mock failures.
+    acceptance_criteria:
+      - E2E flow passes
+      - Edge cases covered (mock failures)
+      - Agent orchestration tested
+      - Graph builder integration tested
+    definition_of_done:
+      - Integration test suite complete
+      - Mock infrastructure in place
+      - All critical paths covered
+    artifacts:
+      - tests/integration/test_agent_orchestration.py
+      - tests/integration/test_graph_builder.py
+      - tests/mocks/mock_external_services.py
+      - tests/conftest.py
+
+dependencies:
+  - E1.2  # Environment config must be complete
+
+quality_metrics:
+  test_coverage:
+    target: 80
+    current: 85
+  lines_of_code:
+    hrm_agent: 450
+    trm_agent: 350
+    hybrid_agent: 300
+    meta_controller: 600

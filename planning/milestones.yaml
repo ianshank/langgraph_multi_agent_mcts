@@ -1,0 +1,130 @@
+# Multi-Agent MCTS Framework - Project Milestones
+# Auto-generated planning file following Agile methodology
+# Reference: universal-dev-agent prompt template
+
+version: "1.0"
+project:
+  name: langgraph_multi_agent_mcts
+  domain: multi-agent-systems
+  goal: Production-grade MCTS-driven multi-agent orchestration framework
+  constraints:
+    tech_stack:
+      - python>=3.11
+      - langgraph
+      - pytorch (optional)
+      - pydantic-settings
+    timeline: ongoing
+    quality_gates:
+      min_test_coverage: 80
+      max_critical_issues: 0
+      required_reviews: 1
+
+milestones:
+  - id: M1
+    name: Project Initialization
+    status: completed
+    completion: 95
+    goal: Bootstrap repo with architecture using Planner subagent
+    epics:
+      - $ref: "./epics/epic_1_1_repo_setup.yaml"
+      - $ref: "./epics/epic_1_2_environment_config.yaml"
+    deliverables:
+      - CLAUDE.md created
+      - Git repository initialized
+      - .gitignore configured
+      - README with quick start
+      - C4 architecture diagrams
+
+  - id: M2
+    name: Core Implementation
+    status: completed
+    completion: 90
+    goal: Build MVP logic with Coder and SQE subagents
+    epics:
+      - $ref: "./epics/epic_2_1_components.yaml"
+      - $ref: "./epics/epic_2_2_orchestration.yaml"
+    deliverables:
+      - HRM/TRM agents implemented
+      - LangGraph orchestration working
+      - MCTS engine functional
+      - Meta-controller routing
+      - 80%+ test coverage
+
+  - id: M3
+    name: Review and Polish
+    status: in_progress
+    completion: 93
+    goal: Quality gate with Reviewer; Iterate via Orchestrator
+    epics:
+      - $ref: "./epics/epic_3_1_code_review.yaml"
+      - $ref: "./epics/epic_3_2_performance.yaml"
+    deliverables:
+      - Zero critical issues
+      - Performance benchmarks passing
+      - Actionable feedback applied
+
+  - id: M4
+    name: Deployment Readiness
+    status: in_progress
+    completion: 95
+    goal: Productionize with full subagent verification
+    epics:
+      - $ref: "./epics/epic_4_1_ci_cd.yaml"
+      - $ref: "./epics/epic_4_2_health_checks.yaml"
+    deliverables:
+      - GitHub Actions CI/CD
+      - Docker image builds
+      - Health checks implemented
+      - Staging deployment ready
+
+  - id: M5
+    name: Advanced Features
+    status: planned
+    completion: 0
+    goal: Extend framework with neural enhancements and multi-domain support
+    epics:
+      - $ref: "./epics/epic_5_1_neural_mcts.yaml"
+      - $ref: "./epics/epic_5_2_domain_adapters.yaml"
+    deliverables:
+      - Neural MCTS policies
+      - Domain-specific state adapters
+      - Performance optimization module
+
+quality_metrics:
+  test_coverage:
+    current: 88.4
+    target: 90
+  test_pass_rate:
+    unit: 1325/1477  # passed/total including skipped
+    integration: 101/164
+    training: 36/45
+  code_quality:
+    linting: passing
+    type_checking: passing
+    formatting: passing
+
+subagents:
+  planner:
+    role: Architecture and epic planning
+    tools: [Read, Grep, WebSearch]
+    outputs: [C4_diagrams, milestones, epics]
+
+  sge:
+    role: Software Quality Engineering
+    tools: [Read, Write, Bash, Grep]
+    outputs: [test_plans, test_cases, coverage_reports]
+
+  coder:
+    role: Implementation
+    tools: [Read, Write, Edit, Bash]
+    outputs: [source_code, documentation]
+
+  reviewer:
+    role: Code review and quality gate
+    tools: [Read, Grep, Bash]
+    outputs: [review_comments, approval]
+
+  orchestrator:
+    role: Integration and workflow coordination
+    tools: [Read, Write, Edit, Bash, Task]
+    outputs: [ci_cd_config, deployment_scripts]

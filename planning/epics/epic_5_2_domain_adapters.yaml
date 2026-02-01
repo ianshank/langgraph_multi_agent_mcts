@@ -1,0 +1,116 @@
+# Epic 5.2: Domain Adapters
+# Part of Milestone 5: Advanced Features
+
+epic:
+  id: E5.2
+  name: Domain Adapters
+  milestone: M5
+  status: planned
+  owner: coder
+
+stories:
+  - id: S5.2.1
+    name: Create Domain Adapter Protocol
+    status: planned
+    subagent: coder
+    description: |
+      Define protocol for domain-specific state adapters that
+      convert domain states to MCTS-compatible format.
+    acceptance_criteria:
+      - Protocol interface defined
+      - State conversion methods
+      - Action space mapping
+      - Reward shaping interface
+    definition_of_done:
+      - DomainAdapter protocol complete
+      - Base implementation
+      - Documentation
+    artifacts:
+      - src/framework/mcts/domain_adapter.py
+      - docs/DOMAIN_ADAPTER_GUIDE.md
+
+  - id: S5.2.2
+    name: Implement Chess Domain Adapter
+    status: in_progress
+    subagent: coder
+    description: |
+      Create domain adapter for chess game states as reference
+      implementation.
+    acceptance_criteria:
+      - Chess state representation
+      - Legal move generation
+      - Position evaluation
+      - PGN import/export
+    definition_of_done:
+      - ChessAdapter class complete
+      - Integration with python-chess
+      - Comprehensive tests
+    artifacts:
+      - src/games/chess/adapter.py
+      - src/games/chess/state.py
+      - tests/games/chess/
+
+  - id: S5.2.3
+    name: Implement Reasoning Domain Adapter
+    status: planned
+    subagent: coder
+    description: |
+      Create adapter for multi-step reasoning tasks.
+    acceptance_criteria:
+      - Reasoning state representation
+      - Step decomposition
+      - Confidence tracking
+      - Backtracking support
+    definition_of_done:
+      - ReasoningAdapter complete
+      - Integration with agents
+      - Example usage
+    artifacts:
+      - src/framework/mcts/reasoning_adapter.py
+
+  - id: S5.2.4
+    name: Implement Planning Domain Adapter
+    status: planned
+    subagent: coder
+    description: |
+      Create adapter for planning and scheduling tasks.
+    acceptance_criteria:
+      - Planning state representation
+      - Goal tracking
+      - Resource constraints
+      - Temporal reasoning
+    definition_of_done:
+      - PlanningAdapter complete
+      - Integration with orchestration
+      - Benchmark tasks
+    artifacts:
+      - src/framework/mcts/planning_adapter.py
+
+dependencies:
+  - E5.1  # Neural MCTS provides foundation
+
+domain_adapter_interface:
+  methods:
+    - name: state_to_mcts
+      input: domain_state
+      output: MCTSState
+
+    - name: mcts_to_state
+      input: MCTSState
+      output: domain_state
+
+    - name: get_legal_actions
+      input: domain_state
+      output: list[Action]
+
+    - name: apply_action
+      input: [domain_state, Action]
+      output: domain_state
+
+    - name: evaluate
+      input: domain_state
+      output: float
+
+    - name: is_terminal
+      input: domain_state
+      output: bool

@@ -1,0 +1,84 @@
+# Epic 3.1: Code Review
+# Part of Milestone 3: Review and Polish
+
+epic:
+  id: E3.1
+  name: Code Review
+  milestone: M3
+  status: in_progress
+  owner: reviewer
+
+stories:
+  - id: S3.1.1
+    name: Run Automated Code Review
+    status: completed
+    subagent: reviewer
+    description: |
+      Run Reviewer subagent on all diffs to identify issues
+      and generate actionable feedback.
+    acceptance_criteria:
+      - Zero critical issues
+      - All linting errors resolved
+      - Type checking passes
+      - Actionable feedback applied
+    definition_of_done:
+      - black formatting applied
+      - ruff linting passes
+      - mypy type checking passes
+      - No security vulnerabilities
+    artifacts:
+      - .github/workflows/ci.yaml (linting steps)
+    validation_commands:
+      - black src/ tests/ --check
+      - ruff check src/ tests/
+      - mypy src/
+
+  - id: S3.1.2
+    name: Security Audit
+    status: completed
+    subagent: reviewer
+    description: |
+      Audit codebase for security vulnerabilities including
+      OWASP top 10 and secrets exposure.
+    acceptance_criteria:
+      - No hardcoded API keys or secrets
+      - Input validation on all external interfaces
+      - SQL injection prevention (if applicable)
+      - XSS prevention (if applicable)
+      - Secret masking in logs
+    definition_of_done:
+      - Security review completed
+      - All findings addressed
+      - Secret handling verified
+    artifacts:
+      - src/config/settings.py (SecretStr usage)
+      - src/observability/logging.py (sanitize_dict)
+
+  - id: S3.1.3
+    name: Setup Code Quality Tools
+    status: in_progress
+    subagent: orchestrator
+    description: |
+      Integrate SonarQube or CodeClimate for automated PR reviews.
+    acceptance_criteria:
+      - Quality tool integrated with CI
+      - PR comments on quality issues
+      - Coverage reporting
+      - Trend tracking
+    definition_of_done:
+      - Tool configured and running
+      - Badge added to README
+      - Quality gate defined
+    artifacts:
+      - .github/workflows/ci.yaml
+      - README.md (quality badge)
+
+dependencies:
+  - E2.1
+  - E2.2
+
+quality_gate:
+  critical_issues: 0
+  code_smells: "<10"
+  coverage: ">80%"
+  duplications: "<3%"

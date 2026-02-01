@@ -1,0 +1,81 @@
+# Epic 1.2: Environment Configuration
+# Part of Milestone 1: Project Initialization
+
+epic:
+  id: E1.2
+  name: Environment Configuration
+  milestone: M1
+  status: completed
+  owner: sge
+
+stories:
+  - id: S1.2.1
+    name: Create Pydantic Settings Configuration
+    status: completed
+    subagent: coder
+    description: |
+      Implement centralized configuration using Pydantic Settings v2
+      with environment variable loading and validation.
+    acceptance_criteria:
+      - src/config/settings.py with Pydantic v2 BaseSettings
+      - Environment variables for all configurable values
+      - No hardcoded secrets or API keys
+      - Type validation for all settings
+    definition_of_done:
+      - Settings class with proper validation
+      - .env.example with all required variables
+      - Unit tests for config validation
+    artifacts:
+      - src/config/settings.py
+      - .env.example
+      - tests/unit/test_validation_config.py
+
+  - id: S1.2.2
+    name: Generate Config Validation Tests
+    status: completed
+    subagent: sge
+    description: |
+      SQE generates comprehensive test suite for configuration validation.
+    acceptance_criteria:
+      - Pytest suite passes
+      - Environment variables enforced, no hardcodes
+      - Edge cases tested (invalid values, missing keys)
+      - Secret masking verified
+    definition_of_done:
+      - 100% coverage on settings.py
+      - Tests for all validators
+      - Tests for secret handling
+    artifacts:
+      - tests/unit/test_validation_config.py
+      - tests/unit/test_llm_guided_config.py
+
+  - id: S1.2.3
+    name: Setup Development Environment
+    status: completed
+    subagent: orchestrator
+    description: |
+      Configure pyproject.toml with dev dependencies and tool configuration.
+    acceptance_criteria:
+      - pyproject.toml with all dependencies
+      - Dev extras for testing, linting, typing
+      - Neural extras for PyTorch (optional)
+      - Tool configurations (black, ruff, mypy, pytest)
+    definition_of_done:
+      - pip install -e ".[dev]" works
+      - All tools configured and functional
+      - Documented in CLAUDE.md
+    artifacts:
+      - pyproject.toml
+      - CLAUDE.md (Build Commands section)
+
+dependencies:
+  - E1.1  # Repo must be initialized first
+
+validation:
+  tests:
+    - pytest tests/unit/test_validation_config.py -v
+  commands:
+    - pip install -e ".[dev]"
+    - black --check src/ tests/
+    - ruff check src/ tests/
+    - mypy src/

@@ -1,0 +1,109 @@
+# Epic 2.2: Orchestration Framework
+# Part of Milestone 2: Core Implementation
+
+epic:
+  id: E2.2
+  name: Orchestration Framework
+  milestone: M2
+  status: completed
+  owner: orchestrator
+
+stories:
+  - id: S2.2.1
+    name: Implement LangGraph Orchestration
+    status: completed
+    subagent: coder
+    description: |
+      Build LangGraph StateGraph for multi-agent orchestration with
+      state persistence and visualization support.
+    acceptance_criteria:
+      - LangGraph graph compiles without errors
+      - State persists via MemorySaver checkpointing
+      - AgentState TypedDict with all required fields
+      - Conditional routing implemented
+      - Parallel agent execution supported
+    definition_of_done:
+      - GraphBuilder class complete (src/framework/graph.py)
+      - IntegratedFramework wrapper functional
+      - Streaming support implemented
+      - Graph visualization methods working
+    artifacts:
+      - src/framework/graph.py
+      - tests/integration/test_graph_builder.py
+
+  - id: S2.2.2
+    name: Implement MCTS Engine
+    status: completed
+    subagent: coder
+    description: |
+      Create production-grade MCTS engine with configurable policies
+      and experiment tracking.
+    acceptance_criteria:
+      - MCTSEngine with UCB1 selection
+      - Configurable rollout policies (Random, Greedy, Hybrid, LLM)
+      - Deterministic seeding for reproducibility
+      - Experiment tracking integration
+      - Cache statistics and metrics
+    definition_of_done:
+      - MCTS core implementation complete
+      - All policy types implemented
+      - Unit tests with full coverage
+      - Performance benchmarks established
+    artifacts:
+      - src/framework/mcts/core.py
+      - src/framework/mcts/policies.py
+      - src/framework/mcts/config.py
+      - tests/unit/test_mcts_framework.py
+      - tests/unit/test_mcts_edge_cases.py
+
+  - id: S2.2.3
+    name: Implement Meta-Controller Routing
+    status: completed
+    subagent: coder
+    description: |
+      Create neural meta-controller for intelligent agent routing
+      with both rule-based and learned strategies.
+    acceptance_criteria:
+      - Base meta-controller protocol
+      - RNN-based controller option
+      - BERT-based controller option
+      - Rule-based fallback routing
+      - Feature extraction pipeline
+    definition_of_done:
+      - Meta-controller factory functional
+      - All controller variants implemented
+      - Routing decisions logged
+      - Integration tests passing
+    artifacts:
+      - src/agents/meta_controller/base.py
+      - src/agents/meta_controller/rnn_controller.py
+      - src/agents/meta_controller/bert_controller.py
+      - src/framework/factories.py
+
+  - id: S2.2.4
+    name: Implement Consensus Mechanism
+    status: completed
+    subagent: coder
+    description: |
+      Build consensus evaluation with iteration control and threshold-based
+      termination.
+    acceptance_criteria:
+      - Average confidence calculation
+      - Configurable threshold (default 0.75)
+      - Max iterations enforcement (default 3)
+      - Proper iteration increment
+    definition_of_done:
+      - Consensus node implemented
+      - Loop termination logic correct
+      - Tests verify iteration behavior
+    artifacts:
+      - src/framework/graph.py (evaluate_consensus_node)
+      - tests/integration/test_graph_builder.py
+
+dependencies:
+  - E2.1  # Core components must be implemented
+
+quality_metrics:
+  graph_nodes: 12
+  routing_strategies: 2  # Neural and rule-based
+  mcts_policies: 4  # Random, Greedy, Hybrid, LLM

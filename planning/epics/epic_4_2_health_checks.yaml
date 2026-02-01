@@ -1,0 +1,114 @@
+# Epic 4.2: Health Checks and Monitoring
+# Part of Milestone 4: Deployment Readiness
+
+epic:
+  id: E4.2
+  name: Health Checks and Monitoring
+  milestone: M4
+  status: completed
+  owner: orchestrator
+
+stories:
+  - id: S4.2.1
+    name: Implement Docker Build
+    status: completed
+    subagent: orchestrator
+    description: |
+      Create production-ready Docker image with multi-stage build
+      and proper health checks.
+    acceptance_criteria:
+      - Multi-stage Dockerfile
+      - Image builds successfully
+      - Minimal image size
+      - Non-root user execution
+    definition_of_done:
+      - Dockerfile complete
+      - docker-compose.yaml for local dev
+      - Build documented
+    artifacts:
+      - Dockerfile
+      - docker-compose.yaml
+      - docs/DOCKER_DEPLOYMENT.md
+
+  - id: S4.2.2
+    name: Add Health Check Endpoints
+    status: completed
+    subagent: coder
+    description: |
+      Implement health check endpoints for container orchestration
+      and monitoring systems.
+    acceptance_criteria:
+      - /health endpoint returns status
+      - /ready endpoint for readiness probe
+      - /live endpoint for liveness probe
+      - Includes dependency health (LLM, RAG)
+    definition_of_done:
+      - Health endpoints implemented
+      - Unit tests for health checks
+      - Documentation updated
+    artifacts:
+      - src/api/framework_service.py (health endpoints)
+      - tests/integration/test_api_framework_integration.py
+
+  - id: S4.2.3
+    name: Configure Observability Stack
+    status: completed
+    subagent: orchestrator
+    description: |
+      Setup observability stack with structured logging, metrics,
+      and distributed tracing.
+    acceptance_criteria:
+      - JSON-structured logging
+      - Prometheus metrics endpoint
+      - OpenTelemetry tracing
+      - Correlation ID propagation
+    definition_of_done:
+      - Observability module complete
+      - Integration with existing code
+      - Documentation and guides
+    artifacts:
+      - src/observability/logging.py
+      - src/observability/metrics.py
+      - src/observability/tracing.py
+      - docs/AGENT_TRACING_GUIDE.md
+
+  - id: S4.2.4
+    name: Smoke Tests for Staging
+    status: completed
+    subagent: sge
+    description: |
+      Create smoke tests that run against deployed staging environment.
+    acceptance_criteria:
+      - Basic functionality verified
+      - API endpoints responsive
+      - Configuration loading correct
+      - No critical errors in logs
+    definition_of_done:
+      - Smoke test suite created
+      - Integration with deploy workflow
+      - Clear pass/fail criteria
+    artifacts:
+      - tests/deployment/test_docker_smoke.py
+      - .github/workflows/deploy.yaml (smoke test step)
+
+dependencies:
+  - E4.1  # CI/CD must be configured
+
+health_endpoints:
+  - path: /health
+    method: GET
+    expected_status: 200
+    checks:
+      - llm_client
+      - rag_service (optional)
+      - mcts_engine
+
+  - path: /ready
+    method: GET
+    expected_status: 200
+    description: Readiness probe for Kubernetes
+
+  - path: /live
+    method: GET
+    expected_status: 200
+    description: Liveness probe for Kubernetes
