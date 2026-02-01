@@ -8,10 +8,10 @@ Based on: NEXT_STEPS_PLAN.md Phase 5.1
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock, MagicMock, patch
+import importlib.util
+from unittest.mock import patch
 
 import pytest
-
 
 # =============================================================================
 # Test Markers
@@ -26,13 +26,7 @@ pytestmark = [
 # Check httpx availability
 # =============================================================================
 
-HTTPX_AVAILABLE = False
-try:
-    import httpx
-
-    HTTPX_AVAILABLE = True
-except ImportError:
-    pass
+HTTPX_AVAILABLE = importlib.util.find_spec("httpx") is not None
 
 skip_if_no_httpx = pytest.mark.skipif(
     not HTTPX_AVAILABLE,

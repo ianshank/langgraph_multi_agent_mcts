@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import tempfile
 from pathlib import Path
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
-
 
 # =============================================================================
 # Test Markers
@@ -251,9 +250,11 @@ class TestOrchestratorInitialization:
 
         with tempfile.TemporaryDirectory() as tmpdir:
             training_config.checkpoint_dir = Path(tmpdir) / "test_checkpoints"
-            orchestrator = MetaControllerTrainingOrchestrator(training_config)
+            # Create orchestrator to trigger checkpoint dir creation
+            _orchestrator = MetaControllerTrainingOrchestrator(training_config)
 
             assert training_config.checkpoint_dir.exists()
+            assert _orchestrator is not None  # Verify instance was created
 
 
 # =============================================================================

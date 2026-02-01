@@ -9,10 +9,8 @@ Based on: NEXT_STEPS_PLAN.md Phase 5.1
 from __future__ import annotations
 
 import time
-from unittest.mock import MagicMock, patch
 
 import pytest
-
 
 # =============================================================================
 # Test Markers
