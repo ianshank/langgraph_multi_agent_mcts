@@ -1350,3 +1350,326 @@ class IntegratedFramework:
         """Set MCTS seed for deterministic behavior."""
         self.graph_builder.mcts_engine.reset_seed(seed)
         self.graph_builder.mcts_config.seed = seed
+
+    # =========================================================================
+    # Visualization Methods
+    # =========================================================================
+
+    def get_graph(self):
+        """
+        Get the compiled LangGraph application.
+
+        Returns:
+            The compiled LangGraph app object.
+        """
+        return self.app
+
+    def get_graph_structure(self) -> dict:
+        """
+        Extract the graph structure for visualization and introspection.
+
+        Returns:
+            Dict containing nodes, edges, and conditional routing info.
+        """
+        # Core node definitions with descriptions
+        nodes = [
+            {"id": "entry", "label": "Entry", "description": "Input validation", "type": "start"},
+            {"id": "retrieve_context", "label": "Retrieve Context", "description": "RAG retrieval", "type": "process"},
+            {"id": "route_decision", "label": "Route Decision", "description": "Agent selection", "type": "branch"},
+            {"id": "parallel_agents", "label": "Parallel Agents", "description": "HRM + TRM parallel", "type": "process"},
+            {"id": "hrm_agent", "label": "HRM Agent", "description": "Hierarchical reasoning", "type": "agent"},
+            {"id": "trm_agent", "label": "TRM Agent", "description": "Task refinement", "type": "agent"},
+            {"id": "mcts_simulator", "label": "MCTS Simulator", "description": "Monte Carlo search", "type": "agent"},
+            {"id": "aggregate_results", "label": "Aggregate Results", "description": "Combine outputs", "type": "process"},
+            {"id": "evaluate_consensus", "label": "Evaluate Consensus", "description": "Check agreement", "type": "branch"},
+            {"id": "synthesize", "label": "Synthesize", "description": "Final response", "type": "end"},
+        ]
+
+        # Add symbolic agent if enabled
+        if self.graph_builder.use_symbolic_reasoning:
+            nodes.insert(7, {
+                "id": "symbolic_agent",
+                "label": "Symbolic Agent",
+                "description": "Neuro-symbolic reasoning",
+                "type": "agent",
+            })
+
+        # Add ADK agent nodes
+        for name in self.graph_builder.adk_agents:
+            nodes.append({
+                "id": f"adk_{name}",
+                "label": f"ADK: {name}",
+                "description": f"Google ADK agent: {name}",
+                "type": "agent",
+            })
+
+        # Sequential edges
+        edges = [
+            {"source": "__start__", "target": "entry"},
+            {"source": "entry", "target": "retrieve_context"},
+            {"source": "retrieve_context", "target": "route_decision"},
+            {"source": "parallel_agents", "target": "aggregate_results"},
+            {"source": "hrm_agent", "target": "aggregate_results"},
+            {"source": "trm_agent", "target": "aggregate_results"},
+            {"source": "mcts_simulator", "target": "aggregate_results"},
+            {"source": "aggregate_results", "target": "evaluate_consensus"},
+            {"source": "synthesize", "target": "__end__"},
+        ]
+
+        # Add symbolic agent edge
+        if self.graph_builder.use_symbolic_reasoning:
+            edges.append({"source": "symbolic_agent", "target": "aggregate_results"})
+
+        # Add ADK agent edges
+        for name in self.graph_builder.adk_agents:
+            edges.append({"source": f"adk_{name}", "target": "aggregate_results"})
+
+        # Conditional routing
+        routing_map = {
+            "parallel": "parallel_agents",
+            "hrm": "hrm_agent",
+            "trm": "trm_agent",
+            "mcts": "mcts_simulator",
+            "aggregate": "aggregate_results",
+        }
+
+        if self.graph_builder.use_symbolic_reasoning:
+            routing_map["symbolic"] = "symbolic_agent"
+
+        for name in self.graph_builder.adk_agents:
+            routing_map[f"adk_{name}"] = f"adk_{name}"
+
+        conditional_edges = {
+            "route_decision": {
+                "condition": "_route_to_agents",
+                "routes": routing_map,
+            },
+            "evaluate_consensus": {
+                "condition": "_check_consensus",
+                "routes": {
+                    "synthesize": "synthesize",
+                    "iterate": "route_decision",
+                },
+            },
+        }
+
+        return {
+            "nodes": nodes,
+            "edges": edges,
+            "conditional_edges": conditional_edges,
+            "entry_point": "entry",
+            "terminal_node": "synthesize",
+        }
+
+    def get_graph_mermaid(
+        self,
+        include_descriptions: bool = True,
+        theme: str = "default",
+    ) -> str:
+        """
+        Generate a Mermaid flowchart diagram of the graph.
+
+        Args:
+            include_descriptions: Include node descriptions in labels.
+            theme: Mermaid theme (default, forest, dark, neutral).
+
+        Returns:
+            Mermaid diagram source code.
+        """
+        structure = self.get_graph_structure()
+        lines = []
+
+        # Add theme configuration
+        if theme != "default":
+            lines.append(f"%%{{init: {{'theme': '{theme}'}}}}%%")
+
+        lines.append("flowchart TD")
+
+        # Define node styles by type
+        lines.append("    %% Node style definitions")
+        lines.append("    classDef startNode fill:#90EE90,stroke:#228B22")
+        lines.append("    classDef endNode fill:#FFB6C1,stroke:#DC143C")
+        lines.append("    classDef processNode fill:#87CEEB,stroke:#4169E1")
+        lines.append("    classDef branchNode fill:#DDA0DD,stroke:#8B008B")
+        lines.append("    classDef agentNode fill:#FFD700,stroke:#DAA520")
+        lines.append("")
+
+        # Add nodes
+        lines.append("    %% Nodes")
+        node_type_map = {}
+        for node in structure["nodes"]:
+            node_id = node["id"]
+            label = node["label"]
+            node_type = node["type"]
+            node_type_map[node_id] = node_type
+
+            if include_descriptions and node.get("description"):
+                label = f"{label}<br/><small>{node['description']}</small>"
+
+            # Use different shapes based on node type
+            if node_type == "start":
+                lines.append(f"    {node_id}([{label}])")
+            elif node_type == "end":
+                lines.append(f"    {node_id}([{label}])")
+            elif node_type == "branch":
+                lines.append(f"    {node_id}{{{label}}}")
+            elif node_type == "agent":
+                lines.append(f"    {node_id}[/{label}/]")
+            else:
+                lines.append(f"    {node_id}[{label}]")
+
+        lines.append("")
+
+        # Add sequential edges
+        lines.append("    %% Sequential edges")
+        for edge in structure["edges"]:
+            source = edge["source"]
+            target = edge["target"]
+
+            # Handle special start/end nodes
+            if source == "__start__":
+                lines.append(f"    START(( )) --> {target}")
+            elif target == "__end__":
+                lines.append(f"    {source} --> END(( ))")
+            else:
+                lines.append(f"    {source} --> {target}")
+
+        lines.append("")
+
+        # Add conditional edges
+        lines.append("    %% Conditional edges")
+        for source_node, edge_info in structure["conditional_edges"].items():
+            routes = edge_info["routes"]
+            for label, target in routes.items():
+                lines.append(f"    {source_node} -->|{label}| {target}")
+
+        lines.append("")
+
+        # Apply styles
+        lines.append("    %% Apply styles")
+        for node_id, node_type in node_type_map.items():
+            if node_type == "start":
+                lines.append(f"    class {node_id} startNode")
+            elif node_type == "end":
+                lines.append(f"    class {node_id} endNode")
+            elif node_type == "process":
+                lines.append(f"    class {node_id} processNode")
+            elif node_type == "branch":
+                lines.append(f"    class {node_id} branchNode")
+            elif node_type == "agent":
+                lines.append(f"    class {node_id} agentNode")
+
+        return "\n".join(lines)
+
+    def draw_mermaid(
+        self,
+        output_file: str | None = None,
+        format: str = "png",
+        include_descriptions: bool = True,
+    ) -> str:
+        """
+        Generate and optionally render a Mermaid diagram of the graph.
+
+        This method generates the Mermaid source code and can optionally
+        render it to PNG via the Kroki API.
+
+        Args:
+            output_file: Optional file path to save PNG (requires network).
+            format: Output format ('png', 'svg').
+            include_descriptions: Include node descriptions.
+
+        Returns:
+            Mermaid diagram source code.
+
+        Raises:
+            RuntimeError: If rendering fails and output_file is specified.
+        """
+        import base64
+        import zlib
+
+        mermaid_code = self.get_graph_mermaid(include_descriptions=include_descriptions)
+
+        # If no output file requested, just return the code
+        if not output_file:
+            return mermaid_code
+
+        # Render via Kroki API
+        try:
+            import httpx
+
+            # Compress and encode for Kroki
+            compressed = zlib.compress(mermaid_code.encode("utf-8"), 9)
+            encoded = base64.urlsafe_b64encode(compressed).decode("ascii")
+
+            # Build Kroki URL
+            kroki_url = f"https://kroki.io/mermaid/{format}/{encoded}"
+
+            # Fetch rendered diagram
+            with httpx.Client(timeout=30.0) as client:
+                response = client.get(kroki_url)
+                response.raise_for_status()
+
+            # Save to file
+            with open(output_file, "wb") as f:
+                f.write(response.content)
+
+            self.logger.info(f"Saved graph diagram to {output_file}")
+
+        except ImportError:
+            self.logger.warning(
+                "httpx not available for Kroki rendering. "
+                "Install with: pip install httpx"
+            )
+        except Exception as e:
+            self.logger.error(f"Failed to render diagram: {e}")
+            raise RuntimeError(f"Diagram rendering failed: {e}") from e
+
+        return mermaid_code
+
+    def get_execution_trace_mermaid(
+        self,
+        execution_path: list[str],
+        timings: dict[str, float] | None = None,
+    ) -> str:
+        """
+        Generate a Mermaid diagram showing an execution trace.
+
+        Args:
+            execution_path: List of node IDs in execution order.
+            timings: Optional dict of node_id -> execution_time_ms.
+
+        Returns:
+            Mermaid sequence diagram source code.
+        """
+        lines = ["sequenceDiagram"]
+        lines.append("    autonumber")
+        lines.append("")
+
+        # Define participants
+        unique_nodes = []
+        for node in execution_path:
+            if node not in unique_nodes:
+                unique_nodes.append(node)
+
+        for node in unique_nodes:
+            # Format label
+            label = node.replace("_", " ").title()
+            lines.append(f"    participant {node} as {label}")
+
+        lines.append("")
+
+        # Add execution arrows
+        for i, node in enumerate(execution_path):
+            if i == 0:
+                lines.append(f"    Note over {node}: Start")
+            elif i < len(execution_path) - 1:
+                prev_node = execution_path[i - 1]
+                timing_label = ""
+                if timings and prev_node in timings:
+                    timing_label = f" [{timings[prev_node]:.1f}ms]"
+                lines.append(f"    {prev_node}->>+{node}: Execute{timing_label}")
+
+            if i == len(execution_path) - 1:
+                lines.append(f"    Note over {node}: End")
+
+        return "\n".join(lines)
