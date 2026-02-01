@@ -666,7 +666,7 @@ class TestErrorHandlingIntegration:
         mock_llm.set_failure_mode(True, "Service unavailable")
 
         # First call fails
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError):
             await mock_llm.generate("Test query")
 
         # Subsequent call succeeds

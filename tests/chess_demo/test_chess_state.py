@@ -149,7 +149,7 @@ class TestChessState:
 
         # Should have 14 channels
         try:
-            import torch
+            import torch  # noqa: F401 - availability check
             assert tensor.shape == (14, 8, 8)
 
             # Check that pieces are encoded correctly

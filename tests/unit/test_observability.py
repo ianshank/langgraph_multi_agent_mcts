@@ -35,7 +35,6 @@ except ImportError:
 
 try:
     from src.observability.decorators import (
-        LogConfig,
         cached,
         debug_on_error,
         logged,

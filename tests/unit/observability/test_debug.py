@@ -7,11 +7,9 @@ and verbose debugging controls.
 
 from __future__ import annotations
 
-import logging
 import os
 from dataclasses import dataclass, field
-from typing import Any
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
@@ -24,7 +22,6 @@ from src.observability.debug import (
     print_debug_banner,
     visualize_mcts_tree,
 )
-
 
 # ============================================================================
 # Test Fixtures
@@ -39,7 +36,7 @@ class MockMCTSNode:
     action: str = "root"
     visits: int = 0
     value: float = 0.0
-    children: list["MockMCTSNode"] = field(default_factory=list)
+    children: list[MockMCTSNode] = field(default_factory=list)
     _ucb_value: float = 0.0
 
     def ucb1(self) -> float:

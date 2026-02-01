@@ -56,7 +56,7 @@ except ImportError:
     API_AVAILABLE = False
 
 try:
-    from src.api.auth import (
+    from src.api.auth import (  # noqa: F401 - for future tests
         APIKeyAuthenticator,
         ClientInfo,
         RateLimitConfig,
@@ -68,7 +68,7 @@ except ImportError:
     AUTH_AVAILABLE = False
 
 try:
-    from src.api.exceptions import (
+    from src.api.exceptions import (  # noqa: F401 - for future tests
         AuthenticationError,
         FrameworkError,
         RateLimitError,

@@ -220,7 +220,7 @@ class ChessActionEncoder:
         """Total size of action space."""
         return self.config.total_actions
 
-    @lru_cache(maxsize=8192)
+    @lru_cache(maxsize=8192)  # noqa: B019 - intentional: class used as singleton
     def encode_move(self, move_uci: str, from_black_perspective: bool = False) -> int:
         """Encode a UCI move string to action index.
 

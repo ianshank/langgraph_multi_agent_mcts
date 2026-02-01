@@ -444,7 +444,7 @@ class AssemblyGraph(nx.DiGraph):
             try:
                 min_path = self.get_min_construction_pathway()
                 stats['min_pathway_length'] = len(min_path)
-            except:
+            except Exception:  # Catch all graph calculation errors
                 stats['min_pathway_length'] = 0
 
         return stats

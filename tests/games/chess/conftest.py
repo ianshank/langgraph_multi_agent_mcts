@@ -22,7 +22,7 @@ if TYPE_CHECKING:
 
 # Check if Selenium is available
 try:
-    import selenium
+    import selenium  # noqa: F401 - availability check
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False

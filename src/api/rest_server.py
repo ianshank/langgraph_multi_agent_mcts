@@ -49,12 +49,14 @@ try:
         AuthenticationError,
         FrameworkError,
         RateLimitError,
+        ValidationError,
     )
     from src.api.framework_service import (
         FrameworkConfig,
         FrameworkService,
         FrameworkState,
     )
+    from src.models.validation import QueryInput
 
     IMPORTS_AVAILABLE = True
     FRAMEWORK_SERVICE_AVAILABLE = True

@@ -8,7 +8,6 @@ from __future__ import annotations
 
 import asyncio
 import time
-from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -21,7 +20,6 @@ from src.observability.profiling import (
     profile_block,
     profile_function,
 )
-
 
 # ============================================================================
 # TimingResult Tests
@@ -564,4 +562,4 @@ class TestProfileFunctionDecorator:
         my_function()
 
         # Name should include function name
-        assert any("my_function" in name for name in profiler._aggregate_timings.keys())
+        assert any("my_function" in name for name in profiler._aggregate_timings)

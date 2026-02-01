@@ -8,13 +8,11 @@ from __future__ import annotations
 
 import gzip
 import hashlib
-import os
 from unittest.mock import MagicMock, patch
 
 import pytest
 
 from src.storage.s3_client import S3Config, S3StorageClient
-
 
 # ============================================================================
 # S3Config Tests
@@ -307,7 +305,7 @@ class TestS3StorageClientEdgeCases:
 
     def test_decompress_invalid_data(self, client: S3StorageClient) -> None:
         """Test decompressing invalid data raises error."""
-        with pytest.raises(Exception):
+        with pytest.raises(OSError):  # gzip.BadGzipFile is subclass of OSError
             client._decompress_data(b"not valid gzip")
 
     def test_large_data_compression(self, client: S3StorageClient) -> None:
