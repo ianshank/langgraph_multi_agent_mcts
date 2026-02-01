@@ -38,7 +38,6 @@ logger = logging.getLogger(__name__)
 
 # Import framework components
 try:
-    from src.adapters.llm import create_client  # noqa: F401
     from src.api.auth import (
         APIKeyAuthenticator,
         ClientInfo,
@@ -48,17 +47,14 @@ try:
     )
     from src.api.exceptions import (
         AuthenticationError,
-        AuthorizationError,  # noqa: F401
         FrameworkError,
         RateLimitError,
-        ValidationError,  # noqa: F401
     )
     from src.api.framework_service import (
         FrameworkConfig,
         FrameworkService,
         FrameworkState,
     )
-    from src.models.validation import MCTSConfig, QueryInput  # noqa: F401
 
     IMPORTS_AVAILABLE = True
     FRAMEWORK_SERVICE_AVAILABLE = True
