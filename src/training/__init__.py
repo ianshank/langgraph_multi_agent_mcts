@@ -13,7 +13,7 @@ from __future__ import annotations
 # Check PyTorch availability for conditional imports
 _HAS_TORCH = False
 try:
-    import torch as _torch
+    import torch as _torch  # noqa: F401
 
     _HAS_TORCH = True
 except ImportError:
@@ -40,10 +40,9 @@ from .experiment_tracker import (
     WandBTracker,
 )
 
-
 # Conditional imports for PyTorch-dependent modules
 if _HAS_TORCH:
-    from .evaluation_service import (
+    from .evaluation_service import (  # noqa: F401
         EvaluationConfig,
         EvaluationResult,
         EvaluationService,

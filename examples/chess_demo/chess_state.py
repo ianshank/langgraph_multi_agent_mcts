@@ -71,14 +71,26 @@ class GameState(Protocol):
 
 
 # Piece values for evaluation heuristics
-PIECE_VALUES = {
-    chess.PAWN: 100 if CHESS_AVAILABLE else 100,
-    chess.KNIGHT: 320 if CHESS_AVAILABLE else 320,
-    chess.BISHOP: 330 if CHESS_AVAILABLE else 330,
-    chess.ROOK: 500 if CHESS_AVAILABLE else 500,
-    chess.QUEEN: 900 if CHESS_AVAILABLE else 900,
-    chess.KING: 20000 if CHESS_AVAILABLE else 20000,
-}
+# Use integer keys when chess module not available for type safety
+if CHESS_AVAILABLE:
+    PIECE_VALUES = {
+        chess.PAWN: 100,
+        chess.KNIGHT: 320,
+        chess.BISHOP: 330,
+        chess.ROOK: 500,
+        chess.QUEEN: 900,
+        chess.KING: 20000,
+    }
+else:
+    # Fallback with integer piece type constants (1=PAWN, 2=KNIGHT, etc.)
+    PIECE_VALUES = {
+        1: 100,    # PAWN
+        2: 320,    # KNIGHT
+        3: 330,    # BISHOP
+        4: 500,    # ROOK
+        5: 900,    # QUEEN
+        6: 20000,  # KING
+    }
 
 # Position tables for piece-square evaluation (simplified)
 PAWN_TABLE = [

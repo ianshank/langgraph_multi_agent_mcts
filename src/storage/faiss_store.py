@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Final
 
 if TYPE_CHECKING:
-    from numpy.typing import NDArray
+    pass
 
 # Module-level logger
 logger: logging.Logger = logging.getLogger(__name__)
@@ -392,7 +392,7 @@ class FAISSVectorStore:
                 distances, indices = self._index.search(query_embedding, min(search_k, len(self._documents)))
 
                 results = []
-                for score, idx in zip(distances[0], indices[0]):
+                for score, idx in zip(distances[0], indices[0], strict=True):
                     if idx == -1:  # FAISS returns -1 for missing results
                         continue
 

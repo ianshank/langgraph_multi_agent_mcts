@@ -28,9 +28,11 @@ Usage:
 import os
 import time
 
-import docker
 import pytest
 import requests
+
+# Optional docker import - skip tests if not available
+docker = pytest.importorskip("docker", reason="Docker SDK required for deployment tests")
 
 # ============================================================================
 # Fixtures
@@ -91,7 +93,7 @@ def wait_for_container_healthy(
                 # Check if health check is configured
                 health = container.attrs.get("State", {}).get("Health", {})
                 status = health.get("Status")
-                
+
                 # If healthy, or if running and no health check (status is None)
                 if status == "healthy" or status is None:
                     return True
@@ -115,7 +117,7 @@ def exec_in_container(
             # Try to restart it for the test
             container.start()
             time.sleep(5) # Give it a moment
-            
+
         exit_code, output = container.exec_run(command)
         return exit_code, output.decode("utf-8")
     except docker.errors.NotFound:
@@ -140,7 +142,7 @@ def test_training_container_running(docker_client, training_container_name):
             container.start()
             time.sleep(2)
             container.reload()
-            
+
         assert container.status == "running", f"Container status: {container.status}"
     except docker.errors.NotFound:
         pytest.skip(f"Container {training_container_name} not found")
@@ -160,7 +162,7 @@ def test_training_container_healthy(docker_client, training_container_name):
     # Wait for it to become healthy or running
     # Note: Our demo container might exit successfully (code 0) which is also "healthy" logic-wise
     # but for this test we want it running.
-    
+
     start_time = time.time()
     healthy = False
     while time.time() - start_time < 30:
@@ -178,7 +180,7 @@ def test_training_container_healthy(docker_client, training_container_name):
         except Exception:
             pass
         time.sleep(2)
-            
+
     if not healthy:
         pytest.fail(f"Container {training_container_name} did not become healthy")
 
@@ -337,7 +339,7 @@ def test_api_container_health_endpoint(api_container_name):
         paths = ["/health", "/healthz", "/api/health"]
         success = False
         last_status = None
-        
+
         for path in paths:
             try:
                 response = requests.get(f"http://localhost:8000{path}", timeout=5)
@@ -347,7 +349,7 @@ def test_api_container_health_endpoint(api_container_name):
                 last_status = response.status_code
             except requests.exceptions.RequestException:
                 continue
-                
+
         if not success:
             # If we got a 404, the container is running but endpoint might be different
             # Skip if we can't find the health endpoint but can connect
@@ -357,7 +359,7 @@ def test_api_container_health_endpoint(api_container_name):
                 pytest.fail(f"Health check failed: {last_status}")
             else:
                 pytest.skip("API container not accessible on localhost:8000")
-                
+
     except requests.exceptions.ConnectionError:
         pytest.skip("API container not accessible on localhost:8000")
 

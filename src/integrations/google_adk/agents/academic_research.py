@@ -53,7 +53,7 @@ class AcademicResearchAgent(ADKAgentAdapter):
         except ImportError:
             raise RuntimeError(
                 "google-adk not installed. Install with: pip install 'langgraph-multi-agent-mcts[google-adk]'"
-            )
+            ) from None
 
         # Verify search is enabled
         if not self.config.enable_search:

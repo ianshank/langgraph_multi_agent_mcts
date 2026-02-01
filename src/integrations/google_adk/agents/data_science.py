@@ -59,7 +59,7 @@ class DataScienceAgent(ADKAgentAdapter):
         except ImportError:
             raise RuntimeError(
                 "google-adk not installed. Install with: pip install 'langgraph-multi-agent-mcts[google-adk]'"
-            )
+            ) from None
 
         # Setup environment variables for database connections
         self._setup_database_config()

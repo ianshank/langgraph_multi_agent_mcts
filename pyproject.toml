@@ -198,6 +198,11 @@ markers = [
     "component: Component-level tests for specific modules",
     "contract: Contract tests for API and interface compliance",
     "property: Property-based tests using hypothesis",
+    "ui: UI/browser-based tests",
+    "journey: User journey tests across features",
+    "enterprise: Enterprise feature tests",
+    "ma_due_diligence: M&A due diligence workflow tests",
+    "selenium: Selenium browser automation tests",
 ]
 
 [tool.coverage.run]

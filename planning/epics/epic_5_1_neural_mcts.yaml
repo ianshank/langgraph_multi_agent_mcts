@@ -1,0 +1,106 @@
+# Epic 5.1: Neural MCTS
+# Part of Milestone 5: Advanced Features
+
+epic:
+  id: E5.1
+  name: Neural MCTS
+  milestone: M5
+  status: planned
+  owner: coder
+
+stories:
+  - id: S5.1.1
+    name: Implement Neural Rollout Policy
+    status: planned
+    subagent: coder
+    description: |
+      Create neural network-based rollout policy that learns
+      from historical data and agent feedback.
+    acceptance_criteria:
+      - Neural policy class implemented
+      - Training pipeline for policy learning
+      - Integration with MCTS engine
+      - Performance comparable to heuristic
+    definition_of_done:
+      - NeuralRolloutPolicy class complete
+      - Training data pipeline
+      - Evaluation metrics
+      - Documentation
+    artifacts:
+      - src/framework/mcts/neural_policy.py
+      - training/rollout_policy_trainer.py
+      - tests/unit/mcts/test_neural_policy.py
+
+  - id: S5.1.2
+    name: Implement Value Network
+    status: planned
+    subagent: coder
+    description: |
+      Create value network for state evaluation to guide MCTS search.
+    acceptance_criteria:
+      - Value network architecture defined
+      - Training pipeline functional
+      - Integration with selection policy
+      - Uncertainty quantification
+    definition_of_done:
+      - ValueNetwork class complete
+      - Training infrastructure
+      - Calibration testing
+    artifacts:
+      - src/framework/mcts/value_network.py
+      - training/value_network_trainer.py
+
+  - id: S5.1.3
+    name: Implement Policy Network
+    status: planned
+    subagent: coder
+    description: |
+      Create policy network for action prior probabilities.
+    acceptance_criteria:
+      - Policy network architecture
+      - Prior probability outputs
+      - Integration with MCTS expansion
+      - Temperature scaling
+    definition_of_done:
+      - PolicyNetwork class complete
+      - Prior integration in MCTS
+      - Ablation studies
+    artifacts:
+      - src/framework/mcts/policy_network.py
+
+  - id: S5.1.4
+    name: AlphaZero-style Training Loop
+    status: planned
+    subagent: coder
+    description: |
+      Implement self-play training loop inspired by AlphaZero.
+    acceptance_criteria:
+      - Self-play data generation
+      - Combined loss function
+      - Experience replay
+      - Checkpoint management
+    definition_of_done:
+      - Training loop functional
+      - Distributed training support
+      - Experiment tracking
+    artifacts:
+      - training/alphazero_trainer.py
+      - training/self_play.py
+
+dependencies:
+  - E3.2  # Performance optimization complete
+
+neural_architecture:
+  value_network:
+    input: state_embedding
+    hidden: [256, 128]
+    output: scalar (0, 1)
+
+  policy_network:
+    input: state_embedding
+    hidden: [256, 128]
+    output: action_priors
+
+  shared_backbone:
+    encoder: transformer
+    embedding_dim: 256

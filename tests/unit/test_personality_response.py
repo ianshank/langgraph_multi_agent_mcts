@@ -113,8 +113,8 @@ class TestPersonalityTraits:
         # Arrange
         traits = PersonalityTraits()
 
-        # Act & Assert
-        with pytest.raises(Exception):  # FrozenInstanceError in dataclasses
+        # Act & Assert - FrozenInstanceError is subclass of AttributeError
+        with pytest.raises(AttributeError):
             traits.loyalty = 0.5  # type: ignore
 
 

@@ -112,7 +112,7 @@ async def example_classification_task():
 
     # Get agent capabilities
     capabilities = agent.get_capabilities()
-    print(f"\nAgent Capabilities:")
+    print("\nAgent Capabilities:")
     print(f"- Supported Tasks: {capabilities['supported_tasks']}")
     print(f"- Supported Metrics: {capabilities['supported_metrics']}")
     print(f"- Features: {capabilities['features']}")

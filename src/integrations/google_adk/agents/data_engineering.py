@@ -58,7 +58,7 @@ class DataEngineeringAgent(ADKAgentAdapter):
         except ImportError:
             raise RuntimeError(
                 "google-adk not installed. Install with: pip install 'langgraph-multi-agent-mcts[google-adk]'"
-            )
+            ) from None
 
         # Load Dataform configuration from environment
         import os

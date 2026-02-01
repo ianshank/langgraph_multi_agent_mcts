@@ -11,14 +11,23 @@ import asyncio
 import logging
 import random
 import time
-from dataclasses import dataclass, field
+from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 import numpy as np
-import torch
-import torch.nn.functional as F
+
+# Optional torch import for neural network operations
+try:
+    import torch
+    import torch.nn.functional as F
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    F = None  # type: ignore[assignment]
+    TORCH_AVAILABLE = False
 
 if TYPE_CHECKING:
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
@@ -425,7 +434,7 @@ class ContinuousLearningSession:
         self.current_game_id_display: str = ""
 
     @property
-    def agent(self) -> "ChessEnsembleAgent":
+    def agent(self) -> ChessEnsembleAgent:
         """Lazy load the ensemble agent."""
         if self._agent is None:
             from src.games.chess.ensemble_agent import ChessEnsembleAgent
@@ -504,7 +513,7 @@ class ContinuousLearningSession:
             # For now, we rely on the positions list but this is O(N) checking per move which is slow for long games
             # Optimization: Use a localized counter if needed, but for < 150 moves list scan is acceptable for now
             # Actually, let's implement a proper counter
-            
+
             # (Note: This is just a placeholder comment for the thought process, implementing below)
 
             move_start = time.time()

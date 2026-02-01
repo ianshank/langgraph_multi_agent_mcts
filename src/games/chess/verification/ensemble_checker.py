@@ -304,7 +304,7 @@ class EnsembleConsistencyChecker:
             issues.append(
                 VerificationIssue(
                     code="INAPPROPRIATE_ROUTING",
-                    message=(f"Routing decision may not be optimal for game phase"),
+                    message=("Routing decision may not be optimal for game phase"),
                     severity=VerificationSeverity.WARNING,
                     context={
                         "primary_agent": ensemble_response.routing_decision.primary_agent.value,

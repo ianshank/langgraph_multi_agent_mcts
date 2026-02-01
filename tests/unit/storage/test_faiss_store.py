@@ -14,7 +14,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
-
 # =============================================================================
 # Test Markers
 # =============================================================================
@@ -29,8 +28,8 @@ pytestmark = [
 # =============================================================================
 
 try:
-    import faiss
-    import numpy as np
+    import faiss  # noqa: F401 - availability check
+    import numpy as np  # noqa: F401 - availability check
 
     FAISS_AVAILABLE = True
 except ImportError:

@@ -23,7 +23,7 @@ import os
 import secrets
 import time
 from contextlib import asynccontextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
@@ -49,12 +49,14 @@ try:
         AuthenticationError,
         FrameworkError,
         RateLimitError,
+        ValidationError,
     )
     from src.api.framework_service import (
         FrameworkConfig,
         FrameworkService,
         FrameworkState,
     )
+    from src.models.validation import QueryInput
 
     IMPORTS_AVAILABLE = True
     FRAMEWORK_SERVICE_AVAILABLE = True
@@ -365,7 +367,7 @@ async def health_check():
 
     return HealthResponse(
         status=status,
-        timestamp=datetime.now(timezone.utc).isoformat(),
+        timestamp=datetime.now(UTC).isoformat(),
         version="1.0.0",
         uptime_seconds=time.time() - start_time,
     )
@@ -432,7 +434,7 @@ async def prometheus_metrics():
         504: {"model": ErrorResponse, "description": "Request timeout"},
     },
 )
-async def process_query(request: QueryRequest, client_info: ClientInfo = Depends(verify_api_key)):
+async def process_query(request: QueryRequest, client_info: ClientInfo = Depends(verify_api_key)):  # noqa: B008
     """
     Process a query using the multi-agent MCTS framework.
 
@@ -528,7 +530,7 @@ async def process_query(request: QueryRequest, client_info: ClientInfo = Depends
 
 
 @app.get("/stats", tags=["metrics"])
-async def get_stats(client_info: ClientInfo = Depends(verify_api_key)):
+async def get_stats(client_info: ClientInfo = Depends(verify_api_key)):  # noqa: B008
     """
     Get usage statistics for the authenticated client.
 

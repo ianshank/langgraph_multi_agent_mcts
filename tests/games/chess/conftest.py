@@ -11,9 +11,13 @@ import os
 import subprocess
 import sys
 import time
-from typing import TYPE_CHECKING, Generator
+from collections.abc import Generator
+from typing import TYPE_CHECKING
 
 import pytest
+
+# Skip entire chess tests directory if required dependencies not available
+pytest.importorskip("chess", reason="python-chess required for chess tests")
 
 if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
@@ -21,7 +25,7 @@ if TYPE_CHECKING:
 
 # Check if Selenium is available
 try:
-    import selenium
+    import selenium  # noqa: F401 - availability check
     SELENIUM_AVAILABLE = True
 except ImportError:
     SELENIUM_AVAILABLE = False
@@ -131,7 +135,7 @@ def browser_options() -> dict:
 
 
 @pytest.fixture(scope="function")
-def driver(browser_options: dict, ui_server: subprocess.Popen | None) -> Generator["WebDriver", None, None]:
+def driver(browser_options: dict, ui_server: subprocess.Popen | None) -> Generator[WebDriver, None, None]:
     """Create and configure WebDriver for each test.
 
     This fixture creates a new browser instance for each test function,

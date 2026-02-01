@@ -24,13 +24,19 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import numpy as np
-import torch
+
+# Optional torch import
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    TORCH_AVAILABLE = False
 
 if TYPE_CHECKING:
     import chess
 
 from src.games.chess.config import ChessBoardConfig
-
 
 # Piece type to plane index mapping
 PIECE_TO_PLANE: dict[int, int] = {
@@ -70,9 +76,9 @@ class ChessBoardRepresentation:
 
     def encode(
         self,
-        board: "chess.Board",
+        board: chess.Board,
         from_perspective: int = 1,
-        history: list["chess.Board"] | None = None,
+        history: list[chess.Board] | None = None,
     ) -> torch.Tensor:
         """Encode a chess position to tensor representation.
 
@@ -155,7 +161,7 @@ class ChessBoardRepresentation:
     def _encode_pieces(
         self,
         tensor: torch.Tensor,
-        board: "chess.Board",
+        board: chess.Board,
         flip: bool,
     ) -> None:
         """Encode piece positions into tensor planes.
@@ -195,7 +201,7 @@ class ChessBoardRepresentation:
     def _encode_history(
         self,
         tensor: torch.Tensor,
-        history: list["chess.Board"],
+        history: list[chess.Board],
         start_plane: int,
         flip: bool,
     ) -> None:
@@ -214,7 +220,7 @@ class ChessBoardRepresentation:
     def _encode_pieces_at_offset(
         self,
         tensor: torch.Tensor,
-        board: "chess.Board",
+        board: chess.Board,
         plane_offset: int,
         flip: bool,
     ) -> None:
@@ -252,7 +258,7 @@ class ChessBoardRepresentation:
 
     def encode_batch(
         self,
-        boards: list["chess.Board"],
+        boards: list[chess.Board],
         from_perspective: int | list[int] = 1,
     ) -> torch.Tensor:
         """Encode a batch of chess positions.
@@ -312,7 +318,7 @@ class ChessBoardRepresentation:
 
 
 def board_to_tensor(
-    board: "chess.Board",
+    board: chess.Board,
     config: ChessBoardConfig | None = None,
     from_perspective: int = 1,
 ) -> torch.Tensor:

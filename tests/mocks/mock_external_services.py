@@ -503,7 +503,7 @@ class MockLLMClient:
 
         if self._should_fail:
             self._should_fail = False
-            raise Exception(self._failure_message)
+            raise RuntimeError(self._failure_message)
 
         if self.responses and self._response_index < len(self.responses):
             response = self.responses[self._response_index]

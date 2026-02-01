@@ -1,0 +1,81 @@
+# Epic 3.2: Performance Optimization
+# Part of Milestone 3: Review and Polish
+
+epic:
+  id: E3.2
+  name: Performance Optimization
+  milestone: M3
+  status: completed
+  owner: coder
+
+stories:
+  - id: S3.2.1
+    name: Establish Performance Benchmarks
+    status: completed
+    subagent: sge
+    description: |
+      Create performance benchmarks for critical paths including
+      MCTS iterations, agent response times, and graph execution.
+    acceptance_criteria:
+      - Benchmark suite created
+      - Baseline metrics established
+      - CI integration for regression detection
+      - Results tracked over time
+    definition_of_done:
+      - tests/performance/ directory with benchmarks
+      - Baseline results documented
+      - Performance thresholds defined
+    artifacts:
+      - tests/performance/test_stress.py
+      - tests/performance/test_load.py
+      - docs/PERFORMANCE_BENCHMARKS.md
+
+  - id: S3.2.2
+    name: Optimize Hot Paths
+    status: completed
+    subagent: coder
+    description: |
+      Profile and optimize performance-critical code paths.
+    acceptance_criteria:
+      - MCTS iterations < threshold
+      - Agent response time < threshold
+      - Memory usage within bounds
+      - No memory leaks detected
+    definition_of_done:
+      - Profiling results analyzed
+      - Hotspots optimized
+      - Caching implemented where beneficial
+      - Parallel execution utilized
+    artifacts:
+      - src/framework/caching.py
+      - src/framework/mcts/parallel_mcts.py
+      - src/training/performance_optimizer.py
+
+  - id: S3.2.3
+    name: Add Performance Module
+    status: completed
+    subagent: coder
+    description: |
+      Implement Phase 5.1 performance optimization module with
+      profiling decorators and metrics collection.
+    acceptance_criteria:
+      - Profiling decorators available
+      - Performance metrics collection
+      - Resource monitoring (CPU, memory)
+      - Configurable thresholds
+    definition_of_done:
+      - Performance optimizer class complete
+      - Integration with observability
+      - Unit tests passing
+    artifacts:
+      - src/training/performance_optimizer.py
+      - tests/unit/training/test_performance_optimizer.py
+
+dependencies:
+  - E2.2  # Orchestration must be complete
+
+performance_thresholds:
+  mcts_iteration_ms: 100
+  agent_response_ms: 500
+  graph_execution_ms: 2000
+  memory_mb: 512

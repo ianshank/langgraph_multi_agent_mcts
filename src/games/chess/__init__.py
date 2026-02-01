@@ -34,6 +34,7 @@ Example usage:
     ```
 """
 
+from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import (
     AgentType,
     ChessActionSpaceConfig,
@@ -50,44 +51,9 @@ from src.games.chess.config import (
     get_chess_medium_config,
     get_chess_small_config,
 )
-from src.games.chess.action_space import ChessActionEncoder
-from src.games.chess.representation import ChessBoardRepresentation, board_to_tensor
 from src.games.chess.state import ChessGameState, create_initial_state, create_state_from_fen
-from src.games.chess.meta_controller import (
-    ChessFeatureExtractor,
-    ChessMetaController,
-    ChessPositionFeatures,
-    RoutingDecision,
-)
-from src.games.chess.ensemble_agent import (
-    AgentResponse,
-    ChessEnsembleAgent,
-    ChessStateEncoder,
-    EnsembleResponse,
-)
-from src.games.chess.training import (
-    ChessDataAugmentation,
-    ChessOpeningBook,
-    ChessTrainingMetrics,
-    ChessTrainingOrchestrator,
-    SelfPlayGame,
-    create_chess_orchestrator,
-)
-from src.games.chess.ui import (
-    GameSession,
-    create_chess_ui,
-    render_board_html,
-)
-from src.games.chess.continuous_learning import (
-    ContinuousLearningConfig,
-    ContinuousLearningSession,
-    GameRecord,
-    GameResult,
-    OnlineLearner,
-    ScoreCard,
-    create_learning_session,
-)
 
+# Base exports always available
 __all__ = [
     # Config
     "AgentType",
@@ -106,40 +72,101 @@ __all__ = [
     "get_chess_small_config",
     # Action space
     "ChessActionEncoder",
-    # Representation
-    "ChessBoardRepresentation",
-    "board_to_tensor",
     # State
     "ChessGameState",
     "create_initial_state",
     "create_state_from_fen",
-    # Meta-controller
-    "ChessFeatureExtractor",
-    "ChessMetaController",
-    "ChessPositionFeatures",
-    "RoutingDecision",
-    # Ensemble agent
-    "AgentResponse",
-    "ChessEnsembleAgent",
-    "ChessStateEncoder",
-    "EnsembleResponse",
-    # Training
-    "ChessDataAugmentation",
-    "ChessOpeningBook",
-    "ChessTrainingMetrics",
-    "ChessTrainingOrchestrator",
-    "SelfPlayGame",
-    "create_chess_orchestrator",
-    # UI
-    "GameSession",
-    "create_chess_ui",
-    "render_board_html",
-    # Continuous Learning
-    "ContinuousLearningConfig",
-    "ContinuousLearningSession",
-    "GameRecord",
-    "GameResult",
-    "OnlineLearner",
-    "ScoreCard",
-    "create_learning_session",
 ]
+
+# Optional torch-dependent representation imports
+try:
+    from src.games.chess.representation import (  # noqa: F401 - re-exported
+        ChessBoardRepresentation,
+        board_to_tensor,
+    )
+    __all__.extend([
+        "ChessBoardRepresentation",
+        "board_to_tensor",
+    ])
+except ImportError:
+    pass
+
+# Optional torch-dependent imports
+try:
+    from src.games.chess.continuous_learning import (  # noqa: F401 - re-exported
+        ContinuousLearningConfig,
+        ContinuousLearningSession,
+        GameRecord,
+        GameResult,
+        OnlineLearner,
+        ScoreCard,
+        create_learning_session,
+    )
+    from src.games.chess.ensemble_agent import (  # noqa: F401 - re-exported
+        AgentResponse,
+        ChessEnsembleAgent,
+        ChessStateEncoder,
+        EnsembleResponse,
+    )
+    from src.games.chess.meta_controller import (  # noqa: F401 - re-exported
+        ChessFeatureExtractor,
+        ChessMetaController,
+        ChessPositionFeatures,
+        RoutingDecision,
+    )
+    from src.games.chess.training import (  # noqa: F401 - re-exported
+        ChessDataAugmentation,
+        ChessOpeningBook,
+        ChessTrainingMetrics,
+        ChessTrainingOrchestrator,
+        SelfPlayGame,
+        create_chess_orchestrator,
+    )
+
+    # Add torch-dependent exports
+    __all__.extend([
+        # Meta-controller
+        "ChessFeatureExtractor",
+        "ChessMetaController",
+        "ChessPositionFeatures",
+        "RoutingDecision",
+        # Ensemble agent
+        "AgentResponse",
+        "ChessEnsembleAgent",
+        "ChessStateEncoder",
+        "EnsembleResponse",
+        # Training
+        "ChessDataAugmentation",
+        "ChessOpeningBook",
+        "ChessTrainingMetrics",
+        "ChessTrainingOrchestrator",
+        "SelfPlayGame",
+        "create_chess_orchestrator",
+        # Continuous Learning
+        "ContinuousLearningConfig",
+        "ContinuousLearningSession",
+        "GameRecord",
+        "GameResult",
+        "OnlineLearner",
+        "ScoreCard",
+        "create_learning_session",
+    ])
+    TORCH_AVAILABLE = True
+except ImportError:
+    TORCH_AVAILABLE = False
+
+# Optional UI imports (requires gradio)
+try:
+    from src.games.chess.ui import (  # noqa: F401 - re-exported
+        GameSession,
+        create_chess_ui,
+        render_board_html,
+    )
+    __all__.extend([
+        "GameSession",
+        "create_chess_ui",
+        "render_board_html",
+    ])
+    UI_AVAILABLE = True
+except ImportError:
+    UI_AVAILABLE = False

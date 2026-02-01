@@ -581,7 +581,7 @@ class FrameworkService:
                 )
             raise TimeoutError(
                 f"Query processing timed out after {self._config.timeout_seconds}s"
-            )
+            ) from None
         except Exception as e:
             self._error_count += 1
             if _HAS_STRUCTURED_LOGGING:

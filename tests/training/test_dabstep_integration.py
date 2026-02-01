@@ -14,13 +14,13 @@ Expected outcomes:
 - Feature extraction for meta-controller training
 """
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 import pytest
 
 # Check if the datasets library is available
 try:
-    import datasets
+    import datasets  # noqa: F401 - availability check
 
     HAS_DATASETS = True
 except ImportError:

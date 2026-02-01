@@ -8,10 +8,15 @@ by the Neural MCTS framework for self-play and training.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from functools import lru_cache
 from typing import TYPE_CHECKING, Any
 
-import torch
+# Optional torch import
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    TORCH_AVAILABLE = False
 
 if TYPE_CHECKING:
     import numpy as np
@@ -19,7 +24,12 @@ if TYPE_CHECKING:
 from src.framework.mcts.neural_mcts import GameState
 from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import ChessActionSpaceConfig, ChessBoardConfig, GamePhase
-from src.games.chess.representation import ChessBoardRepresentation
+
+# Optional torch-dependent representation
+try:
+    from src.games.chess.representation import ChessBoardRepresentation
+except ImportError:
+    ChessBoardRepresentation = None  # type: ignore[assignment, misc]
 
 
 @dataclass(frozen=False)
@@ -279,7 +289,7 @@ class ChessGameState(GameState):
         from_black = self.current_player == -1
         return self._encoder.decode_move(index, from_black_perspective=from_black)
 
-    def get_action_mask(self) -> "np.ndarray":
+    def get_action_mask(self) -> np.ndarray:
         """Get mask of legal actions.
 
         Returns:
