@@ -28,9 +28,11 @@ Usage:
 import os
 import time
 
-import docker
 import pytest
 import requests
+
+# Optional docker import - skip tests if not available
+docker = pytest.importorskip("docker", reason="Docker SDK required for deployment tests")
 
 # ============================================================================
 # Fixtures

@@ -3,7 +3,10 @@ import time
 import urllib.request
 
 import pytest
-from gradio_client import Client
+
+# Optional gradio_client import - skip tests if not available
+gradio_client = pytest.importorskip("gradio_client", reason="Gradio client required for UI tests")
+Client = gradio_client.Client
 
 import app
 

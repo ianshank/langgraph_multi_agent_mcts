@@ -19,7 +19,9 @@ import random
 import time
 
 import pytest
-import torch
+
+# Optional torch import - skip tests if not available
+torch = pytest.importorskip("torch", reason="PyTorch required for E2E user journey tests")
 
 from tests.mocks.mock_external_services import (
     MockLLMClient,

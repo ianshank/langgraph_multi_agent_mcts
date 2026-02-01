@@ -20,7 +20,9 @@ from concurrent.futures import ThreadPoolExecutor
 from typing import Any
 
 import pytest
-import torch
+
+# Optional torch import - skip tests if not available
+torch = pytest.importorskip("torch", reason="PyTorch required for performance stress tests")
 
 from tests.mocks.mock_external_services import create_mock_llm
 

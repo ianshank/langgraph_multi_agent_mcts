@@ -10,7 +10,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
-import torch
+# Optional torch import
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    TORCH_AVAILABLE = False
 
 if TYPE_CHECKING:
     import numpy as np
@@ -18,7 +24,12 @@ if TYPE_CHECKING:
 from src.framework.mcts.neural_mcts import GameState
 from src.games.chess.action_space import ChessActionEncoder
 from src.games.chess.config import ChessActionSpaceConfig, ChessBoardConfig, GamePhase
-from src.games.chess.representation import ChessBoardRepresentation
+
+# Optional torch-dependent representation
+try:
+    from src.games.chess.representation import ChessBoardRepresentation
+except ImportError:
+    ChessBoardRepresentation = None  # type: ignore[assignment, misc]
 
 
 @dataclass(frozen=False)

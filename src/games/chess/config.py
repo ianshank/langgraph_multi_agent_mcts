@@ -20,7 +20,13 @@ from typing import TYPE_CHECKING, Any, ClassVar
 if TYPE_CHECKING:
     from src.training.system_config import SystemConfig
 
-import torch
+# Optional torch import for device configuration
+try:
+    import torch
+    TORCH_AVAILABLE = True
+except ImportError:
+    torch = None  # type: ignore[assignment]
+    TORCH_AVAILABLE = False
 
 
 class GamePhase(Enum):
@@ -357,7 +363,7 @@ class ChessConfig:
 
     # System settings
     device: str = field(
-        default_factory=lambda: "cuda" if torch.cuda.is_available() else "cpu"
+        default_factory=lambda: "cuda" if TORCH_AVAILABLE and torch.cuda.is_available() else "cpu"
     )
     seed: int = 42
     use_mixed_precision: bool = True
@@ -425,8 +431,9 @@ class ChessConfig:
 
     def _validate(self) -> None:
         """Validate configuration values."""
-        # Device validation
-        if self.device.startswith("cuda") and not torch.cuda.is_available():
+        # Device validation - check torch availability first
+        cuda_available = TORCH_AVAILABLE and torch.cuda.is_available()
+        if self.device.startswith("cuda") and not cuda_available:
             self.device = "cpu"
             self.use_mixed_precision = False
             self.distributed = False

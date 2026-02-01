@@ -16,6 +16,9 @@ from typing import TYPE_CHECKING
 
 import pytest
 
+# Skip entire chess tests directory if required dependencies not available
+pytest.importorskip("chess", reason="python-chess required for chess tests")
+
 if TYPE_CHECKING:
     from selenium.webdriver.remote.webdriver import WebDriver
 
