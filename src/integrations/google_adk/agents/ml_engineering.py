@@ -61,7 +61,7 @@ class MLEngineeringAgent(ADKAgentAdapter):
         except ImportError:
             raise RuntimeError(
                 "google-adk not installed. Install with: pip install 'langgraph-multi-agent-mcts[google-adk]'"
-            )
+            ) from None
 
         # Setup task directory structure
         self._setup_task_environment()

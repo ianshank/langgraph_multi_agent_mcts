@@ -260,7 +260,7 @@ class LocalEmbeddingStore:
                 new_embeddings = np.vstack(all_embeddings)
 
                 # Set embeddings on documents
-                for local_doc, emb in zip(new_docs, new_embeddings):
+                for local_doc, emb in zip(new_docs, new_embeddings, strict=True):
                     local_doc.embedding = emb
 
                 # Add to store

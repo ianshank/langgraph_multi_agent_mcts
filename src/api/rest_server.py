@@ -434,7 +434,7 @@ async def prometheus_metrics():
         504: {"model": ErrorResponse, "description": "Request timeout"},
     },
 )
-async def process_query(request: QueryRequest, client_info: ClientInfo = Depends(verify_api_key)):
+async def process_query(request: QueryRequest, client_info: ClientInfo = Depends(verify_api_key)):  # noqa: B008
     """
     Process a query using the multi-agent MCTS framework.
 
@@ -530,7 +530,7 @@ async def process_query(request: QueryRequest, client_info: ClientInfo = Depends
 
 
 @app.get("/stats", tags=["metrics"])
-async def get_stats(client_info: ClientInfo = Depends(verify_api_key)):
+async def get_stats(client_info: ClientInfo = Depends(verify_api_key)):  # noqa: B008
     """
     Get usage statistics for the authenticated client.
 

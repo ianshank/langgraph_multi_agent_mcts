@@ -68,7 +68,7 @@ class DeepSearchAgent(ADKAgentAdapter):
         except ImportError:
             raise RuntimeError(
                 "google-adk not installed. Install with: pip install 'langgraph-multi-agent-mcts[google-adk]'"
-            )
+            ) from None
 
         # Verify search is enabled
         if not self.config.enable_search:
@@ -225,13 +225,13 @@ class DeepSearchAgent(ADKAgentAdapter):
             "objectives": [
                 f"Understand current state of {topic}",
                 f"Identify key developments and trends in {topic}",
-                f"Analyze challenges and opportunities",
+                "Analyze challenges and opportunities",
                 "Synthesize comprehensive overview",
             ],
             "research_questions": [
                 f"What is {topic}?",
                 f"What are the latest developments in {topic}?",
-                f"What are the key challenges and solutions?",
+                "What are the key challenges and solutions?",
                 "What are future directions?",
             ],
             "search_strategy": {

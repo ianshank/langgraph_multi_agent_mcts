@@ -343,7 +343,7 @@ class TestADKAgentPerformance:
 
             # Execute tasks in parallel
             results = await asyncio.gather(
-                *[agent.execute(task) for agent, task in zip(agents, tasks)]
+                *[agent.execute(task) for agent, task in zip(agents, tasks, strict=True)]
             )
 
             assert len(results) == 3

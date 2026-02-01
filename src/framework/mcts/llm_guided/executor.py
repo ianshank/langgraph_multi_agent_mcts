@@ -629,7 +629,7 @@ class CodeExecutor:
         """
         # Generate test cases from inputs/outputs
         test_cases = []
-        for inp, expected in zip(inputs, expected_outputs):
+        for inp, expected in zip(inputs, expected_outputs, strict=True):
             if isinstance(inp, tuple):
                 args_str = ", ".join(repr(a) for a in inp)
             else:

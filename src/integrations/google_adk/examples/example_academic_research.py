@@ -129,9 +129,9 @@ async def example_training_corpus_building():
                 "topic": topic,
                 "citation_file": response.metadata.get("citation_file"),
             })
-            print(f"  ✓ Citations collected")
+            print("  ✓ Citations collected")
 
-    print(f"\nCorpus building complete!")
+    print("\nCorpus building complete!")
     print(f"Collected data for {len(corpus_data)} research topics")
     print("\nThis data can be used to:")
     print("- Train your HRM/TRM agents")

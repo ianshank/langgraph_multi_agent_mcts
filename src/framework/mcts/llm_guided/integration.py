@@ -65,7 +65,7 @@ class SubProblemDecomposition:
         if not self.hierarchy_levels:
             return self.subproblems
         max_level = max(self.hierarchy_levels)
-        return [sp for sp, level in zip(self.subproblems, self.hierarchy_levels) if level == max_level]
+        return [sp for sp, level in zip(self.subproblems, self.hierarchy_levels, strict=True) if level == max_level]
 
 
 @dataclass
