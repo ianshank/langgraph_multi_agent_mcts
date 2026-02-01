@@ -11,6 +11,7 @@ Provides configurable HTTP connection pooling with:
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 from dataclasses import dataclass, field
@@ -53,6 +54,7 @@ class ConnectionPoolConfig:
 
     # Health monitoring
     health_check_interval: float = 30.0
+    health_check_timeout: float = 5.0
     enable_health_monitoring: bool = True
 
     # HTTP/2 support
@@ -208,7 +210,7 @@ class ConnectionPool:
         self._closed = False
         self._health_task: asyncio.Task | None = None
 
-    async def _get_client(self) -> "AsyncClient":
+    async def _get_client(self) -> AsyncClient:
         """Get or create the HTTP client."""
         if self._client is None:
             async with self._lock:
@@ -268,20 +270,22 @@ class ConnectionPool:
                 )
 
                 # Check for retryable status codes
-                if response.status_code in self.config.retry_status_codes:
-                    if attempt < self.config.max_retries:
-                        retries += 1
-                        backoff = self.config.retry_backoff_factor * (2**attempt)
-                        logger.warning(
-                            "Retrying request to %s (attempt %d/%d) after %.2fs - status %d",
-                            url,
-                            attempt + 1,
-                            self.config.max_retries,
-                            backoff,
-                            response.status_code,
-                        )
-                        await asyncio.sleep(backoff)
-                        continue
+                if (
+                    response.status_code in self.config.retry_status_codes
+                    and attempt < self.config.max_retries
+                ):
+                    retries += 1
+                    backoff = self.config.retry_backoff_factor * (2**attempt)
+                    logger.warning(
+                        "Retrying request to %s (attempt %d/%d) after %.2fs - status %d",
+                        url,
+                        attempt + 1,
+                        self.config.max_retries,
+                        backoff,
+                        response.status_code,
+                    )
+                    await asyncio.sleep(backoff)
+                    continue
 
                 latency_ms = (time.perf_counter() - start_time) * 1000
                 self._metrics.record_request(
@@ -340,7 +344,7 @@ class ConnectionPool:
             True if healthy, False otherwise
         """
         try:
-            response = await self.get(url, timeout=5.0)
+            response = await self.get(url, timeout=self.config.health_check_timeout)
             healthy = response.status_code < 500
             self._metrics.last_health_check = time.time()
 
@@ -364,10 +368,8 @@ class ConnectionPool:
         """Close the connection pool."""
         if self._health_task is not None:
             self._health_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._health_task
-            except asyncio.CancelledError:
-                pass
 
         if self._client is not None:
             await self._client.aclose()
@@ -377,7 +379,7 @@ class ConnectionPool:
 
         self._closed = True
 
-    async def __aenter__(self) -> "ConnectionPool":
+    async def __aenter__(self) -> ConnectionPool:
         """Async context manager entry."""
         return self
 

@@ -14,7 +14,7 @@ import gc
 import logging
 import time
 from collections.abc import Callable, Iterator
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any, TypeVar
 
 try:
@@ -115,6 +115,9 @@ class BatchProcessor:
         self._total_batches = 0
         self._total_time_ms = 0.0
 
+        # Cache process for memory checks (avoid repeated creation)
+        self._process = psutil.Process() if _HAS_PSUTIL else None
+
     def batch_iterator(
         self, items: list[T]
     ) -> Iterator[tuple[int, list[T]]]:
@@ -152,9 +155,8 @@ class BatchProcessor:
 
         for batch_idx, batch in self.batch_iterator(items):
             # Check memory limit
-            if self.memory_limit_mb is not None and _HAS_PSUTIL:
-                process = psutil.Process()
-                memory_mb = process.memory_info().rss / (1024 * 1024)
+            if self.memory_limit_mb is not None and self._process is not None:
+                memory_mb = self._process.memory_info().rss / (1024 * 1024)
                 if memory_mb > self.memory_limit_mb:
                     gc.collect()
                     logger.warning(
@@ -202,7 +204,6 @@ class BatchProcessor:
         Returns:
             BatchResult with all results and timing info
         """
-        import asyncio
 
         start_time = time.perf_counter()
         all_results: list[Any] = []
@@ -256,17 +257,22 @@ class MemoryOptimizer:
     - Object pool management
     """
 
-    def __init__(self, target_memory_mb: float | None = None):
+    def __init__(
+        self,
+        target_memory_mb: float | None = None,
+        max_samples: int = 100,
+    ):
         """
         Initialize memory optimizer.
 
         Args:
             target_memory_mb: Target memory usage (triggers GC if exceeded)
+            max_samples: Maximum number of memory samples to keep
         """
         self.target_memory_mb = target_memory_mb
         self._gc_runs = 0
         self._memory_samples: list[float] = []
-        self._max_samples = 100
+        self._max_samples = max_samples
 
         if _HAS_PSUTIL:
             self._process = psutil.Process()

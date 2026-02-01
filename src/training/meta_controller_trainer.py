@@ -20,10 +20,10 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from torch.utils.data import DataLoader
@@ -53,6 +53,7 @@ class MetaControllerTrainingConfig:
     model_type: str = "bert"  # "bert" or "rnn"
     num_agents: int = 4
     hidden_dim: int = 256
+    embedding_dim: int = 768  # Input embedding dimension (BERT default)
     num_layers: int = 2
     dropout: float = 0.1
 
@@ -106,6 +107,45 @@ class TrainingMetrics:
     learning_rate: float = 0.0
     epoch_time_seconds: float = 0.0
     stage: str = ""
+
+
+# Define _SimpleRNNController only if torch is available
+_SimpleRNNController: type | None = None
+
+if _HAS_TORCH:
+
+    class _SimpleRNNControllerImpl(nn.Module):
+        """
+        Simple GRU-based controller fallback.
+
+        Used when full RNNMetaController is not available.
+        Defined at module level to avoid class redefinition overhead.
+        """
+
+        def __init__(
+            self,
+            input_dim: int,
+            hidden_dim: int,
+            num_agents: int,
+            num_layers: int,
+            dropout: float,
+        ) -> None:
+            super().__init__()
+            self.gru = nn.GRU(
+                input_dim,
+                hidden_dim,
+                num_layers,
+                batch_first=True,
+                dropout=dropout if num_layers > 1 else 0,
+            )
+            self.classifier = nn.Linear(hidden_dim, num_agents)
+
+        def forward(self, x: torch.Tensor) -> torch.Tensor:
+            """Forward pass through GRU and classifier."""
+            _, hidden = self.gru(x)
+            return self.classifier(hidden[-1])
+
+    _SimpleRNNController = _SimpleRNNControllerImpl
 
 
 class CalibrationLoss:
@@ -264,22 +304,9 @@ class MetaControllerTrainingOrchestrator:
                 dropout=self.config.dropout,
             )
         except ImportError:
-            # Fallback to simple GRU classifier
-            class SimpleRNNController(nn.Module):
-                def __init__(self, input_dim, hidden_dim, num_agents, num_layers, dropout):
-                    super().__init__()
-                    self.gru = nn.GRU(
-                        input_dim, hidden_dim, num_layers,
-                        batch_first=True, dropout=dropout if num_layers > 1 else 0
-                    )
-                    self.classifier = nn.Linear(hidden_dim, num_agents)
-
-                def forward(self, x):
-                    _, hidden = self.gru(x)
-                    return self.classifier(hidden[-1])
-
-            return SimpleRNNController(
-                input_dim=768,
+            # Fallback to simple GRU classifier (defined at module level)
+            return _SimpleRNNController(
+                input_dim=self.config.embedding_dim,
                 hidden_dim=self.config.hidden_dim,
                 num_agents=self.config.num_agents,
                 num_layers=self.config.num_layers,
@@ -320,6 +347,14 @@ class MetaControllerTrainingOrchestrator:
             List of training metrics per epoch
         """
         self.initialize_model()
+
+        # Validate model was successfully initialized
+        if self._model is None:
+            raise RuntimeError(
+                "Model initialization failed. Check if model_type "
+                f"'{self.config.model_type}' is supported."
+            )
+
         self.setup_optimizer()
         self._initialize_tracker()
 
@@ -611,13 +646,28 @@ class MetaControllerTrainingOrchestrator:
 
     # Logging helpers
     def _log_debug(self, message: str, **kwargs: Any) -> None:
-        self._logger.debug(f"{message} {kwargs}" if kwargs else message)
+        """Log debug message with optional structured data."""
+        if kwargs:
+            extra_info = ", ".join(f"{k}={v}" for k, v in kwargs.items())
+            self._logger.debug("%s [%s]", message, extra_info)
+        else:
+            self._logger.debug(message)
 
     def _log_info(self, message: str, **kwargs: Any) -> None:
-        self._logger.info(f"{message} {kwargs}" if kwargs else message)
+        """Log info message with optional structured data."""
+        if kwargs:
+            extra_info = ", ".join(f"{k}={v}" for k, v in kwargs.items())
+            self._logger.info("%s [%s]", message, extra_info)
+        else:
+            self._logger.info(message)
 
     def _log_warning(self, message: str, **kwargs: Any) -> None:
-        self._logger.warning(f"{message} {kwargs}" if kwargs else message)
+        """Log warning message with optional structured data."""
+        if kwargs:
+            extra_info = ", ".join(f"{k}={v}" for k, v in kwargs.items())
+            self._logger.warning("%s [%s]", message, extra_info)
+        else:
+            self._logger.warning(message)
 
 
 def create_meta_controller_trainer(

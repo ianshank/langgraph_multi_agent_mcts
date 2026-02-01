@@ -15,8 +15,9 @@ import logging
 import threading
 import time
 from collections import OrderedDict
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 try:
     import numpy as np
