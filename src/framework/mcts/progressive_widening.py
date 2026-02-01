@@ -375,9 +375,9 @@ class ProgressiveWideningEngine:
         Returns:
             Tuple of (value, actions_taken)
         """
-        # Standard simulation
+        # Standard simulation using consistent keyword argument style
         value = await rollout_policy.evaluate(
-            node.state,
+            state=node.state,
             rng=self.rng,
             max_depth=max_depth,
         )

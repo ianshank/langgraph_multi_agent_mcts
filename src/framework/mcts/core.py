@@ -420,18 +420,22 @@ class MCTSEngine:
         rollout_policy: RolloutPolicy,
         max_rollout_depth: int = 10,
         selection_policy: SelectionPolicy = SelectionPolicy.MAX_VISITS,
+        early_termination_threshold: float = 0.95,
+        min_iterations_before_termination: int = 50,
     ) -> tuple[str | None, dict[str, Any]]:
         """
-        Run MCTS search for specified number of iterations.
+        Run MCTS search for specified number of iterations with early termination.
 
         Args:
             root: Root node to search from
-            num_iterations: Number of MCTS iterations
+            num_iterations: Maximum number of MCTS iterations
             action_generator: Function to generate available actions
             state_transition: Function to compute state transitions
             rollout_policy: Policy for rollout simulation
             max_rollout_depth: Maximum rollout depth
             selection_policy: Policy for final action selection
+            early_termination_threshold: Stop if best action has this fraction of visits
+            min_iterations_before_termination: Minimum iterations before checking termination
 
         Returns:
             Tuple of (best_action, statistics_dict)
@@ -444,8 +448,12 @@ class MCTSEngine:
         if not root.available_actions:
             root.available_actions = action_generator(root.state)
 
-        # Run iterations
-        for _i in range(num_iterations):
+        # Track actual iterations run
+        iterations_run = 0
+        early_terminated = False
+
+        # Run iterations with early termination check
+        for iteration in range(num_iterations):
             await self.run_iteration(
                 root=root,
                 action_generator=action_generator,
@@ -453,14 +461,60 @@ class MCTSEngine:
                 rollout_policy=rollout_policy,
                 max_rollout_depth=max_rollout_depth,
             )
+            iterations_run = iteration + 1
+
+            # Check for early termination after minimum iterations
+            if iterations_run >= min_iterations_before_termination:
+                if self._should_terminate_early(
+                    root,
+                    early_termination_threshold,
+                ):
+                    early_terminated = True
+                    break
 
         # Select best action based on policy
         best_action = self._select_best_action(root, selection_policy)
 
         # Compute statistics
-        stats = self._compute_statistics(root, num_iterations)
+        stats = self._compute_statistics(root, iterations_run)
+
+        # Add early termination info to stats
+        stats["early_terminated"] = early_terminated
+        stats["iterations_run"] = iterations_run
+        stats["max_iterations"] = num_iterations
+        if early_terminated:
+            stats["termination_reason"] = "visit_threshold_reached"
 
         return best_action, stats
+
+    def _should_terminate_early(
+        self,
+        root: MCTSNode,
+        threshold: float,
+    ) -> bool:
+        """
+        Check if early termination conditions are met.
+
+        Early termination occurs when the best action has accumulated
+        a fraction of visits above the threshold, indicating convergence.
+
+        Args:
+            root: Root node with children
+            threshold: Fraction of visits for best action to trigger termination
+
+        Returns:
+            True if early termination should occur
+        """
+        if not root.children or root.visits == 0:
+            return False
+
+        # Find the child with most visits
+        max_child_visits = max(child.visits for child in root.children)
+
+        # Calculate the fraction of total visits on best child
+        visit_fraction = max_child_visits / root.visits
+
+        return visit_fraction >= threshold
 
     def _select_best_action(
         self,

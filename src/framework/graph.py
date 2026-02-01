@@ -569,9 +569,6 @@ class GraphBuilder:
             # Map agent prediction to route
             agent = prediction.agent
 
-            # Handle routing based on predicted agent
-            state.get("iteration", 0)
-
             if agent == "hrm":
                 if "hrm_results" not in state:
                     return "hrm"
@@ -970,34 +967,63 @@ class GraphBuilder:
         return {"confidence_scores": confidence_scores}
 
     def _evaluate_consensus_node(self, state: AgentState) -> dict:
-        """Evaluate consensus among agents."""
+        """Evaluate consensus among agents and increment iteration counter.
+
+        The iteration counter is incremented here to ensure proper loop termination
+        when consensus is not reached and max_iterations is checked in _check_consensus.
+        """
         agent_outputs = state.get("agent_outputs", [])
+        current_iteration = state.get("iteration", 0)
+        next_iteration = current_iteration + 1
 
         if len(agent_outputs) < 2:
+            self.logger.debug(
+                f"Single agent output, auto-consensus (iteration={next_iteration})"
+            )
             return {
                 "consensus_reached": True,
                 "consensus_score": 1.0,
+                "iteration": next_iteration,
             }
 
         avg_confidence = sum(o["confidence"] for o in agent_outputs) / len(agent_outputs)
-
         consensus_reached = avg_confidence >= self.consensus_threshold
 
-        self.logger.info(f"Consensus: {consensus_reached} (score={avg_confidence:.2f})")
+        self.logger.info(
+            f"Consensus: {consensus_reached} (score={avg_confidence:.2f}, "
+            f"iteration={next_iteration}/{state.get('max_iterations', self.max_iterations)})"
+        )
 
         return {
             "consensus_reached": consensus_reached,
             "consensus_score": avg_confidence,
+            "iteration": next_iteration,
         }
 
     def _check_consensus(self, state: AgentState) -> str:
-        """Check if consensus reached or need more iterations."""
+        """Check if consensus reached or need more iterations.
+
+        Returns:
+            'synthesize' if consensus reached or max iterations exceeded
+            'iterate' if more iterations needed
+        """
+        current_iteration = state.get("iteration", 0)
+        max_iter = state.get("max_iterations", self.max_iterations)
+
         if state.get("consensus_reached", False):
+            self.logger.info(f"Consensus reached at iteration {current_iteration}")
             return "synthesize"
 
-        if state.get("iteration", 0) >= state.get("max_iterations", self.max_iterations):
+        if current_iteration >= max_iter:
+            self.logger.warning(
+                f"Max iterations ({max_iter}) reached without consensus, "
+                f"proceeding to synthesis"
+            )
             return "synthesize"
 
+        self.logger.debug(
+            f"Continuing iteration loop (current={current_iteration}, max={max_iter})"
+        )
         return "iterate"
 
     async def _synthesize_node(self, state: AgentState) -> dict:
@@ -1172,6 +1198,149 @@ class IntegratedFramework:
             "metadata": result.get("metadata", {}),
             "state": result,
         }
+
+    async def astream(
+        self,
+        query: str,
+        use_rag: bool = True,
+        use_mcts: bool = False,
+        config: dict | None = None,
+    ):
+        """
+        Stream node-level state updates through LangGraph.
+
+        Yields state updates as each node completes execution.
+
+        Args:
+            query: User query to process
+            use_rag: Enable RAG context retrieval
+            use_mcts: Enable MCTS simulation
+            config: Optional LangGraph config
+
+        Yields:
+            Tuple of (node_name, state_update) for each node completion
+        """
+        if self.app is None:
+            raise RuntimeError("LangGraph not available. Install with: pip install langgraph")
+
+        initial_state = {
+            "query": query,
+            "use_rag": use_rag,
+            "use_mcts": use_mcts,
+            "iteration": 0,
+            "max_iterations": self.graph_builder.max_iterations,
+            "agent_outputs": [],
+        }
+
+        config = config or {"configurable": {"thread_id": "default"}}
+
+        self.logger.debug(f"Starting streaming execution for query: {query[:100]}")
+
+        async for event in self.app.astream(initial_state, config=config):
+            for node_name, state_update in event.items():
+                self.logger.debug(f"Node '{node_name}' completed with keys: {list(state_update.keys())}")
+                yield node_name, state_update
+
+    async def astream_events(
+        self,
+        query: str,
+        use_rag: bool = True,
+        use_mcts: bool = False,
+        config: dict | None = None,
+        include_types: list[str] | None = None,
+    ):
+        """
+        Stream detailed events from LangGraph execution.
+
+        Provides fine-grained streaming including token-level events when
+        LLM calls support streaming, and node lifecycle events.
+
+        Args:
+            query: User query to process
+            use_rag: Enable RAG context retrieval
+            use_mcts: Enable MCTS simulation
+            config: Optional LangGraph config
+            include_types: Event types to include (default: all)
+                Supported: ['on_llm_start', 'on_llm_stream', 'on_llm_end',
+                           'on_chain_start', 'on_chain_end', 'on_tool_start', 'on_tool_end']
+
+        Yields:
+            StreamEvent dict with event type, name, data, and metadata
+        """
+        if self.app is None:
+            raise RuntimeError("LangGraph not available. Install with: pip install langgraph")
+
+        initial_state = {
+            "query": query,
+            "use_rag": use_rag,
+            "use_mcts": use_mcts,
+            "iteration": 0,
+            "max_iterations": self.graph_builder.max_iterations,
+            "agent_outputs": [],
+        }
+
+        config = config or {"configurable": {"thread_id": "default"}}
+
+        # Default to all event types if not specified
+        include_types = include_types or [
+            "on_llm_start",
+            "on_llm_stream",
+            "on_llm_end",
+            "on_chain_start",
+            "on_chain_end",
+        ]
+
+        self.logger.debug(
+            f"Starting event streaming for query: {query[:100]}, "
+            f"event_types: {include_types}"
+        )
+
+        try:
+            async for event in self.app.astream_events(
+                initial_state,
+                config=config,
+                version="v2",
+            ):
+                event_type = event.get("event", "")
+
+                # Filter by event type if specified
+                if include_types and event_type not in include_types:
+                    continue
+
+                # Construct standardized event format
+                stream_event = {
+                    "event_type": event_type,
+                    "name": event.get("name", ""),
+                    "run_id": event.get("run_id", ""),
+                    "data": event.get("data", {}),
+                    "metadata": event.get("metadata", {}),
+                    "tags": event.get("tags", []),
+                }
+
+                # For LLM streaming events, extract token content
+                if event_type == "on_llm_stream":
+                    chunk = event.get("data", {}).get("chunk", {})
+                    if hasattr(chunk, "content"):
+                        stream_event["token"] = chunk.content
+                    elif isinstance(chunk, dict):
+                        stream_event["token"] = chunk.get("content", "")
+
+                self.logger.debug(
+                    f"Event: {event_type}, name: {stream_event['name']}"
+                )
+                yield stream_event
+
+        except Exception as e:
+            self.logger.error(f"Streaming error: {e}")
+            # Yield error event
+            yield {
+                "event_type": "on_error",
+                "name": "streaming_error",
+                "run_id": "",
+                "data": {"error": str(e)},
+                "metadata": {},
+                "tags": [],
+            }
 
     def get_experiment_tracker(self) -> ExperimentTracker:
         """Get the experiment tracker for analysis."""
