@@ -7,6 +7,8 @@ and edge case handling.
 
 from __future__ import annotations
 
+import pytest
+
 from src.benchmark.evaluation.models import BenchmarkResult, ScoringResult
 from src.benchmark.reporting.metrics_aggregator import (
     AggregatedMetrics,
@@ -37,6 +39,7 @@ def _make_result(
     )
 
 
+@pytest.mark.unit
 class TestAggregatedMetrics:
     """Test AggregatedMetrics dataclass."""
 
@@ -52,6 +55,7 @@ class TestAggregatedMetrics:
         assert data["mean"] == 3.5
 
 
+@pytest.mark.unit
 class TestSystemComparison:
     """Test SystemComparison logic."""
 
@@ -88,6 +92,7 @@ class TestSystemComparison:
         assert comp.winner == "tie"
 
 
+@pytest.mark.unit
 class TestMetricsAggregator:
     """Test MetricsAggregator computations."""
 

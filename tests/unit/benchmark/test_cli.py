@@ -9,11 +9,14 @@ from __future__ import annotations
 
 import argparse
 
+import pytest
+
 from src.benchmark.cli import _dry_run, _print_summary, apply_cli_overrides, build_parser
 from src.benchmark.config.benchmark_settings import BenchmarkSettings, reset_benchmark_settings
 from src.benchmark.factory import BenchmarkFactory
 
 
+@pytest.mark.unit
 class TestBuildParser:
     """Test argument parser construction."""
 
@@ -74,6 +77,16 @@ class TestBuildParser:
         args = parser.parse_args(["--no-report"])
         assert args.no_report is True
 
+    def test_parse_no_save_results(self) -> None:
+        parser = build_parser()
+        args = parser.parse_args(["--no-save-results"])
+        assert args.no_save_results is True
+
+    def test_no_save_results_default_false(self) -> None:
+        parser = build_parser()
+        args = parser.parse_args([])
+        assert args.no_save_results is False
+
     def test_parse_combined(self) -> None:
         parser = build_parser()
         args = parser.parse_args(
@@ -96,6 +109,7 @@ class TestBuildParser:
         assert args.log_level == "DEBUG"
 
 
+@pytest.mark.unit
 class TestApplyCliOverrides:
     """Test CLI argument overrides on settings."""
 
@@ -141,6 +155,7 @@ class TestApplyCliOverrides:
         assert self.settings.run.num_iterations == original_iterations
 
 
+@pytest.mark.unit
 class TestDryRun:
     """Test dry run output."""
 
@@ -179,6 +194,7 @@ class TestDryRun:
         assert "A2" in captured.out
 
 
+@pytest.mark.unit
 class TestPrintSummary:
     """Test summary printing."""
 

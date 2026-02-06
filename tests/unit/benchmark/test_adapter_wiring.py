@@ -33,6 +33,7 @@ class MockLLMResponse:
     usage: dict
 
 
+@pytest.mark.unit
 class TestLangGraphAdapterFrameworkWiring:
     """Test adapter wired to IntegratedFramework."""
 

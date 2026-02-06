@@ -25,6 +25,7 @@ from src.benchmark.config.benchmark_settings import (
 )
 
 
+@pytest.mark.unit
 class TestBenchmarkRunConfig:
     """Test BenchmarkRunConfig defaults and validation."""
 
@@ -52,6 +53,7 @@ class TestBenchmarkRunConfig:
             BenchmarkRunConfig(num_iterations=101)
 
 
+@pytest.mark.unit
 class TestScoringConfig:
     """Test ScoringConfig defaults and validation."""
 
@@ -81,6 +83,7 @@ class TestScoringConfig:
             assert config.provider == provider
 
 
+@pytest.mark.unit
 class TestCostConfig:
     """Test CostConfig pricing and rate lookup."""
 
@@ -123,6 +126,7 @@ class TestCostConfig:
         assert output_rate == config.openai_output_per_1k
 
 
+@pytest.mark.unit
 class TestLangGraphBenchmarkConfig:
     """Test LangGraph-specific config."""
 
@@ -135,6 +139,7 @@ class TestLangGraphBenchmarkConfig:
         assert config.consensus_threshold == 0.75
 
 
+@pytest.mark.unit
 class TestADKBenchmarkConfig:
     """Test ADK-specific config."""
 
@@ -152,6 +157,7 @@ class TestADKBenchmarkConfig:
             assert config.coordinator_model == "gemini-1.5-pro"
 
 
+@pytest.mark.unit
 class TestReportConfig:
     """Test report configuration."""
 
@@ -164,6 +170,7 @@ class TestReportConfig:
         assert config.include_agent_traces is False
 
 
+@pytest.mark.unit
 class TestBenchmarkSettings:
     """Test master benchmark settings."""
 
@@ -233,6 +240,7 @@ class TestBenchmarkSettings:
         assert "vertex_adk" not in mapping
 
 
+@pytest.mark.unit
 class TestScoringConfigTruncation:
     """Test scoring config truncation settings."""
 

@@ -14,6 +14,7 @@ from src.benchmark.evaluation.cost_calculator import CostBreakdown, CostCalculat
 from src.benchmark.evaluation.models import BenchmarkResult
 
 
+@pytest.mark.unit
 class TestCostBreakdown:
     """Test CostBreakdown dataclass."""
 
@@ -32,6 +33,7 @@ class TestCostBreakdown:
             breakdown.total_cost_usd = 0.05  # type: ignore[misc]
 
 
+@pytest.mark.unit
 class TestCostCalculator:
     """Test CostCalculator operations."""
 
@@ -115,3 +117,9 @@ class TestCostCalculator:
         system_providers: dict[str, tuple[str, str]] = {}
         self.calculator.apply_costs(results, system_providers)
         assert results[0].estimated_cost_usd == 0.0
+
+    def test_apply_costs_empty_results(self) -> None:
+        results: list[BenchmarkResult] = []
+        system_providers = {"langgraph_mcts": ("openai", "gpt-4")}
+        returned = self.calculator.apply_costs(results, system_providers)
+        assert returned == []

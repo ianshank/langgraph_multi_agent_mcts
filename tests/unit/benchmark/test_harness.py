@@ -62,6 +62,7 @@ class MockAdapter:
         return self._available
 
 
+@pytest.mark.unit
 class TestEvaluationHarness:
     """Test the evaluation harness orchestration."""
 

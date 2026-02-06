@@ -23,6 +23,7 @@ from src.benchmark.tasks.task_sets import (
 )
 
 
+@pytest.mark.unit
 class TestTaskCategory:
     """Test TaskCategory enum."""
 
@@ -37,6 +38,7 @@ class TestTaskCategory:
         assert TaskCategory("strategic") == TaskCategory.STRATEGIC
 
 
+@pytest.mark.unit
 class TestTaskComplexity:
     """Test TaskComplexity enum."""
 
@@ -47,6 +49,7 @@ class TestTaskComplexity:
         assert TaskComplexity.VERY_HIGH == "very_high"
 
 
+@pytest.mark.unit
 class TestBenchmarkTask:
     """Test BenchmarkTask dataclass."""
 
@@ -166,6 +169,7 @@ class TestBenchmarkTask:
         assert restored.complexity == original.complexity
 
 
+@pytest.mark.unit
 class TestBenchmarkTaskRegistry:
     """Test BenchmarkTaskRegistry operations."""
 
@@ -307,6 +311,7 @@ class TestBenchmarkTaskRegistry:
         assert "qe" in summary["by_category"]
 
 
+@pytest.mark.unit
 class TestDefaultTaskSets:
     """Test the default task set definitions."""
 

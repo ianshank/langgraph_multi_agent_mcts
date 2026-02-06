@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import tempfile
 
+import pytest
+
 from src.benchmark.config.benchmark_settings import ReportConfig
 from src.benchmark.evaluation.models import BenchmarkResult, ScoringResult
 from src.benchmark.reporting.report_generator import ReportGenerator
@@ -39,6 +41,7 @@ def _make_result(
     )
 
 
+@pytest.mark.unit
 class TestReportGenerator:
     """Test report generation."""
 

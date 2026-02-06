@@ -131,6 +131,14 @@ class MetricsAggregator:
         aggregated: dict[str, dict[str, AggregatedMetrics]] = {}
         for system, sys_results in by_system.items():
             valid = [r for r in sys_results if not r.has_error]
+            error_count = len(sys_results) - len(valid)
+            if error_count > 0:
+                logger.warning(
+                    "System '%s': %d/%d results had errors and were excluded from aggregation",
+                    system,
+                    error_count,
+                    len(sys_results),
+                )
             aggregated[system] = self._compute_system_metrics(valid)
 
         return aggregated
@@ -180,6 +188,11 @@ class MetricsAggregator:
 
         metrics_a = aggregated.get(system_a, {})
         metrics_b = aggregated.get(system_b, {})
+
+        if not metrics_a:
+            logger.warning("No metrics found for system '%s' during comparison", system_a)
+        if not metrics_b:
+            logger.warning("No metrics found for system '%s' during comparison", system_b)
 
         lower_is_better = self.LOWER_IS_BETTER_METRICS
 

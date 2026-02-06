@@ -35,6 +35,7 @@ import logging
 import sys
 import uuid
 from pathlib import Path
+from typing import Any
 
 from src.benchmark.config.benchmark_settings import BenchmarkSettings, get_benchmark_settings, reset_benchmark_settings
 from src.benchmark.factory import BenchmarkFactory
@@ -281,7 +282,7 @@ def _dry_run(factory: BenchmarkFactory, args: argparse.Namespace) -> int:
     return 0
 
 
-def _print_summary(summary: dict) -> None:
+def _print_summary(summary: dict[str, Any]) -> None:
     """Print benchmark summary to stdout."""
     print("\n" + "=" * 60)
     print(f"  Benchmark Run: {summary['run_id']}")

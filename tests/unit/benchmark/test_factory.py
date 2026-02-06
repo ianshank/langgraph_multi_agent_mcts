@@ -9,6 +9,8 @@ from __future__ import annotations
 
 from unittest.mock import AsyncMock, MagicMock, patch
 
+import pytest
+
 from src.benchmark.config.benchmark_settings import BenchmarkSettings, ScoringConfig, reset_benchmark_settings
 from src.benchmark.evaluation.harness import EvaluationHarness
 from src.benchmark.evaluation.scorer import LLMJudgeScorer
@@ -18,6 +20,7 @@ from src.benchmark.reporting.report_generator import ReportGenerator
 from src.benchmark.tasks.registry import BenchmarkTaskRegistry
 
 
+@pytest.mark.unit
 class TestBenchmarkFactory:
     """Test BenchmarkFactory creation methods."""
 
@@ -28,7 +31,7 @@ class TestBenchmarkFactory:
 
     def test_init_default_settings(self) -> None:
         factory = BenchmarkFactory()
-        assert factory.settings is not None
+        assert isinstance(factory.settings, BenchmarkSettings)
 
     def test_init_custom_settings(self) -> None:
         settings = BenchmarkSettings()
@@ -61,8 +64,10 @@ class TestBenchmarkFactory:
         assert scorer._llm_client is mock_client
 
     def test_create_cost_calculator(self) -> None:
+        from src.benchmark.evaluation.cost_calculator import CostCalculator
+
         calc = self.factory.create_cost_calculator()
-        assert calc is not None
+        assert isinstance(calc, CostCalculator)
 
     def test_create_adapter_factory(self) -> None:
         af = self.factory.create_adapter_factory()

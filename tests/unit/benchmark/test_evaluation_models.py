@@ -12,6 +12,7 @@ import pytest
 from src.benchmark.evaluation.models import BenchmarkResult, ScoringResult
 
 
+@pytest.mark.unit
 class TestScoringResult:
     """Test ScoringResult dataclass."""
 
@@ -64,6 +65,7 @@ class TestScoringResult:
         assert scoring.task_completion == 4.0
 
 
+@pytest.mark.unit
 class TestBenchmarkResult:
     """Test BenchmarkResult dataclass."""
 

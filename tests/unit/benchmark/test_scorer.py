@@ -52,6 +52,7 @@ def _make_llm_response(scores: dict) -> MockLLMResponse:
     )
 
 
+@pytest.mark.unit
 class TestLLMJudgeScorer:
     """Test LLM-as-judge scoring."""
 

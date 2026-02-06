@@ -35,6 +35,7 @@ class MockLLMResponse:
     usage: dict
 
 
+@pytest.mark.unit
 class TestLangGraphBenchmarkAdapter:
     """Test LangGraph MCTS benchmark adapter."""
 
@@ -111,6 +112,7 @@ class TestLangGraphBenchmarkAdapter:
             assert not adapter.is_available
 
 
+@pytest.mark.unit
 class TestBenchmarkAdapterFactory:
     """Test adapter factory creation."""
 
@@ -161,5 +163,29 @@ class TestBenchmarkAdapterFactory:
     def test_create_all_available(self) -> None:
         factory = BenchmarkAdapterFactory()
         adapters = factory.create_all_available()
-        # At minimum langgraph should be available (it only needs the import)
+        # Returns list of adapters that are available
         assert isinstance(adapters, list)
+        # All returned adapters should implement the protocol
+        for adapter in adapters:
+            assert isinstance(adapter, BenchmarkSystemProtocol)
+            assert adapter.is_available
+
+    def test_create_all_available_empty_when_none_available(self) -> None:
+        settings = BenchmarkSettings()
+        from src.benchmark.config.benchmark_settings import LangGraphBenchmarkConfig
+
+        settings._langgraph = LangGraphBenchmarkConfig(enabled=False)
+        factory = BenchmarkAdapterFactory(settings=settings)
+        adapters = factory.create_all_available()
+        # LangGraph disabled, ADK not installed — should have no available adapters
+        langgraph_adapters = [a for a in adapters if a.name == "langgraph_mcts"]
+        assert len(langgraph_adapters) == 0
+
+    def test_create_with_kwargs(self) -> None:
+        from unittest.mock import MagicMock
+
+        factory = BenchmarkAdapterFactory()
+        mock_client = MagicMock()
+        adapter = factory.create("langgraph_mcts", llm_client=mock_client)
+        assert adapter.name == "langgraph_mcts"
+        assert adapter._llm_client is mock_client
