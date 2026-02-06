@@ -136,5 +136,10 @@ class CostCalculator:
                 provider, model = provider_info
                 breakdown = self.calculate(result, provider, model)
                 result.estimated_cost_usd = breakdown.total_cost_usd
+            else:
+                self._logger.warning(
+                    "No provider mapping for system '%s', skipping cost calculation",
+                    result.system,
+                )
 
         return results

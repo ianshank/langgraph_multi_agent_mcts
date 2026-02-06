@@ -20,7 +20,7 @@ from src.benchmark.evaluation.models import BenchmarkResult
 from src.benchmark.tasks.models import BenchmarkTask
 from src.observability.logging import get_correlation_id
 
-logger = logging.getLogger(__name__)
+_DIRECT_MODE_SYSTEM_PROMPT = "You are a multi-agent reasoning system."
 
 
 class LangGraphBenchmarkAdapter:
@@ -253,7 +253,7 @@ class LangGraphBenchmarkAdapter:
 
         response = await self._llm_client.generate(
             messages=[
-                {"role": "system", "content": "You are a multi-agent reasoning system."},
+                {"role": "system", "content": _DIRECT_MODE_SYSTEM_PROMPT},
                 {"role": "user", "content": task.input_data},
             ],
         )

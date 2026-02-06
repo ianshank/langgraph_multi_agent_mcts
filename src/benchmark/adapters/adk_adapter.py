@@ -18,7 +18,8 @@ from src.benchmark.evaluation.models import BenchmarkResult
 from src.benchmark.tasks.models import BenchmarkTask
 from src.observability.logging import get_correlation_id
 
-logger = logging.getLogger(__name__)
+_ADK_APP_NAME = "benchmark"
+_ADK_USER_ID = "benchmark"
 
 
 def _check_adk_available() -> bool:
@@ -233,6 +234,8 @@ class ADKBenchmarkAdapter:
             description="Assesses and models risks across multiple dimensions",
         )
 
+        sub_agents = [code_reviewer, test_strategist, compliance_analyst, risk_assessor]
+
         # Build coordinator
         self._coordinator = LlmAgent(
             name="qe_coordinator",
@@ -254,10 +257,10 @@ class ADKBenchmarkAdapter:
                 "Always explain your delegation reasoning."
             ),
             description="Coordinates multi-agent quality engineering workflows",
-            sub_agents=[code_reviewer, test_strategist, compliance_analyst, risk_assessor],
+            sub_agents=sub_agents,
         )
 
-        self._logger.info("Built ADK coordinator with %d sub-agents", 4)
+        self._logger.info("Built ADK coordinator with %d sub-agents", len(sub_agents))
         return self._coordinator
 
     def _get_or_build_runner(self, coordinator: Any) -> Any:
@@ -271,7 +274,7 @@ class ADKBenchmarkAdapter:
         session_service = InMemorySessionService()
         self._runner = Runner(
             agent=coordinator,
-            app_name="benchmark",
+            app_name=_ADK_APP_NAME,
             session_service=session_service,
         )
 
@@ -293,7 +296,7 @@ class ADKBenchmarkAdapter:
         session_id = f"benchmark_{task.task_id}_{int(time.time())}"
 
         async for event in runner.run_async(
-            user_id="benchmark",
+            user_id=_ADK_USER_ID,
             session_id=session_id,
             new_message=content,
         ):

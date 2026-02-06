@@ -15,8 +15,6 @@ from src.benchmark.config.benchmark_settings import BenchmarkSettings, ReportCon
 from src.benchmark.evaluation.models import BenchmarkResult
 from src.benchmark.reporting.metrics_aggregator import MetricsAggregator
 
-logger = logging.getLogger(__name__)
-
 
 class ReportGenerator:
     """
@@ -50,20 +48,21 @@ class ReportGenerator:
     def generate(
         self,
         results: list[BenchmarkResult],
-        title: str = "MangoMAS vs Vertex AI ADK Benchmark Report",
+        title: str | None = None,
     ) -> str:
         """
         Generate a complete markdown comparison report.
 
         Args:
             results: All benchmark results
-            title: Report title
+            title: Report title (defaults to benchmark_name from settings)
 
         Returns:
             Markdown report as string
         """
+        report_title = title or f"{self._settings.benchmark_name} Benchmark Report"
         sections = [
-            self._generate_header(title, results),
+            self._generate_header(report_title, results),
             self._generate_summary_table(results),
             self._generate_per_task_analysis(results),
             self._generate_scoring_comparison(results),

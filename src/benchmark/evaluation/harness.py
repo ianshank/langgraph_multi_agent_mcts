@@ -23,8 +23,6 @@ from src.benchmark.tasks.models import BenchmarkTask
 from src.benchmark.tasks.registry import BenchmarkTaskRegistry
 from src.observability.logging import set_correlation_id
 
-logger = logging.getLogger(__name__)
-
 
 class EvaluationHarness:
     """
@@ -302,9 +300,6 @@ class EvaluationHarness:
 
     def _apply_costs(self) -> None:
         """Apply cost estimates based on system-provider mapping from settings."""
-        system_providers: dict[str, tuple[str, str]] = {
-            "langgraph_mcts": (self._settings.scoring.provider, self._settings.scoring.model),
-            "vertex_adk": ("google", self._settings.adk.coordinator_model),
-        }
+        system_providers = self._settings.get_system_provider_mapping()
         if self._cost_calculator:
             self._cost_calculator.apply_costs(self._results, system_providers)

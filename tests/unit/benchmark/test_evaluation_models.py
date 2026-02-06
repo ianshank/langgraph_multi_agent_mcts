@@ -39,8 +39,8 @@ class TestScoringResult:
             accuracy=2.0,
             coherence=0.0,
         )
-        # Should only average non-zero scores
-        assert scoring.average_score == pytest.approx(3.0)
+        # Averages all dimensions including zeros: (4+0+2+0)/4 = 1.5
+        assert scoring.average_score == pytest.approx(1.5)
 
     def test_average_score_all_zero(self) -> None:
         scoring = ScoringResult()
@@ -141,6 +141,17 @@ class TestBenchmarkResult:
         assert result.task_id == "B1"
         assert result.system == "vertex_adk"
         assert result.scoring.task_completion == 4.0
+
+    def test_from_dict_does_not_mutate_input(self) -> None:
+        data = {
+            "task_id": "B1",
+            "system": "vertex_adk",
+            "scoring": {"task_completion": 4.0},
+        }
+        original_data = dict(data)
+        BenchmarkResult.from_dict(data)
+        # Input dict should not be mutated
+        assert data == original_data
 
     def test_to_json(self) -> None:
         result = BenchmarkResult(task_id="A1", system="test")

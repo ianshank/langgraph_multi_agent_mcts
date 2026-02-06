@@ -7,10 +7,13 @@ for comparison reporting.
 
 from __future__ import annotations
 
+import logging
 import math
 from dataclasses import dataclass
 
 from src.benchmark.evaluation.models import BenchmarkResult
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -65,6 +68,8 @@ class MetricsAggregator:
         >>> summary = aggregator.aggregate_by_system(results)
         >>> comparison = aggregator.compare_systems(results, "langgraph_mcts", "vertex_adk")
     """
+
+    LOWER_IS_BETTER_METRICS: frozenset[str] = frozenset({"latency_ms", "cost_usd", "time_to_first_token_ms"})
 
     @staticmethod
     def compute_stats(values: list[float]) -> AggregatedMetrics:
@@ -176,8 +181,7 @@ class MetricsAggregator:
         metrics_a = aggregated.get(system_a, {})
         metrics_b = aggregated.get(system_b, {})
 
-        # Define which metrics are better when lower
-        lower_is_better = {"latency_ms", "cost_usd", "time_to_first_token_ms"}
+        lower_is_better = self.LOWER_IS_BETTER_METRICS
 
         comparisons: list[SystemComparison] = []
         all_metrics = set(metrics_a.keys()) | set(metrics_b.keys())

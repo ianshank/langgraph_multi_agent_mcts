@@ -17,8 +17,6 @@ from src.benchmark.evaluation.models import BenchmarkResult, ScoringResult
 from src.benchmark.tasks.models import BenchmarkTask
 from src.observability.logging import get_correlation_id
 
-logger = logging.getLogger(__name__)
-
 
 class ScorerProtocol(Protocol):
     """Protocol for benchmark result scorers."""
@@ -157,9 +155,9 @@ class LLMJudgeScorer:
             task_description=task.description,
             task_category=task.category_label,
             task_complexity=task.complexity.value,
-            task_input=task.input_data[:2000],  # Truncate very long inputs
+            task_input=task.input_data[: self._config.max_input_truncation],
             expected_outputs=json.dumps(list(task.expected_outputs)),
-            system_response=result.raw_response[:3000],  # Truncate very long responses
+            system_response=result.raw_response[: self._config.max_response_truncation],
             min_score=self._config.min_score,
             max_score=self._config.max_score,
         )

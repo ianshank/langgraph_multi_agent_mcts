@@ -207,3 +207,41 @@ class TestBenchmarkSettings:
         reset_benchmark_settings()
         s2 = get_benchmark_settings()
         assert s1 is not s2
+
+    def test_get_system_provider_mapping_both_enabled(self) -> None:
+        settings = BenchmarkSettings()
+        mapping = settings.get_system_provider_mapping()
+        assert "langgraph_mcts" in mapping
+        assert "vertex_adk" in mapping
+        # LangGraph maps to scoring provider/model
+        assert mapping["langgraph_mcts"] == (settings.scoring.provider, settings.scoring.model)
+        # ADK maps to google + coordinator model
+        assert mapping["vertex_adk"] == ("google", settings.adk.coordinator_model)
+
+    def test_get_system_provider_mapping_langgraph_disabled(self) -> None:
+        settings = BenchmarkSettings()
+        settings._langgraph = LangGraphBenchmarkConfig(enabled=False)
+        mapping = settings.get_system_provider_mapping()
+        assert "langgraph_mcts" not in mapping
+        assert "vertex_adk" in mapping
+
+    def test_get_system_provider_mapping_adk_disabled(self) -> None:
+        settings = BenchmarkSettings()
+        settings._adk = ADKBenchmarkConfig(enabled=False)
+        mapping = settings.get_system_provider_mapping()
+        assert "langgraph_mcts" in mapping
+        assert "vertex_adk" not in mapping
+
+
+class TestScoringConfigTruncation:
+    """Test scoring config truncation settings."""
+
+    def test_default_truncation(self) -> None:
+        config = ScoringConfig()
+        assert config.max_input_truncation == 2000
+        assert config.max_response_truncation == 3000
+
+    def test_custom_truncation(self) -> None:
+        config = ScoringConfig(max_input_truncation=5000, max_response_truncation=10000)
+        assert config.max_input_truncation == 5000
+        assert config.max_response_truncation == 10000

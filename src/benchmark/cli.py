@@ -33,6 +33,7 @@ import argparse
 import asyncio
 import logging
 import sys
+import uuid
 from pathlib import Path
 
 from src.benchmark.config.benchmark_settings import BenchmarkSettings, get_benchmark_settings, reset_benchmark_settings
@@ -107,10 +108,9 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     parser.add_argument(
-        "--save-results",
+        "--no-save-results",
         action="store_true",
-        default=True,
-        help="Save raw results to JSON (default: true)",
+        help="Skip saving raw results to JSON",
     )
 
     parser.add_argument(
@@ -163,7 +163,7 @@ async def run_benchmark(args: argparse.Namespace) -> int:
     Returns:
         Exit code (0 = success, 1 = error, 2 = no results)
     """
-    set_correlation_id(f"cli-benchmark")
+    set_correlation_id(f"cli-benchmark-{uuid.uuid4().hex[:8]}")
 
     # Load and configure settings
     reset_benchmark_settings()
@@ -211,7 +211,7 @@ async def run_benchmark(args: argparse.Namespace) -> int:
     # Save results
     output_dir = Path(args.output_dir) if args.output_dir else Path(settings.report.output_dir)
 
-    if args.save_results:
+    if not args.no_save_results:
         try:
             results_path = harness.save_results(output_dir)
             logger.info("Results saved to %s", results_path)
@@ -270,7 +270,7 @@ def _dry_run(factory: BenchmarkFactory, args: argparse.Namespace) -> int:
             print(f"  - {tid}: NOT FOUND")
 
     # Show config
-    settings = factory._settings
+    settings = factory.settings
     print(f"\nIterations: {settings.run.num_iterations}")
     print(f"Scoring: {'enabled' if settings.scoring.enabled else 'disabled'}")
     print(f"Output: {settings.report.output_dir}")

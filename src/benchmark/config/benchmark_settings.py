@@ -151,6 +151,18 @@ class ScoringConfig(BaseSettings):
         ],
         description="Dimensions to score",
     )
+    max_input_truncation: int = Field(
+        default=2000,
+        ge=100,
+        le=50000,
+        description="Maximum chars of task input to include in scoring prompt",
+    )
+    max_response_truncation: int = Field(
+        default=3000,
+        ge=100,
+        le=50000,
+        description="Maximum chars of system response to include in scoring prompt",
+    )
 
     @field_validator("provider")
     @classmethod
@@ -448,6 +460,15 @@ class BenchmarkSettings(BaseSettings):
         if self._report is None:
             self._report = ReportConfig()
         return self._report
+
+    def get_system_provider_mapping(self) -> dict[str, tuple[str, str]]:
+        """Return mapping of system names to (provider, model) for cost calculation."""
+        mapping: dict[str, tuple[str, str]] = {}
+        if self.langgraph.enabled:
+            mapping["langgraph_mcts"] = (self.scoring.provider, self.scoring.model)
+        if self.adk.enabled:
+            mapping["vertex_adk"] = ("google", self.adk.coordinator_model)
+        return mapping
 
     def safe_dict(self) -> dict[str, Any]:
         """Return configuration with secrets masked. Safe for logging."""

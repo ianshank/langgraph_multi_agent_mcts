@@ -22,8 +22,6 @@ from src.benchmark.reporting.report_generator import ReportGenerator
 from src.benchmark.tasks.registry import BenchmarkTaskRegistry
 from src.observability.logging import get_correlation_id
 
-logger = logging.getLogger(__name__)
-
 
 class BenchmarkFactory:
     """
@@ -55,6 +53,11 @@ class BenchmarkFactory:
         self._settings = settings or get_benchmark_settings()
         self._llm_client = llm_client
         self._logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
+
+    @property
+    def settings(self) -> BenchmarkSettings:
+        """Public access to benchmark settings."""
+        return self._settings
 
     def create_llm_client(self, provider: str | None = None, model: str | None = None) -> Any:
         """
@@ -208,7 +211,6 @@ class BenchmarkFactory:
     def create_harness(
         self,
         systems: list[str] | None = None,
-        task_ids: list[str] | None = None,
         scorer: ScorerProtocol | None = None,
         llm_client: Any | None = None,
         framework: Any | None = None,
@@ -221,7 +223,6 @@ class BenchmarkFactory:
 
         Args:
             systems: Specific systems to benchmark (None = all available)
-            task_ids: Specific tasks to load (None = all defaults)
             scorer: Optional custom scorer (created from settings if not provided)
             llm_client: Optional LLM client for adapters and scorer
             framework: Optional IntegratedFramework for LangGraph adapter

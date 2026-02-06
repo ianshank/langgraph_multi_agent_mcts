@@ -32,15 +32,14 @@ class ScoringResult:
 
     @property
     def average_score(self) -> float:
-        """Calculate average across all quality dimensions."""
+        """Calculate average across all quality dimensions (including zeros)."""
         scores = [
             self.task_completion,
             self.reasoning_depth,
             self.accuracy,
             self.coherence,
         ]
-        non_zero = [s for s in scores if s > 0]
-        return sum(non_zero) / len(non_zero) if non_zero else 0.0
+        return sum(scores) / len(scores) if scores else 0.0
 
     def to_dict(self) -> dict[str, Any]:
         return asdict(self)
@@ -112,7 +111,9 @@ class BenchmarkResult:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> BenchmarkResult:
-        """Deserialize from dictionary."""
+        """Deserialize from dictionary without mutating the input."""
+        # Defensive copy to avoid mutating caller's dict
+        data = dict(data)
         scoring_data = data.pop("scoring", {})
         valid_fields = {f.name for f in cls.__dataclass_fields__.values()}
         filtered = {k: v for k, v in data.items() if k in valid_fields}

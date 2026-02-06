@@ -28,17 +28,20 @@ class TestBenchmarkFactory:
 
     def test_init_default_settings(self) -> None:
         factory = BenchmarkFactory()
-        assert factory._settings is not None
+        assert factory.settings is not None
 
     def test_init_custom_settings(self) -> None:
         settings = BenchmarkSettings()
         factory = BenchmarkFactory(settings=settings)
-        assert factory._settings is settings
+        assert factory.settings is settings
 
     def test_init_with_llm_client(self) -> None:
         mock_client = MagicMock()
         factory = BenchmarkFactory(settings=self.settings, llm_client=mock_client)
         assert factory._llm_client is mock_client
+
+    def test_settings_property(self) -> None:
+        assert self.factory.settings is self.settings
 
     def test_create_scorer_disabled(self) -> None:
         self.settings._scoring = ScoringConfig(enabled=False)

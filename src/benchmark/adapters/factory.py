@@ -7,6 +7,7 @@ Enables dependency injection and testability.
 
 from __future__ import annotations
 
+import importlib
 import logging
 from typing import Any
 
@@ -120,15 +121,14 @@ class BenchmarkAdapterFactory:
         return list(ADAPTER_REGISTRY.keys()) + list(self._custom_adapters.keys())
 
     def _create_builtin(self, system_name: str, **kwargs: Any) -> BenchmarkSystemProtocol:
-        """Create a built-in adapter by importing and instantiating."""
-        if system_name == "langgraph_mcts":
-            from src.benchmark.adapters.langgraph_adapter import LangGraphBenchmarkAdapter
+        """Create a built-in adapter by dynamic import from ADAPTER_REGISTRY."""
+        qualified_name = ADAPTER_REGISTRY.get(system_name)
+        if not qualified_name:
+            raise ValueError(f"No built-in adapter for: {system_name}")
 
-            return LangGraphBenchmarkAdapter(settings=self._settings, **kwargs)
+        module_path, class_name = qualified_name.rsplit(".", 1)
+        module = importlib.import_module(module_path)
+        adapter_class = getattr(module, class_name)
 
-        elif system_name == "vertex_adk":
-            from src.benchmark.adapters.adk_adapter import ADKBenchmarkAdapter
-
-            return ADKBenchmarkAdapter(settings=self._settings, **kwargs)
-
-        raise ValueError(f"No built-in adapter for: {system_name}")
+        adapter: BenchmarkSystemProtocol = adapter_class(settings=self._settings, **kwargs)
+        return adapter

@@ -31,7 +31,7 @@ class TestBuildParser:
         assert not args.no_scoring
         assert not args.dry_run
         assert args.log_level == "INFO"
-        assert args.save_results is True
+        assert not args.no_save_results
         assert not args.no_report
 
     def test_parse_systems(self) -> None:
