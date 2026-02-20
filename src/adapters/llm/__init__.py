@@ -7,7 +7,7 @@ based on provider settings, with lazy loading of adapters.
 
 import importlib
 import logging
-from typing import Any
+from typing import Any, cast
 
 from .base import BaseLLMClient, LLMClient, LLMResponse, LLMToolResponse, ToolCall
 from .exceptions import (
@@ -108,7 +108,7 @@ def get_provider_class(provider: str) -> type[BaseLLMClient]:
 
     # Cache for future use
     _CLIENT_CACHE[provider] = client_class
-    return client_class
+    return cast(type[BaseLLMClient], client_class)
 
 
 def create_client(

@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import logging
 import uuid
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, cast
 
 if TYPE_CHECKING:
     from src.adapters.llm.base import LLMClient
@@ -88,7 +88,7 @@ class MADueDiligence(BaseUseCase[MADueDiligenceState]):
 
     @property
     def config(self) -> MADueDiligenceConfig:
-        return self._config
+        return cast(MADueDiligenceConfig, self._config)
 
     def _setup_agents(self) -> None:
         """Initialize domain-specific agents."""
@@ -271,7 +271,7 @@ class MADueDiligence(BaseUseCase[MADueDiligenceState]):
                 risk_score = features.get("risk_score", 0)
                 risk_penalty = risk_score * 0.05
 
-                return min(base + depth_bonus + phase_bonus + risk_bonus - risk_penalty, 1.0)
+                return float(min(base + depth_bonus + phase_bonus + risk_bonus - risk_penalty, 1.0))
 
             return HybridRolloutPolicy(
                 heuristic_fn=heuristic_fn,

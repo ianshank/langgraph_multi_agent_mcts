@@ -9,7 +9,7 @@ Provides:
 
 import re
 from datetime import datetime
-from typing import Any
+from typing import Any, cast
 
 
 class FrameworkError(Exception):
@@ -296,4 +296,4 @@ def wrap_exception(
         FrameworkError instance with sanitized details
     """
     internal_details = f"{type(exc).__name__}: {str(exc)}"
-    return error_class(user_message=user_message, internal_details=internal_details, **kwargs)
+    return cast(FrameworkError, error_class(user_message=user_message, internal_details=internal_details, **kwargs))

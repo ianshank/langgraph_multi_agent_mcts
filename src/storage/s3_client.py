@@ -242,7 +242,7 @@ class S3StorageClient:
                 },
             )
 
-            return data
+            return bytes(data)
 
     async def store_config(
         self,

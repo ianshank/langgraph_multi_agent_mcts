@@ -8,7 +8,7 @@ Designed for running local models with configurable endpoint.
 import json
 import logging
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, cast
 
 import httpx
 
@@ -120,7 +120,7 @@ class LMStudioClient(BaseLLMClient):
             response = await client.get("/models")
             if response.status_code == 200:
                 data = response.json()
-                return data.get("data", [])
+                return list(data.get("data", []))
             return []
         except Exception as e:
             logger.warning(f"Failed to list models: {e}")
@@ -337,7 +337,7 @@ class LMStudioClient(BaseLLMClient):
                     raise
                 raise LLMStreamError(self.PROVIDER_NAME, str(e)) from e
 
-        return stream_generator()
+        return cast(AsyncIterator[str], stream_generator())
 
     async def close(self) -> None:
         """Close the HTTP client."""

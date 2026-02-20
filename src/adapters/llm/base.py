@@ -28,17 +28,17 @@ class LLMResponse:
     @property
     def total_tokens(self) -> int:
         """Total tokens used in request/response."""
-        return self.usage.get("total_tokens", 0)
+        return int(self.usage.get("total_tokens", 0))
 
     @property
     def prompt_tokens(self) -> int:
         """Tokens used in prompt."""
-        return self.usage.get("prompt_tokens", 0)
+        return int(self.usage.get("prompt_tokens", 0))
 
     @property
     def completion_tokens(self) -> int:
         """Tokens used in completion."""
-        return self.usage.get("completion_tokens", 0)
+        return int(self.usage.get("completion_tokens", 0))
 
 
 @dataclass

@@ -9,7 +9,7 @@ import json
 import logging
 import time
 from collections.abc import AsyncIterator
-from typing import Any
+from typing import Any, cast
 
 import httpx
 from tenacity import (
@@ -449,7 +449,7 @@ class OpenAIClient(BaseLLMClient):
                     raise
                 raise LLMStreamError(self.PROVIDER_NAME, str(e)) from e
 
-        return stream_generator()
+        return cast(AsyncIterator[str], stream_generator())
 
     async def close(self) -> None:
         """Close the HTTP client."""

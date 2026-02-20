@@ -235,12 +235,12 @@ class BERTLoRATrainer:
 
         # Tokenize function
         def tokenize_function(examples: dict[str, Any]) -> dict[str, Any]:
-            return self.tokenizer(
+            return dict(self.tokenizer(
                 examples["text"],
                 padding="max_length",
                 truncation=True,
                 max_length=512,
-            )
+            ))
 
         # Tokenize the dataset
         tokenized_dataset = dataset.map(
