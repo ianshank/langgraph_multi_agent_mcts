@@ -71,7 +71,7 @@ class ProgressiveWideningConfig:
             return True  # Always expand first child
 
         threshold = self.k * (num_children**self.alpha)
-        return visits > threshold
+        return bool(visits > threshold)
 
     def min_visits_for_next_child(self, num_children: int) -> int:
         """

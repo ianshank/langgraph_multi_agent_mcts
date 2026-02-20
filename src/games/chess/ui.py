@@ -177,9 +177,9 @@ def render_board_html(fen: str, last_move: str | None = None, flipped: bool = Fa
     row_indices = range(8) if not flipped else range(7, -1, -1)
     col_indices = range(8) if not flipped else range(7, -1, -1)
 
-    for row_idx, board_row in enumerate(row_indices):
+    for _row_idx, board_row in enumerate(row_indices):
         html_parts.append('<div class="chess-row">')
-        for col_idx, board_col in enumerate(col_indices):
+        for _col_idx, board_col in enumerate(col_indices):
             is_light = (board_row + board_col) % 2 == 0
             square_class = "light-square" if is_light else "dark-square"
             if (board_row, board_col) in highlight_squares:
@@ -209,7 +209,6 @@ def render_board_html(fen: str, last_move: str | None = None, flipped: bool = Fa
 def render_scorecard_html(scorecard: ScoreCard) -> str:
     """Render scorecard as HTML."""
     win_rate = scorecard.win_rate * 100
-    draw_rate = scorecard.draw_rate * 100
 
     # Determine streak info
     if scorecard.streak_type == "win":

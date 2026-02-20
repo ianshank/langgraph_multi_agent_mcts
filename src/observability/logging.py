@@ -21,6 +21,7 @@ import uuid
 from contextvars import ContextVar
 from datetime import datetime
 from functools import wraps
+from typing import Any
 
 import psutil
 
@@ -74,7 +75,7 @@ def sanitize_message(message: str) -> str:
     return message
 
 
-def sanitize_dict(data: dict) -> dict:
+def sanitize_dict(data: dict[str, Any]) -> dict[str, Any]:
     """Recursively sanitize sensitive data from dictionaries."""
     sensitive_keys = {
         "api_key",
@@ -89,7 +90,7 @@ def sanitize_dict(data: dict) -> dict:
         "private_key",
     }
 
-    result = {}
+    result: dict[str, Any] = {}
     for key, value in data.items():
         key_lower = key.lower().replace("-", "_")
         if key_lower in sensitive_keys:
@@ -132,12 +133,11 @@ class JSONFormatter(logging.Formatter):
         super().__init__()
         self.include_hostname = include_hostname
         self.include_process = include_process
+        self.hostname: str | None = None
         if include_hostname:
             import socket
 
             self.hostname = socket.gethostname()
-        else:
-            self.hostname = None
 
     def format(self, record: logging.LogRecord) -> str:
         log_data = {
@@ -186,7 +186,7 @@ class JSONFormatter(logging.Formatter):
             }
 
         # Add any extra fields (sanitized)
-        extra_fields = {}
+        extra_fields: dict[str, Any] = {}
         for key, value in record.__dict__.items():
             if key not in {
                 "name",

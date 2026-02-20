@@ -23,7 +23,7 @@ class Experience:
     state: torch.Tensor  # State representation
     policy: np.ndarray  # MCTS visit count distribution
     value: float  # Game outcome from this state's perspective
-    metadata: dict = None  # Optional metadata (e.g., game_id, move_number)
+    metadata: dict | None = None  # Optional metadata (e.g., game_id, move_number)
 
 
 class ReplayBuffer:
@@ -149,7 +149,7 @@ class PrioritizedReplayBuffer:
             priorities: Optional list of priorities (same length as experiences)
         """
         if priorities is None:
-            priorities = [None] * len(experiences)
+            priorities = [None] * len(experiences)  # type: ignore[list-item]
 
         for exp, priority in zip(experiences, priorities, strict=True):
             self.add(exp, priority)

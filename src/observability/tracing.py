@@ -99,14 +99,14 @@ class TracingManager:
 
         # Configure exporter based on type
         if exporter_type.lower() == "otlp":
-            exporter = OTLPSpanExporter(
+            otlp_exporter = OTLPSpanExporter(
                 endpoint=otlp_endpoint,
                 insecure=os.environ.get("OTEL_EXPORTER_OTLP_INSECURE", "true").lower() == "true",
             )
-            processor = BatchSpanProcessor(exporter)
+            processor: BatchSpanProcessor | SimpleSpanProcessor | None = BatchSpanProcessor(otlp_exporter)
         elif exporter_type.lower() == "console":
-            exporter = ConsoleSpanExporter()
-            processor = SimpleSpanProcessor(exporter)
+            console_exporter = ConsoleSpanExporter()
+            processor = SimpleSpanProcessor(console_exporter)
         elif exporter_type.lower() == "none":
             processor = None
         else:
@@ -321,7 +321,7 @@ class SpanContextPropagator:
 
     def get_trace_parent(self) -> str | None:
         """Get the traceparent header value for the current span."""
-        carrier = {}
+        carrier: dict[str, str] = {}
         self.inject(carrier)
         return carrier.get("traceparent")
 

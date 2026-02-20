@@ -379,9 +379,6 @@ class ChessTrainingOrchestrator:
         num_games = self.config.training.games_per_iteration
         num_actors = self.config.training.num_actors
 
-        # Create game tasks
-        games_per_actor = num_games // num_actors
-
         tasks = [self._play_single_game() for _ in range(num_games)]
 
         # Run games (with some concurrency limit)
@@ -472,7 +469,7 @@ class ChessTrainingOrchestrator:
         outcome = state.get_reward(player=1)  # From white's perspective
 
         # Assign values to all positions based on outcome
-        for i, pos_tensor in enumerate(positions):
+        for i, _pos_tensor in enumerate(positions):
             # Alternate perspective
             perspective = 1 if i % 2 == 0 else -1
             values[i] = outcome * perspective

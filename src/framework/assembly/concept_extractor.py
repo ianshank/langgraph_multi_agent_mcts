@@ -145,16 +145,14 @@ class ConceptExtractor:
             # Infer dependencies from domain knowledge
             prerequisite_concepts = self._infer_prerequisites(concept.term)
             for prereq in prerequisite_concepts:
-                if prereq in [c.term for c in concepts] and prereq != concept.term:
-                    if not graph.has_edge(prereq, concept.term):
-                        graph.add_edge(prereq, concept.term, type="inferred")
+                if prereq in [c.term for c in concepts] and prereq != concept.term and not graph.has_edge(prereq, concept.term):
+                    graph.add_edge(prereq, concept.term, type="inferred")
 
             # Sequential dependencies (weaker)
             if i > 0:
                 prev_concept = concepts[i - 1]
-                if self._are_related(prev_concept.term, concept.term):
-                    if not graph.has_edge(prev_concept.term, concept.term):
-                        graph.add_edge(prev_concept.term, concept.term, type="sequential")
+                if self._are_related(prev_concept.term, concept.term) and not graph.has_edge(prev_concept.term, concept.term):
+                    graph.add_edge(prev_concept.term, concept.term, type="sequential")
 
         # Ensure DAG (remove cycles)
         if not nx.is_directed_acyclic_graph(graph):
@@ -409,10 +407,7 @@ class ConceptExtractor:
                 return True
 
         # Check if one contains the other
-        if term1 in term2 or term2 in term1:
-            return True
-
-        return False
+        return bool(term1 in term2 or term2 in term1)
 
     def _make_dag(self, graph: nx.DiGraph) -> nx.DiGraph:
         """Convert graph to DAG by removing cycles."""

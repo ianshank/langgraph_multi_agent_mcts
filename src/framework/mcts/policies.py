@@ -159,7 +159,7 @@ class RandomRolloutPolicy(RolloutPolicy):
         """Generate random evaluation with noise."""
         noise = rng.uniform(-self.noise_scale, self.noise_scale)
         value = self.base_value + noise
-        return max(0.0, min(1.0, value))
+        return float(max(0.0, min(1.0, value)))
 
 
 class GreedyRolloutPolicy(RolloutPolicy):
@@ -190,7 +190,7 @@ class GreedyRolloutPolicy(RolloutPolicy):
         base_value = self.heuristic_fn(state)
         noise = rng.uniform(-self.noise_scale, self.noise_scale)
         value = base_value + noise
-        return max(0.0, min(1.0, value))
+        return float(max(0.0, min(1.0, value)))
 
 
 class HybridRolloutPolicy(RolloutPolicy):
@@ -243,7 +243,7 @@ class HybridRolloutPolicy(RolloutPolicy):
         # Combine
         value = self.heuristic_weight * heuristic_value + self.random_weight * random_value
 
-        return max(0.0, min(1.0, value))
+        return float(max(0.0, min(1.0, value)))
 
 
 class LLMRolloutPolicy(RolloutPolicy):
@@ -275,7 +275,7 @@ class LLMRolloutPolicy(RolloutPolicy):
         state_key = state.to_hash_key()
 
         if self.cache_results and state_key in self._cache:
-            return self._cache[state_key]
+            return float(self._cache[state_key])
 
         value = await self.evaluate_fn(state)
         value = max(0.0, min(1.0, value))
@@ -330,7 +330,7 @@ class ProgressiveWideningConfig:
             True if should expand, False otherwise
         """
         threshold = self.k * (num_children**self.alpha)
-        return visits > threshold
+        return bool(visits > threshold)
 
     def min_visits_for_expansion(self, num_children: int) -> int:
         """
@@ -372,12 +372,12 @@ def compute_action_probabilities(
         # Deterministic: assign 1.0 to max, 0 to others
         probs = np.zeros_like(visits)
         probs[np.argmax(visits)] = 1.0
-        return probs.tolist()
+        return list(probs.tolist())
 
     # Apply temperature
     scaled_visits = visits ** (1.0 / temperature)
     probs = scaled_visits / scaled_visits.sum()
-    return probs.tolist()
+    return list(probs.tolist())
 
 
 def select_action_stochastic(
@@ -399,4 +399,4 @@ def select_action_stochastic(
     probs = compute_action_probabilities(children_stats, temperature)
     if not probs:
         raise ValueError("No actions to select from")
-    return rng.choice(len(probs), p=probs)
+    return int(rng.choice(len(probs), p=probs))

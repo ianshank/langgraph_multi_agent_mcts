@@ -25,7 +25,7 @@ from src.agents.meta_controller.utils import (
 
 # Import feature extractor
 try:
-    from src.agents.meta_controller.feature_extractor import (
+    from src.agents.meta_controller.feature_extractor import (  # noqa: F401
         EmbeddingBackend,
         FeatureExtractor,
         FeatureExtractorConfig,

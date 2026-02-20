@@ -142,7 +142,7 @@ class MCTSNode:
         unexpanded = [a for a in self.available_actions if a not in self.expanded_actions]
         if not unexpanded:
             return None
-        return self._rng.choice(unexpanded)
+        return str(self._rng.choice(unexpanded))
 
     def __repr__(self) -> str:
         return (
@@ -235,7 +235,7 @@ class MCTSEngine:
         num_children = len(node.children)
         threshold = self.progressive_widening_k * (num_children**self.progressive_widening_alpha)
 
-        return node.visits > threshold
+        return bool(node.visits > threshold)
 
     def select(self, node: MCTSNode) -> MCTSNode:
         """
@@ -324,7 +324,7 @@ class MCTSEngine:
             self.cache_hits += 1
             # Return cached average with small noise for exploration
             noise = self.rng.normal(0, 0.01)
-            return cached_value + noise
+            return float(cached_value + noise)
 
         self.cache_misses += 1
 

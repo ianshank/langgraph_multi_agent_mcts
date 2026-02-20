@@ -247,7 +247,7 @@ class RiskIdentificationAgent:
             extra={"existing_risks": len(domain_state.risks_identified)},
         )
 
-        risks = []
+        risks: list[dict[str, Any]] = []
         refinement_rounds = self._config.get("max_refinement_rounds", 3)
 
         for round_num in range(refinement_rounds):
@@ -552,4 +552,4 @@ class ComplianceCheckAgent:
     def _compute_confidence(self, results: dict[str, Any]) -> float:
         """Compute confidence based on checks performed."""
         total_checks = sum(r.get("checks_performed", 0) for r in results.values())
-        return min(0.5 + total_checks * 0.05, 0.9)
+        return float(min(0.5 + total_checks * 0.05, 0.9))

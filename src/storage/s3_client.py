@@ -183,7 +183,7 @@ class S3StorageClient:
             await self.initialize()
 
         async with self._session.client("s3", **self._get_client_params()) as s3:
-            extra_args = {
+            extra_args: dict[str, Any] = {
                 "ContentType": content_type,
             }
             if metadata:
@@ -242,7 +242,7 @@ class S3StorageClient:
                 },
             )
 
-            return data
+            return bytes(data)
 
     async def store_config(
         self,

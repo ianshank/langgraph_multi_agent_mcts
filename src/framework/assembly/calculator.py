@@ -183,7 +183,7 @@ class AssemblyIndexCalculator:
             return 1.0
 
         # Count node pattern frequencies
-        node_patterns = defaultdict(int)
+        node_patterns: dict[str, int] = defaultdict(int)
 
         for node in graph.nodes():
             # Pattern: (in_degree, out_degree)
@@ -258,9 +258,8 @@ class AssemblyIndexCalculator:
         for i in range(len(tokens)):
             for j in range(i + 2, min(i + 5, len(tokens))):  # Look ahead 2-4 tokens
                 # Add edge if tokens are related (simple heuristic)
-                if self._tokens_related(tokens[i], tokens[j]):
-                    if not graph.has_edge(i, j):
-                        graph.add_edge(i, j, weight=0.5)
+                if self._tokens_related(tokens[i], tokens[j]) and not graph.has_edge(i, j):
+                    graph.add_edge(i, j, weight=0.5)
 
         return graph
 
@@ -286,11 +285,7 @@ class AssemblyIndexCalculator:
                 return True
 
         # Check for common suffix
-        for length in range(3, min(len(token1), len(token2)) + 1):
-            if token1[-length:] == token2[-length:]:
-                return True
-
-        return False
+        return any(token1[-length:] == token2[-length:] for length in range(3, min(len(token1), len(token2)) + 1))
 
     def _break_cycles(self, graph: nx.DiGraph) -> nx.DiGraph:
         """

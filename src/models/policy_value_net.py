@@ -12,6 +12,8 @@ Based on:
 
 from __future__ import annotations
 
+from typing import cast
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -339,7 +341,7 @@ def create_policy_value_network(
     network.apply(init_weights)
     network = network.to(device)
 
-    return network
+    return cast(PolicyValueNetwork, network)
 
 
 # Example: Simpler MLP-based policy-value network for non-spatial tasks

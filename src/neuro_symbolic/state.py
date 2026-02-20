@@ -35,7 +35,7 @@ try:
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
-    torch = None  # type: ignore[assignment]
+    torch = None
 
 
 class SymbolicFactType(Enum):
@@ -334,7 +334,7 @@ class NeuroSymbolicState:
 
         # Combine
         neural_weight = 1.0 - symbolic_weight
-        return symbolic_weight * symbolic_sim + neural_weight * neural_sim
+        return float(symbolic_weight * symbolic_sim + neural_weight * neural_sim)
 
     def to_dict(self) -> dict[str, Any]:
         """Convert state to dictionary for serialization."""

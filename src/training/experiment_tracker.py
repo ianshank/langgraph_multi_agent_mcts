@@ -67,8 +67,8 @@ class BraintrustTracker:
         """
         self.api_key = api_key or os.getenv("BRAINTRUST_API_KEY")
         self.project_name = project_name
-        self._experiment = None
-        self._experiment_id = None
+        self._experiment: Any = None
+        self._experiment_id: str | None = None
         self._metrics_buffer: list[dict[str, Any]] = []
         self._initialized = False
 
