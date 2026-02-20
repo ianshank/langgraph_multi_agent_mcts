@@ -83,7 +83,7 @@ class AssemblyGraph(nx.DiGraph):
             components: List of component node IDs
             **metadata: Additional metadata
         """
-        node = AssemblyNode(
+        AssemblyNode(
             id=node_id,
             label=label,
             assembly_index=assembly_index,
@@ -304,7 +304,7 @@ class AssemblyGraph(nx.DiGraph):
 
             # Check if adding edge created cycle
             try:
-                cycle = nx.find_cycle(dag)
+                nx.find_cycle(dag)
                 # Remove this edge
                 dag.remove_edge(u, v)
             except nx.NetworkXNoCycle:
@@ -412,7 +412,7 @@ class AssemblyGraph(nx.DiGraph):
             try:
                 min_path = self.get_min_construction_pathway()
                 stats["min_pathway_length"] = len(min_path)
-            except:
+            except Exception:
                 stats["min_pathway_length"] = 0
 
         return stats

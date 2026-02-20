@@ -135,6 +135,7 @@ ignore = [
     "SIM116", # use dict.get (sometimes less clear)
     "SIM117", # combine with statements (sometimes clearer separate)
     "F541",   # f-string without placeholders (used for future formatting)
+    "UP042",  # str+Enum → StrEnum (StrEnum requires Python 3.11+, project supports 3.10+)
 ]
 
 [tool.ruff.format]

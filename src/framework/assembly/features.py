@@ -227,7 +227,7 @@ class AssemblyFeatureExtractor:
         try:
             layers = list(nx.topological_generations(dep_graph))
             num_layers = len(layers)
-        except:
+        except Exception:
             num_layers = 1
 
         layer_score = min(num_layers / 5.0, 1.0)  # Normalize to max 5 layers
@@ -273,7 +273,7 @@ class AssemblyFeatureExtractor:
                 # For cyclic graphs, use topological sort approximation
                 layers = list(nx.topological_generations(dep_graph))
                 depth = len(layers)
-        except:
+        except Exception:
             # Fallback: estimate from node count
             depth = int(np.sqrt(dep_graph.number_of_nodes()))
 
