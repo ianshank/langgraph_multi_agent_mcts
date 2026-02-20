@@ -379,9 +379,6 @@ class ChessTrainingOrchestrator:
         num_games = self.config.training.games_per_iteration
         num_actors = self.config.training.num_actors
 
-        # Create game tasks  (num_actors used for batch_size below)
-        _ = num_games // num_actors
-
         tasks = [self._play_single_game() for _ in range(num_games)]
 
         # Run games (with some concurrency limit)

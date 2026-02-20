@@ -335,4 +335,5 @@ def tensor_to_numpy(tensor: torch.Tensor) -> np.ndarray:
     Returns:
         Numpy array
     """
-    return tensor.detach().cpu().numpy()
+    result: np.ndarray = tensor.detach().cpu().numpy()
+    return result

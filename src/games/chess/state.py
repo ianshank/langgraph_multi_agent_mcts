@@ -285,7 +285,8 @@ class ChessGameState(GameState):
             Boolean numpy array where True indicates legal action
         """
         from_black = self.current_player == -1
-        return self._encoder.get_legal_action_mask(self._board, from_black_perspective=from_black)
+        mask: np.ndarray = self._encoder.get_legal_action_mask(self._board, from_black_perspective=from_black)
+        return mask
 
     def get_game_phase(self) -> GamePhase:
         """Determine the current game phase.
