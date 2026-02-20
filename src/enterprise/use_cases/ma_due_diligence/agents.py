@@ -247,7 +247,7 @@ class RiskIdentificationAgent:
             extra={"existing_risks": len(domain_state.risks_identified)},
         )
 
-        risks = []
+        risks: list[dict[str, Any]] = []
         refinement_rounds = self._config.get("max_refinement_rounds", 3)
 
         for round_num in range(refinement_rounds):

@@ -63,8 +63,8 @@ class DataEngineeringAgent(ADKAgentAdapter):
         # Load Dataform configuration from environment
         import os
 
-        self.dataform_repo = os.getenv("DATAFORM_REPOSITORY_NAME")
-        self.dataform_workspace = os.getenv("DATAFORM_WORKSPACE_NAME")
+        self.dataform_repo: str | None = os.getenv("DATAFORM_REPOSITORY_NAME")
+        self.dataform_workspace: str | None = os.getenv("DATAFORM_WORKSPACE_NAME")
 
     async def _agent_invoke(self, request: ADKAgentRequest) -> ADKAgentResponse:
         """

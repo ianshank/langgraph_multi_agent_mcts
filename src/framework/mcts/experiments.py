@@ -196,7 +196,7 @@ class ExperimentTracker:
 
         # Best action consistency
         best_actions = [r.best_action for r in self.results]
-        action_counts = {}
+        action_counts: dict[str, int] = {}
         for action in best_actions:
             action_counts[action] = action_counts.get(action, 0) + 1
         most_common_action = max(action_counts.items(), key=lambda x: x[1])

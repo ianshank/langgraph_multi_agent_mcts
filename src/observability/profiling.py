@@ -502,7 +502,7 @@ def generate_performance_report(session_id: str | None = None) -> dict[str, Any]
 
         # Compute session-specific stats
         if session.timings:
-            session_times = {}
+            session_times: dict[str, list[float]] = {}
             for timing in session.timings:
                 if timing.name not in session_times:
                     session_times[timing.name] = []

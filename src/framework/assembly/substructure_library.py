@@ -84,7 +84,7 @@ class SubstructureLibrary:
         self._hash_index: dict[str, str] = {}
 
         # Statistics
-        self._stats = {
+        self._stats: dict[str, int | float] = {
             "total_additions": 0,
             "total_queries": 0,
             "cache_hits": 0,
