@@ -42,8 +42,8 @@ except ImportError as e:
         ImportWarning,
         stacklevel=2,
     )
-    AutoTokenizer = None  # type: ignore
-    AutoModelForSequenceClassification = None  # type: ignore
+    AutoTokenizer = None
+    AutoModelForSequenceClassification = None
 
 try:
     from peft import LoraConfig, PeftModel, TaskType, get_peft_model
@@ -55,19 +55,19 @@ except ImportError as e:
     _PEFT_AVAILABLE = False
     _PEFT_ERROR = e
     logger.warning(f"⚠️ BERT Controller V2 ({CONTROLLER_VERSION}): peft not available (will use base BERT): {e}")
-    LoraConfig = None  # type: ignore
-    TaskType = None  # type: ignore
-    get_peft_model = None  # type: ignore
-    PeftModel = None  # type: ignore
+    LoraConfig = None
+    TaskType = None
+    get_peft_model = None
+    PeftModel = None
 except Exception as e:
     # Catch all other errors (like the transformers.modeling_layers issue)
     _PEFT_AVAILABLE = False
     _PEFT_ERROR = e
     logger.error(f"❌ BERT Controller V2 ({CONTROLLER_VERSION}): peft failed to load: {type(e).__name__}: {e}")
-    LoraConfig = None  # type: ignore
-    TaskType = None  # type: ignore
-    get_peft_model = None  # type: ignore
-    PeftModel = None  # type: ignore
+    LoraConfig = None
+    TaskType = None
+    get_peft_model = None
+    PeftModel = None
 
 
 class BERTMetaController(AbstractMetaController):
