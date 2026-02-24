@@ -28,6 +28,7 @@ sys.modules["llm_mcts"] = _llm_mcts  # Required for dataclass decorator
 _spec.loader.exec_module(_llm_mcts)
 
 ConsensusBuilder = _llm_mcts.ConsensusBuilder
+IterationEvent = _llm_mcts.IterationEvent
 LLMMCTSEngine = _llm_mcts.LLMMCTSEngine
 MCTSResult = _llm_mcts.MCTSResult
 MCTSTreeNode = _llm_mcts.MCTSTreeNode
@@ -36,7 +37,9 @@ MultiAgentMCTSPipeline = _llm_mcts.MultiAgentMCTSPipeline
 PipelineResult = _llm_mcts.PipelineResult
 REASONING_STRATEGIES = _llm_mcts.REASONING_STRATEGIES
 ResponseScorer = _llm_mcts.ResponseScorer
+SingleShotRunner = _llm_mcts.SingleShotRunner
 STRATEGY_PROMPTS = _llm_mcts.STRATEGY_PROMPTS
+TreeVisualizer = _llm_mcts.TreeVisualizer
 
 
 # ---------------------------------------------------------------------------
@@ -327,6 +330,168 @@ class TestStrategyPrompts:
         for strategy, template in STRATEGY_PROMPTS.items():
             formatted = template.format(query="test question")
             assert "test question" in formatted
+
+
+# ---------------------------------------------------------------------------
+# Integration test: demo.py CLI
+# ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# M3: TreeVisualizer tests
+# ---------------------------------------------------------------------------
+
+
+class TestTreeVisualizer:
+    def _make_tree(self) -> MCTSTreeNode:
+        """Build a simple MCTS tree for testing."""
+        root = MCTSTreeNode(strategy="root")
+        for strategy in REASONING_STRATEGIES:
+            child = MCTSTreeNode(strategy=strategy, parent=root, depth=1)
+            root.children.append(child)
+        # Simulate some visits
+        root.children[0].visits = 5
+        root.children[0].value_sum = 3.5
+        root.children[1].visits = 3
+        root.children[1].value_sum = 2.1
+        root.children[2].visits = 2
+        root.children[2].value_sum = 1.2
+        root.visits = 10
+        return root
+
+    def test_render_returns_string(self):
+        root = self._make_tree()
+        output = TreeVisualizer.render(root)
+        assert isinstance(output, str)
+        assert len(output) > 0
+
+    def test_render_contains_strategies(self):
+        root = self._make_tree()
+        output = TreeVisualizer.render(root)
+        assert "direct" in output
+        assert "decomposition" in output
+
+    def test_render_contains_visits(self):
+        root = self._make_tree()
+        output = TreeVisualizer.render(root)
+        assert "5 visits" in output
+        assert "3 visits" in output
+
+    def test_render_highlights_best(self):
+        root = self._make_tree()
+        output = TreeVisualizer.render(root, highlight_best=True)
+        assert "***" in output
+
+    def test_render_no_highlight(self):
+        root = self._make_tree()
+        output = TreeVisualizer.render(root, highlight_best=False)
+        assert "***" not in output
+
+    def test_render_empty_children(self):
+        root = MCTSTreeNode(strategy="root")
+        output = TreeVisualizer.render(root)
+        assert "no children" in output
+
+    def test_render_contains_avg_values(self):
+        root = self._make_tree()
+        output = TreeVisualizer.render(root)
+        assert "avg=" in output
+
+
+# ---------------------------------------------------------------------------
+# M4: Streaming callback tests
+# ---------------------------------------------------------------------------
+
+
+class TestStreamingCallback:
+    def test_callback_invoked_per_iteration(self):
+        events = []
+        engine = LLMMCTSEngine(iterations=5, seed=42)
+        engine.search("test query", on_iteration=lambda e: events.append(e))
+        assert len(events) == 5
+
+    def test_callback_events_have_correct_fields(self):
+        events = []
+        engine = LLMMCTSEngine(iterations=3, seed=42)
+        engine.search("test query", on_iteration=lambda e: events.append(e))
+        for event in events:
+            assert isinstance(event, IterationEvent)
+            assert event.strategy in REASONING_STRATEGIES
+            assert 0.0 <= event.score <= 1.0
+            assert event.iteration >= 1
+            assert event.total_iterations == 3
+            assert event.elapsed_ms >= 0
+            assert event.node_visits >= 1
+
+    def test_callback_iteration_numbers_sequential(self):
+        events = []
+        engine = LLMMCTSEngine(iterations=5, seed=42)
+        engine.search("test", on_iteration=lambda e: events.append(e))
+        iterations = [e.iteration for e in events]
+        assert iterations == [1, 2, 3, 4, 5]
+
+    def test_pipeline_forwards_callback(self):
+        events = []
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=5, seed=42)
+        pipeline.run("test", on_iteration=lambda e: events.append(e))
+        assert len(events) == 5
+
+
+# ---------------------------------------------------------------------------
+# M2: SingleShotRunner tests
+# ---------------------------------------------------------------------------
+
+
+class TestSingleShotRunner:
+    def test_returns_response_score_latency(self):
+        client = MockLLMClient()
+        runner = SingleShotRunner(client)
+        response, score, latency = runner.run("test question")
+        assert isinstance(response, str)
+        assert len(response) > 0
+        assert 0.0 <= score <= 1.0
+        assert latency >= 0
+
+    def test_score_within_range(self):
+        client = MockLLMClient()
+        runner = SingleShotRunner(client)
+        _, score, _ = runner.run("Design a rate limiter")
+        assert 0.0 <= score <= 1.0
+
+
+# ---------------------------------------------------------------------------
+# M3: Pipeline tree_root tests
+# ---------------------------------------------------------------------------
+
+
+class TestPipelineTreeRoot:
+    def test_pipeline_result_includes_tree_root(self):
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=5, seed=42)
+        result = pipeline.run("test")
+        assert result.tree_root is not None
+        assert result.tree_root.strategy == "root"
+        assert len(result.tree_root.children) == 5
+
+    def test_tree_root_visualizable(self):
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=10, seed=42)
+        result = pipeline.run("test")
+        viz = TreeVisualizer.render(result.tree_root)
+        assert "root" in viz
+        assert "visits" in viz
+
+
+# ---------------------------------------------------------------------------
+# Engine last_root tests
+# ---------------------------------------------------------------------------
+
+
+class TestEngineLastRoot:
+    def test_last_root_stored_after_search(self):
+        engine = LLMMCTSEngine(iterations=5, seed=42)
+        assert engine.last_root is None
+        engine.search("query")
+        assert engine.last_root is not None
+        assert engine.last_root.strategy == "root"
 
 
 # ---------------------------------------------------------------------------

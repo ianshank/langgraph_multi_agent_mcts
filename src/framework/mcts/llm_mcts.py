@@ -29,7 +29,7 @@ import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -128,6 +128,23 @@ class MCTSTreeNode:
         if not self.responses:
             return None
         return self.responses[-1]
+
+
+@dataclass
+class IterationEvent:
+    """Event emitted after each MCTS iteration for streaming output."""
+
+    iteration: int
+    total_iterations: int
+    strategy: str
+    score: float
+    response_preview: str
+    node_visits: int
+    elapsed_ms: float
+
+
+# Callback type: called after each MCTS iteration
+IterationCallback = Callable[[IterationEvent], None]
 
 
 @dataclass
@@ -480,6 +497,7 @@ class LLMMCTSEngine:
         self.exploration_weight = exploration_weight
         self.rng = random.Random(seed)
         self.llm_calls: list[LLMCall] = []
+        self.last_root: MCTSTreeNode | None = None
 
         # Use mock client if none provided
         if llm_client is None:
@@ -489,12 +507,13 @@ class LLMMCTSEngine:
 
         self._scorer = ResponseScorer(self._llm)
 
-    def search(self, query: str) -> MCTSResult:
+    def search(self, query: str, on_iteration: IterationCallback | None = None) -> MCTSResult:
         """
         Run MCTS search over reasoning strategies for a query.
 
         Args:
             query: The question/task to reason about
+            on_iteration: Optional callback invoked after each iteration
 
         Returns:
             MCTSResult with the best strategy, response, and tree statistics
@@ -524,6 +543,24 @@ class LLMMCTSEngine:
             # Store the response
             node.responses.append(response)
             self.llm_calls.append(llm_call)
+
+            # 4. Emit iteration event
+            if on_iteration is not None:
+                elapsed = (time.perf_counter() - start_time) * 1000
+                preview = response[:80].replace("\n", " ") + ("..." if len(response) > 80 else "")
+                event = IterationEvent(
+                    iteration=i + 1,
+                    total_iterations=self.iterations,
+                    strategy=node.strategy,
+                    score=round(score, 3),
+                    response_preview=preview,
+                    node_visits=node.visits,
+                    elapsed_ms=round(elapsed, 1),
+                )
+                on_iteration(event)
+
+        # Store root for visualization
+        self.last_root = root
 
         # Find the best strategy (most visited = most robust)
         best_child = max(root.children, key=lambda c: c.visits)
@@ -665,6 +702,86 @@ class ConsensusBuilder:
 
 
 # ---------------------------------------------------------------------------
+# Tree visualizer
+# ---------------------------------------------------------------------------
+
+
+class TreeVisualizer:
+    """Renders an MCTS tree as ASCII art."""
+
+    @staticmethod
+    def render(root: MCTSTreeNode, highlight_best: bool = True) -> str:
+        """
+        Render the MCTS tree as an ASCII tree diagram.
+
+        Args:
+            root: The root MCTSTreeNode (with children = strategy nodes)
+            highlight_best: Highlight the most-visited child
+
+        Returns:
+            Multi-line ASCII string
+        """
+        if not root.children:
+            return f"root ({root.visits} visits, no children)"
+
+        best_child = max(root.children, key=lambda c: c.visits) if highlight_best else None
+
+        lines: list[str] = []
+        lines.append(f"root ({root.visits} visits)")
+
+        for i, child in enumerate(root.children):
+            is_last = i == len(root.children) - 1
+            connector = "\u2514\u2500\u2500" if is_last else "\u251c\u2500\u2500"
+            stars = " ***" if child is best_child else ""
+
+            # Build bar from visits
+            max_visits = max(c.visits for c in root.children) or 1
+            bar_len = max(1, int(20 * child.visits / max_visits)) if child.visits > 0 else 0
+            bar_str = "\u2588" * bar_len + "\u2591" * (20 - bar_len)
+
+            lines.append(
+                f"{connector} {child.strategy:<15} "
+                f"{bar_str} "
+                f"{child.visits:>2} visits, "
+                f"avg={child.value:.3f}"
+                f"{stars}"
+            )
+
+        return "\n".join(lines)
+
+
+# ---------------------------------------------------------------------------
+# Single-shot runner for comparison mode
+# ---------------------------------------------------------------------------
+
+
+class SingleShotRunner:
+    """Run a single LLM call for A/B comparison against MCTS."""
+
+    def __init__(self, llm_client: StdlibLLMClient | MockLLMClient):
+        self._llm = llm_client
+        self._scorer = ResponseScorer(llm_client)
+
+    def run(self, query: str) -> tuple[str, float, float]:
+        """
+        Run a single-shot prompt and score it.
+
+        Returns:
+            (response_text, score, latency_ms)
+        """
+        prompt = (
+            "Answer the following question directly and concisely.\n\n"
+            f"Question: {query}\n\n"
+            "Provide a clear, well-structured answer."
+        )
+        start = time.perf_counter()
+        response, _tokens = self._llm.generate_sync(prompt, temperature=0.7)
+        latency_ms = (time.perf_counter() - start) * 1000
+        score = self._scorer.score(query, response, "direct")
+        return response, score, latency_ms
+
+
+# ---------------------------------------------------------------------------
 # Multi-Agent MCTS Pipeline
 # ---------------------------------------------------------------------------
 
@@ -679,6 +796,7 @@ class PipelineResult:
     top_strategies: list[tuple[str, float]]
     total_time_ms: float
     provider: str
+    tree_root: MCTSTreeNode | None = None
 
 
 class MultiAgentMCTSPipeline:
@@ -724,12 +842,13 @@ class MultiAgentMCTSPipeline:
         self._consensus = ConsensusBuilder(self._llm) if use_consensus else None
         self._use_consensus = use_consensus
 
-    def run(self, query: str) -> PipelineResult:
+    def run(self, query: str, on_iteration: IterationCallback | None = None) -> PipelineResult:
         """
         Run the full multi-agent MCTS pipeline on a query.
 
         Args:
             query: The question or task to process
+            on_iteration: Optional callback invoked after each MCTS iteration
 
         Returns:
             PipelineResult with all details
@@ -737,7 +856,7 @@ class MultiAgentMCTSPipeline:
         start = time.perf_counter()
 
         # Step 1: MCTS search
-        mcts_result = self._engine.search(query)
+        mcts_result = self._engine.search(query, on_iteration=on_iteration)
 
         # Step 2: Get top strategies (those with above-median scores)
         sorted_strategies = sorted(
@@ -767,4 +886,5 @@ class MultiAgentMCTSPipeline:
             top_strategies=top_strategies,
             total_time_ms=round(elapsed, 1),
             provider=self._llm.provider,
+            tree_root=self._engine.last_root,
         )

@@ -47,6 +47,10 @@ _spec.loader.exec_module(_llm_mcts)
 
 MultiAgentMCTSPipeline = _llm_mcts.MultiAgentMCTSPipeline
 PipelineResult = _llm_mcts.PipelineResult
+TreeVisualizer = _llm_mcts.TreeVisualizer
+SingleShotRunner = _llm_mcts.SingleShotRunner
+MockLLMClient = _llm_mcts.MockLLMClient
+StdlibLLMClient = _llm_mcts.StdlibLLMClient
 
 # ---------------------------------------------------------------------------
 # Terminal formatting (no dependencies)
@@ -220,6 +224,154 @@ def print_comparison_note():
 
 
 # ---------------------------------------------------------------------------
+# M4: Streaming iteration callback
+# ---------------------------------------------------------------------------
+
+
+def make_streaming_callback():
+    """Create a callback that prints each MCTS iteration as it happens."""
+
+    def _callback(event):
+        idx = event.iteration
+        total = event.total_iterations
+        strategy = event.strategy
+        score = event.score
+        visits = event.node_visits
+        elapsed = event.elapsed_ms
+
+        # Pad strategy name
+        strat_str = f"{strategy:<15}"
+
+        # Color the score
+        if score >= 0.7:
+            score_c = c(f"{score:.3f}", GREEN)
+        elif score >= 0.5:
+            score_c = c(f"{score:.3f}", YELLOW)
+        else:
+            score_c = c(f"{score:.3f}", RED)
+
+        prefix = c(f"  [{idx:>2}/{total}]", DIM)
+        ucb_note = ""
+        if visits > 1:
+            ucb_note = c(f"  (UCB1 re-selected, visit #{visits})", DIM)
+
+        print(f"{prefix} {strat_str} -> score: {score_c}  {c(f'{elapsed:.0f}ms', DIM)}{ucb_note}")
+
+    return _callback
+
+
+# ---------------------------------------------------------------------------
+# M3: Tree visualization display
+# ---------------------------------------------------------------------------
+
+
+def print_tree(result: PipelineResult):
+    """Print the ASCII MCTS tree visualization."""
+    if result.tree_root is None:
+        return
+
+    print(c("--- MCTS Tree ---", BOLD))
+    print()
+    tree_str = TreeVisualizer.render(result.tree_root)
+    for line in tree_str.split("\n"):
+        print(f"  {line}")
+    print()
+
+
+# ---------------------------------------------------------------------------
+# M2: Comparison mode (MCTS vs single-shot)
+# ---------------------------------------------------------------------------
+
+
+def run_comparison(pipeline: MultiAgentMCTSPipeline, query: str, provider: str, streaming: bool):
+    """Run MCTS vs single-shot comparison."""
+    print(c("=" * 72, DIM))
+    print(c("  A/B Comparison: Single-Shot vs MCTS", BOLD))
+    print(c("=" * 72, DIM))
+    print()
+    print_query(query)
+
+    # --- Single-shot ---
+    print(c("--- [A] Single-Shot (direct prompt) ---", YELLOW))
+    print()
+
+    if provider == "mock":
+        llm_client = MockLLMClient()
+    else:
+        llm_client = StdlibLLMClient(provider=provider)
+
+    runner = SingleShotRunner(llm_client)
+    ss_response, ss_score, ss_latency = runner.run(query)
+
+    for line in ss_response.split("\n"):
+        if line.strip():
+            print(f"  {line}")
+        else:
+            print()
+    print()
+    print(f"  Score:   {c(f'{ss_score:.3f}', YELLOW)}")
+    print(f"  Time:    {ss_latency:.0f} ms")
+    print(f"  Calls:   1")
+    print()
+
+    # --- MCTS ---
+    print(c("--- [B] MCTS (multi-strategy exploration) ---", GREEN))
+    print()
+
+    callback = make_streaming_callback() if streaming else None
+    if streaming:
+        print(c("  Exploration progress:", DIM))
+
+    result = pipeline.run(query, on_iteration=callback)
+
+    if streaming:
+        print()
+
+    mcts = result.mcts_result
+
+    # Print best response
+    for line in mcts.best_response.split("\n"):
+        if line.strip():
+            print(f"  {line}")
+        else:
+            print()
+    print()
+    print(f"  Score:   {c(f'{mcts.best_score:.3f}', GREEN)}")
+    print(f"  Time:    {result.total_time_ms:.0f} ms")
+    print(f"  Calls:   {len(mcts.llm_calls)}")
+    print(f"  Best:    {mcts.best_strategy}")
+    print()
+
+    # Tree visualization
+    print_tree(result)
+
+    # --- Comparison summary ---
+    print(c("--- Comparison ---", BOLD))
+    print()
+
+    delta = mcts.best_score - ss_score
+    if delta > 0:
+        pct = (delta / ss_score * 100) if ss_score > 0 else 0
+        print(f"  Single-shot score: {ss_score:.3f}")
+        print(f"  MCTS score:        {mcts.best_score:.3f}")
+        print(f"  Improvement:       {c(f'+{pct:.0f}%', GREEN)} ({c(f'+{delta:.3f}', GREEN)})")
+    elif delta < 0:
+        pct = (abs(delta) / ss_score * 100) if ss_score > 0 else 0
+        print(f"  Single-shot score: {ss_score:.3f}")
+        print(f"  MCTS score:        {mcts.best_score:.3f}")
+        print(f"  Difference:        {c(f'-{pct:.0f}%', RED)} ({c(f'{delta:.3f}', RED)})")
+    else:
+        print(f"  Single-shot score: {ss_score:.3f}")
+        print(f"  MCTS score:        {mcts.best_score:.3f}")
+        print(f"  Difference:        tied")
+
+    print()
+    print(c("  MCTS explores multiple reasoning strategies (decomposition, refinement,", DIM))
+    print(c("  analogy, adversarial) and converges on the best via UCB1 selection.", DIM))
+    print()
+
+
+# ---------------------------------------------------------------------------
 # Example queries
 # ---------------------------------------------------------------------------
 
@@ -309,6 +461,9 @@ def main():
     parser.add_argument("--no-consensus", action="store_true", help="Skip consensus synthesis step")
     parser.add_argument("--interactive", action="store_true", help="Run in interactive REPL mode")
     parser.add_argument("--json", action="store_true", help="Output results as JSON")
+    parser.add_argument("--compare", action="store_true", help="A/B comparison: MCTS vs single-shot")
+    parser.add_argument("--tree", action="store_true", help="Show ASCII tree visualization of MCTS exploration")
+    parser.add_argument("--stream", action="store_true", help="Show iteration-by-iteration progress during MCTS")
 
     args = parser.parse_args()
 
@@ -348,12 +503,24 @@ def main():
     # Single query mode
     query = args.query or EXAMPLE_QUERIES[0]
 
+    # Comparison mode
+    if args.compare:
+        run_comparison(pipeline, query, args.provider, streaming=args.stream)
+        return
+
     if not args.json:
         print_query(query)
-        print(c("  Running MCTS exploration...", DIM))
-        print()
+        if args.stream:
+            print(c("  MCTS exploration (streaming):", DIM))
+            print()
 
-    result = pipeline.run(query)
+    # Build streaming callback
+    callback = make_streaming_callback() if (args.stream and not args.json) else None
+
+    result = pipeline.run(query, on_iteration=callback)
+
+    if args.stream and not args.json:
+        print()
 
     if args.json:
         import json
@@ -372,6 +539,8 @@ def main():
         print(json.dumps(output, indent=2))
     else:
         print_mcts_progress(result)
+        if args.tree:
+            print_tree(result)
         print_best_response(result)
         print_consensus(result)
         print_stats(result)
