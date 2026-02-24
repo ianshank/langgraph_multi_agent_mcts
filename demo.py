@@ -29,7 +29,6 @@ import argparse
 import os
 import sys
 import textwrap
-import time
 
 # Add project root to path
 _PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -37,7 +36,7 @@ sys.path.insert(0, _PROJECT_ROOT)
 
 # Import directly from the module file to avoid triggering the mcts package
 # __init__.py which requires numpy. llm_mcts.py has zero external dependencies.
-import importlib.util
+import importlib.util  # noqa: E402
 
 _mod_path = os.path.join(_PROJECT_ROOT, "src", "framework", "mcts", "llm_mcts.py")
 _spec = importlib.util.spec_from_file_location("llm_mcts", _mod_path)

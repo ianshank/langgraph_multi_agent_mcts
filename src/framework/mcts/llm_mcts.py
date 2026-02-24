@@ -18,8 +18,6 @@ Strategies explored by MCTS:
 
 from __future__ import annotations
 
-import asyncio
-import hashlib
 import json
 import logging
 import math
@@ -28,8 +26,9 @@ import ssl
 import time
 import urllib.error
 import urllib.request
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -37,7 +36,7 @@ logger = logging.getLogger(__name__)
 # Data structures
 # ---------------------------------------------------------------------------
 
-REASONING_STRATEGIES = [
+REASONING_STRATEGIES: list[str] = [
     "direct",
     "decomposition",
     "refinement",
@@ -85,6 +84,67 @@ STRATEGY_PROMPTS: dict[str, str] = {
     ),
 }
 
+# ---------------------------------------------------------------------------
+# Default configuration constants (no hardcoded magic numbers)
+# ---------------------------------------------------------------------------
+
+DEFAULT_ITERATIONS = 10
+DEFAULT_EXPLORATION_WEIGHT = 1.414
+DEFAULT_SEED = 42
+DEFAULT_LLM_TIMEOUT = 60.0
+DEFAULT_TEMPERATURE = 0.7
+DEFAULT_MAX_TOKENS = 1024
+DEFAULT_JUDGE_TEMPERATURE = 0.1
+DEFAULT_JUDGE_MAX_TOKENS = 100
+DEFAULT_CONSENSUS_TEMPERATURE = 0.3
+DEFAULT_CONSENSUS_MAX_TOKENS = 1500
+DEFAULT_TOP_STRATEGIES_LIMIT = 3
+
+# Heuristic scoring parameters
+HEURISTIC_BASELINE_SCORE = 0.3
+HEURISTIC_LENGTH_BONUS_FULL = 0.2
+HEURISTIC_LENGTH_BONUS_PARTIAL = 0.1
+HEURISTIC_LENGTH_MIN_FULL = 200
+HEURISTIC_LENGTH_MAX_FULL = 2000
+HEURISTIC_LENGTH_MIN_PARTIAL = 100
+HEURISTIC_STRUCTURE_BONUS_PER_MARKER = 0.03
+HEURISTIC_STRUCTURE_BONUS_MAX = 0.2
+HEURISTIC_STRATEGY_BONUS = 0.15
+HEURISTIC_NOISE_RANGE = 0.05
+
+# Truncation limits for logs / stored data
+PROMPT_TRUNCATE_LEN = 200
+RESPONSE_TRUNCATE_LEN = 500
+RESPONSE_PREVIEW_LEN = 80
+JUDGE_RESPONSE_TRUNCATE_LEN = 2000
+CONSENSUS_RESPONSE_TRUNCATE_LEN = 800
+
+# Strategy-specific keyword detectors (strategy → keywords)
+STRATEGY_KEYWORDS: dict[str, list[str]] = {
+    "decomposition": ["sub-problem", "step"],
+    "refinement": ["refin"],
+    "adversarial": ["counter"],
+    "analogy": ["analogy"],
+}
+
+# Structural markers for heuristic scoring
+STRUCTURAL_MARKERS: list[str] = ["**", "##", "- ", "1.", "2.", "3.", "\n\n"]
+
+# Provider configuration (no inline URLs)
+PROVIDER_CONFIG: dict[str, dict[str, str]] = {
+    "openai": {
+        "env_key": "OPENAI_API_KEY",
+        "default_model": "gpt-4o-mini",
+        "base_url": "https://api.openai.com/v1/chat/completions",
+    },
+    "anthropic": {
+        "env_key": "ANTHROPIC_API_KEY",
+        "default_model": "claude-sonnet-4-20250514",
+        "base_url": "https://api.anthropic.com/v1/messages",
+        "api_version": "2023-06-01",
+    },
+}
+
 
 @dataclass
 class LLMCall:
@@ -116,7 +176,7 @@ class MCTSTreeNode:
             return 0.0
         return self.value_sum / self.visits
 
-    def ucb1(self, parent_visits: int, c: float = 1.414) -> float:
+    def ucb1(self, parent_visits: int, c: float = DEFAULT_EXPLORATION_WEIGHT) -> float:
         if self.visits == 0:
             return float("inf")
         exploitation = self.value
@@ -163,6 +223,28 @@ class MCTSResult:
 
 
 # ---------------------------------------------------------------------------
+# LLM Client Protocol (for type safety across real/mock clients)
+# ---------------------------------------------------------------------------
+
+
+class LLMClientProtocol:
+    """
+    Structural protocol for LLM clients used by the MCTS engine.
+
+    Both StdlibLLMClient and MockLLMClient implement this interface.
+    """
+
+    provider: str
+    total_tokens: int
+    call_count: int
+
+    def generate_sync(
+        self, prompt: str, temperature: float = DEFAULT_TEMPERATURE, max_tokens: int = DEFAULT_MAX_TOKENS
+    ) -> tuple[str, int]:
+        raise NotImplementedError
+
+
+# ---------------------------------------------------------------------------
 # LLM Client (stdlib-only, supports OpenAI and Anthropic)
 # ---------------------------------------------------------------------------
 
@@ -179,7 +261,7 @@ class StdlibLLMClient:
         provider: str = "openai",
         api_key: str | None = None,
         model: str | None = None,
-        timeout: float = 60.0,
+        timeout: float = DEFAULT_LLM_TIMEOUT,
     ):
         import os
 
@@ -188,31 +270,42 @@ class StdlibLLMClient:
         self.total_tokens = 0
         self.call_count = 0
 
-        if self.provider == "openai":
-            self.api_key = api_key or os.environ.get("OPENAI_API_KEY", "")
-            self.model = model or "gpt-4o-mini"
-            self.base_url = "https://api.openai.com/v1/chat/completions"
-        elif self.provider == "anthropic":
-            self.api_key = api_key or os.environ.get("ANTHROPIC_API_KEY", "")
-            self.model = model or "claude-sonnet-4-20250514"
-            self.base_url = "https://api.anthropic.com/v1/messages"
-        else:
-            raise ValueError(f"Unsupported provider: {provider}. Use 'openai' or 'anthropic'.")
+        if self.provider not in PROVIDER_CONFIG:
+            raise ValueError(
+                f"Unsupported provider: {provider}. "
+                f"Supported: {', '.join(PROVIDER_CONFIG.keys())}."
+            )
+
+        config = PROVIDER_CONFIG[self.provider]
+        self.api_key = api_key or os.environ.get(config["env_key"], "")
+        self.model = model or config["default_model"]
+        self.base_url = config["base_url"]
 
         if not self.api_key:
             raise ValueError(
-                f"No API key for {provider}. Set {'OPENAI_API_KEY' if provider == 'openai' else 'ANTHROPIC_API_KEY'} "
+                f"No API key for {provider}. Set {config['env_key']} "
                 "environment variable or pass api_key parameter."
             )
 
-    def generate_sync(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> tuple[str, int]:
-        """
-        Synchronous LLM call. Returns (response_text, tokens_used).
-        """
+        logger.info(
+            "StdlibLLMClient initialized: provider=%s, model=%s",
+            self.provider,
+            self.model,
+        )
+
+    def generate_sync(
+        self, prompt: str, temperature: float = DEFAULT_TEMPERATURE, max_tokens: int = DEFAULT_MAX_TOKENS
+    ) -> tuple[str, int]:
+        """Synchronous LLM call. Returns (response_text, tokens_used)."""
+        logger.debug(
+            "LLM call: provider=%s, prompt_len=%d, temperature=%.2f",
+            self.provider,
+            len(prompt),
+            temperature,
+        )
         if self.provider == "openai":
             return self._call_openai(prompt, temperature, max_tokens)
-        else:
-            return self._call_anthropic(prompt, temperature, max_tokens)
+        return self._call_anthropic(prompt, temperature, max_tokens)
 
     def _call_openai(self, prompt: str, temperature: float, max_tokens: int) -> tuple[str, int]:
         payload = {
@@ -226,13 +319,14 @@ class StdlibLLMClient:
             "Content-Type": "application/json",
         }
         data = self._http_post(self.base_url, payload, headers)
-        text = data["choices"][0]["message"]["content"]
-        tokens = data.get("usage", {}).get("total_tokens", 0)
+        text: str = data["choices"][0]["message"]["content"]
+        tokens: int = data.get("usage", {}).get("total_tokens", 0)
         self.total_tokens += tokens
         self.call_count += 1
         return text, tokens
 
     def _call_anthropic(self, prompt: str, temperature: float, max_tokens: int) -> tuple[str, int]:
+        config = PROVIDER_CONFIG["anthropic"]
         payload = {
             "model": self.model,
             "messages": [{"role": "user", "content": prompt}],
@@ -241,7 +335,7 @@ class StdlibLLMClient:
         }
         headers = {
             "x-api-key": self.api_key,
-            "anthropic-version": "2023-06-01",
+            "anthropic-version": config["api_version"],
             "Content-Type": "application/json",
         }
         data = self._http_post(self.base_url, payload, headers)
@@ -250,26 +344,27 @@ class StdlibLLMClient:
             if block.get("type") == "text":
                 text_parts.append(block["text"])
         text = "\n".join(text_parts)
-        tokens = data.get("usage", {}).get("input_tokens", 0) + data.get("usage", {}).get("output_tokens", 0)
+        tokens: int = data.get("usage", {}).get("input_tokens", 0) + data.get("usage", {}).get("output_tokens", 0)
         self.total_tokens += tokens
         self.call_count += 1
         return text, tokens
 
-    def _http_post(self, url: str, payload: dict, headers: dict) -> dict:
+    def _http_post(self, url: str, payload: dict[str, Any], headers: dict[str, str]) -> dict[str, Any]:
         """Make an HTTP POST request using urllib."""
         body = json.dumps(payload).encode("utf-8")
         req = urllib.request.Request(url, data=body, headers=headers, method="POST")
-
-        # Create SSL context that works in most environments
         ctx = ssl.create_default_context()
 
         try:
             with urllib.request.urlopen(req, timeout=self.timeout, context=ctx) as resp:
-                return json.loads(resp.read().decode("utf-8"))
+                result: dict[str, Any] = json.loads(resp.read().decode("utf-8"))
+                return result
         except urllib.error.HTTPError as e:
             error_body = e.read().decode("utf-8", errors="replace")
+            logger.error("HTTP %d from %s: %s", e.code, self.provider, error_body[:200])
             raise RuntimeError(f"HTTP {e.code} from {self.provider}: {error_body}") from e
         except urllib.error.URLError as e:
+            logger.error("Connection error to %s: %s", self.provider, e.reason)
             raise RuntimeError(f"Connection error to {self.provider}: {e.reason}") from e
 
 
@@ -351,33 +446,38 @@ class MockLLMClient:
         ),
     }
 
-    def __init__(self):
-        self.total_tokens = 0
-        self.call_count = 0
-        self.provider = "mock"
+    # Strategy detection keywords (keyword → strategy name)
+    DETECTION_KEYWORDS: dict[str, list[str]] = {
+        "decomposition": ["break", "sub-problem"],
+        "refinement": ["refine", "review"],
+        "analogy": ["analogy"],
+        "adversarial": ["argue against", "counter"],
+    }
 
-    def generate_sync(self, prompt: str, temperature: float = 0.7, max_tokens: int = 1024) -> tuple[str, int]:
+    def __init__(self) -> None:
+        self.total_tokens: int = 0
+        self.call_count: int = 0
+        self.provider: str = "mock"
+
+    def generate_sync(
+        self, prompt: str, temperature: float = DEFAULT_TEMPERATURE, max_tokens: int = DEFAULT_MAX_TOKENS
+    ) -> tuple[str, int]:
         """Return a mock response based on the detected strategy."""
         strategy = self._detect_strategy(prompt)
         response = self.MOCK_RESPONSES.get(strategy, self.MOCK_RESPONSES["direct"])
 
-        # Simulate slight variation
         mock_tokens = random.randint(150, 400)
         self.total_tokens += mock_tokens
         self.call_count += 1
 
+        logger.debug("MockLLMClient: detected strategy=%s, tokens=%d", strategy, mock_tokens)
         return response, mock_tokens
 
     def _detect_strategy(self, prompt: str) -> str:
         prompt_lower = prompt.lower()
-        if "break" in prompt_lower or "sub-problem" in prompt_lower:
-            return "decomposition"
-        elif "refine" in prompt_lower or "review" in prompt_lower:
-            return "refinement"
-        elif "analogy" in prompt_lower:
-            return "analogy"
-        elif "argue against" in prompt_lower or "counter" in prompt_lower:
-            return "adversarial"
+        for strategy, keywords in self.DETECTION_KEYWORDS.items():
+            if any(kw in prompt_lower for kw in keywords):
+                return strategy
         return "direct"
 
 
@@ -403,7 +503,7 @@ class ResponseScorer:
         "- Completeness and depth\n"
         "- Clarity and structure\n"
         "- Practical usefulness\n\n"
-        "Respond with ONLY a JSON object: {{\"score\": <float>, \"reason\": \"<brief reason>\"}}"
+        'Respond with ONLY a JSON object: {{"score": <float>, "reason": "<brief reason>"}}'
     )
 
     def __init__(self, llm_client: StdlibLLMClient | MockLLMClient | None = None):
@@ -417,19 +517,23 @@ class ResponseScorer:
 
     def _llm_judge_score(self, query: str, response: str) -> float:
         """Use the LLM as a judge to score the response."""
-        prompt = self.JUDGE_PROMPT.format(query=query, response=response[:2000])
+        assert self._llm is not None  # guaranteed by caller check
+        prompt = self.JUDGE_PROMPT.format(query=query, response=response[:JUDGE_RESPONSE_TRUNCATE_LEN])
         try:
-            text, _ = self._llm.generate_sync(prompt, temperature=0.1, max_tokens=100)
-            # Parse the JSON score
-            # Try to find JSON in the response
+            text, _ = self._llm.generate_sync(
+                prompt,
+                temperature=DEFAULT_JUDGE_TEMPERATURE,
+                max_tokens=DEFAULT_JUDGE_MAX_TOKENS,
+            )
             start = text.find("{")
             end = text.rfind("}") + 1
             if start >= 0 and end > start:
                 data = json.loads(text[start:end])
-                score = float(data.get("score", 0.5))
-                return max(0.0, min(1.0, score))
-        except Exception as e:
-            logger.warning(f"LLM judge scoring failed: {e}, falling back to heuristic")
+                score_val = float(data.get("score", 0.5))
+                logger.debug("LLM judge score: %.3f", score_val)
+                return max(0.0, min(1.0, score_val))
+        except Exception:
+            logger.warning("LLM judge scoring failed, falling back to heuristic", exc_info=True)
         return self._heuristic_score(response, "direct")
 
     def _heuristic_score(self, response: str, strategy: str) -> float:
@@ -438,32 +542,27 @@ class ResponseScorer:
 
         Not a substitute for LLM-as-judge, but useful for mock/offline demos.
         """
-        score = 0.3  # baseline
+        score = HEURISTIC_BASELINE_SCORE
 
-        # Length bonus (prefer substantive answers, penalize too short/long)
+        # Length bonus
         length = len(response)
-        if 200 <= length <= 2000:
-            score += 0.2
-        elif length > 100:
-            score += 0.1
+        if HEURISTIC_LENGTH_MIN_FULL <= length <= HEURISTIC_LENGTH_MAX_FULL:
+            score += HEURISTIC_LENGTH_BONUS_FULL
+        elif length > HEURISTIC_LENGTH_MIN_PARTIAL:
+            score += HEURISTIC_LENGTH_BONUS_PARTIAL
 
-        # Structure bonus (markdown headers, bullet points, numbered lists)
-        structural_markers = ["**", "##", "- ", "1.", "2.", "3.", "\n\n"]
-        structure_count = sum(1 for m in structural_markers if m in response)
-        score += min(0.2, structure_count * 0.03)
+        # Structure bonus
+        structure_count = sum(1 for m in STRUCTURAL_MARKERS if m in response)
+        score += min(HEURISTIC_STRUCTURE_BONUS_MAX, structure_count * HEURISTIC_STRUCTURE_BONUS_PER_MARKER)
 
         # Strategy-specific bonuses
-        if strategy == "decomposition" and ("sub-problem" in response.lower() or "step" in response.lower()):
-            score += 0.15
-        elif strategy == "refinement" and "refin" in response.lower():
-            score += 0.15
-        elif strategy == "adversarial" and "counter" in response.lower():
-            score += 0.15
-        elif strategy == "analogy" and "analogy" in response.lower():
-            score += 0.15
+        response_lower = response.lower()
+        keywords = STRATEGY_KEYWORDS.get(strategy, [])
+        if keywords and any(kw in response_lower for kw in keywords):
+            score += HEURISTIC_STRATEGY_BONUS
 
         # Add small random noise for variety
-        score += random.uniform(-0.05, 0.05)
+        score += random.uniform(-HEURISTIC_NOISE_RANGE, HEURISTIC_NOISE_RANGE)
 
         return max(0.0, min(1.0, score))
 
@@ -489,23 +588,32 @@ class LLMMCTSEngine:
     def __init__(
         self,
         llm_client: StdlibLLMClient | MockLLMClient | None = None,
-        iterations: int = 10,
-        exploration_weight: float = 1.414,
-        seed: int | None = 42,
+        iterations: int = DEFAULT_ITERATIONS,
+        exploration_weight: float = DEFAULT_EXPLORATION_WEIGHT,
+        seed: int | None = DEFAULT_SEED,
+        strategies: list[str] | None = None,
     ):
         self.iterations = iterations
         self.exploration_weight = exploration_weight
+        self.strategies = strategies or REASONING_STRATEGIES
         self.rng = random.Random(seed)
         self.llm_calls: list[LLMCall] = []
         self.last_root: MCTSTreeNode | None = None
 
         # Use mock client if none provided
         if llm_client is None:
-            self._llm = MockLLMClient()
+            self._llm: StdlibLLMClient | MockLLMClient = MockLLMClient()
         else:
             self._llm = llm_client
 
         self._scorer = ResponseScorer(self._llm)
+
+        logger.info(
+            "LLMMCTSEngine initialized: iterations=%d, exploration=%.3f, strategies=%s",
+            self.iterations,
+            self.exploration_weight,
+            self.strategies,
+        )
 
     def search(self, query: str, on_iteration: IterationCallback | None = None) -> MCTSResult:
         """
@@ -521,15 +629,17 @@ class LLMMCTSEngine:
         start_time = time.perf_counter()
         self.llm_calls = []
 
+        logger.info("MCTS search starting: query_len=%d, iterations=%d", len(query), self.iterations)
+
         # Build the root with strategy children
         root = MCTSTreeNode(strategy="root")
-        for strategy in REASONING_STRATEGIES:
+        for strategy in self.strategies:
             child = MCTSTreeNode(strategy=strategy, parent=root, depth=1)
             root.children.append(child)
 
         # MCTS iterations
         for i in range(self.iterations):
-            logger.debug(f"MCTS iteration {i + 1}/{self.iterations}")
+            logger.debug("MCTS iteration %d/%d", i + 1, self.iterations)
 
             # 1. Selection: choose the most promising node via UCB1
             node = self._select(root)
@@ -547,7 +657,10 @@ class LLMMCTSEngine:
             # 4. Emit iteration event
             if on_iteration is not None:
                 elapsed = (time.perf_counter() - start_time) * 1000
-                preview = response[:80].replace("\n", " ") + ("..." if len(response) > 80 else "")
+                preview = (
+                    response[:RESPONSE_PREVIEW_LEN].replace("\n", " ")
+                    + ("..." if len(response) > RESPONSE_PREVIEW_LEN else "")
+                )
                 event = IterationEvent(
                     iteration=i + 1,
                     total_iterations=self.iterations,
@@ -566,13 +679,10 @@ class LLMMCTSEngine:
         best_child = max(root.children, key=lambda c: c.visits)
 
         # Collect strategy scores
-        strategy_scores = {}
-        for child in root.children:
-            strategy_scores[child.strategy] = round(child.value, 3)
+        strategy_scores = {child.strategy: round(child.value, 3) for child in root.children}
 
         # Tree statistics
-        total_visits = sum(c.visits for c in root.children)
-        tree_stats = {
+        tree_stats: dict[str, Any] = {
             "total_iterations": self.iterations,
             "total_llm_calls": len(self.llm_calls),
             "total_tokens": self._llm.total_tokens,
@@ -582,6 +692,14 @@ class LLMMCTSEngine:
         }
 
         elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+        logger.info(
+            "MCTS search complete: best=%s (score=%.3f, visits=%d), time=%.1fms",
+            best_child.strategy,
+            best_child.value,
+            best_child.visits,
+            elapsed_ms,
+        )
 
         return MCTSResult(
             query=query,
@@ -618,15 +736,17 @@ class LLMMCTSEngine:
         prompt = prompt_template.format(query=query)
 
         start = time.perf_counter()
-        response, tokens = self._llm.generate_sync(prompt, temperature=0.7)
+        response, tokens = self._llm.generate_sync(prompt, temperature=DEFAULT_TEMPERATURE)
         latency_ms = (time.perf_counter() - start) * 1000
 
         score = self._scorer.score(query, response, strategy)
 
         llm_call = LLMCall(
             strategy=strategy,
-            prompt=prompt[:200] + "..." if len(prompt) > 200 else prompt,
-            response=response[:500] + "..." if len(response) > 500 else response,
+            prompt=prompt[:PROMPT_TRUNCATE_LEN] + "..." if len(prompt) > PROMPT_TRUNCATE_LEN else prompt,
+            response=(
+                response[:RESPONSE_TRUNCATE_LEN] + "..." if len(response) > RESPONSE_TRUNCATE_LEN else response
+            ),
             score=score,
             latency_ms=round(latency_ms, 1),
             tokens_used=tokens,
@@ -672,7 +792,7 @@ class ConsensusBuilder:
 
         Args:
             query: Original query
-            strategy_responses: Map of strategy name → response text
+            strategy_responses: Map of strategy name -> response text
 
         Returns:
             Synthesized consensus response
@@ -680,24 +800,26 @@ class ConsensusBuilder:
         if not strategy_responses:
             return "No strategies produced responses."
 
-        # If only one strategy, return it directly
         if len(strategy_responses) == 1:
             return next(iter(strategy_responses.values()))
 
-        # Build the synthesis prompt
         parts = []
         for i, (strategy, response) in enumerate(strategy_responses.items(), 1):
-            parts.append(f"**Strategy {i} ({strategy}):**\n{response[:800]}\n")
+            parts.append(f"**Strategy {i} ({strategy}):**\n{response[:CONSENSUS_RESPONSE_TRUNCATE_LEN]}\n")
 
         strategy_text = "\n".join(parts)
         prompt = self.CONSENSUS_PROMPT.format(query=query, strategy_answers=strategy_text)
 
         try:
-            response, _ = self._llm.generate_sync(prompt, temperature=0.3, max_tokens=1500)
+            response, _ = self._llm.generate_sync(
+                prompt,
+                temperature=DEFAULT_CONSENSUS_TEMPERATURE,
+                max_tokens=DEFAULT_CONSENSUS_MAX_TOKENS,
+            )
+            logger.debug("Consensus built from %d strategies", len(strategy_responses))
             return response
-        except Exception as e:
-            logger.warning(f"Consensus synthesis failed: {e}")
-            # Fallback: return the best individual response
+        except Exception:
+            logger.warning("Consensus synthesis failed, returning best individual response", exc_info=True)
             return next(iter(strategy_responses.values()))
 
 
@@ -708,6 +830,8 @@ class ConsensusBuilder:
 
 class TreeVisualizer:
     """Renders an MCTS tree as ASCII art."""
+
+    BAR_WIDTH = 20
 
     @staticmethod
     def render(root: MCTSTreeNode, highlight_best: bool = True) -> str:
@@ -725,19 +849,20 @@ class TreeVisualizer:
             return f"root ({root.visits} visits, no children)"
 
         best_child = max(root.children, key=lambda c: c.visits) if highlight_best else None
+        bar_width = TreeVisualizer.BAR_WIDTH
 
         lines: list[str] = []
         lines.append(f"root ({root.visits} visits)")
+
+        max_visits = max(c.visits for c in root.children) or 1
 
         for i, child in enumerate(root.children):
             is_last = i == len(root.children) - 1
             connector = "\u2514\u2500\u2500" if is_last else "\u251c\u2500\u2500"
             stars = " ***" if child is best_child else ""
 
-            # Build bar from visits
-            max_visits = max(c.visits for c in root.children) or 1
-            bar_len = max(1, int(20 * child.visits / max_visits)) if child.visits > 0 else 0
-            bar_str = "\u2588" * bar_len + "\u2591" * (20 - bar_len)
+            bar_len = max(1, int(bar_width * child.visits / max_visits)) if child.visits > 0 else 0
+            bar_str = "\u2588" * bar_len + "\u2591" * (bar_width - bar_len)
 
             lines.append(
                 f"{connector} {child.strategy:<15} "
@@ -769,15 +894,12 @@ class SingleShotRunner:
         Returns:
             (response_text, score, latency_ms)
         """
-        prompt = (
-            "Answer the following question directly and concisely.\n\n"
-            f"Question: {query}\n\n"
-            "Provide a clear, well-structured answer."
-        )
+        prompt = STRATEGY_PROMPTS["direct"].format(query=query)
         start = time.perf_counter()
-        response, _tokens = self._llm.generate_sync(prompt, temperature=0.7)
+        response, _tokens = self._llm.generate_sync(prompt, temperature=DEFAULT_TEMPERATURE)
         latency_ms = (time.perf_counter() - start) * 1000
         score = self._scorer.score(query, response, "direct")
+        logger.debug("SingleShot: score=%.3f, latency=%.1fms", score, latency_ms)
         return response, score, latency_ms
 
 
@@ -801,7 +923,7 @@ class PipelineResult:
 
 class MultiAgentMCTSPipeline:
     """
-    End-to-end pipeline: Query → MCTS exploration → Consensus → Answer.
+    End-to-end pipeline: Query -> MCTS exploration -> Consensus -> Answer.
 
     This is the main entry point for the MVP demo. It:
     1. Takes a user query
@@ -818,11 +940,15 @@ class MultiAgentMCTSPipeline:
         provider: str = "mock",
         api_key: str | None = None,
         model: str | None = None,
-        iterations: int = 10,
-        exploration_weight: float = 1.414,
-        seed: int | None = 42,
+        iterations: int = DEFAULT_ITERATIONS,
+        exploration_weight: float = DEFAULT_EXPLORATION_WEIGHT,
+        seed: int | None = DEFAULT_SEED,
         use_consensus: bool = True,
+        strategies: list[str] | None = None,
+        top_strategies_limit: int = DEFAULT_TOP_STRATEGIES_LIMIT,
     ):
+        self._top_strategies_limit = top_strategies_limit
+
         # Create the LLM client
         if provider == "mock":
             self._llm: StdlibLLMClient | MockLLMClient = MockLLMClient()
@@ -838,9 +964,17 @@ class MultiAgentMCTSPipeline:
             iterations=iterations,
             exploration_weight=exploration_weight,
             seed=seed,
+            strategies=strategies,
         )
-        self._consensus = ConsensusBuilder(self._llm) if use_consensus else None
+        self._consensus: ConsensusBuilder | None = ConsensusBuilder(self._llm) if use_consensus else None
         self._use_consensus = use_consensus
+
+        logger.info(
+            "Pipeline initialized: provider=%s, iterations=%d, consensus=%s",
+            provider,
+            iterations,
+            use_consensus,
+        )
 
     def run(self, query: str, on_iteration: IterationCallback | None = None) -> PipelineResult:
         """
@@ -864,13 +998,12 @@ class MultiAgentMCTSPipeline:
             key=lambda x: x[1],
             reverse=True,
         )
-        top_strategies = [(s, v) for s, v in sorted_strategies if v > 0][:3]
+        top_strategies = [(s, v) for s, v in sorted_strategies if v > 0][: self._top_strategies_limit]
 
         # Step 3: Consensus synthesis
         consensus = None
-        if self._use_consensus and len(top_strategies) > 1:
-            # Get the best response from each top strategy
-            strategy_responses = {}
+        if self._use_consensus and self._consensus is not None and len(top_strategies) > 1:
+            strategy_responses: dict[str, str] = {}
             for call in mcts_result.llm_calls:
                 if call.strategy in dict(top_strategies) and call.strategy not in strategy_responses:
                     strategy_responses[call.strategy] = call.response

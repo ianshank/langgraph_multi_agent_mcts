@@ -17,6 +17,17 @@ from typing import Any
 from src.adapters.llm.base import LLMClient
 from src.framework.agents.base import AgentContext, AgentResult, AsyncAgentBase
 
+logger = logging.getLogger(__name__)
+
+# Configurable defaults (no hardcoded magic numbers)
+DEFAULT_TRM_TEMPERATURE = 0.5
+DEFAULT_TRM_MAX_TOKENS = 1500
+QUALITY_BASELINE = 0.5
+QUALITY_INITIAL_BONUS = 0.1
+QUALITY_REVIEW_BONUS = 0.2
+QUALITY_REFINED_BONUS = 0.15
+QUALITY_LENGTH_BONUS = 0.05
+QUALITY_LENGTH_THRESHOLD = 300
 
 REFINEMENT_PROMPT = """\
 You are a Task Refinement Module (TRM). Your job is to produce a high-quality
@@ -59,8 +70,8 @@ class LLMTRMAgent(AsyncAgentBase):
         model_adapter: LLMClient,
         logger: Any = None,
         name: str = "LLM_TRM",
-        temperature: float = 0.5,
-        max_tokens: int = 1500,
+        temperature: float = DEFAULT_TRM_TEMPERATURE,
+        max_tokens: int = DEFAULT_TRM_MAX_TOKENS,
         **config: Any,
     ):
         super().__init__(model_adapter, logger, name, **config)
@@ -70,6 +81,7 @@ class LLMTRMAgent(AsyncAgentBase):
     async def _process_impl(self, context: AgentContext) -> AgentResult:
         """Generate, critique, and refine an answer."""
         query = context.query
+        self.logger.info("TRM processing query: %s", query[:100])
 
         # Build RAG section if available
         rag_section = ""
@@ -84,21 +96,20 @@ class LLMTRMAgent(AsyncAgentBase):
             max_tokens=self._max_tokens,
         )
 
-        # Extract quality signal from response structure
         text = response.text
+        quality_score = self._compute_quality_score(text)
+
         has_initial = "initial" in text.lower()
         has_review = "review" in text.lower() or "weakness" in text.lower()
         has_refined = "refined" in text.lower() or "improved" in text.lower()
-        quality_score = 0.5
-        if has_initial:
-            quality_score += 0.1
-        if has_review:
-            quality_score += 0.2
-        if has_refined:
-            quality_score += 0.15
-        if len(text) > 300:
-            quality_score += 0.05
-        quality_score = min(quality_score, 1.0)
+
+        self.logger.debug(
+            "TRM result: quality=%.3f, has_initial=%s, has_review=%s, has_refined=%s",
+            quality_score,
+            has_initial,
+            has_review,
+            has_refined,
+        )
 
         return AgentResult(
             response=text,
@@ -112,3 +123,18 @@ class LLMTRMAgent(AsyncAgentBase):
             },
             token_usage=response.usage,
         )
+
+    @staticmethod
+    def _compute_quality_score(text: str) -> float:
+        """Compute a quality score from response structure."""
+        score = QUALITY_BASELINE
+        text_lower = text.lower()
+        if "initial" in text_lower:
+            score += QUALITY_INITIAL_BONUS
+        if "review" in text_lower or "weakness" in text_lower:
+            score += QUALITY_REVIEW_BONUS
+        if "refined" in text_lower or "improved" in text_lower:
+            score += QUALITY_REFINED_BONUS
+        if len(text) > QUALITY_LENGTH_THRESHOLD:
+            score += QUALITY_LENGTH_BONUS
+        return min(score, 1.0)

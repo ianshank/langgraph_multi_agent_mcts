@@ -16,6 +16,16 @@ from typing import Any
 from src.adapters.llm.base import LLMClient
 from src.framework.agents.base import AgentContext, AgentResult, AsyncAgentBase
 
+logger = logging.getLogger(__name__)
+
+# Configurable defaults (no hardcoded magic numbers)
+DEFAULT_HRM_TEMPERATURE = 0.5
+DEFAULT_HRM_MAX_TOKENS = 1500
+QUALITY_BASELINE = 0.5
+QUALITY_SUBPROBLEM_BONUS = 0.2
+QUALITY_SYNTHESIS_BONUS = 0.15
+QUALITY_LENGTH_BONUS = 0.1
+QUALITY_LENGTH_THRESHOLD = 300
 
 DECOMPOSITION_PROMPT = """\
 You are a Hierarchical Reasoning Module (HRM). Your job is to decompose
@@ -58,8 +68,8 @@ class LLMHRMAgent(AsyncAgentBase):
         model_adapter: LLMClient,
         logger: Any = None,
         name: str = "LLM_HRM",
-        temperature: float = 0.5,
-        max_tokens: int = 1500,
+        temperature: float = DEFAULT_HRM_TEMPERATURE,
+        max_tokens: int = DEFAULT_HRM_MAX_TOKENS,
         **config: Any,
     ):
         super().__init__(model_adapter, logger, name, **config)
@@ -69,6 +79,7 @@ class LLMHRMAgent(AsyncAgentBase):
     async def _process_impl(self, context: AgentContext) -> AgentResult:
         """Decompose the query and synthesize an answer."""
         query = context.query
+        self.logger.info("HRM processing query: %s", query[:100])
 
         # Build RAG section if available
         rag_section = ""
@@ -83,18 +94,18 @@ class LLMHRMAgent(AsyncAgentBase):
             max_tokens=self._max_tokens,
         )
 
-        # Extract quality signal from response structure
         text = response.text
+        quality_score = self._compute_quality_score(text)
+
         has_subproblems = "sub-problem" in text.lower() or "###" in text
         has_synthesis = "synthesis" in text.lower() or "final" in text.lower()
-        quality_score = 0.5
-        if has_subproblems:
-            quality_score += 0.2
-        if has_synthesis:
-            quality_score += 0.15
-        if len(text) > 300:
-            quality_score += 0.1
-        quality_score = min(quality_score, 1.0)
+
+        self.logger.debug(
+            "HRM result: quality=%.3f, has_subproblems=%s, has_synthesis=%s",
+            quality_score,
+            has_subproblems,
+            has_synthesis,
+        )
 
         return AgentResult(
             response=text,
@@ -107,3 +118,15 @@ class LLMHRMAgent(AsyncAgentBase):
             },
             token_usage=response.usage,
         )
+
+    @staticmethod
+    def _compute_quality_score(text: str) -> float:
+        """Compute a quality score from response structure."""
+        score = QUALITY_BASELINE
+        if "sub-problem" in text.lower() or "###" in text:
+            score += QUALITY_SUBPROBLEM_BONUS
+        if "synthesis" in text.lower() or "final" in text.lower():
+            score += QUALITY_SYNTHESIS_BONUS
+        if len(text) > QUALITY_LENGTH_THRESHOLD:
+            score += QUALITY_LENGTH_BONUS
+        return min(score, 1.0)
