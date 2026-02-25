@@ -10,6 +10,7 @@ Note: This module requires PyTorch for neural components.
 If PyTorch is not installed, only base classes will be available.
 """
 
+import contextlib
 import logging
 from typing import TYPE_CHECKING
 
@@ -134,7 +135,7 @@ except ImportError:
 # Note: These are guarded with try/except to handle cases where
 # dependencies are not installed but type checking is still run
 if TYPE_CHECKING:
-    try:
+    with contextlib.suppress(ImportError):
         from src.agents.meta_controller.rnn_controller import (  # noqa: F401
             RNNMetaController,
             RNNMetaControllerModel,
@@ -145,40 +146,25 @@ if TYPE_CHECKING:
             normalize_features,
             one_hot_encode_agent,
         )
-    except ImportError:
-        # Optional dependencies not required at runtime; imports are for type checking only
-        pass
 
-    try:
+    with contextlib.suppress(ImportError):
         from src.agents.meta_controller.bert_controller import BERTMetaController  # noqa: F401
-    except ImportError:
-        # Optional transformers/peft dependencies not installed
-        pass
 
-    try:
+    with contextlib.suppress(ImportError):
         from src.agents.meta_controller.hybrid_controller import (  # noqa: F401
             HybridMetaController,
             HybridPrediction,
         )
-    except ImportError:
-        # Optional hybrid controller dependencies not installed
-        pass
 
-    try:
+    with contextlib.suppress(ImportError):
         from src.agents.meta_controller.feature_extractor import (  # noqa: F401
             EmbeddingBackend,
             FeatureExtractor,
             FeatureExtractorConfig,
         )
-    except ImportError:
-        # Optional feature extractor dependencies not installed
-        pass
 
-    try:
+    with contextlib.suppress(ImportError):
         from src.agents.meta_controller.assembly_router import (  # noqa: F401
             AssemblyRouter,
             RoutingDecision,
         )
-    except ImportError:
-        # Optional networkx dependency not installed
-        pass

@@ -23,6 +23,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("pydantic", reason="pydantic required for settings/benchmark")
+
 # ============================================================================
 # Test Constants (avoid hardcoded values in tests)
 # ============================================================================

@@ -9,6 +9,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from unittest.mock import MagicMock
 
+import pytest
+
+pytest.importorskip("numpy", reason="numpy required for MCTS framework")
+
 from src.utils.mcts_debug import (
     MCTSDebugger,
     NodeStats,

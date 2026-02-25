@@ -6,12 +6,15 @@ enabling seamless switching between providers (OpenAI, Anthropic, LM Studio, etc
 """
 
 import asyncio
+import logging
 import time
 from abc import ABC, abstractmethod
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Protocol, runtime_checkable
+
+logger = logging.getLogger(__name__)
 
 
 def _utc_now() -> datetime:
@@ -215,6 +218,7 @@ class BaseLLMClient(ABC):
         self._request_count = 0
         self._total_tokens_used = 0
         self._rate_limited_requests = 0
+        logger.debug("LLM client initialized: model=%s, timeout=%.1f, max_retries=%d", model, timeout, max_retries)
 
         # Initialize rate limiter if configured
         if rate_limit_per_minute is not None and rate_limit_per_minute > 0:
@@ -269,6 +273,10 @@ class BaseLLMClient(ABC):
         """Update internal statistics."""
         self._request_count += 1
         self._total_tokens_used += response.total_tokens
+        logger.debug(
+            "LLM request #%d: model=%s, tokens=%d, finish=%s",
+            self._request_count, response.model, response.total_tokens, response.finish_reason,
+        )
 
     async def _apply_rate_limit(self) -> None:
         """
@@ -281,6 +289,7 @@ class BaseLLMClient(ABC):
             wait_time = await self._rate_limiter.acquire()
             if wait_time > 0:
                 self._rate_limited_requests += 1
+                logger.warning("Rate limited: waited %.2fs (total rate-limited: %d)", wait_time, self._rate_limited_requests)
 
     @property
     def stats(self) -> dict:

@@ -12,8 +12,11 @@ from __future__ import annotations
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import httpx
 import pytest
+
+pytest.importorskip("httpx", reason="httpx required for HTTP client tests")
+
+import httpx
 
 from src.adapters.llm.anthropic_client import ANTHROPIC_MODELS, AnthropicClient
 from src.adapters.llm.exceptions import (

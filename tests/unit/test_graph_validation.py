@@ -8,6 +8,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("numpy", reason="numpy required for MCTS framework")
+
 
 class TestEntryNodeValidation:
     """Tests for _entry_node query validation."""

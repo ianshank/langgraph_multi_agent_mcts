@@ -9,6 +9,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
+pytest.importorskip("psutil", reason="psutil required for observability tests")
+
 from src.api.framework_service import FlexibleLogger
 
 

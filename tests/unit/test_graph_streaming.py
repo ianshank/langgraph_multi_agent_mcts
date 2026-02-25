@@ -13,6 +13,8 @@ from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 
+pytest.importorskip("numpy", reason="numpy required for MCTS framework")
+
 # =============================================================================
 # Test Markers
 # =============================================================================

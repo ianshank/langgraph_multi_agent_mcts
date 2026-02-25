@@ -13,6 +13,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("numpy", reason="numpy required for MCTS framework")
+
 # =============================================================================
 # Test Markers
 # =============================================================================

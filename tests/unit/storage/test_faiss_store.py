@@ -14,6 +14,8 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 
+pytest.importorskip("aioboto3", reason="aioboto3 required for storage tests")
+
 # =============================================================================
 # Test Markers
 # =============================================================================

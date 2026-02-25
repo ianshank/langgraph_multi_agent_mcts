@@ -10,6 +10,8 @@ from __future__ import annotations
 
 import pytest
 
+pytest.importorskip("psutil", reason="psutil required for observability tests")
+
 # =============================================================================
 # Test Markers
 # =============================================================================

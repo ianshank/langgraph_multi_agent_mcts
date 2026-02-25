@@ -9,6 +9,10 @@ from __future__ import annotations
 import tempfile
 from pathlib import Path
 
+import pytest
+
+pytest.importorskip("yaml", reason="PyYAML required for planning loader tests")
+
 import yaml
 
 from src.utils.planning_loader import (

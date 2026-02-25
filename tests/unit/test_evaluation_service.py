@@ -1201,10 +1201,9 @@ class TestStatisticalMethods:
             null_hypothesis=0.5,
         )
         # Check consistency with expectation (allowing for edge cases)
-        if games >= evaluation_service._config.min_games_for_significance:
-            # For games above threshold, verify the direction matches
-            if abs(win_rate - 0.5) > 0.2:
-                assert is_significant == expected_significant
+        if games >= evaluation_service._config.min_games_for_significance and abs(win_rate - 0.5) > 0.2:
+            # For games above threshold with clear direction, verify the match
+            assert is_significant == expected_significant
 
 
 # =============================================================================

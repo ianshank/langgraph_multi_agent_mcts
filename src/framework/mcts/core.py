@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 from collections import OrderedDict
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -21,6 +22,8 @@ from typing import Any
 import numpy as np
 
 from .policies import RolloutPolicy, SelectionPolicy, ucb1
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -188,6 +191,10 @@ class MCTSEngine:
         self.exploration_weight = exploration_weight
         self.progressive_widening_k = progressive_widening_k
         self.progressive_widening_alpha = progressive_widening_alpha
+        logger.debug(
+            "MCTSEngine initialized: seed=%d, c=%.3f, pw_k=%.2f, pw_alpha=%.2f",
+            seed, exploration_weight, progressive_widening_k, progressive_widening_alpha,
+        )
 
         # Parallel rollout control
         self.max_parallel_rollouts = max_parallel_rollouts
@@ -440,6 +447,11 @@ class MCTSEngine:
         Returns:
             Tuple of (best_action, statistics_dict)
         """
+        logger.info(
+            "MCTS search started: max_iterations=%d, policy=%s, state=%s",
+            num_iterations, selection_policy.value, root.state.state_id,
+        )
+
         # Reset cached tree statistics for new search
         self._cached_tree_depth = 0
         self._cached_node_count = 1  # Start with root node
@@ -483,6 +495,12 @@ class MCTSEngine:
         stats["max_iterations"] = num_iterations
         if early_terminated:
             stats["termination_reason"] = "visit_threshold_reached"
+            logger.info("MCTS search early-terminated at iteration %d/%d", iterations_run, num_iterations)
+
+        logger.info(
+            "MCTS search complete: best_action=%s, iterations=%d, cache_hit_rate=%.2f",
+            best_action, iterations_run, stats.get("cache_hit_rate", 0.0),
+        )
 
         return best_action, stats
 

@@ -308,9 +308,8 @@ class FAISSVectorStore:
                 embeddings = np.vstack(all_embeddings).astype("float32")
 
                 # Train IVF index if needed (first time with enough data)
-                if self._index_type == IndexType.IVF_FLAT:
-                    if not self._index.is_trained and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST:
-                        self._index.train(embeddings)
+                if self._index_type == IndexType.IVF_FLAT and not self._index.is_trained and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST:
+                    self._index.train(embeddings)
 
                 # Add embeddings to index
                 start_id = self._next_id
@@ -489,9 +488,8 @@ class FAISSVectorStore:
                 new_index = self._create_index()
 
                 # Train if needed
-                if self._index_type == IndexType.IVF_FLAT:
-                    if not new_index.is_trained and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST:
-                        new_index.train(embeddings)
+                if self._index_type == IndexType.IVF_FLAT and not new_index.is_trained and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST:
+                    new_index.train(embeddings)
 
                 # Add all embeddings
                 new_index.add(embeddings)

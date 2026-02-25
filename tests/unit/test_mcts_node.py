@@ -2,6 +2,10 @@
 Unit tests for MCTS Node and Core Logic.
 """
 
+import pytest
+
+pytest.importorskip("numpy", reason="numpy required for MCTS framework")
+
 from src.framework.mcts.core import MCTSNode, MCTSState
 from src.framework.mcts.policies import ucb1
 
