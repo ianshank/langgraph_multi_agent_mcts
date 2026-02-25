@@ -7,7 +7,6 @@ checking agreement between HRM, TRM, and MCTS agents.
 
 from __future__ import annotations
 
-import logging
 import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -32,7 +31,7 @@ from src.games.chess.verification.types import (
     VerificationIssue,
     VerificationSeverity,
 )
-from src.observability.logging import get_structured_logger
+from src.observability.logging import StructuredLogger, get_structured_logger
 
 
 @dataclass
@@ -133,7 +132,7 @@ class EnsembleConsistencyChecker:
         self,
         ensemble_agent: ChessEnsembleAgent | None = None,
         config: EnsembleCheckerConfig | None = None,
-        logger: logging.Logger | None = None,
+        logger: StructuredLogger | None = None,
     ) -> None:
         """Initialize the consistency checker.
 

@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import logging
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum, auto
@@ -36,6 +37,8 @@ try:
 except ImportError:
     TORCH_AVAILABLE = False
     torch = None
+
+logger = logging.getLogger(__name__)
 
 
 class SymbolicFactType(Enum):
@@ -211,6 +214,7 @@ class NeuroSymbolicState:
 
     def add_fact(self, fact: Fact) -> NeuroSymbolicState:
         """Create new state with an additional fact."""
+        logger.debug("Adding fact to state %s: %s", self.state_id, fact.to_string())
         new_facts = frozenset(self.facts | {fact})
         return NeuroSymbolicState(
             state_id=self.state_id,
@@ -407,6 +411,7 @@ class StateTransition:
     def apply(self) -> NeuroSymbolicState:
         """Apply transition to create new state."""
         if not self.is_valid():
+            logger.warning("Transition preconditions not satisfied for action=%s", self.action)
             raise ValueError("Transition preconditions not satisfied")
 
         # Remove negated facts and add postconditions

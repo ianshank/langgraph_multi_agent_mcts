@@ -224,7 +224,7 @@ def logged(
                 elif cfg.log_duration:
                     log.log(cfg.exit_level, f"[EXIT] {func_name} ({duration_ms:.2f}ms)")
 
-                return result
+                return result  # type: ignore[no-any-return]
 
             except Exception as e:
                 duration_ms = (time.time() - start_time) * 1000

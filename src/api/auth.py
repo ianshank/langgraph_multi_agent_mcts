@@ -9,6 +9,7 @@ Provides:
 """
 
 import hashlib
+import logging
 import secrets
 import time
 from collections import defaultdict
@@ -20,6 +21,8 @@ from src.api.exceptions import (
     AuthorizationError,
     RateLimitError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def _utc_now() -> datetime:
@@ -114,6 +117,7 @@ class APIKeyAuthenticator:
             AuthenticationError: If authentication fails
         """
         if not api_key:
+            logger.warning("Authentication failed: no API key provided")
             raise AuthenticationError(
                 user_message="API key is required",
                 internal_details="No API key provided in request",
@@ -123,6 +127,7 @@ class APIKeyAuthenticator:
         key_hash = self._hash_key(api_key)
 
         if key_hash not in self._key_to_client:
+            logger.warning("Authentication failed: invalid API key (hash=%s...)", key_hash[:16])
             raise AuthenticationError(
                 user_message="Invalid API key",
                 internal_details=f"API key hash not found: {key_hash[:16]}...",
@@ -135,6 +140,7 @@ class APIKeyAuthenticator:
         # Check rate limits
         self._check_rate_limit(client_info.client_id)
 
+        logger.info("Authentication attempt", extra={"client_id": client_info.client_id})
         return client_info
 
     def _check_rate_limit(self, client_id: str) -> None:
@@ -159,6 +165,10 @@ class APIKeyAuthenticator:
         one_second_ago = now - 1
         burst_count = sum(1 for t in request_times if t > one_second_ago)
         if burst_count >= self.rate_limit_config.burst_limit:
+            logger.warning(
+                "Rate limit exceeded",
+                extra={"client_id": client_id, "limit_type": "burst", "count": burst_count},
+            )
             raise RateLimitError(
                 user_message="Too many requests. Please slow down.",
                 internal_details=f"Client {client_id} exceeded burst limit: {burst_count}/{self.rate_limit_config.burst_limit}",
@@ -169,6 +179,10 @@ class APIKeyAuthenticator:
         one_minute_ago = now - 60
         minute_count = sum(1 for t in request_times if t > one_minute_ago)
         if minute_count >= self.rate_limit_config.requests_per_minute:
+            logger.warning(
+                "Rate limit exceeded",
+                extra={"client_id": client_id, "limit_type": "per_minute", "count": minute_count},
+            )
             raise RateLimitError(
                 user_message="Rate limit exceeded. Please wait a minute.",
                 internal_details=f"Client {client_id} exceeded minute limit: {minute_count}/{self.rate_limit_config.requests_per_minute}",
@@ -179,6 +193,10 @@ class APIKeyAuthenticator:
         one_hour_ago = now - 3600
         hour_count = sum(1 for t in request_times if t > one_hour_ago)
         if hour_count >= self.rate_limit_config.requests_per_hour:
+            logger.warning(
+                "Rate limit exceeded",
+                extra={"client_id": client_id, "limit_type": "per_hour", "count": hour_count},
+            )
             raise RateLimitError(
                 user_message="Hourly rate limit exceeded. Please try again later.",
                 internal_details=f"Client {client_id} exceeded hour limit: {hour_count}/{self.rate_limit_config.requests_per_hour}",
@@ -188,6 +206,10 @@ class APIKeyAuthenticator:
         # Check per-day limit
         day_count = len(request_times)
         if day_count >= self.rate_limit_config.requests_per_day:
+            logger.warning(
+                "Rate limit exceeded",
+                extra={"client_id": client_id, "limit_type": "per_day", "count": day_count},
+            )
             raise RateLimitError(
                 user_message="Daily rate limit exceeded. Please try again tomorrow.",
                 internal_details=f"Client {client_id} exceeded day limit: {day_count}/{self.rate_limit_config.requests_per_day}",
@@ -226,6 +248,10 @@ class APIKeyAuthenticator:
             AuthorizationError: If client doesn't have required role
         """
         if required_role not in client_info.roles:
+            logger.warning(
+                "Authorization failed: missing role",
+                extra={"client_id": client_info.client_id, "required_role": required_role},
+            )
             raise AuthorizationError(
                 user_message="You do not have permission for this operation",
                 internal_details=f"Client {client_info.client_id} missing role: {required_role}",
@@ -254,7 +280,9 @@ class APIKeyAuthenticator:
         key_hash = self._hash_key(api_key)
         if key_hash in self._key_to_client:
             del self._key_to_client[key_hash]
+            logger.info("API key revoked")
             return True
+        logger.warning("API key revocation failed: key not found")
         return False
 
     def add_client(
@@ -274,6 +302,7 @@ class APIKeyAuthenticator:
         """
         api_key = self.generate_api_key()
         self._add_key(api_key, client_id, roles)
+        logger.info("New client added", extra={"client_id": client_id})
         return api_key
 
     def get_client_stats(self, client_id: str) -> dict:
@@ -347,7 +376,7 @@ class JWTAuthenticator:
             "jti": secrets.token_hex(16),  # Unique token ID
         }
 
-        return jwt.encode(payload, self.secret_key, algorithm=self.algorithm)
+        return str(jwt.encode(payload, self.secret_key, algorithm=self.algorithm))
 
     def verify_token(self, token: str) -> ClientInfo:
         """
@@ -368,6 +397,7 @@ class JWTAuthenticator:
             raise ImportError("PyJWT library required for JWT authentication") from e
 
         if token in self._token_blacklist:
+            logger.warning("Authentication failed: token has been revoked")
             raise AuthenticationError(
                 user_message="Token has been revoked",
                 internal_details="Token found in blacklist",
@@ -385,11 +415,13 @@ class JWTAuthenticator:
                 roles=set(payload.get("roles", ["user"])),
             )
         except jwt.ExpiredSignatureError as e:
+            logger.warning("Authentication failed: JWT token expired")
             raise AuthenticationError(
                 user_message="Token has expired",
                 internal_details="JWT signature expired",
             ) from e
         except jwt.InvalidTokenError as e:
+            logger.warning("Authentication failed: invalid JWT token")
             raise AuthenticationError(
                 user_message="Invalid token",
                 internal_details=f"JWT validation failed: {str(e)}",

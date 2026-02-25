@@ -7,7 +7,6 @@ special moves (castling, en passant, promotion) and edge cases.
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from typing import Any
 
@@ -23,7 +22,7 @@ from src.games.chess.verification.types import (
     VerificationIssue,
     VerificationSeverity,
 )
-from src.observability.logging import get_structured_logger
+from src.observability.logging import StructuredLogger, get_structured_logger
 
 
 @dataclass
@@ -65,7 +64,7 @@ class MoveValidator:
         self,
         action_encoder: ChessActionEncoder | None = None,
         config: MoveValidatorConfig | None = None,
-        logger: logging.Logger | None = None,
+        logger: StructuredLogger | None = None,
     ) -> None:
         """Initialize the move validator.
 

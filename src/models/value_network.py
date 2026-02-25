@@ -7,12 +7,15 @@ enabling efficient position evaluation without full tree search.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 from typing import Any
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -91,6 +94,14 @@ class ValueNetwork(nn.Module):
 
         # Initialize weights
         self.apply(self._init_weights)
+
+        logger.debug(
+            "ValueNetwork initialized: state_dim=%d, hidden_dims=%s, output_activation=%s, estimate_uncertainty=%s",
+            state_dim,
+            self.hidden_dims,
+            output_activation,
+            estimate_uncertainty,
+        )
 
     def _init_weights(self, module: nn.Module) -> None:
         """Initialize network weights."""

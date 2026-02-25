@@ -461,7 +461,7 @@ class AnthropicClient(BaseLLMClient):
             if key in kwargs:
                 payload[key] = kwargs[key]
 
-        async def stream_generator():
+        async def stream_generator() -> AsyncIterator[str]:
             try:
                 async with client.stream("POST", "/v1/messages", json=payload) as response:
                     if response.status_code != 200:

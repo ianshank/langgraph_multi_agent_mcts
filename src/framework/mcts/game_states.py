@@ -508,7 +508,7 @@ class DecisionState:
     def is_terminal(self) -> bool:
         """Check if decision is made."""
         if self.decision_history:
-            return self.decision_history[-1].get("final", False)
+            return bool(self.decision_history[-1].get("final", False))
         return len(self.evaluated_options) >= self.max_evaluations
 
     def get_reward(self, player: int = 1) -> float:
@@ -601,7 +601,8 @@ def create_game_state(
     valid_fields = {f.name for f in state_class.__dataclass_fields__.values()}
     filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_fields}
 
-    return state_class(**filtered_kwargs)
+    result: ReasoningState | PlanningState | DecisionState = state_class(**filtered_kwargs)
+    return result
 
 
 __all__ = [

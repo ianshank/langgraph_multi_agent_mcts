@@ -7,7 +7,6 @@ positions, and move sequences.
 
 from __future__ import annotations
 
-import logging
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -34,7 +33,7 @@ from src.games.chess.verification.types import (
     VerificationIssue,
     VerificationSeverity,
 )
-from src.observability.logging import get_structured_logger
+from src.observability.logging import StructuredLogger, get_structured_logger
 
 
 @dataclass
@@ -85,7 +84,7 @@ class ChessGameVerifier:
         self,
         move_validator: MoveValidator | None = None,
         config: GameVerifierConfig | None = None,
-        logger: logging.Logger | None = None,
+        logger: StructuredLogger | None = None,
     ) -> None:
         """Initialize the game verifier.
 

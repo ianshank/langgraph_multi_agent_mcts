@@ -38,7 +38,6 @@ Example:
 
 from __future__ import annotations
 
-import logging
 import threading
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -232,7 +231,7 @@ class TrainerFactory:
     def __init__(
         self,
         settings: Settings | None = None,
-        logger: logging.Logger | StructuredLogger | None = None,
+        logger: StructuredLogger | None = None,
         config: TrainerConfig | None = None,
     ) -> None:
         """
@@ -575,7 +574,7 @@ class MetricsFactory:
     def __init__(
         self,
         settings: Settings | None = None,
-        logger: logging.Logger | StructuredLogger | None = None,
+        logger: StructuredLogger | None = None,
         config: MetricsConfig | None = None,
     ) -> None:
         """
@@ -808,7 +807,7 @@ class MetricsCollector:
         self,
         performance_monitor: PerformanceMonitor | None = None,
         experiment_tracker: BraintrustTracker | WandBTracker | UnifiedExperimentTracker | None = None,
-        logger: logging.Logger | StructuredLogger | None = None,
+        logger: StructuredLogger | None = None,
     ) -> None:
         """
         Initialize metrics collector.
@@ -931,7 +930,7 @@ class DataLoaderFactory:
     def __init__(
         self,
         settings: Settings | None = None,
-        logger: logging.Logger | StructuredLogger | None = None,
+        logger: StructuredLogger | None = None,
         config: DataLoaderConfig | None = None,
     ) -> None:
         """
@@ -1184,7 +1183,7 @@ class ComponentRegistry:
     def __init__(
         self,
         settings: Settings | None = None,
-        logger: logging.Logger | StructuredLogger | None = None,
+        logger: StructuredLogger | None = None,
     ) -> None:
         """
         Initialize component registry.

@@ -139,7 +139,6 @@ class ParallelMCTSConfig:
             raise ValueError("Invalid ParallelMCTSConfig:\n" + "\n".join(f"  - {e}" for e in errors))
 
 
-
 class VirtualLossNode(MCTSNode):
     """
     MCTS node extended with virtual loss for parallel search.

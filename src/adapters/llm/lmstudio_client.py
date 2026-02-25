@@ -104,7 +104,7 @@ class LMStudioClient(BaseLLMClient):
         try:
             client = await self._get_client()
             response = await client.get("/models")
-            return response.status_code == 200
+            return bool(response.status_code == 200)
         except Exception:
             return False
 
@@ -120,7 +120,7 @@ class LMStudioClient(BaseLLMClient):
             response = await client.get("/models")
             if response.status_code == 200:
                 data = response.json()
-                return data.get("data", [])
+                return list(data.get("data", []))
             return []
         except Exception as e:
             logger.warning(f"Failed to list models: {e}")
@@ -306,7 +306,7 @@ class LMStudioClient(BaseLLMClient):
             if key in kwargs:
                 payload[key] = kwargs[key]
 
-        async def stream_generator():
+        async def stream_generator() -> AsyncIterator[str]:
             try:
                 async with client.stream("POST", "/chat/completions", json=payload) as response:
                     if response.status_code != 200:

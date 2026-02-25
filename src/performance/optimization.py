@@ -277,7 +277,7 @@ class MemoryOptimizer:
         """Get current process memory usage in MB."""
         if self._process is None:
             return 0.0
-        return self._process.memory_info().rss / (1024 * 1024)
+        return float(self._process.memory_info().rss / (1024 * 1024))
 
     def sample_memory(self) -> float:
         """Sample current memory and track it."""

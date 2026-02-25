@@ -380,7 +380,7 @@ class OnlineLearner:
 
         self.network.eval()
 
-        return total_loss.item()
+        return float(total_loss.item())
 
     def get_buffer_size(self) -> int:
         """Get current buffer size."""

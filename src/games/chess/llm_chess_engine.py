@@ -330,7 +330,7 @@ class LLMChessMetaController:
         if CHESS_AVAILABLE:
             try:
                 board = _chess.Board(fen)
-                return board.is_check()
+                return bool(board.is_check())
             except (ValueError, AttributeError):
                 pass
         return False

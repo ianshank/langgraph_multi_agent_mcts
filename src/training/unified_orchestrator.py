@@ -719,7 +719,7 @@ class UnifiedTrainingOrchestrator:
             if p.grad is not None:
                 param_norm = p.grad.data.norm(2)
                 total_norm += param_norm.item() ** 2
-        return total_norm**0.5
+        return float(total_norm**0.5)
 
     async def _train_hrm_agent(self) -> dict[str, float]:
         """

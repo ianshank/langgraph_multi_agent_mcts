@@ -545,9 +545,9 @@ class Settings(BaseSettings):
         Returns the secret value - use with caution to avoid logging.
         """
         if self.LLM_PROVIDER == LLMProvider.OPENAI and self.OPENAI_API_KEY:
-            return self.OPENAI_API_KEY.get_secret_value()
+            return str(self.OPENAI_API_KEY.get_secret_value())
         elif self.LLM_PROVIDER == LLMProvider.ANTHROPIC and self.ANTHROPIC_API_KEY:
-            return self.ANTHROPIC_API_KEY.get_secret_value()
+            return str(self.ANTHROPIC_API_KEY.get_secret_value())
         return None
 
     def safe_dict(self) -> dict:
@@ -556,7 +556,7 @@ class Settings(BaseSettings):
 
         Safe for logging and display purposes.
         """
-        data = self.model_dump()
+        data: dict = self.model_dump()
         # Mask all sensitive fields
         secret_fields = [
             "OPENAI_API_KEY",
@@ -578,7 +578,7 @@ class Settings(BaseSettings):
         Returns the secret value - use with caution to avoid logging.
         """
         if self.BRAINTRUST_API_KEY:
-            return self.BRAINTRUST_API_KEY.get_secret_value()
+            return str(self.BRAINTRUST_API_KEY.get_secret_value())
         return None
 
     def get_pinecone_api_key(self) -> str | None:
@@ -588,7 +588,7 @@ class Settings(BaseSettings):
         Returns the secret value - use with caution to avoid logging.
         """
         if self.PINECONE_API_KEY:
-            return self.PINECONE_API_KEY.get_secret_value()
+            return str(self.PINECONE_API_KEY.get_secret_value())
         return None
 
     def get_langsmith_api_key(self) -> str | None:
@@ -598,7 +598,7 @@ class Settings(BaseSettings):
         Returns the secret value - use with caution to avoid logging.
         """
         if self.LANGSMITH_API_KEY:
-            return self.LANGSMITH_API_KEY.get_secret_value()
+            return str(self.LANGSMITH_API_KEY.get_secret_value())
         return None
 
     def get_wandb_api_key(self) -> str | None:
@@ -608,7 +608,7 @@ class Settings(BaseSettings):
         Returns the secret value - use with caution to avoid logging.
         """
         if self.WANDB_API_KEY:
-            return self.WANDB_API_KEY.get_secret_value()
+            return str(self.WANDB_API_KEY.get_secret_value())
         return None
 
     def __repr__(self) -> str:

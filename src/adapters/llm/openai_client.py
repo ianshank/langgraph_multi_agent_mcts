@@ -412,7 +412,7 @@ class OpenAIClient(BaseLLMClient):
 
         payload.update(kwargs)
 
-        async def stream_generator():
+        async def stream_generator() -> AsyncIterator[str]:
             try:
                 async with client.stream("POST", "/chat/completions", json=payload) as response:
                     if response.status_code != 200:

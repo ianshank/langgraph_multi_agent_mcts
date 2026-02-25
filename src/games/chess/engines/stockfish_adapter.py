@@ -13,8 +13,6 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
-    import logging
-
     from src.games.chess.ensemble_agent import ChessEnsembleAgent
 
 from src.games.chess.constants import get_stockfish_executables
@@ -126,13 +124,13 @@ class StockfishAdapter:
     def __init__(
         self,
         config: StockfishConfig | None = None,
-        logger: StructuredLogger | logging.Logger | None = None,
+        logger: StructuredLogger | None = None,
     ) -> None:
         """Initialize the Stockfish adapter.
 
         Args:
             config: Stockfish configuration
-            logger: Optional logger instance (StructuredLogger preferred)
+            logger: Optional logger instance
         """
         self._config = config or StockfishConfig()
         self._logger = logger or get_structured_logger("chess.engines.stockfish")

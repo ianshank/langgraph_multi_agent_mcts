@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import asyncio
 import hashlib
+import logging
 import time
 from collections.abc import Callable
 from dataclasses import dataclass, field
@@ -29,6 +30,8 @@ from .config import (
     NeuroSymbolicConfig,
 )
 from .state import Fact, NeuroSymbolicState, SymbolicFactType
+
+logger = logging.getLogger(__name__)
 
 
 class ProofStatus(Enum):
@@ -548,6 +551,14 @@ class LogicEngine:
         else:
             status = ProofStatus.FAILURE
 
+        logger.debug(
+            "Logic engine query complete: goal=%s, status=%s, time_ms=%.2f, steps=%d",
+            goal.to_string(),
+            status.name,
+            elapsed_ms,
+            self._step_counter,
+        )
+
         # Build proof tree
         proof_tree = ProofTree(
             root=root_step,
@@ -764,6 +775,8 @@ class SymbolicReasoningAgent:
         """
         self._query_count += 1
         start_time = time.perf_counter()
+
+        logger.debug("SymbolicReasoningAgent processing query %d: %s", self._query_count, query[:100])
 
         # Create state if not provided
         if state is None:

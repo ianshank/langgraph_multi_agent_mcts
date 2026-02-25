@@ -120,7 +120,7 @@ class RandomRolloutPolicy(RolloutPolicy):
         max_depth: int = 10,
     ) -> float:
         """Generate random evaluation with noise."""
-        noise = rng.uniform(-self.noise_scale, self.noise_scale)
+        noise = float(rng.uniform(-self.noise_scale, self.noise_scale))
         value = self.base_value + noise
         return max(0.0, min(1.0, value))
 
@@ -151,7 +151,7 @@ class GreedyRolloutPolicy(RolloutPolicy):
     ) -> float:
         """Evaluate using heuristic with small noise."""
         base_value = self.heuristic_fn(state)
-        noise = rng.uniform(-self.noise_scale, self.noise_scale)
+        noise = float(rng.uniform(-self.noise_scale, self.noise_scale))
         value = base_value + noise
         return max(0.0, min(1.0, value))
 
@@ -197,7 +197,7 @@ class HybridRolloutPolicy(RolloutPolicy):
     ) -> float:
         """Combine heuristic and random evaluation."""
         # Random component
-        random_noise = rng.uniform(-self.noise_scale, self.noise_scale)
+        random_noise = float(rng.uniform(-self.noise_scale, self.noise_scale))
         random_value = self.base_random_value + random_noise
 
         # Heuristic component

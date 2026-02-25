@@ -11,6 +11,7 @@ Provides:
 from __future__ import annotations
 
 import asyncio
+import logging
 import operator
 import time
 from typing import Annotated, Any, NotRequired, TypedDict
@@ -80,6 +81,8 @@ except ImportError:
     NeuroSymbolicMCTSConfig = None  # type: ignore
     ConstraintSystem = None  # type: ignore
     ConstraintConfig = None  # type: ignore
+
+logger = logging.getLogger(__name__)
 
 
 class AgentState(TypedDict):
@@ -215,6 +218,14 @@ class GraphBuilder:
         if neuro_symbolic_config is not None:
             self._init_neuro_symbolic(neuro_symbolic_config)
 
+        logger.debug(
+            "GraphBuilder initialized: max_iterations=%d, consensus_threshold=%.2f, parallel_agents=%s, mcts_seed=%d",
+            self.max_iterations,
+            self.consensus_threshold,
+            self.enable_parallel_agents,
+            self.mcts_config.seed,
+        )
+
     def build_graph(self) -> StateGraph:
         """
         Build LangGraph state machine.
@@ -225,6 +236,7 @@ class GraphBuilder:
         if StateGraph is None:
             raise ImportError("LangGraph not installed. Install with: pip install langgraph")
 
+        logger.info("Building LangGraph state machine")
         workflow = StateGraph(AgentState)
 
         # Add nodes

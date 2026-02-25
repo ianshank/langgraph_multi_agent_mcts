@@ -345,7 +345,7 @@ class ConnectionPool:
             else:
                 self._metrics.health_checks_failed += 1
 
-            return healthy
+            return bool(healthy)
         except Exception as e:
             logger.warning("Health check failed for %s: %s", url, e)
             self._metrics.health_checks_failed += 1

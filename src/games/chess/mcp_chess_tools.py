@@ -372,8 +372,8 @@ async def dispatch_chess_tool(
 
     # Tools that don't need an engine
     if name in ("chess_game_status", "chess_position_features"):
-        return await handler(arguments)
+        return dict(await handler(arguments))
     # Tools that need the engine
     if engine is None:
         return {"success": False, "error": "LLMChessEngine not initialised"}
-    return await handler(arguments, engine)
+    return dict(await handler(arguments, engine))
