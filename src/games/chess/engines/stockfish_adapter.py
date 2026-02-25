@@ -347,13 +347,9 @@ class StockfishAdapter:
                     move = response.best_move
 
                     # Compare with Stockfish (using comparison_depth for faster evaluation)
-                    sf_analysis = await self.analyze_position(
-                        state, depth=self._config.comparison_depth
-                    )
+                    sf_analysis = await self.analyze_position(state, depth=self._config.comparison_depth)
                     if sf_analysis.best_move:
-                        total_move_diff += abs(
-                            response.value_estimate - sf_analysis.evaluation_score
-                        )
+                        total_move_diff += abs(response.value_estimate - sf_analysis.evaluation_score)
                         move_count += 1
                         if move == sf_analysis.best_move:
                             agreements += 1

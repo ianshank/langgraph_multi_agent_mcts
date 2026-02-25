@@ -108,6 +108,7 @@ def run_async(coro):
 class TestLLMHRMAgent:
     def _make_agent(self, response_text: str | None = None):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter(response_text)
         return LLMHRMAgent(model_adapter=adapter, name="test_hrm"), adapter
 
@@ -172,6 +173,7 @@ class TestLLMHRMAgent:
 class TestLLMTRMAgent:
     def _make_agent(self, response_text: str | None = None):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         adapter = MockLLMAdapter(response_text)
         return LLMTRMAgent(model_adapter=adapter, name="test_trm"), adapter
 
@@ -212,10 +214,7 @@ class TestLLMTRMAgent:
         agent_plain, _ = self._make_agent(plain)
         result_plain = run_async(agent_plain.process(query="test"))
 
-        assert (
-            result_refined["metadata"]["final_quality_score"]
-            >= result_plain["metadata"]["final_quality_score"]
-        )
+        assert result_refined["metadata"]["final_quality_score"] >= result_plain["metadata"]["final_quality_score"]
 
     def test_rag_context_included_in_prompt(self):
         agent, adapter = self._make_agent("Response")
@@ -239,6 +238,7 @@ class TestAgentCompatibility:
     def test_hrm_output_matches_graph_expectations(self):
         """graph.py expects {"response": ..., "metadata": {...decomposition_quality_score...}}"""
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMHRMAgent(model_adapter=adapter)
         result = run_async(agent.process(query="test"))
@@ -251,6 +251,7 @@ class TestAgentCompatibility:
     def test_trm_output_matches_graph_expectations(self):
         """graph.py expects {"response": ..., "metadata": {...final_quality_score...}}"""
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMTRMAgent(model_adapter=adapter)
         result = run_async(agent.process(query="test"))
@@ -271,29 +272,34 @@ class TestHRMQualityScoring:
 
     def test_baseline_score(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         score = LLMHRMAgent._compute_quality_score("Short text")
         assert 0.0 <= score <= 1.0
 
     def test_subproblem_bonus(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         with_sp = LLMHRMAgent._compute_quality_score("### Sub-problems\nSub-problem 1")
         without_sp = LLMHRMAgent._compute_quality_score("No structure here")
         assert with_sp > without_sp
 
     def test_synthesis_bonus(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         with_syn = LLMHRMAgent._compute_quality_score("### Synthesis\nFinal integrated answer")
         without_syn = LLMHRMAgent._compute_quality_score("No synthesis here")
         assert with_syn > without_syn
 
     def test_long_response_bonus(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         long_text = "x" * 400
         short_text = "x" * 50
         assert LLMHRMAgent._compute_quality_score(long_text) > LLMHRMAgent._compute_quality_score(short_text)
 
     def test_max_score_capped_at_one(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         # Trigger all bonuses
         text = "### Sub-problems\nSub-problem analysis\n### Synthesis\nFinal answer\n" + "x" * 400
         score = LLMHRMAgent._compute_quality_score(text)
@@ -305,29 +311,34 @@ class TestTRMQualityScoring:
 
     def test_baseline_score(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         score = LLMTRMAgent._compute_quality_score("Short text")
         assert 0.0 <= score <= 1.0
 
     def test_initial_bonus(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         with_init = LLMTRMAgent._compute_quality_score("Initial answer provided")
         without_init = LLMTRMAgent._compute_quality_score("Direct response")
         assert with_init > without_init
 
     def test_review_bonus(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         with_review = LLMTRMAgent._compute_quality_score("Critical Review: weakness found")
         without_review = LLMTRMAgent._compute_quality_score("No structure")
         assert with_review > without_review
 
     def test_refined_bonus(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         with_refined = LLMTRMAgent._compute_quality_score("Refined answer after improvements")
         without_refined = LLMTRMAgent._compute_quality_score("Basic text only")
         assert with_refined > without_refined
 
     def test_max_score_capped_at_one(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         text = "Initial answer review weakness refined improved " + "x" * 400
         score = LLMTRMAgent._compute_quality_score(text)
         assert score <= 1.0
@@ -341,6 +352,7 @@ class TestTRMQualityScoring:
 class TestAgentConfiguration:
     def test_hrm_custom_temperature(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMHRMAgent(model_adapter=adapter, temperature=0.9, max_tokens=500)
         assert agent._temperature == 0.9
@@ -348,6 +360,7 @@ class TestAgentConfiguration:
 
     def test_trm_custom_temperature(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMTRMAgent(model_adapter=adapter, temperature=0.2, max_tokens=2000)
         assert agent._temperature == 0.2
@@ -355,12 +368,14 @@ class TestAgentConfiguration:
 
     def test_hrm_custom_name(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMHRMAgent(model_adapter=adapter, name="CustomHRM")
         assert agent.name == "CustomHRM"
 
     def test_trm_custom_name(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMTRMAgent(model_adapter=adapter, name="CustomTRM")
         assert agent.name == "CustomTRM"
@@ -374,6 +389,7 @@ class TestAgentConfiguration:
 class TestAgentLifecycle:
     def test_hrm_stats_after_processing(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMHRMAgent(model_adapter=adapter)
         run_async(agent.process(query="test"))
@@ -384,6 +400,7 @@ class TestAgentLifecycle:
 
     def test_trm_stats_after_processing(self):
         from src.framework.agents.llm_trm import LLMTRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMTRMAgent(model_adapter=adapter)
         run_async(agent.process(query="test"))
@@ -395,6 +412,7 @@ class TestAgentLifecycle:
         import pytest  # noqa: E402
 
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMHRMAgent(model_adapter=adapter)
         with pytest.raises((ValueError, TypeError)):
@@ -402,6 +420,7 @@ class TestAgentLifecycle:
 
     def test_multiple_calls_increment_stats(self):
         from src.framework.agents.llm_hrm import LLMHRMAgent
+
         adapter = MockLLMAdapter()
         agent = LLMHRMAgent(model_adapter=adapter)
         run_async(agent.process(query="q1"))

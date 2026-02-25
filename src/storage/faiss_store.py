@@ -308,7 +308,11 @@ class FAISSVectorStore:
                 embeddings = np.vstack(all_embeddings).astype("float32")
 
                 # Train IVF index if needed (first time with enough data)
-                if self._index_type == IndexType.IVF_FLAT and not self._index.is_trained and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST:
+                if (
+                    self._index_type == IndexType.IVF_FLAT
+                    and not self._index.is_trained
+                    and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST
+                ):
                     self._index.train(embeddings)
 
                 # Add embeddings to index
@@ -379,11 +383,15 @@ class FAISSVectorStore:
 
             try:
                 # Encode query
-                query_embedding = self._model.encode(
-                    query,
-                    convert_to_numpy=True,
-                    normalize_embeddings=True,
-                ).astype("float32").reshape(1, -1)
+                query_embedding = (
+                    self._model.encode(
+                        query,
+                        convert_to_numpy=True,
+                        normalize_embeddings=True,
+                    )
+                    .astype("float32")
+                    .reshape(1, -1)
+                )
 
                 # Search FAISS index
                 # For IVF, we might need to search more to apply filters
@@ -414,12 +422,14 @@ class FAISSVectorStore:
                     if filter_metadata and not self._matches_filter(doc.metadata, filter_metadata):
                         continue
 
-                    results.append({
-                        "content": doc.content,
-                        "score": similarity,
-                        "metadata": doc.metadata,
-                        "id": doc.id,
-                    })
+                    results.append(
+                        {
+                            "content": doc.content,
+                            "score": similarity,
+                            "metadata": doc.metadata,
+                            "id": doc.id,
+                        }
+                    )
 
                     if len(results) >= top_k:
                         break
@@ -488,7 +498,11 @@ class FAISSVectorStore:
                 new_index = self._create_index()
 
                 # Train if needed
-                if self._index_type == IndexType.IVF_FLAT and not new_index.is_trained and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST:
+                if (
+                    self._index_type == IndexType.IVF_FLAT
+                    and not new_index.is_trained
+                    and len(embeddings) >= FAISSStoreDefaults.IVF_NLIST
+                ):
                     new_index.train(embeddings)
 
                 # Add all embeddings

@@ -25,6 +25,7 @@ _ASSEMBLY_AVAILABLE = False
 # Check if torch is available
 try:
     import torch  # noqa: F401
+
     _TORCH_AVAILABLE = True
 except ImportError:
     _logger.debug("PyTorch not available - neural meta-controllers will be limited")
@@ -81,18 +82,21 @@ if _TORCH_AVAILABLE:
         one_hot_encode_agent,
     )
 
-    __all__.extend([
-        "normalize_features",
-        "one_hot_encode_agent",
-        "features_to_tensor",
-        "features_to_text",
-        "RNNMetaController",
-        "RNNMetaControllerModel",
-    ])
+    __all__.extend(
+        [
+            "normalize_features",
+            "one_hot_encode_agent",
+            "features_to_tensor",
+            "features_to_text",
+            "RNNMetaController",
+            "RNNMetaControllerModel",
+        ]
+    )
 
     # Try importing BERT controller (requires transformers/peft)
     try:
         from src.agents.meta_controller.bert_controller import BERTMetaController
+
         _BERT_AVAILABLE = True
         __all__.append("BERTMetaController")
     except ImportError:
@@ -104,6 +108,7 @@ if _TORCH_AVAILABLE:
             HybridMetaController,
             HybridPrediction,
         )
+
         __all__.extend(["HybridMetaController", "HybridPrediction"])
     except ImportError:
         _logger.debug("Hybrid meta-controller not available")
@@ -115,6 +120,7 @@ try:
         FeatureExtractor,
         FeatureExtractorConfig,
     )
+
     _FEATURE_EXTRACTOR_AVAILABLE = True
     __all__.extend(["FeatureExtractor", "FeatureExtractorConfig", "EmbeddingBackend"])
 except ImportError:
@@ -126,6 +132,7 @@ try:
         AssemblyRouter,
         RoutingDecision,
     )
+
     _ASSEMBLY_AVAILABLE = True
     __all__.extend(["AssemblyRouter", "RoutingDecision"])
 except ImportError:

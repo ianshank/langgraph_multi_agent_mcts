@@ -44,8 +44,10 @@ def metrics_collector():
     collector._prometheus_initialized = False
     # Initialize process handle for system metrics
     import psutil
+
     collector._process = psutil.Process()
     from datetime import datetime
+
     collector._start_time = datetime.utcnow()
 
     return collector

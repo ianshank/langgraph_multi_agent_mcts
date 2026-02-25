@@ -111,9 +111,7 @@ def mock_integrated_framework(mock_langgraph_app):
     # Bind actual streaming methods
     import src.framework.graph as graph_module
 
-    framework.astream = lambda *args, **kwargs: graph_module.IntegratedFramework.astream(
-        framework, *args, **kwargs
-    )
+    framework.astream = lambda *args, **kwargs: graph_module.IntegratedFramework.astream(framework, *args, **kwargs)
     framework.astream_events = lambda *args, **kwargs: graph_module.IntegratedFramework.astream_events(
         framework, *args, **kwargs
     )
@@ -134,9 +132,7 @@ class TestNodeLevelStreaming:
         """Test astream yields node updates as they complete."""
         nodes_received = []
 
-        async for node_name, _state_update in mock_integrated_framework.astream(
-            query="Test query"
-        ):
+        async for node_name, _state_update in mock_integrated_framework.astream(query="Test query"):
             nodes_received.append(node_name)
 
         assert "entry" in nodes_received
@@ -148,9 +144,7 @@ class TestNodeLevelStreaming:
         """Test astream includes state updates for each node."""
         updates = {}
 
-        async for node_name, state_update in mock_integrated_framework.astream(
-            query="Test query"
-        ):
+        async for node_name, state_update in mock_integrated_framework.astream(query="Test query"):
             updates[node_name] = state_update
 
         assert updates["entry"]["iteration"] == 0
@@ -192,9 +186,7 @@ class TestNodeLevelStreaming:
 
         import src.framework.graph as graph_module
 
-        framework.astream = lambda *args, **kwargs: graph_module.IntegratedFramework.astream(
-            framework, *args, **kwargs
-        )
+        framework.astream = lambda *args, **kwargs: graph_module.IntegratedFramework.astream(framework, *args, **kwargs)
 
         with pytest.raises(RuntimeError, match="LangGraph not available"):
             async for _ in framework.astream(query="Test"):

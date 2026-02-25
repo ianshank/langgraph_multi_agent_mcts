@@ -67,9 +67,7 @@ class MetaControllerTrainingConfig:
 
     # Curriculum learning
     use_curriculum: bool = True
-    curriculum_stages: list[str] = field(
-        default_factory=lambda: ["simple", "medium", "complex"]
-    )
+    curriculum_stages: list[str] = field(default_factory=lambda: ["simple", "medium", "complex"])
     epochs_per_stage: int = 3
 
     # Calibration
@@ -351,8 +349,7 @@ class MetaControllerTrainingOrchestrator:
         # Validate model was successfully initialized
         if self._model is None:
             raise RuntimeError(
-                "Model initialization failed. Check if model_type "
-                f"'{self.config.model_type}' is supported."
+                f"Model initialization failed. Check if model_type '{self.config.model_type}' is supported."
             )
 
         self.setup_optimizer()
@@ -536,9 +533,7 @@ class MetaControllerTrainingOrchestrator:
             all_confidences = torch.cat(all_confidences)
             all_predictions = torch.cat(all_predictions)
             all_targets = torch.cat(all_targets)
-            _, calibration_error = self._calibration_loss(
-                all_confidences, all_predictions, all_targets
-            )
+            _, calibration_error = self._calibration_loss(all_confidences, all_predictions, all_targets)
         else:
             calibration_error = 0.0
 
@@ -619,15 +614,17 @@ class MetaControllerTrainingOrchestrator:
     def _log_metrics(self, metrics: TrainingMetrics) -> None:
         """Log metrics to tracker."""
         if self._tracker:
-            self._tracker.log_metrics({
-                "train/loss": metrics.train_loss,
-                "train/accuracy": metrics.train_accuracy,
-                "val/loss": metrics.val_loss,
-                "val/accuracy": metrics.val_accuracy,
-                "val/calibration_error": metrics.calibration_error,
-                "learning_rate": metrics.learning_rate,
-                "epoch_time": metrics.epoch_time_seconds,
-            })
+            self._tracker.log_metrics(
+                {
+                    "train/loss": metrics.train_loss,
+                    "train/accuracy": metrics.train_accuracy,
+                    "val/loss": metrics.val_loss,
+                    "val/accuracy": metrics.val_accuracy,
+                    "val/calibration_error": metrics.calibration_error,
+                    "learning_rate": metrics.learning_rate,
+                    "epoch_time": metrics.epoch_time_seconds,
+                }
+            )
 
         self._training_history.append(metrics)
 

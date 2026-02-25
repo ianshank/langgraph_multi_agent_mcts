@@ -438,9 +438,7 @@ class FrameworkService:
 
         # Ensure initialized
         if self._state != FrameworkState.READY and not await self.initialize():
-            raise RuntimeError(
-                f"Framework not available: {self._init_error or 'initialization failed'}"
-            )
+            raise RuntimeError(f"Framework not available: {self._init_error or 'initialization failed'}")
 
         if not query or not query.strip():
             raise ValueError("Query cannot be empty")
@@ -512,9 +510,7 @@ class FrameworkService:
 
             # Process with timeout
             if self._framework is None:
-                raise RuntimeError(
-                    "Framework not initialized. Call initialize() before processing queries."
-                )
+                raise RuntimeError("Framework not initialized. Call initialize() before processing queries.")
 
             framework_start = time.perf_counter()
             result = await asyncio.wait_for(
@@ -579,9 +575,7 @@ class FrameworkService:
                     timeout_seconds=self._config.timeout_seconds,
                     processing_time_ms=round(processing_time, 2),
                 )
-            raise TimeoutError(
-                f"Query processing timed out after {self._config.timeout_seconds}s"
-            ) from None
+            raise TimeoutError(f"Query processing timed out after {self._config.timeout_seconds}s") from None
         except Exception as e:
             self._error_count += 1
             if _HAS_STRUCTURED_LOGGING:
@@ -604,11 +598,7 @@ class FrameworkService:
             Dictionary with health information
         """
         uptime = time.time() - self._start_time if self._start_time else 0
-        avg_processing_time = (
-            self._total_processing_time_ms / self._request_count
-            if self._request_count > 0
-            else 0.0
-        )
+        avg_processing_time = self._total_processing_time_ms / self._request_count if self._request_count > 0 else 0.0
 
         return {
             "status": self._state.value,
@@ -748,11 +738,7 @@ Provide a comprehensive and accurate answer:"""
             )
             response_text = response.text
             # Higher confidence when RAG context is used
-            confidence = (
-                self._config.confidence_with_rag
-                if rag_context
-                else self._config.confidence_without_rag
-            )
+            confidence = self._config.confidence_with_rag if rag_context else self._config.confidence_without_rag
         except Exception as e:
             self._logger.warning(
                 "LLM call failed in lightweight mode",

@@ -136,9 +136,7 @@ class ParallelMCTSConfig:
             errors.append("lock_timeout_seconds must be None or > 0")
 
         if errors:
-            raise ValueError(
-                "Invalid ParallelMCTSConfig:\n" + "\n".join(f"  - {e}" for e in errors)
-            )
+            raise ValueError("Invalid ParallelMCTSConfig:\n" + "\n".join(f"  - {e}" for e in errors))
 
     def to_dict(self) -> dict[str, Any]:
         """Convert stats to dictionary."""
@@ -319,10 +317,7 @@ class ParallelMCTSEngine:
         self._collision_history: list[bool] = []
 
         # Worker-specific RNGs for deterministic parallel behavior
-        self._worker_rngs = {
-            i: np.random.default_rng(self.seed + i)
-            for i in range(self.num_workers)
-        }
+        self._worker_rngs = {i: np.random.default_rng(self.seed + i) for i in range(self.num_workers)}
 
     async def parallel_search(
         self,
@@ -716,11 +711,7 @@ class RootParallelMCTSEngine:
             action_stats[act]["value"] = action_stats[act]["value_sum"] / visits if visits > 0 else 0.0
 
         # Select best action (most total visits)
-        best_action = (
-            max(action_stats.keys(), key=lambda a: action_stats[a]["visits"])
-            if action_stats
-            else None
-        )
+        best_action = max(action_stats.keys(), key=lambda a: action_stats[a]["visits"]) if action_stats else None
 
         # Merge statistics
         total_simulations = sum(stats["iterations"] for _, stats in results)
@@ -782,7 +773,9 @@ class LeafParallelMCTSEngine:
         # Create rollout tasks
         rollout_rngs = [np.random.default_rng(self.seed + i) for i in range(self.num_parallel_rollouts)]
 
-        rollout_tasks = [rollout_policy.evaluate(state=node.state, rng=rng, max_depth=max_depth) for rng in rollout_rngs]
+        rollout_tasks = [
+            rollout_policy.evaluate(state=node.state, rng=rng, max_depth=max_depth) for rng in rollout_rngs
+        ]
 
         # Run rollouts concurrently
         values = await asyncio.gather(*rollout_tasks)

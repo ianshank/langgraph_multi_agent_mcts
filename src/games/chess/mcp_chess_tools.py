@@ -36,6 +36,7 @@ except ImportError:  # pragma: no cover
     def field_validator(*args: Any, **kwargs: Any) -> Any:
         def _decorator(fn: Any) -> Any:
             return fn
+
         return _decorator
 
 # ---------------------------------------------------------------------------
@@ -43,9 +44,7 @@ except ImportError:  # pragma: no cover
 # ---------------------------------------------------------------------------
 
 FEN_INITIAL = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-FEN_PATTERN = re.compile(
-    r"^[rnbqkpRNBQKP1-8/]+ [wb] [KQkq-]+ [a-h1-8-]+ \d+ \d+$"
-)
+FEN_PATTERN = re.compile(r"^[rnbqkpRNBQKP1-8/]+ [wb] [KQkq-]+ [a-h1-8-]+ \d+ \d+$")
 UCI_PATTERN = re.compile(r"^[a-h][1-8][a-h][1-8][qrbn]?$")
 
 DEFAULT_ANALYSIS_DEPTH = 8
@@ -204,8 +203,7 @@ async def handle_analyze_position(args: dict[str, Any], engine: Any) -> dict[str
             "success": True,
             "best_move": analysis.best_move,
             "candidate_moves": [
-                {"move": c.move, "score": c.score, "agent": c.agent_name}
-                for c in analysis.candidate_moves
+                {"move": c.move, "score": c.score, "agent": c.agent_name} for c in analysis.candidate_moves
             ],
             "routing": {
                 "primary_agent": analysis.routing_decision.primary_agent,
@@ -273,21 +271,21 @@ async def handle_game_status(args: dict[str, Any]) -> dict[str, Any]:
 
         try:
             board = chess.Board(inp.fen)
-            status.update({
-                "is_check": board.is_check(),
-                "is_checkmate": board.is_checkmate(),
-                "is_stalemate": board.is_stalemate(),
-                "is_game_over": board.is_game_over(),
-                "legal_moves": len(list(board.legal_moves)),
-                "turn": "white" if board.turn else "black",
-            })
+            status.update(
+                {
+                    "is_check": board.is_check(),
+                    "is_checkmate": board.is_checkmate(),
+                    "is_stalemate": board.is_stalemate(),
+                    "is_game_over": board.is_game_over(),
+                    "legal_moves": len(list(board.legal_moves)),
+                    "turn": "white" if board.turn else "black",
+                }
+            )
             if board.is_game_over():
                 outcome = board.outcome()
                 if outcome:
                     status["winner"] = (
-                        "white" if outcome.winner is True
-                        else "black" if outcome.winner is False
-                        else "draw"
+                        "white" if outcome.winner is True else "black" if outcome.winner is False else "draw"
                     )
                     status["termination"] = outcome.termination.name
         except ValueError as e:
@@ -295,10 +293,12 @@ async def handle_game_status(args: dict[str, Any]) -> dict[str, Any]:
     else:
         # Minimal status from FEN parsing
         parts = inp.fen.split()
-        status.update({
-            "turn": "white" if len(parts) > 1 and parts[1] == "w" else "black",
-            "note": "python-chess not available; limited status",
-        })
+        status.update(
+            {
+                "turn": "white" if len(parts) > 1 and parts[1] == "w" else "black",
+                "note": "python-chess not available; limited status",
+            }
+        )
 
     return status
 

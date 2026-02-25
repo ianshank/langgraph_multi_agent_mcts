@@ -84,29 +84,31 @@ try:
         create_state_from_fen,
     )
 
-    __all__.extend([
-        # Config
-        "AgentType",
-        "ChessActionSpaceConfig",
-        "ChessBoardConfig",
-        "ChessConfig",
-        "ChessEnsembleConfig",
-        "ChessHRMConfig",
-        "ChessMCTSConfig",
-        "ChessNeuralNetConfig",
-        "ChessTrainingConfig",
-        "ChessTRMConfig",
-        "GamePhase",
-        "get_chess_large_config",
-        "get_chess_medium_config",
-        "get_chess_small_config",
-        # Action space
-        "ChessActionEncoder",
-        # State
-        "ChessGameState",
-        "create_initial_state",
-        "create_state_from_fen",
-    ])
+    __all__.extend(
+        [
+            # Config
+            "AgentType",
+            "ChessActionSpaceConfig",
+            "ChessBoardConfig",
+            "ChessConfig",
+            "ChessEnsembleConfig",
+            "ChessHRMConfig",
+            "ChessMCTSConfig",
+            "ChessNeuralNetConfig",
+            "ChessTrainingConfig",
+            "ChessTRMConfig",
+            "GamePhase",
+            "get_chess_large_config",
+            "get_chess_medium_config",
+            "get_chess_small_config",
+            # Action space
+            "ChessActionEncoder",
+            # State
+            "ChessGameState",
+            "create_initial_state",
+            "create_state_from_fen",
+        ]
+    )
     NUMPY_AVAILABLE = True
 except ImportError:
     NUMPY_AVAILABLE = False
@@ -117,10 +119,13 @@ try:
         ChessBoardRepresentation,
         board_to_tensor,
     )
-    __all__.extend([
-        "ChessBoardRepresentation",
-        "board_to_tensor",
-    ])
+
+    __all__.extend(
+        [
+            "ChessBoardRepresentation",
+            "board_to_tensor",
+        ]
+    )
 except ImportError:
     pass
 
@@ -157,33 +162,35 @@ try:
     )
 
     # Add torch-dependent exports
-    __all__.extend([
-        # Meta-controller
-        "ChessFeatureExtractor",
-        "ChessMetaController",
-        "ChessPositionFeatures",
-        "RoutingDecision",
-        # Ensemble agent
-        "AgentResponse",
-        "ChessEnsembleAgent",
-        "ChessStateEncoder",
-        "EnsembleResponse",
-        # Training
-        "ChessDataAugmentation",
-        "ChessOpeningBook",
-        "ChessTrainingMetrics",
-        "ChessTrainingOrchestrator",
-        "SelfPlayGame",
-        "create_chess_orchestrator",
-        # Continuous Learning
-        "ContinuousLearningConfig",
-        "ContinuousLearningSession",
-        "GameRecord",
-        "GameResult",
-        "OnlineLearner",
-        "ScoreCard",
-        "create_learning_session",
-    ])
+    __all__.extend(
+        [
+            # Meta-controller
+            "ChessFeatureExtractor",
+            "ChessMetaController",
+            "ChessPositionFeatures",
+            "RoutingDecision",
+            # Ensemble agent
+            "AgentResponse",
+            "ChessEnsembleAgent",
+            "ChessStateEncoder",
+            "EnsembleResponse",
+            # Training
+            "ChessDataAugmentation",
+            "ChessOpeningBook",
+            "ChessTrainingMetrics",
+            "ChessTrainingOrchestrator",
+            "SelfPlayGame",
+            "create_chess_orchestrator",
+            # Continuous Learning
+            "ContinuousLearningConfig",
+            "ContinuousLearningSession",
+            "GameRecord",
+            "GameResult",
+            "OnlineLearner",
+            "ScoreCard",
+            "create_learning_session",
+        ]
+    )
     TORCH_AVAILABLE = True
 except ImportError:
     TORCH_AVAILABLE = False
@@ -195,11 +202,14 @@ try:
         create_chess_ui,
         render_board_html,
     )
-    __all__.extend([
-        "GameSession",
-        "create_chess_ui",
-        "render_board_html",
-    ])
+
+    __all__.extend(
+        [
+            "GameSession",
+            "create_chess_ui",
+            "render_board_html",
+        ]
+    )
     UI_AVAILABLE = True
 except ImportError:
     UI_AVAILABLE = False

@@ -147,9 +147,7 @@ class EmbeddingCache:
             self.config.embedding_dim,
         )
 
-    def set_compute_function(
-        self, fn: Callable[[str], Any]
-    ) -> None:
+    def set_compute_function(self, fn: Callable[[str], Any]) -> None:
         """
         Set the function to compute embeddings on cache miss.
 

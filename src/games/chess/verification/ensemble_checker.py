@@ -271,8 +271,7 @@ class EnsembleConsistencyChecker:
                 VerificationIssue(
                     code="LOW_AGREEMENT",
                     message=(
-                        f"Agent agreement rate {agreement_rate:.2f} "
-                        f"below threshold {self._config.agreement_threshold}"
+                        f"Agent agreement rate {agreement_rate:.2f} below threshold {self._config.agreement_threshold}"
                     ),
                     severity=VerificationSeverity.WARNING,
                     context={
@@ -288,9 +287,7 @@ class EnsembleConsistencyChecker:
                 issues.append(
                     VerificationIssue(
                         code="HIGH_DIVERGENCE",
-                        message=(
-                            f"Agent {agent_name} divergence {divergence:.2f} " f"exceeds threshold"
-                        ),
+                        message=(f"Agent {agent_name} divergence {divergence:.2f} exceeds threshold"),
                         severity=VerificationSeverity.WARNING,
                         context={
                             "agent": agent_name,
@@ -317,8 +314,7 @@ class EnsembleConsistencyChecker:
 
         # Determine overall consistency
         is_consistent = agreement_rate >= self._config.agreement_threshold and not any(
-            i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
-            for i in issues
+            i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL) for i in issues
         )
 
         # Log if enabled

@@ -280,9 +280,7 @@ def timed(
             finally:
                 duration_ms = (time.perf_counter() - start) * 1000
                 if duration_ms > threshold:
-                    logger.warning(
-                        f"Slow operation: {name} took {duration_ms:.2f}ms (threshold: {threshold}ms)"
-                    )
+                    logger.warning(f"Slow operation: {name} took {duration_ms:.2f}ms (threshold: {threshold}ms)")
                 else:
                     logger.debug(f"Timing: {name} took {duration_ms:.2f}ms")
 
@@ -294,9 +292,7 @@ def timed(
             finally:
                 duration_ms = (time.perf_counter() - start) * 1000
                 if duration_ms > threshold:
-                    logger.warning(
-                        f"Slow operation: {name} took {duration_ms:.2f}ms (threshold: {threshold}ms)"
-                    )
+                    logger.warning(f"Slow operation: {name} took {duration_ms:.2f}ms (threshold: {threshold}ms)")
                 else:
                     logger.debug(f"Timing: {name} took {duration_ms:.2f}ms")
 
@@ -348,14 +344,11 @@ def retry(
                 except exceptions as e:
                     last_exception = e
                     if attempt == max_attempts:
-                        logger.error(
-                            f"All {max_attempts} attempts failed for {func.__name__}: {e}"
-                        )
+                        logger.error(f"All {max_attempts} attempts failed for {func.__name__}: {e}")
                         raise
 
                     logger.warning(
-                        f"Attempt {attempt}/{max_attempts} failed for {func.__name__}: {e}. "
-                        f"Retrying in {delay:.1f}s..."
+                        f"Attempt {attempt}/{max_attempts} failed for {func.__name__}: {e}. Retrying in {delay:.1f}s..."
                     )
 
                     if on_retry:
@@ -377,14 +370,11 @@ def retry(
                 except exceptions as e:
                     last_exception = e
                     if attempt == max_attempts:
-                        logger.error(
-                            f"All {max_attempts} attempts failed for {func.__name__}: {e}"
-                        )
+                        logger.error(f"All {max_attempts} attempts failed for {func.__name__}: {e}")
                         raise
 
                     logger.warning(
-                        f"Attempt {attempt}/{max_attempts} failed for {func.__name__}: {e}. "
-                        f"Retrying in {delay:.1f}s..."
+                        f"Attempt {attempt}/{max_attempts} failed for {func.__name__}: {e}. Retrying in {delay:.1f}s..."
                     )
 
                     if on_retry:
@@ -529,10 +519,7 @@ def debug_on_error(
                             # Mask sensitive data
                             safe_locals = {}
                             for k, v in local_vars.items():
-                                if any(
-                                    s in k.lower()
-                                    for s in ["password", "secret", "token", "key"]
-                                ):
+                                if any(s in k.lower() for s in ["password", "secret", "token", "key"]):
                                     safe_locals[k] = "***MASKED***"
                                 else:
                                     try:

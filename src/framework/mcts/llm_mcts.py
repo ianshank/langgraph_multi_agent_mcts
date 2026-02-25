@@ -271,10 +271,7 @@ class StdlibLLMClient:
         self.call_count = 0
 
         if self.provider not in PROVIDER_CONFIG:
-            raise ValueError(
-                f"Unsupported provider: {provider}. "
-                f"Supported: {', '.join(PROVIDER_CONFIG.keys())}."
-            )
+            raise ValueError(f"Unsupported provider: {provider}. Supported: {', '.join(PROVIDER_CONFIG.keys())}.")
 
         config = PROVIDER_CONFIG[self.provider]
         self.api_key = api_key or os.environ.get(config["env_key"], "")
@@ -283,8 +280,7 @@ class StdlibLLMClient:
 
         if not self.api_key:
             raise ValueError(
-                f"No API key for {provider}. Set {config['env_key']} "
-                "environment variable or pass api_key parameter."
+                f"No API key for {provider}. Set {config['env_key']} environment variable or pass api_key parameter."
             )
 
         logger.info(
@@ -657,9 +653,8 @@ class LLMMCTSEngine:
             # 4. Emit iteration event
             if on_iteration is not None:
                 elapsed = (time.perf_counter() - start_time) * 1000
-                preview = (
-                    response[:RESPONSE_PREVIEW_LEN].replace("\n", " ")
-                    + ("..." if len(response) > RESPONSE_PREVIEW_LEN else "")
+                preview = response[:RESPONSE_PREVIEW_LEN].replace("\n", " ") + (
+                    "..." if len(response) > RESPONSE_PREVIEW_LEN else ""
                 )
                 event = IterationEvent(
                     iteration=i + 1,
@@ -744,9 +739,7 @@ class LLMMCTSEngine:
         llm_call = LLMCall(
             strategy=strategy,
             prompt=prompt[:PROMPT_TRUNCATE_LEN] + "..." if len(prompt) > PROMPT_TRUNCATE_LEN else prompt,
-            response=(
-                response[:RESPONSE_TRUNCATE_LEN] + "..." if len(response) > RESPONSE_TRUNCATE_LEN else response
-            ),
+            response=(response[:RESPONSE_TRUNCATE_LEN] + "..." if len(response) > RESPONSE_TRUNCATE_LEN else response),
             score=score,
             latency_ms=round(latency_ms, 1),
             tokens_used=tokens,
@@ -865,11 +858,7 @@ class TreeVisualizer:
             bar_str = "\u2588" * bar_len + "\u2591" * (bar_width - bar_len)
 
             lines.append(
-                f"{connector} {child.strategy:<15} "
-                f"{bar_str} "
-                f"{child.visits:>2} visits, "
-                f"avg={child.value:.3f}"
-                f"{stars}"
+                f"{connector} {child.strategy:<15} {bar_str} {child.visits:>2} visits, avg={child.value:.3f}{stars}"
             )
 
         return "\n".join(lines)

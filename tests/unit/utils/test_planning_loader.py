@@ -437,7 +437,16 @@ class TestPlanningLoader:
 
             milestones_data = {
                 "project": {"name": "Test", "domain": "test", "goal": "test"},
-                "milestones": [{"id": "M1", "name": "M1", "status": "in_progress", "completion": 50, "goal": "M1", "epics": [{"$ref": "./epics/epic_1.yaml"}]}],
+                "milestones": [
+                    {
+                        "id": "M1",
+                        "name": "M1",
+                        "status": "in_progress",
+                        "completion": 50,
+                        "goal": "M1",
+                        "epics": [{"$ref": "./epics/epic_1.yaml"}],
+                    }
+                ],
             }
 
             with open(Path(tmpdir) / "milestones.yaml", "w") as f:

@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 # Optional torch import
 try:
     import torch
+
     TORCH_AVAILABLE = True
 except ImportError:
     torch = None  # type: ignore[assignment]

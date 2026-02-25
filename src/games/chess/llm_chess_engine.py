@@ -688,13 +688,19 @@ class LLMChessEngine:
 
         # Agents
         self.hrm_agent = LLMChessHRMAgent(
-            model_adapter, temperature=temperature, max_tokens=max_tokens,
+            model_adapter,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
         self.trm_agent = LLMChessTRMAgent(
-            model_adapter, temperature=temperature, max_tokens=max_tokens,
+            model_adapter,
+            temperature=temperature,
+            max_tokens=max_tokens,
         )
         self.mcts_agent = LLMChessMCTSAgent(
-            model_adapter, temperature=temperature, max_tokens=max_tokens,
+            model_adapter,
+            temperature=temperature,
+            max_tokens=max_tokens,
             strategies=strategies,
         )
 
@@ -712,7 +718,9 @@ class LLMChessEngine:
 
         logger.info(
             "LLMChessEngine initialised: depth=%d, temperature=%.2f, strategies=%s",
-            mcts_depth, temperature, strategies or list(MCTS_CHESS_STRATEGIES.keys()),
+            mcts_depth,
+            temperature,
+            strategies or list(MCTS_CHESS_STRATEGIES.keys()),
         )
 
     async def analyze_position(self, fen: str) -> ChessAnalysis:
@@ -730,7 +738,9 @@ class LLMChessEngine:
         routing = self.meta_controller.route(fen)
         logger.info(
             "Routing decision: primary=%s, phase=%s, confidence=%.2f",
-            routing.primary_agent, routing.game_phase, routing.confidence,
+            routing.primary_agent,
+            routing.game_phase,
+            routing.confidence,
         )
 
         # 2. Run all agents in parallel (HRM, TRM, MCTS)
@@ -739,7 +749,10 @@ class LLMChessEngine:
         mcts_task = self.mcts_agent.process(query=fen)
 
         hrm_raw, trm_raw, mcts_raw = await asyncio.gather(
-            hrm_task, trm_task, mcts_task, return_exceptions=True,
+            hrm_task,
+            trm_task,
+            mcts_task,
+            return_exceptions=True,
         )
 
         # 3. Parse agent results
@@ -774,7 +787,8 @@ class LLMChessEngine:
         consensus_reasoning: str | None = None
         if len(agent_results) >= 2:
             consensus_move, consensus_reasoning = await self._synthesize_consensus(
-                fen, agent_results,
+                fen,
+                agent_results,
             )
 
         # 6. Determine best move

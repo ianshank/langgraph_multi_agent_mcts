@@ -193,9 +193,7 @@ class TestMessageConversion:
 
     def test_convert_tool_result_message(self, client: AnthropicClient) -> None:
         """Test converting tool result message."""
-        messages = [
-            {"role": "tool", "tool_call_id": "call_123", "content": "Result: 42"}
-        ]
+        messages = [{"role": "tool", "tool_call_id": "call_123", "content": "Result: 42"}]
 
         system, converted = client._convert_messages_to_anthropic(messages)
 
@@ -241,9 +239,7 @@ class TestToolConversion:
                     "description": "Get current weather",
                     "parameters": {
                         "type": "object",
-                        "properties": {
-                            "location": {"type": "string"}
-                        },
+                        "properties": {"location": {"type": "string"}},
                     },
                 },
             }

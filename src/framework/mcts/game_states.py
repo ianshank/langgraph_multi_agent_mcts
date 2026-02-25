@@ -295,9 +295,7 @@ class PlanningState:
             cost = self._get_action_cost(action_name)
 
             # Check if we have enough resources
-            can_afford = all(
-                self.resources.get(resource, 0) >= amount for resource, amount in cost.items()
-            )
+            can_afford = all(self.resources.get(resource, 0) >= amount for resource, amount in cost.items())
 
             if can_afford and len(self.completed_actions) < self.max_actions:
                 actions.append(
@@ -374,9 +372,7 @@ class PlanningState:
             return 0.0
 
         # Base reward for completion
-        completed_with_finish = (
-            self.completed_actions and self.completed_actions[-1].get("name") == "finish"
-        )
+        completed_with_finish = self.completed_actions and self.completed_actions[-1].get("name") == "finish"
         base_reward = 0.8 if completed_with_finish else 0.3
 
         # Efficiency bonus
@@ -495,14 +491,10 @@ class DecisionState:
             new_history.append({"action": "evaluate", "option": option_id, "score": score})
 
         elif action_type == "compare":
-            new_history.append(
-                {"action": "compare", "options": action.get("options", []), "result": "compared"}
-            )
+            new_history.append({"action": "compare", "options": action.get("options", []), "result": "compared"})
 
         elif action_type == "decide":
-            new_history.append(
-                {"action": "decide", "selected": action.get("best_option"), "final": True}
-            )
+            new_history.append({"action": "decide", "selected": action.get("best_option"), "final": True})
 
         return DecisionState(
             context=self.context,
@@ -601,9 +593,7 @@ def create_game_state(
     }
 
     if state_type not in state_classes:
-        raise ValueError(
-            f"Unknown state type: {state_type}. Valid types: {list(state_classes.keys())}"
-        )
+        raise ValueError(f"Unknown state type: {state_type}. Valid types: {list(state_classes.keys())}")
 
     state_class = state_classes[state_type]
 

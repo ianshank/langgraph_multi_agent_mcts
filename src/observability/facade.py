@@ -430,10 +430,7 @@ class ObservabilityFacade:
         finally:
             metrics.duration_ms = (time.time() - start_time) * 1000
 
-            if (
-                self.config.profiling_enabled
-                and metrics.duration_ms > self.config.profile_threshold_ms
-            ):
+            if self.config.profiling_enabled and metrics.duration_ms > self.config.profile_threshold_ms:
                 self.log_warning(
                     f"Slow operation: {name}",
                     duration_ms=metrics.duration_ms,

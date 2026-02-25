@@ -193,7 +193,10 @@ class MCTSEngine:
         self.progressive_widening_alpha = progressive_widening_alpha
         logger.debug(
             "MCTSEngine initialized: seed=%d, c=%.3f, pw_k=%.2f, pw_alpha=%.2f",
-            seed, exploration_weight, progressive_widening_k, progressive_widening_alpha,
+            seed,
+            exploration_weight,
+            progressive_widening_k,
+            progressive_widening_alpha,
         )
 
         # Parallel rollout control
@@ -449,7 +452,9 @@ class MCTSEngine:
         """
         logger.info(
             "MCTS search started: max_iterations=%d, policy=%s, state=%s",
-            num_iterations, selection_policy.value, root.state.state_id,
+            num_iterations,
+            selection_policy.value,
+            root.state.state_id,
         )
 
         # Reset cached tree statistics for new search
@@ -499,7 +504,9 @@ class MCTSEngine:
 
         logger.info(
             "MCTS search complete: best_action=%s, iterations=%d, cache_hit_rate=%.2f",
-            best_action, iterations_run, stats.get("cache_hit_rate", 0.0),
+            best_action,
+            iterations_run,
+            stats.get("cache_hit_rate", 0.0),
         )
 
         return best_action, stats

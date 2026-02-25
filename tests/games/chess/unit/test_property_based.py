@@ -383,8 +383,12 @@ class TestEncodingProperties:
         """Property: Promotion moves encode correctly."""
         # White pawn promotion moves
         promotion_moves = [
-            "e7e8q", "e7e8r", "e7e8b", "e7e8n",
-            "a7a8q", "h7h8q",
+            "e7e8q",
+            "e7e8r",
+            "e7e8b",
+            "e7e8n",
+            "a7a8q",
+            "h7h8q",
         ]
 
         for move in promotion_moves:

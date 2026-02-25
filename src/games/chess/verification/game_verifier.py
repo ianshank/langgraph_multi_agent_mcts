@@ -95,9 +95,7 @@ class ChessGameVerifier:
             logger: Optional logger instance
         """
         self._config = config or GameVerifierConfig()
-        self._move_validator = move_validator or MoveValidator(
-            config=self._config.move_validator_config
-        )
+        self._move_validator = move_validator or MoveValidator(config=self._config.move_validator_config)
         self._logger = logger or get_structured_logger("chess.verification.game_verifier")
 
     @property
@@ -164,7 +162,7 @@ class ChessGameVerifier:
                 issues.append(
                     VerificationIssue(
                         code="RESULT_MISMATCH",
-                        message=(f"Expected {expected_outcome.value}, " f"got {game_result.value}"),
+                        message=(f"Expected {expected_outcome.value}, got {game_result.value}"),
                         severity=VerificationSeverity.ERROR,
                         context={
                             "expected": expected_outcome.value,
@@ -266,10 +264,7 @@ class ChessGameVerifier:
         game_phase = state.get_game_phase().value
 
         return PositionVerificationResult(
-            is_valid=not any(
-                i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
-                for i in issues
-            ),
+            is_valid=not any(i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL) for i in issues),
             fen=fen,
             issues=issues,
             extra_info=extra_info,
@@ -406,10 +401,7 @@ class ChessGameVerifier:
 
         return MoveSequenceResult(
             is_valid=valid_moves == total_moves
-            and not any(
-                i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
-                for i in issues
-            ),
+            and not any(i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL) for i in issues),
             initial_fen=initial_fen,
             moves=moves,
             final_fen=current_state.fen,
@@ -482,10 +474,7 @@ class ChessGameVerifier:
         verification_time_ms = (time.perf_counter() - start_time) * 1000
 
         return GameVerificationResult(
-            is_valid=not any(
-                i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL)
-                for i in issues
-            ),
+            is_valid=not any(i.severity in (VerificationSeverity.ERROR, VerificationSeverity.CRITICAL) for i in issues),
             game_id=game_id,
             moves=moves_played,
             result=game_result,
@@ -555,16 +544,18 @@ class ChessGameVerifier:
         checks["castling_rights"] = (True, "")
         if board.castling_rights:
             # Check if the required pieces are in place
-            if board.castling_rights & chess.BB_H1 and (board.piece_at(chess.E1) != chess.Piece(
-                chess.KING, chess.WHITE
-            ) or board.piece_at(chess.H1) != chess.Piece(chess.ROOK, chess.WHITE)):
+            if board.castling_rights & chess.BB_H1 and (
+                board.piece_at(chess.E1) != chess.Piece(chess.KING, chess.WHITE)
+                or board.piece_at(chess.H1) != chess.Piece(chess.ROOK, chess.WHITE)
+            ):
                 checks["castling_rights"] = (
                     False,
                     "White kingside castling rights but pieces not in place",
                 )
-            if board.castling_rights & chess.BB_A1 and (board.piece_at(chess.E1) != chess.Piece(
-                chess.KING, chess.WHITE
-            ) or board.piece_at(chess.A1) != chess.Piece(chess.ROOK, chess.WHITE)):
+            if board.castling_rights & chess.BB_A1 and (
+                board.piece_at(chess.E1) != chess.Piece(chess.KING, chess.WHITE)
+                or board.piece_at(chess.A1) != chess.Piece(chess.ROOK, chess.WHITE)
+            ):
                 checks["castling_rights"] = (
                     False,
                     "White queenside castling rights but pieces not in place",

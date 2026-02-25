@@ -17,8 +17,13 @@ import pytest
 # Import directly from the module file to avoid triggering the mcts package
 # __init__.py which requires numpy.
 _mod_path = os.path.join(
-    os.path.dirname(__file__), os.pardir, os.pardir,
-    "src", "framework", "mcts", "llm_mcts.py",
+    os.path.dirname(__file__),
+    os.pardir,
+    os.pardir,
+    "src",
+    "framework",
+    "mcts",
+    "llm_mcts.py",
 )
 _mod_path = os.path.abspath(_mod_path)
 _spec = importlib.util.spec_from_file_location("llm_mcts", _mod_path)
@@ -283,17 +288,13 @@ class TestMultiAgentMCTSPipeline:
         assert result.mcts_result.best_strategy in REASONING_STRATEGIES
 
     def test_pipeline_with_consensus(self):
-        pipeline = MultiAgentMCTSPipeline(
-            provider="mock", iterations=10, seed=42, use_consensus=True
-        )
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=10, seed=42, use_consensus=True)
         result = pipeline.run("Complex question")
         assert result.top_strategies is not None
         assert len(result.top_strategies) > 0
 
     def test_pipeline_without_consensus(self):
-        pipeline = MultiAgentMCTSPipeline(
-            provider="mock", iterations=5, seed=42, use_consensus=False
-        )
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=5, seed=42, use_consensus=False)
         result = pipeline.run("Simple question")
         assert result.consensus_response is None
 
@@ -508,6 +509,7 @@ class TestStdlibLLMClientConfig:
     def test_missing_api_key_raises(self):
         # Unset env vars temporarily
         import os
+
         original = os.environ.pop("OPENAI_API_KEY", None)
         try:
             with pytest.raises(ValueError, match="No API key"):
@@ -781,16 +783,12 @@ class TestSingleShotRunnerExtended:
 
 class TestMultiAgentMCTSPipelineExtended:
     def test_pipeline_with_custom_strategies(self):
-        pipeline = MultiAgentMCTSPipeline(
-            provider="mock", iterations=4, seed=42, strategies=["direct", "analogy"]
-        )
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=4, seed=42, strategies=["direct", "analogy"])
         result = pipeline.run("test")
         assert result.mcts_result.best_strategy in ["direct", "analogy"]
 
     def test_pipeline_top_strategies_limit(self):
-        pipeline = MultiAgentMCTSPipeline(
-            provider="mock", iterations=10, seed=42, top_strategies_limit=2
-        )
+        pipeline = MultiAgentMCTSPipeline(provider="mock", iterations=10, seed=42, top_strategies_limit=2)
         result = pipeline.run("test")
         assert len(result.top_strategies) <= 2
 
@@ -869,9 +867,15 @@ class TestBackwardCompatibility:
     def test_pipeline_result_dataclass_fields(self):
         """PipelineResult must have all fields expected by demo.py."""
         mcts_result = MCTSResult(
-            query="q", best_strategy="direct", best_response="r",
-            best_score=0.5, all_strategies={}, tree_stats={},
-            llm_calls=[], total_time_ms=1.0, iterations_run=1,
+            query="q",
+            best_strategy="direct",
+            best_response="r",
+            best_score=0.5,
+            all_strategies={},
+            tree_stats={},
+            llm_calls=[],
+            total_time_ms=1.0,
+            iterations_run=1,
         )
         result = PipelineResult(
             query="q",
@@ -908,14 +912,14 @@ class TestDemoCLI:
     def test_demo_module_imports(self):
         """Verify demo.py can be imported without errors."""
         import importlib
-        spec = importlib.util.spec_from_file_location(
-            "demo", "demo.py"
-        )
+
+        spec = importlib.util.spec_from_file_location("demo", "demo.py")
         assert spec is not None
 
     def test_demo_mock_mode_runs(self):
         """demo.py --json should produce valid JSON in mock mode."""
         import subprocess
+
         result = subprocess.run(
             [sys.executable, "demo.py", "--json", "--iterations", "3"],
             capture_output=True,
@@ -924,6 +928,7 @@ class TestDemoCLI:
         )
         assert result.returncode == 0, f"stderr: {result.stderr}"
         import json
+
         output = json.loads(result.stdout)
         assert "query" in output
         assert "best_strategy" in output
@@ -932,6 +937,7 @@ class TestDemoCLI:
     def test_demo_stream_flag_runs(self):
         """demo.py --stream should work."""
         import subprocess
+
         result = subprocess.run(
             [sys.executable, "demo.py", "--stream", "--iterations", "3"],
             capture_output=True,
@@ -943,6 +949,7 @@ class TestDemoCLI:
     def test_demo_tree_flag_runs(self):
         """demo.py --tree should render a tree."""
         import subprocess
+
         result = subprocess.run(
             [sys.executable, "demo.py", "--tree", "--iterations", "3"],
             capture_output=True,
@@ -955,6 +962,7 @@ class TestDemoCLI:
     def test_demo_compare_flag_runs(self):
         """demo.py --compare should work."""
         import subprocess
+
         result = subprocess.run(
             [sys.executable, "demo.py", "--compare", "--iterations", "3"],
             capture_output=True,

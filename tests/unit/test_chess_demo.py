@@ -95,6 +95,7 @@ CHECKMATE_FEN = "rnb1kbnr/pppp1ppp/4p3/8/6Pq/5P2/PPPPP2P/RNBQKBNR w KQkq - 1 3"
 class TestLLMChessMetaController:
     def _make_controller(self):
         from src.games.chess.llm_chess_engine import LLMChessMetaController
+
         return LLMChessMetaController()
 
     def test_opening_routes_to_hrm(self):
@@ -127,6 +128,7 @@ class TestLLMChessMetaController:
 
     def test_custom_weights(self):
         from src.games.chess.llm_chess_engine import LLMChessMetaController
+
         ctrl = LLMChessMetaController(
             opening_weights={"hrm": 0.1, "trm": 0.1, "mcts": 0.8},
         )
@@ -147,15 +149,20 @@ class TestLLMChessMetaController:
 class TestChessDataStructures:
     def test_move_result_creation(self):
         from src.games.chess.llm_chess_engine import ChessMoveResult
+
         mr = ChessMoveResult(
-            move="e2e4", score=0.8, reasoning="Central control",
-            agent_name="hrm", confidence=0.8,
+            move="e2e4",
+            score=0.8,
+            reasoning="Central control",
+            agent_name="hrm",
+            confidence=0.8,
         )
         assert mr.move == "e2e4"
         assert mr.score == 0.8
 
     def test_chess_analysis_creation(self):
         from src.games.chess.llm_chess_engine import ChessAnalysis, ChessMoveResult, RoutingDecision
+
         analysis = ChessAnalysis(
             best_move="e2e4",
             candidate_moves=[ChessMoveResult("e2e4", 0.8, "test", "hrm")],
@@ -167,6 +174,7 @@ class TestChessDataStructures:
 
     def test_routing_decision_creation(self):
         from src.games.chess.llm_chess_engine import RoutingDecision
+
         rd = RoutingDecision("mcts", {"hrm": 0.2, "trm": 0.3, "mcts": 0.5}, 0.7, "middlegame", "complex")
         assert rd.primary_agent == "mcts"
 
@@ -179,6 +187,7 @@ class TestChessDataStructures:
 class TestLLMChessEngine:
     def _make_engine(self, move: str = "e2e4"):
         from src.games.chess.llm_chess_engine import LLMChessEngine
+
         adapter = MockChessLLMAdapter(move=move)
         return LLMChessEngine(model_adapter=adapter), adapter
 
@@ -186,6 +195,7 @@ class TestLLMChessEngine:
         engine, _ = self._make_engine()
         analysis = run_async(engine.analyze_position(INITIAL_FEN))
         from src.games.chess.llm_chess_engine import ChessAnalysis
+
         assert isinstance(analysis, ChessAnalysis)
 
     def test_analyze_has_best_move(self):
@@ -227,6 +237,7 @@ class TestLLMChessEngine:
 
     def test_engine_configurable_temperature(self):
         from src.games.chess.llm_chess_engine import LLMChessEngine
+
         adapter = MockChessLLMAdapter()
         engine = LLMChessEngine(model_adapter=adapter, temperature=0.9)
         assert engine._temperature == 0.9
@@ -251,6 +262,7 @@ class TestLLMChessEngine:
 class TestChessAgents:
     def test_hrm_agent_returns_result(self):
         from src.games.chess.llm_chess_engine import LLMChessHRMAgent
+
         adapter = MockChessLLMAdapter()
         agent = LLMChessHRMAgent(adapter)
         result = run_async(agent.process(query=INITIAL_FEN))
@@ -260,6 +272,7 @@ class TestChessAgents:
 
     def test_trm_agent_returns_result(self):
         from src.games.chess.llm_chess_engine import LLMChessTRMAgent
+
         adapter = MockChessLLMAdapter()
         agent = LLMChessTRMAgent(adapter)
         result = run_async(agent.process(query=INITIAL_FEN))
@@ -269,6 +282,7 @@ class TestChessAgents:
 
     def test_mcts_agent_returns_result(self):
         from src.games.chess.llm_chess_engine import LLMChessMCTSAgent
+
         adapter = MockChessLLMAdapter()
         agent = LLMChessMCTSAgent(adapter)
         result = run_async(agent.process(query=INITIAL_FEN))
@@ -278,6 +292,7 @@ class TestChessAgents:
 
     def test_mcts_agent_runs_all_strategies(self):
         from src.games.chess.llm_chess_engine import LLMChessMCTSAgent
+
         adapter = MockChessLLMAdapter()
         agent = LLMChessMCTSAgent(adapter, strategies=["tactical", "positional"])
         result = run_async(agent.process(query=INITIAL_FEN))
@@ -293,6 +308,7 @@ class TestChessAgents:
 class TestPositionHelpers:
     def test_fen_to_board_ascii(self):
         from src.games.chess.llm_chess_engine import fen_to_board_ascii
+
         board = fen_to_board_ascii(INITIAL_FEN)
         assert isinstance(board, str)
         assert len(board) > 0
@@ -300,6 +316,7 @@ class TestPositionHelpers:
 
     def test_describe_position(self):
         from src.games.chess.llm_chess_engine import describe_position
+
         desc = describe_position(INITIAL_FEN)
         assert "White" in desc
         assert "Opening" in desc
@@ -307,34 +324,41 @@ class TestPositionHelpers:
 
     def test_extract_uci_move_explicit(self):
         from src.games.chess.llm_chess_engine import extract_uci_move
+
         assert extract_uci_move("**Move:** e2e4") == "e2e4"
         assert extract_uci_move("**Recommended move:** d2d4") == "d2d4"
         assert extract_uci_move("**Best Move:** g1f3") == "g1f3"
 
     def test_extract_uci_move_fallback(self):
         from src.games.chess.llm_chess_engine import extract_uci_move
+
         assert extract_uci_move("I think e2e4 is best") == "e2e4"
 
     def test_extract_uci_move_none(self):
         from src.games.chess.llm_chess_engine import extract_uci_move
+
         assert extract_uci_move("No move here") is None
 
     def test_extract_score(self):
         from src.games.chess.llm_chess_engine import extract_score
+
         assert extract_score("**Score:** 0.85") == 0.85
         assert extract_score("**Confidence:** 0.7") == 0.7
 
     def test_extract_score_default(self):
         from src.games.chess.llm_chess_engine import extract_score
+
         assert extract_score("No score here") == 0.5
 
     def test_extract_score_clamped(self):
         from src.games.chess.llm_chess_engine import extract_score
+
         assert extract_score("**Score:** 1.5") == 1.0
         assert extract_score("**Score:** -0.3") == 0.5  # negative doesn't match pattern
 
     def test_get_legal_moves_without_chess(self):
         from src.games.chess.llm_chess_engine import CHESS_AVAILABLE, get_legal_moves_list
+
         if not CHESS_AVAILABLE:
             assert get_legal_moves_list(INITIAL_FEN) is None
 
@@ -346,6 +370,7 @@ class TestPositionHelpers:
 
 try:
     import pydantic  # noqa: F401
+
     _HAS_PYDANTIC = True
 except ImportError:
     _HAS_PYDANTIC = False
@@ -354,6 +379,7 @@ except ImportError:
 class TestMCPChessTools:
     def test_tool_definitions_count(self):
         from src.games.chess.mcp_chess_tools import get_chess_tool_definitions
+
         tools = get_chess_tool_definitions()
         assert len(tools) == 5
         names = {t["name"] for t in tools}
@@ -366,29 +392,34 @@ class TestMCPChessTools:
     @pytest.mark.skipif(not _HAS_PYDANTIC, reason="pydantic not installed")
     def test_analyze_position_input_validation(self):
         from src.games.chess.mcp_chess_tools import AnalyzePositionInput
+
         inp = AnalyzePositionInput(fen=INITIAL_FEN, depth=10)
         assert inp.depth == 10
 
     @pytest.mark.skipif(not _HAS_PYDANTIC, reason="pydantic not installed")
     def test_analyze_position_invalid_fen(self):
         from src.games.chess.mcp_chess_tools import AnalyzePositionInput
+
         with pytest.raises((ValueError, TypeError)):
             AnalyzePositionInput(fen="not a fen")
 
     @pytest.mark.skipif(not _HAS_PYDANTIC, reason="pydantic not installed")
     def test_evaluate_move_validation(self):
         from src.games.chess.mcp_chess_tools import EvaluateMoveInput
+
         inp = EvaluateMoveInput(fen=INITIAL_FEN, move="e2e4")
         assert inp.move == "e2e4"
 
     @pytest.mark.skipif(not _HAS_PYDANTIC, reason="pydantic not installed")
     def test_evaluate_move_invalid_move(self):
         from src.games.chess.mcp_chess_tools import EvaluateMoveInput
+
         with pytest.raises((ValueError, TypeError)):
             EvaluateMoveInput(fen=INITIAL_FEN, move="xyz")
 
     def test_position_features_handler(self):
         from src.games.chess.mcp_chess_tools import handle_position_features
+
         result = run_async(handle_position_features({"fen": INITIAL_FEN}))
         assert result["success"] is True
         assert result["game_phase"] == "opening"
@@ -397,20 +428,27 @@ class TestMCPChessTools:
 
     def test_game_status_handler(self):
         from src.games.chess.mcp_chess_tools import handle_game_status
+
         result = run_async(handle_game_status({"fen": INITIAL_FEN}))
         assert result["success"] is True
         assert "turn" in result or "fen" in result
 
     def test_dispatch_unknown_tool(self):
         from src.games.chess.mcp_chess_tools import dispatch_chess_tool
+
         with pytest.raises(ValueError, match="Unknown chess tool"):
             run_async(dispatch_chess_tool("nonexistent", {}))
 
     def test_analyze_without_engine(self):
         from src.games.chess.mcp_chess_tools import dispatch_chess_tool
-        result = run_async(dispatch_chess_tool(
-            "chess_analyze_position", {"fen": INITIAL_FEN}, engine=None,
-        ))
+
+        result = run_async(
+            dispatch_chess_tool(
+                "chess_analyze_position",
+                {"fen": INITIAL_FEN},
+                engine=None,
+            )
+        )
         assert result["success"] is False
         assert "not initialised" in result["error"]
 
@@ -424,6 +462,7 @@ class TestAgentIntegration:
     def test_parallel_agent_runs_hrm_and_trm(self):
         from src.framework.agents.base import ParallelAgent
         from src.games.chess.llm_chess_engine import LLMChessHRMAgent, LLMChessTRMAgent
+
         adapter = MockChessLLMAdapter()
         hrm = LLMChessHRMAgent(adapter)
         trm = LLMChessTRMAgent(adapter)
@@ -435,6 +474,7 @@ class TestAgentIntegration:
     def test_sequential_agent_chains_agents(self):
         from src.framework.agents.base import SequentialAgent
         from src.games.chess.llm_chess_engine import LLMChessHRMAgent, LLMChessTRMAgent
+
         adapter = MockChessLLMAdapter()
         hrm = LLMChessHRMAgent(adapter)
         trm = LLMChessTRMAgent(adapter)
@@ -448,6 +488,7 @@ class TestAgentIntegration:
             LLMChessMCTSAgent,
             LLMChessTRMAgent,
         )
+
         adapter = MockChessLLMAdapter()
         agents = [
             LLMChessHRMAgent(adapter),
@@ -463,6 +504,7 @@ class TestAgentIntegration:
     def test_engine_backward_compatible_with_base(self):
         """Engine agents inherit from AsyncAgentBase and support stats."""
         from src.games.chess.llm_chess_engine import LLMChessHRMAgent
+
         adapter = MockChessLLMAdapter()
         agent = LLMChessHRMAgent(adapter)
         run_async(agent.process(query=INITIAL_FEN))
@@ -479,6 +521,7 @@ class TestAgentIntegration:
 class TestConstants:
     def test_strategy_prompts_exist(self):
         from src.games.chess.llm_chess_engine import MCTS_CHESS_STRATEGIES
+
         assert len(MCTS_CHESS_STRATEGIES) >= 4
         for name in ("tactical", "positional", "prophylactic", "endgame"):
             assert name in MCTS_CHESS_STRATEGIES
@@ -490,6 +533,7 @@ class TestConstants:
             DEFAULT_MCTS_DEPTH,
             DEFAULT_TOP_MOVES,
         )
+
         assert DEFAULT_CHESS_TEMPERATURE > 0
         assert DEFAULT_CHESS_MAX_TOKENS > 0
         assert DEFAULT_MCTS_DEPTH > 0
@@ -497,12 +541,14 @@ class TestConstants:
 
     def test_piece_values(self):
         from src.games.chess.llm_chess_engine import PIECE_VALUES
+
         assert PIECE_VALUES["Q"] == 9
         assert PIECE_VALUES["P"] == 1
         assert PIECE_VALUES["K"] == 0
 
     def test_uci_pattern(self):
         from src.games.chess.llm_chess_engine import UCI_MOVE_PATTERN
+
         assert UCI_MOVE_PATTERN.match("e2e4")
         assert UCI_MOVE_PATTERN.match("a7a8q")
         assert not UCI_MOVE_PATTERN.match("ee4")
@@ -518,7 +564,9 @@ class TestChessDemoCLI:
     def test_help_flag(self):
         result = subprocess.run(
             [sys.executable, "chess_demo.py", "--help"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         assert result.returncode == 0
         assert "Chess Demo" in result.stdout
@@ -526,7 +574,9 @@ class TestChessDemoCLI:
     def test_mock_analyze(self):
         result = subprocess.run(
             [sys.executable, "chess_demo.py", "--analyze"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         assert result.returncode == 0
         assert "Best Move" in result.stdout or "best_move" in result.stdout
@@ -536,7 +586,9 @@ class TestChessDemoCLI:
 
         result = subprocess.run(
             [sys.executable, "chess_demo.py", "--json", "--analyze"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         assert result.returncode == 0
         data = json.loads(result.stdout)
@@ -546,7 +598,9 @@ class TestChessDemoCLI:
     def test_mcp_tools_flag(self):
         result = subprocess.run(
             [sys.executable, "chess_demo.py", "--mcp-tools"],
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         assert result.returncode == 0
         assert "chess_analyze_position" in result.stdout

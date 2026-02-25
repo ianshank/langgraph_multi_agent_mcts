@@ -275,7 +275,10 @@ class BaseLLMClient(ABC):
         self._total_tokens_used += response.total_tokens
         logger.debug(
             "LLM request #%d: model=%s, tokens=%d, finish=%s",
-            self._request_count, response.model, response.total_tokens, response.finish_reason,
+            self._request_count,
+            response.model,
+            response.total_tokens,
+            response.finish_reason,
         )
 
     async def _apply_rate_limit(self) -> None:
@@ -289,7 +292,9 @@ class BaseLLMClient(ABC):
             wait_time = await self._rate_limiter.acquire()
             if wait_time > 0:
                 self._rate_limited_requests += 1
-                logger.warning("Rate limited: waited %.2fs (total rate-limited: %d)", wait_time, self._rate_limited_requests)
+                logger.warning(
+                    "Rate limited: waited %.2fs (total rate-limited: %d)", wait_time, self._rate_limited_requests
+                )
 
     @property
     def stats(self) -> dict:

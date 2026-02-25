@@ -325,9 +325,7 @@ async def verify_api_key(x_api_key: str = Header(..., description="API key for a
             ERROR_COUNT.labels(error_type="rate_limit").inc()
         settings = get_settings()
         retry_after = e.retry_after_seconds or settings.RATE_LIMIT_RETRY_AFTER_SECONDS
-        raise HTTPException(
-            status_code=429, detail=e.user_message, headers={"Retry-After": str(retry_after)}
-        ) from e
+        raise HTTPException(status_code=429, detail=e.user_message, headers={"Retry-After": str(retry_after)}) from e
 
 
 # Exception handlers

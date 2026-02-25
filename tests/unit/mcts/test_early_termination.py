@@ -192,10 +192,11 @@ class TestSearchEarlyTermination:
         simple_state_transition,
     ):
         """Test search terminates early when convergence threshold is met."""
+
         # Make rollout strongly favor one action to force convergence
         async def biased_evaluate(state, rng, max_depth=10):
             # Return high value for action1 path, low for others
-            if hasattr(state, 'features') and state.features.get('last_action') == 'action1':
+            if hasattr(state, "features") and state.features.get("last_action") == "action1":
                 return 0.95
             return 0.1
 
