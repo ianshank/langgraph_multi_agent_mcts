@@ -937,9 +937,8 @@ class TestUIErrorHandling:
                 query=None,
                 controller_type="RNN",
             )
-            # If it doesn't raise, check the response
-            result[0] if result else ""
-            assert True  # Graceful handling
+            # If it doesn't raise, check the response is a tuple
+            assert result is not None, "Expected a result from process_query_sync"
         except (TypeError, AttributeError):
             # Expected - None is not a valid query
             pass

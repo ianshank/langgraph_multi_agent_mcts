@@ -12,6 +12,8 @@ from typing import Any
 
 import httpx
 
+from src.config.constants import DEFAULT_LMSTUDIO_URL
+
 from .base import BaseLLMClient, LLMResponse
 from .exceptions import (
     LLMClientError,
@@ -38,7 +40,7 @@ class LMStudioClient(BaseLLMClient):
     """
 
     PROVIDER_NAME = "lmstudio"
-    DEFAULT_BASE_URL = "http://localhost:1234/v1"
+    DEFAULT_BASE_URL = DEFAULT_LMSTUDIO_URL
     DEFAULT_MODEL = "local-model"  # LM Studio uses the loaded model
 
     def __init__(

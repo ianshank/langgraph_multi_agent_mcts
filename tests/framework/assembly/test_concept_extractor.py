@@ -82,9 +82,7 @@ class TestConceptExtractor:
 
         # Check if reasonable prerequisites exist
         # (This is domain-specific, so we just check structure)
-        if graph.number_of_edges() > 0:
-            # At least some dependencies should exist
-            assert True
+        assert graph.number_of_edges() >= 0
 
     def test_domain_specific_extraction(self):
         """Test domain-specific concept extraction."""

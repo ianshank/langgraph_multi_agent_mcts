@@ -217,7 +217,7 @@ class FAISSVectorStore:
                 )
                 return True
 
-            except Exception as e:
+            except (RuntimeError, OSError) as e:
                 self._log_error("Failed to initialize FAISS store", error=str(e))
                 return False
 
@@ -244,7 +244,7 @@ class FAISSVectorStore:
                 gpu_resource = faiss.StandardGpuResources()
                 index = faiss.index_cpu_to_gpu(gpu_resource, 0, index)
                 self._log_info("FAISS index moved to GPU")
-            except Exception as e:
+            except (RuntimeError, OSError) as e:
                 self._log_warning("Failed to move index to GPU, using CPU", error=str(e))
 
         return index
@@ -342,7 +342,7 @@ class FAISSVectorStore:
 
                 return added
 
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 self._log_error("Failed to add documents", error=str(e))
                 return 0
 
@@ -436,7 +436,7 @@ class FAISSVectorStore:
 
                 return results
 
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 self._log_error("Search failed", error=str(e))
                 return []
 
@@ -528,7 +528,7 @@ class FAISSVectorStore:
                 self._log_info("Rebuilt FAISS index", document_count=len(docs))
                 return True
 
-            except Exception as e:
+            except (ValueError, TypeError, RuntimeError) as e:
                 self._log_error("Failed to rebuild index", error=str(e))
                 return False
 
@@ -578,7 +578,7 @@ class FAISSVectorStore:
 
             self._log_debug("Saved FAISS store", path=str(self._persist_dir))
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self._log_error("Failed to save FAISS store", error=str(e))
 
     def _load_if_exists(self) -> bool:
@@ -624,7 +624,7 @@ class FAISSVectorStore:
             )
             return True
 
-        except Exception as e:
+        except (OSError, ValueError) as e:
             self._log_error("Failed to load FAISS store", error=str(e))
             return False
 

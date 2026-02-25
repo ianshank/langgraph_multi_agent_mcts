@@ -14,6 +14,8 @@ from typing import TYPE_CHECKING, Any
 if TYPE_CHECKING:
     from src.adapters.llm.base import LLMClient
 
+from src.adapters.llm.base import LLMResponse
+
 from ...config.enterprise_settings import MADueDiligenceConfig, get_enterprise_settings
 from .state import (
     IdentifiedRisk,
@@ -105,8 +107,9 @@ class DocumentAnalysisAgent:
         # Call LLM if available
         if self._llm:
             try:
-                response = await self._llm.generate(prompt=prompt, temperature=0.3)
-                findings = self._parse_findings(response.content)
+                result = await self._llm.generate(prompt=prompt, temperature=0.3)
+                assert isinstance(result, LLMResponse), "Expected LLMResponse, not stream"
+                findings = self._parse_findings(result.text)
             except Exception as e:
                 self._logger.error(f"LLM call failed: {e}")
                 findings = self._generate_mock_findings(domain_state)
@@ -247,7 +250,7 @@ class RiskIdentificationAgent:
             extra={"existing_risks": len(domain_state.risks_identified)},
         )
 
-        risks = []
+        risks: list[IdentifiedRisk] = []
         refinement_rounds = self._config.get("max_refinement_rounds", 3)
 
         for round_num in range(refinement_rounds):

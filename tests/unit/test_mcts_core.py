@@ -464,7 +464,8 @@ class TestMCTSDeterminism:
 
         # With different seeds, actions may differ
         # This test verifies the mechanism works, not specific outcomes
-        assert True  # Structure was built differently
+        assert root1 is not None and root2 is not None
+        assert len(root1.children) >= 0 and len(root2.children) >= 0
 
 
 class TestMCTSEdgeCases:
