@@ -149,9 +149,7 @@ class InferenceServer:
         # Setup routes
         self._setup_routes()
 
-    def _load_models(
-        self, checkpoint_path: str, config: SystemConfig | None
-    ) -> tuple[SystemConfig, dict[str, torch.nn.Module]]:
+    def _load_models(self, checkpoint_path: str, config: SystemConfig | None) -> tuple[SystemConfig, dict[str, Any]]:
         """Load models from checkpoint with error handling."""
         logger.info("Loading models from %s...", checkpoint_path)
 
@@ -172,7 +170,7 @@ class InferenceServer:
         device = config.device
 
         # Load models
-        models = {}
+        models: dict[str, Any] = {}
 
         # Policy-Value Network
         from ..models.policy_value_net import create_policy_value_network
@@ -259,7 +257,7 @@ class InferenceServer:
 
                 state_tensor = state_tensor.to(self.device)
 
-                results = {}
+                results: dict[str, Any] = {}
 
                 # HRM Decomposition (if requested)
                 if request.use_hrm_decomposition:

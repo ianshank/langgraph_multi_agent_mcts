@@ -175,7 +175,7 @@ class LMStudioClient(BaseLLMClient):
         await self._apply_rate_limit()
 
         if stream:
-            return self._generate_stream(
+            return await self._generate_stream(
                 messages=messages,
                 prompt=prompt,
                 temperature=temperature,
@@ -232,7 +232,7 @@ class LMStudioClient(BaseLLMClient):
                 payload[key] = kwargs[key]
 
         # Retry logic for local server
-        last_error = None
+        last_error: LLMClientError | None = None
         for attempt in range(self.max_retries):
             try:
                 response = await client.post("/chat/completions", json=payload)
