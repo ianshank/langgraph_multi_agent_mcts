@@ -155,6 +155,7 @@ class GraphBuilder:
         meta_controller_config: Any | None = None,
         adk_agents: dict[str, Any] | None = None,
         neuro_symbolic_config: Any | None = None,
+        synthesis_temperature: float = 0.5,
     ):
         """
         Initialize graph builder.
@@ -184,6 +185,7 @@ class GraphBuilder:
         self.consensus_threshold = consensus_threshold
         self.enable_parallel_agents = enable_parallel_agents
         self.adk_agents = adk_agents or {}
+        self.synthesis_temperature = synthesis_temperature
 
         # MCTS configuration
         self.mcts_config = mcts_config or create_preset_config(ConfigPreset.BALANCED)
@@ -493,7 +495,7 @@ class GraphBuilder:
         try:
             response = await self.model_adapter.generate(
                 prompt=f"Answer this question: {query}",
-                temperature=0.5,
+                temperature=self.synthesis_temperature,
             )
             return str(response.text)
         except Exception as e:
@@ -1059,7 +1061,7 @@ Final Response:"""
         try:
             response = await self.model_adapter.generate(
                 prompt=synthesis_prompt,
-                temperature=0.5,
+                temperature=self.synthesis_temperature,
             )
             final_response = response.text
         except Exception as e:
