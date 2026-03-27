@@ -214,9 +214,7 @@ class TestADKAgentAdapter:
                 return ADKAgentResponse(result="done")
 
         agent = _Stub(_local_config(tmp_path), "stub")
-        resp = asyncio.get_event_loop().run_until_complete(
-            agent.invoke(ADKAgentRequest(query="q"))
-        )
+        resp = asyncio.run(agent.invoke(ADKAgentRequest(query="q")))
         assert resp.result == "done"
         assert _Stub.init_count == 1
         assert agent._initialized is True
@@ -234,9 +232,7 @@ class TestADKAgentAdapter:
                 return ADKAgentResponse(result="late")
 
         agent = _Slow(cfg, "slow")
-        resp = asyncio.get_event_loop().run_until_complete(
-            agent.invoke(ADKAgentRequest(query="q"))
-        )
+        resp = asyncio.run(agent.invoke(ADKAgentRequest(query="q")))
         assert resp.status == "error"
         assert "timeout" in resp.error.lower()
 
@@ -249,9 +245,7 @@ class TestADKAgentAdapter:
                 raise RuntimeError("kaboom")
 
         agent = _Bad(_local_config(tmp_path), "bad")
-        resp = asyncio.get_event_loop().run_until_complete(
-            agent.invoke(ADKAgentRequest(query="q"))
-        )
+        resp = asyncio.run(agent.invoke(ADKAgentRequest(query="q")))
         assert resp.status == "error"
         assert "kaboom" in resp.error
 
@@ -264,9 +258,9 @@ class TestADKAgentAdapter:
                 return ADKAgentResponse(result="ok")
 
         agent = _Stub(_local_config(tmp_path), "stub")
-        asyncio.get_event_loop().run_until_complete(agent.initialize())
+        asyncio.run(agent.initialize())
         assert agent._initialized is True
-        asyncio.get_event_loop().run_until_complete(agent.cleanup())
+        asyncio.run(agent.cleanup())
         assert agent._initialized is False
 
 
@@ -341,7 +335,7 @@ class TestMLEngineeringAgent:
         agent = MLEngineeringAgent(_local_config(tmp_path))
         agent._initialized = True  # skip _agent_initialize (needs google.adk import)
         req = ADKAgentRequest(query="train model", parameters={})
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
         assert "data_path" in resp.error
 
@@ -356,7 +350,7 @@ class TestMLEngineeringAgent:
                 "metric": "rmse",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "house_prices" in resp.result
         assert resp.metadata["task_name"] == "house_prices"
@@ -408,7 +402,7 @@ class TestAcademicResearchAgent:
             query="analyze",
             parameters={"task_type": "full_analysis"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
         assert "paper_path" in resp.error or "paper_title" in resp.error
 
@@ -422,7 +416,7 @@ class TestAcademicResearchAgent:
                 "paper_title": "Attention Is All You Need",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "Attention Is All You Need" in resp.result
         assert len(resp.artifacts) == 1
@@ -437,7 +431,7 @@ class TestAcademicResearchAgent:
                 "paper_title": "BERT",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "BERT" in resp.result
 
@@ -451,7 +445,7 @@ class TestAcademicResearchAgent:
                 "paper_title": "GPT-4",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
 
     def test_invoke_unknown_task_type(self, tmp_path):
@@ -461,7 +455,7 @@ class TestAcademicResearchAgent:
             query="x",
             parameters={"task_type": "unknown_type"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
         assert "Unknown task type" in resp.error
 
@@ -508,7 +502,7 @@ class TestDataEngineeringAgent:
                 "target_table": "analytics.events_enriched",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "etl_v1" in resp.result
         assert resp.metadata["pipeline_name"] == "etl_v1"
@@ -524,7 +518,7 @@ class TestDataEngineeringAgent:
                 "transformation_type": "table",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "user_activity" in resp.metadata["table_name"]
 
@@ -536,7 +530,7 @@ class TestDataEngineeringAgent:
             context={"error_log": "ERROR: ref not found"},
             parameters={"task_type": "troubleshooting"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "Troubleshooting" in resp.result
 
@@ -550,7 +544,7 @@ class TestDataEngineeringAgent:
                 "pipeline_name": "slow_pipe",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "Optimization" in resp.result
 
@@ -564,7 +558,7 @@ class TestDataEngineeringAgent:
                 "table_name": "users",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "users" in resp.result
 
@@ -575,7 +569,7 @@ class TestDataEngineeringAgent:
             query="x",
             parameters={"task_type": "invalid"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
 
 
@@ -612,7 +606,7 @@ class TestDataScienceAgent:
             query="Show total sales",
             parameters={"task_type": "nl2sql", "backend": "bigquery"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
         assert "not configured" in resp.error
 
@@ -628,7 +622,7 @@ class TestDataScienceAgent:
                 "backend": "bigquery",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "NL2SQL" in resp.result
         assert resp.metadata["backend"] == "bigquery"
@@ -641,7 +635,7 @@ class TestDataScienceAgent:
             query="Analyze customer churn",
             parameters={"task_type": "analysis", "analysis_type": "exploratory"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "Analysis" in resp.result
 
@@ -657,7 +651,7 @@ class TestDataScienceAgent:
                 "target_column": "revenue",
             },
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "ARIMA" in resp.result
         assert resp.metadata["model_type"] == "arima"
@@ -667,7 +661,7 @@ class TestDataScienceAgent:
         agent._initialized = True
         agent.available_backends = []
         req = ADKAgentRequest(query="x", parameters={"task_type": "nope"})
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
 
 
@@ -710,7 +704,7 @@ class TestDeepSearchAgent:
             parameters={"phase": "planning"},
             session_id="test-session-1",
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "Research Plan" in resp.result
         assert resp.metadata["phase"] == "planning"
@@ -726,7 +720,7 @@ class TestDeepSearchAgent:
             parameters={"phase": "execution"},
             session_id="nonexistent",
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
         assert "No research session" in resp.error
 
@@ -740,7 +734,7 @@ class TestDeepSearchAgent:
             parameters={"phase": "planning"},
             session_id="sess-42",
         )
-        plan_resp = asyncio.get_event_loop().run_until_complete(agent.invoke(plan_req))
+        plan_resp = asyncio.run(agent.invoke(plan_req))
         assert plan_resp.status == "success"
 
         # Phase 2: execution
@@ -749,7 +743,7 @@ class TestDeepSearchAgent:
             parameters={"phase": "execution"},
             session_id="sess-42",
         )
-        exec_resp = asyncio.get_event_loop().run_until_complete(agent.invoke(exec_req))
+        exec_resp = asyncio.run(agent.invoke(exec_req))
         assert exec_resp.status == "success"
         assert "Research Report" in exec_resp.result
         assert exec_resp.metadata["phase"] == "execution"
@@ -762,7 +756,7 @@ class TestDeepSearchAgent:
             parameters={"phase": "full"},
             session_id="full-1",
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "success"
         assert "Research Report" in resp.result
 
@@ -773,7 +767,7 @@ class TestDeepSearchAgent:
             query="x",
             parameters={"phase": "invalid"},
         )
-        resp = asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        resp = asyncio.run(agent.invoke(req))
         assert resp.status == "error"
         assert "Unknown phase" in resp.error
 
@@ -790,7 +784,7 @@ class TestDeepSearchAgent:
             parameters={"phase": "planning"},
             session_id="s1",
         )
-        asyncio.get_event_loop().run_until_complete(agent.invoke(req))
+        asyncio.run(agent.invoke(req))
 
         sessions = agent.list_research_sessions()
         assert len(sessions) == 1

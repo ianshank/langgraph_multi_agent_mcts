@@ -140,5 +140,5 @@ class TestCreateChessOrchestrator:
         orch.config.training.evaluate_vs_stockfish = False
 
         import asyncio
-        result = asyncio.get_event_loop().run_until_complete(orch.evaluate_vs_stockfish())
+        result = asyncio.run(orch.evaluate_vs_stockfish())
         assert "error" in result

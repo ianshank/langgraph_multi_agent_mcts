@@ -249,7 +249,7 @@ class TestLogicEngine:
             Fact(name="human", arguments=("socrates",)),
         ])
         goal = Predicate(name="human", arguments=("socrates",))
-        result = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result = asyncio.run(engine.query(goal, state))
         assert result.status == ProofStatus.SUCCESS
         assert len(result.bindings) > 0
 
@@ -260,7 +260,7 @@ class TestLogicEngine:
             Fact(name="human", arguments=("socrates",)),
         ])
         goal = Predicate(name="fly", arguments=("socrates",))
-        result = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result = asyncio.run(engine.query(goal, state))
         assert result.status == ProofStatus.FAILURE
 
     def test_query_with_rule(self):
@@ -275,7 +275,7 @@ class TestLogicEngine:
             Fact(name="human", arguments=("socrates",)),
         ])
         goal = Predicate(name="mortal", arguments=("socrates",))
-        result = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result = asyncio.run(engine.query(goal, state))
         assert result.status == ProofStatus.SUCCESS
 
     def test_query_with_variable(self):
@@ -290,7 +290,7 @@ class TestLogicEngine:
             Fact(name="human", arguments=("socrates",)),
         ])
         goal = Predicate(name="mortal", arguments=("?X",))
-        result = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result = asyncio.run(engine.query(goal, state))
         assert result.status == ProofStatus.SUCCESS
         # Should bind X to socrates (possibly renamed)
         assert len(result.bindings) > 0
@@ -311,7 +311,7 @@ class TestLogicEngine:
             Fact(name="parent", arguments=("bob", "charlie")),
         ])
         goal = Predicate(name="grandparent", arguments=("alice", "charlie"))
-        result = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result = asyncio.run(engine.query(goal, state))
         assert result.status == ProofStatus.SUCCESS
 
     def test_depth_limit(self):
@@ -330,7 +330,7 @@ class TestLogicEngine:
         ))
         state = self._make_state([Fact(name="c", arguments=("val",))])
         goal = Predicate(name="a", arguments=("val",))
-        result = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result = asyncio.run(engine.query(goal, state))
         # With depth limit of 1, should fail to prove a multi-step chain
         assert result.status == ProofStatus.FAILURE
 
@@ -340,12 +340,12 @@ class TestLogicEngine:
         state = self._make_state([Fact(name="human", arguments=("socrates",))])
         goal = Predicate(name="human", arguments=("socrates",))
 
-        result1 = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result1 = asyncio.run(engine.query(goal, state))
         assert result1.status == ProofStatus.SUCCESS
         assert len(engine._cache) == 1
 
         # Second query should hit cache
-        result2 = asyncio.get_event_loop().run_until_complete(engine.query(goal, state))
+        result2 = asyncio.run(engine.query(goal, state))
         assert result2.status == ProofStatus.SUCCESS
 
     def test_unify_different_names(self):
@@ -412,7 +412,7 @@ class TestSymbolicReasoner:
         reasoner.add_rule("r1", ("mortal", ("?X",)), [("human", ("?X",))])
         state = self._make_state([Fact(name="human", arguments=("socrates",))])
 
-        proof = asyncio.get_event_loop().run_until_complete(
+        proof = asyncio.run(
             reasoner.prove(("mortal", ("socrates",)), state)
         )
         assert proof.success is True
@@ -423,7 +423,7 @@ class TestSymbolicReasoner:
         reasoner = self._make_reasoner()
         state = self._make_state([])
 
-        proof = asyncio.get_event_loop().run_until_complete(
+        proof = asyncio.run(
             reasoner.prove(("fly", ("bob",)), state)
         )
         assert proof.success is False
@@ -433,7 +433,7 @@ class TestSymbolicReasoner:
         reasoner = self._make_reasoner()
         state = self._make_state([Fact(name="parent", arguments=("alice", "bob"))])
 
-        results = asyncio.get_event_loop().run_until_complete(
+        results = asyncio.run(
             reasoner.ask("parent(alice, bob)", state)
         )
         assert len(results) > 0
@@ -442,7 +442,7 @@ class TestSymbolicReasoner:
         reasoner = self._make_reasoner()
         state = self._make_state([])
 
-        results = asyncio.get_event_loop().run_until_complete(
+        results = asyncio.run(
             reasoner.ask("parent(alice, bob)", state)
         )
         assert results == []
@@ -548,7 +548,7 @@ class TestSymbolicReasoningAgent:
             state_id="test",
             facts=frozenset([Fact(name="human", arguments=("socrates",))]),
         )
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             agent.process("mortal(socrates)", state=state)
         )
         assert result["metadata"]["proof_found"] is True
@@ -562,7 +562,7 @@ class TestSymbolicReasoningAgent:
             state_id="test",
             facts=frozenset([Fact(name="isa", arguments=("socrates", "human"))]),
         )
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             agent.process("is socrates a human?", state=state)
         )
         assert result["metadata"]["proof_found"] is True
@@ -574,7 +574,7 @@ class TestSymbolicReasoningAgent:
         config.logic_engine.enable_memoization = False
         agent = SymbolicReasoningAgent(config=config)
 
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             agent.process("is bob a fish?")
         )
         assert result["metadata"]["proof_found"] is False
@@ -585,7 +585,7 @@ class TestSymbolicReasoningAgent:
         fallback = MagicMock(return_value="Neural answer")
         agent = self._make_agent(neural_fallback=fallback)
 
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             agent.process("is bob a fish?")
         )
         assert result["metadata"]["agent"] == "symbolic_with_neural_fallback"
@@ -599,7 +599,7 @@ class TestSymbolicReasoningAgent:
 
         agent = self._make_agent(neural_fallback=async_fallback)
 
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             agent.process("is bob a fish?")
         )
         assert result["response"] == "Async neural answer"
@@ -607,7 +607,7 @@ class TestSymbolicReasoningAgent:
     def test_process_with_rag_context(self):
         """Agent extracts facts from RAG context."""
         agent = self._make_agent()
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             agent.process("is socrates a human?", rag_context="socrates is a human")
         )
         assert result["metadata"]["proof_found"] is True

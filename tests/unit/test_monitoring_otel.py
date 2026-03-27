@@ -244,7 +244,7 @@ class TestTraceOperationDecorator:
             mock_tracer.start_as_current_span.return_value.__exit__ = MagicMock(return_value=False)
             mock_get.return_value = mock_tracer
 
-            result = asyncio.get_event_loop().run_until_complete(my_async_func(10))
+            result = asyncio.run(my_async_func(10))
             assert result == 11
 
     def test_trace_operation_defaults_to_func_name(self):

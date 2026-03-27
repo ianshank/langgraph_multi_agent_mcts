@@ -294,7 +294,7 @@ class TestAsyncTraceSpanExt2:
                 async with async_trace_span("async.op") as span:
                     pass
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
         call_kwargs = mock_tracer.start_as_current_span.call_args
         assert call_kwargs[1]["attributes"] == {}
 
@@ -308,7 +308,7 @@ class TestAsyncTraceSpanExt2:
                     raise RuntimeError("async boom")
 
         with pytest.raises(RuntimeError, match="async boom"):
-            asyncio.get_event_loop().run_until_complete(_run())
+            asyncio.run(_run())
 
     def test_async_trace_span_record_exception_param(self):
         """record_exception is forwarded in async context."""
@@ -319,7 +319,7 @@ class TestAsyncTraceSpanExt2:
                 async with async_trace_span("op", record_exception=False) as span:
                     pass
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
         call_kwargs = mock_tracer.start_as_current_span.call_args
         assert call_kwargs[1]["record_exception"] is False
 
@@ -332,7 +332,7 @@ class TestAsyncTraceSpanExt2:
                 async with async_trace_span("op", set_status_on_exception=False) as span:
                     pass
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
         call_kwargs = mock_tracer.start_as_current_span.call_args
         assert call_kwargs[1]["set_status_on_exception"] is False
 
@@ -397,7 +397,7 @@ class TestTraceOperationExt2:
             async def my_async():
                 return "async_result"
 
-            result = asyncio.get_event_loop().run_until_complete(my_async())
+            result = asyncio.run(my_async())
             assert result == "async_result"
 
     def test_async_decorator_sets_ok_status(self):
@@ -410,7 +410,7 @@ class TestTraceOperationExt2:
             async def ok_async():
                 return "done"
 
-            asyncio.get_event_loop().run_until_complete(ok_async())
+            asyncio.run(ok_async())
             mock_span.set_status.assert_called_once()
 
     def test_async_decorator_records_args_kwargs(self):
@@ -423,7 +423,7 @@ class TestTraceOperationExt2:
             async def multi_args(a, b, c=None, d=None):
                 return a + b
 
-            result = asyncio.get_event_loop().run_until_complete(multi_args(1, 2, c=3, d=4))
+            result = asyncio.run(multi_args(1, 2, c=3, d=4))
             assert result == 3
             mock_span.set_attribute.assert_any_call("function.args_count", 2)
             mock_span.set_attribute.assert_any_call("function.kwargs_count", 2)

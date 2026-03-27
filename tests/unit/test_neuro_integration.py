@@ -155,7 +155,7 @@ class TestMCTSIntegrationStateConversion:
 class TestMCTSIntegrationActionFiltering:
 
     def test_filter_valid_actions_with_pruning_enabled(self, integration, mock_mcts_state, mock_constraint_system):
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             integration.filter_valid_actions(mock_mcts_state, ["a", "b", "c"])
         )
         mock_constraint_system.validate_expansion.assert_called_once()
@@ -164,7 +164,7 @@ class TestMCTSIntegrationActionFiltering:
     def test_filter_valid_actions_pruning_disabled(self, mock_constraint_system, mock_mcts_state):
         config = NeuroSymbolicMCTSConfig(enable_constraint_pruning=False)
         integ = NeuroSymbolicMCTSIntegration(config=config, constraint_system=mock_constraint_system)
-        result = asyncio.get_event_loop().run_until_complete(
+        result = asyncio.run(
             integ.filter_valid_actions(mock_mcts_state, ["x", "y"])
         )
         assert result == [("x", 1.0), ("y", 1.0)]
@@ -173,7 +173,7 @@ class TestMCTSIntegrationActionFiltering:
     def test_filter_tracks_statistics(self, integration, mock_mcts_state, mock_constraint_system):
         # 3 candidates, 2 returned => 1 pruned
         mock_constraint_system.validate_expansion.return_value = [("a", 1.0)]
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             integration.filter_valid_actions(mock_mcts_state, ["a", "b", "c"])
         )
         assert integration._expansions_checked == 1
@@ -187,7 +187,7 @@ class TestMCTSIntegrationActionFiltering:
         state = MagicMock()
         state.state_id = "s-log"
         state.features = {}
-        asyncio.get_event_loop().run_until_complete(
+        asyncio.run(
             integ.filter_valid_actions(state, ["a", "b"])
         )
         logger.debug.assert_called_once()
@@ -327,7 +327,7 @@ class TestSymbolicAgentGraphExtension:
     def test_handle_symbolic_node(self, mock_reasoning_agent):
         ext = SymbolicAgentGraphExtension(mock_reasoning_agent)
         state = {"query": "prove X", "rag_context": "context"}
-        result = asyncio.get_event_loop().run_until_complete(ext.handle_symbolic_node(state))
+        result = asyncio.run(ext.handle_symbolic_node(state))
         assert "symbolic_results" in result
         assert result["symbolic_results"]["response"] == "proved"
         assert len(result["agent_outputs"]) == 1
@@ -337,7 +337,7 @@ class TestSymbolicAgentGraphExtension:
         logger = MagicMock()
         ext = SymbolicAgentGraphExtension(mock_reasoning_agent, logger=logger)
         state = {"query": "q"}
-        asyncio.get_event_loop().run_until_complete(ext.handle_symbolic_node(state))
+        asyncio.run(ext.handle_symbolic_node(state))
         logger.info.assert_called_once()
 
     def test_get_routing_key(self, mock_reasoning_agent):

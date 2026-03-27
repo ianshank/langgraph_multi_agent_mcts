@@ -271,7 +271,7 @@ class TestAsyncTraceSpan:
                 async with async_trace_span("async.span") as span:
                     assert span is mock_span
 
-        asyncio.get_event_loop().run_until_complete(_run())
+        asyncio.run(_run())
 
 
 @pytest.mark.unit
@@ -307,7 +307,7 @@ class TestTraceOperationDecorator:
             async def my_async_func(a):
                 return a * 2
 
-            result = asyncio.get_event_loop().run_until_complete(my_async_func(5))
+            result = asyncio.run(my_async_func(5))
             assert result == 10
 
     def test_decorator_default_name_uses_qualname(self):

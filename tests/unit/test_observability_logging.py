@@ -484,7 +484,7 @@ class TestLogExecutionTime:
         async def async_func(x):
             return x * 2
 
-        result = asyncio.get_event_loop().run_until_complete(async_func(3))
+        result = asyncio.run(async_func(3))
         assert result == 6
         mock_logger.log.assert_called_once()
 
@@ -501,7 +501,7 @@ class TestLogExecutionTime:
             raise ValueError("async fail")
 
         with pytest.raises(ValueError, match="async fail"):
-            asyncio.get_event_loop().run_until_complete(async_fail())
+            asyncio.run(async_fail())
         call_kwargs = mock_logger.log.call_args
         assert call_kwargs[1]["extra"]["timing"]["success"] is False
 
