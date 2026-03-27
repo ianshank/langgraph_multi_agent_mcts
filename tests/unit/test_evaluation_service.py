@@ -772,10 +772,10 @@ class TestEvaluationService:
     @pytest.mark.unit
     def test_detect_anomaly(self, evaluation_service):
         """Test anomaly detection."""
-        # Build history with consistent values
+        # Build history with small variance around 0.5
         for i in range(15):
             result = EvaluationResult(
-                win_rate=0.5,  # Consistent
+                win_rate=0.5 + (i % 3 - 1) * 0.02,  # Small variance: 0.48, 0.50, 0.52
                 win_rate_ci_low=0.4,
                 win_rate_ci_high=0.6,
                 draw_rate=0.1,

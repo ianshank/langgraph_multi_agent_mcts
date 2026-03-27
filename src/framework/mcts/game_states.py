@@ -45,7 +45,7 @@ class ReasoningState:
     reasoning_steps: list[str] = field(default_factory=list)
     current_hypothesis: str = ""
     confidence: float = 0.0
-    max_steps: int = field(default_factory=lambda: get_settings().MCTS_MAX_DEPTH)
+    max_steps: int = field(default_factory=lambda: get_settings().MCTS_MAX_ROLLOUT_DEPTH)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     # Action space configuration
@@ -284,8 +284,8 @@ class PlanningState:
     completed_actions: list[dict[str, Any]] = field(default_factory=list)
     resources: dict[str, float] = field(default_factory=dict)
     constraints: list[str] = field(default_factory=list)
-    time_remaining: float = field(default_factory=lambda: get_settings().MCTS_SEARCH_TIMEOUT)
-    max_actions: int = field(default_factory=lambda: get_settings().MCTS_MAX_DEPTH)
+    time_remaining: float = field(default_factory=lambda: getattr(get_settings(), "MCTS_SEARCH_TIMEOUT", 60.0))
+    max_actions: int = field(default_factory=lambda: get_settings().MCTS_MAX_ROLLOUT_DEPTH)
 
     def get_legal_actions(self) -> list[dict[str, Any]]:
         """Return legal actions based on current resources and constraints."""
@@ -397,7 +397,7 @@ class PlanningState:
         features[0] = len(self.completed_actions) / self.max_actions
 
         # Time remaining (normalized)
-        features[1] = self.time_remaining / get_settings().MCTS_SEARCH_TIMEOUT
+        features[1] = self.time_remaining / getattr(get_settings(), "MCTS_SEARCH_TIMEOUT", 60.0)
 
         # Resource levels
         for i, (_resource, amount) in enumerate(list(self.resources.items())[:10]):

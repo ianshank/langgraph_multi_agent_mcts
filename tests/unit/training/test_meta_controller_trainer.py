@@ -426,12 +426,15 @@ class TestEarlyStopping:
         orchestrator = MetaControllerTrainingOrchestrator(training_config)
         orchestrator._best_val_loss = 1.0
 
-        # First check - improvement
+        # First check - improvement (0.5 < 1.0 - delta)
         result = orchestrator._check_early_stopping(0.5)
         assert result is False
         assert orchestrator._patience_counter == 0
 
-        # Second check - no improvement
+        # Simulate best val loss being tracked externally
+        orchestrator._best_val_loss = 0.5
+
+        # Second check - no improvement (0.6 >= 0.5 - delta)
         result = orchestrator._check_early_stopping(0.6)
         assert result is False
         assert orchestrator._patience_counter == 1
