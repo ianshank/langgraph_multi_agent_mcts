@@ -22,20 +22,42 @@ pytest.importorskip("torch", reason="PyTorch required for meta_controller module
 
 sys.path.insert(0, ".")
 
+# Save original modules before mocking to prevent test pollution.
+# These are restored at the bottom of this file via a session-scoped autouse fixture.
+_orig_obs = sys.modules.get("src.observability")
+_orig_obs_log = sys.modules.get("src.observability.logging")
+_orig_obs_trace = sys.modules.get("src.observability.tracing")
+
 # Mock the observability module before importing storage modules
 # This avoids import issues with opentelemetry instrumentation
-sys.modules["src.observability"] = MagicMock()
-sys.modules["src.observability.logging"] = MagicMock()
-sys.modules["src.observability.tracing"] = MagicMock()
-
-# Create a mock get_logger that returns a Mock logger
+_mock_obs = MagicMock()
+_mock_obs_trace = MagicMock()
 mock_logger_module = MagicMock()
 mock_logger_module.get_logger = Mock(return_value=Mock())
+
+sys.modules["src.observability"] = _mock_obs
 sys.modules["src.observability.logging"] = mock_logger_module
+sys.modules["src.observability.tracing"] = _mock_obs_trace
 
 from src.agents.meta_controller.base import MetaControllerFeatures, MetaControllerPrediction  # noqa: E402
 from src.storage.pinecone_store import PineconeVectorStore  # noqa: E402
 from src.storage.s3_client import S3Config, S3StorageClient  # noqa: E402
+
+# Restore original modules to prevent polluting other test files
+if _orig_obs is not None:
+    sys.modules["src.observability"] = _orig_obs
+elif "src.observability" in sys.modules:
+    del sys.modules["src.observability"]
+
+if _orig_obs_log is not None:
+    sys.modules["src.observability.logging"] = _orig_obs_log
+elif "src.observability.logging" in sys.modules:
+    del sys.modules["src.observability.logging"]
+
+if _orig_obs_trace is not None:
+    sys.modules["src.observability.tracing"] = _orig_obs_trace
+elif "src.observability.tracing" in sys.modules:
+    del sys.modules["src.observability.tracing"]
 
 
 class TestS3Config:
@@ -480,13 +502,20 @@ class TestPineconeVectorStore:
         assert len(store._operation_buffer) == 1
         assert store._operation_buffer[0]["type"] == "store_batch"
 
-    def test_store_batch_validates_list_lengths(self):
+    @patch("src.storage.pinecone_store.PINECONE_AVAILABLE", True)
+    @patch("src.storage.pinecone_store.Pinecone")
+    def test_store_batch_validates_list_lengths(self, mock_pinecone_class):
         """Test that store_batch validates equal list lengths."""
-        store = PineconeVectorStore(auto_init=False)
-        store._is_initialized = True
-        store._api_key = "test"
-        store._host = "test"
-        store._index = Mock()  # Need a mock index to pass is_available check
+        mock_client = Mock()
+        mock_index = Mock()
+        mock_pinecone_class.return_value = mock_client
+        mock_client.Index.return_value = mock_index
+
+        store = PineconeVectorStore(
+            api_key="test-key",
+            host="test-host",
+            auto_init=True,
+        )
 
         features_list = [self.create_sample_features(), self.create_sample_features()]
         predictions_list = [self.create_sample_prediction()]  # Mismatched length
@@ -575,7 +604,7 @@ class TestPineconeVectorStore:
     @patch("src.storage.pinecone_store.Pinecone")
     def test_initialization_failure_handled_gracefully(self, mock_pinecone_class):
         """Test that initialization failures are handled gracefully."""
-        mock_pinecone_class.side_effect = Exception("Connection error")
+        mock_pinecone_class.side_effect = ConnectionError("Connection error")
 
         store = PineconeVectorStore(
             api_key="test-api-key",
@@ -753,7 +782,7 @@ class TestPineconeVectorStore:
         mock_index = Mock()
         mock_pinecone_class.return_value = mock_client
         mock_client.Index.return_value = mock_index
-        mock_index.delete.side_effect = Exception("Delete failed")
+        mock_index.delete.side_effect = RuntimeError("Delete failed")
 
         store = PineconeVectorStore(
             api_key="test-key",
@@ -944,7 +973,7 @@ class TestErrorHandling:
         mock_client.Index.return_value = mock_index
 
         mock_normalize.return_value = [0.8] * 10
-        mock_index.upsert.side_effect = Exception("Network error")
+        mock_index.upsert.side_effect = ConnectionError("Network error")
 
         store = PineconeVectorStore(
             api_key="test-key",
@@ -984,7 +1013,7 @@ class TestErrorHandling:
         mock_client.Index.return_value = mock_index
 
         mock_normalize.return_value = [0.8] * 10
-        mock_index.query.side_effect = Exception("Query failed")
+        mock_index.query.side_effect = ConnectionError("Query failed")
 
         store = PineconeVectorStore(
             api_key="test-key",
@@ -1016,7 +1045,7 @@ class TestErrorHandling:
         mock_index = Mock()
         mock_pinecone_class.return_value = mock_client
         mock_client.Index.return_value = mock_index
-        mock_index.describe_index_stats.side_effect = Exception("Stats error")
+        mock_index.describe_index_stats.side_effect = RuntimeError("Stats error")
 
         store = PineconeVectorStore(
             api_key="test-key",

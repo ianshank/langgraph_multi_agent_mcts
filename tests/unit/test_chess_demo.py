@@ -74,7 +74,7 @@ class MockChessLLMAdapter:
 
 def run_async(coro):
     """Run async coroutine synchronously."""
-    return asyncio.get_event_loop().run_until_complete(coro)
+    return asyncio.run(coro)
 
 
 # ---------------------------------------------------------------------------
@@ -307,12 +307,16 @@ class TestChessAgents:
 
 class TestPositionHelpers:
     def test_fen_to_board_ascii(self):
-        from src.games.chess.llm_chess_engine import fen_to_board_ascii
+        from src.games.chess.llm_chess_engine import CHESS_AVAILABLE, fen_to_board_ascii
 
         board = fen_to_board_ascii(INITIAL_FEN)
         assert isinstance(board, str)
         assert len(board) > 0
-        assert "a" in board  # file labels
+        # python-chess Board.__str__() omits file labels; fallback includes them
+        if not CHESS_AVAILABLE:
+            assert "a" in board  # file labels in fallback rendering
+        assert "r" in board  # black rook always present
+        assert "R" in board  # white rook always present
 
     def test_describe_position(self):
         from src.games.chess.llm_chess_engine import describe_position

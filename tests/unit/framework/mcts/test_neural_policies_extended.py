@@ -332,7 +332,7 @@ class TestFallbackPolicyEdgeCases:
 
         import asyncio
 
-        value = asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        value = asyncio.run(policy.evaluate(state, rng))
 
         # Should be normalized to [0, 1]
         assert 0.0 <= value <= 1.0
@@ -353,7 +353,7 @@ class TestFallbackPolicyEdgeCases:
 
         import asyncio
 
-        value = asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        value = asyncio.run(policy.evaluate(state, rng))
 
         # Should be clamped to 1.0
         assert value == 1.0
@@ -380,9 +380,9 @@ class TestFallbackPolicyEdgeCases:
         import asyncio
 
         # Should call heuristic each time (no caching)
-        asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
-        asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
-        asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        asyncio.run(policy.evaluate(state, rng))
+        asyncio.run(policy.evaluate(state, rng))
+        asyncio.run(policy.evaluate(state, rng))
 
         assert call_count == 3
 
@@ -401,7 +401,7 @@ class TestFallbackPolicyEdgeCases:
         for i in range(15):
             state = MagicMock()
             state.to_hash_key.return_value = f"state_{i}"
-            asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+            asyncio.run(policy.evaluate(state, rng))
 
         # Cache should have been evicted
         stats = policy.get_cache_stats()
@@ -421,7 +421,7 @@ class TestFallbackPolicyEdgeCases:
 
         import asyncio
 
-        asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        asyncio.run(policy.evaluate(state, rng))
         assert policy.get_cache_stats()["size"] == 1
 
         policy.clear_cache()
@@ -803,7 +803,7 @@ class TestTorchNeuralRolloutPolicy:
 
         rng = np.random.default_rng(42)
 
-        value = asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        value = asyncio.run(policy.evaluate(state, rng))
 
         assert isinstance(value, float)
         assert 0.0 <= value <= 1.0

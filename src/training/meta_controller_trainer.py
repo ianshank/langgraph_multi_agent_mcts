@@ -257,7 +257,8 @@ class MetaControllerTrainingOrchestrator:
     def initialize_model(self) -> None:
         """Initialize or reinitialize the model based on config."""
         if self._model is not None:
-            self._model = self._model.to(self._device)
+            if hasattr(self._model, "to"):
+                self._model = self._model.to(self._device)
             return
 
         if self.config.model_type == "bert":
@@ -267,7 +268,8 @@ class MetaControllerTrainingOrchestrator:
         else:
             raise ValueError(f"Unknown model type: {self.config.model_type}")
 
-        self._model = self._model.to(self._device)
+        if hasattr(self._model, "to"):
+            self._model = self._model.to(self._device)
 
     def _create_bert_controller(self) -> nn.Module:
         """Create BERT-based meta-controller."""
@@ -276,10 +278,9 @@ class MetaControllerTrainingOrchestrator:
             from src.agents.meta_controller.bert_controller import BERTMetaController
 
             return BERTMetaController(  # type: ignore[call-arg]
-                num_agents=self.config.num_agents,
-                hidden_dim=self.config.hidden_dim,
-                num_layers=self.config.num_layers,
-                dropout=self.config.dropout,
+                name="MetaControllerTrainer_BERT",
+                seed=getattr(self.config, "seed", 42),
+                lora_dropout=self.config.dropout,
             )
         except ImportError:
             # Fallback to a simple BERT-like classifier
@@ -296,7 +297,8 @@ class MetaControllerTrainingOrchestrator:
             from src.agents.meta_controller.rnn_controller import RNNMetaController
 
             return RNNMetaController(  # type: ignore[call-arg]
-                num_agents=self.config.num_agents,
+                name="MetaControllerTrainer_RNN",
+                seed=getattr(self.config, "seed", 42),
                 hidden_dim=self.config.hidden_dim,
                 num_layers=self.config.num_layers,
                 dropout=self.config.dropout,
@@ -588,7 +590,7 @@ class MetaControllerTrainingOrchestrator:
 
     def load_checkpoint(self, path: Path | str) -> None:
         """Load model checkpoint."""
-        checkpoint = torch.load(path, map_location=self._device)
+        checkpoint = torch.load(path, map_location=self._device, weights_only=False)
 
         self._current_epoch = checkpoint["epoch"]
         self._best_val_loss = checkpoint["best_val_loss"]

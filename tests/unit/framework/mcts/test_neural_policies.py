@@ -303,7 +303,7 @@ class TestFallbackNeuralRolloutPolicy:
 
         import asyncio
 
-        value = asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        value = asyncio.run(policy.evaluate(state, rng))
 
         # Value should be normalized from heuristic output
         # Assuming normalization: (0.75 + 1) / 2 = 0.875
@@ -322,7 +322,7 @@ class TestFallbackNeuralRolloutPolicy:
 
         import asyncio
 
-        value = asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        value = asyncio.run(policy.evaluate(state, rng))
 
         # Should return normalized neutral value
         assert value == 0.5  # (0 + 1) / 2 = 0.5
@@ -349,11 +349,11 @@ class TestFallbackNeuralRolloutPolicy:
         import asyncio
 
         # First evaluation
-        asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        asyncio.run(policy.evaluate(state, rng))
         assert call_count == 1
 
         # Second evaluation - should use cache
-        asyncio.get_event_loop().run_until_complete(policy.evaluate(state, rng))
+        asyncio.run(policy.evaluate(state, rng))
         assert call_count == 1  # No additional call
 
     def test_cache_stats(self):

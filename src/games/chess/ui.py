@@ -548,19 +548,14 @@ def get_ai_move(fen: str) -> tuple[str, dict[str, Any]]:
         state = ChessGameState.from_fen(fen)
         agent = ChessEnsembleAgent(config)
 
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            response = loop.run_until_complete(agent.get_best_move(state, temperature=0.1, use_ensemble=False))
-            return response.best_move, {
-                "value": response.value_estimate,
-                "confidence": response.confidence,
-                "routing": response.routing_decision.primary_agent.value,
-                "reasoning": response.routing_decision.reasoning,
-                "top_moves": dict(list(response.move_probabilities.items())[:5]),
-            }
-        finally:
-            loop.close()
+        response = asyncio.run(agent.get_best_move(state, temperature=0.1, use_ensemble=False))
+        return response.best_move, {
+            "value": response.value_estimate,
+            "confidence": response.confidence,
+            "routing": response.routing_decision.primary_agent.value,
+            "reasoning": response.routing_decision.reasoning,
+            "top_moves": dict(list(response.move_probabilities.items())[:5]),
+        }
 
     except Exception as e:
         logger.warning(f"Ensemble agent failed, using fallback: {e}")
@@ -734,17 +729,12 @@ def start_continuous_learning(
     _learning_session = ContinuousLearningSession(config, learning_config)
 
     def run_learning():
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-        try:
-            loop.run_until_complete(
-                _learning_session.run_session(
-                    max_minutes=duration_minutes,
-                    max_games=max_games,
-                )
+        asyncio.run(
+            _learning_session.run_session(
+                max_minutes=duration_minutes,
+                max_games=max_games,
             )
-        finally:
-            loop.close()
+        )
 
     thread = threading.Thread(target=run_learning, daemon=True)
     thread.start()
