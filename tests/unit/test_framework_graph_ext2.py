@@ -574,7 +574,10 @@ class TestIntegratedFramework:
         mock_adapter = AsyncMock()
         mock_logger = logging.getLogger("test_int")
 
-        with patch("src.framework.graph.StateGraph", None):
+        with (
+            patch("src.framework.graph.StateGraph", None),
+            patch.dict("sys.modules", {"src.framework.agents.llm_hrm": None, "src.framework.agents.llm_trm": None}),
+        ):
             fw = IntegratedFramework(
                 model_adapter=mock_adapter,
                 logger=mock_logger,
