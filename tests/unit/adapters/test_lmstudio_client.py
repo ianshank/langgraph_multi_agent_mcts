@@ -6,7 +6,7 @@ model listing, error handling, retry logic, and streaming.
 """
 
 import json
-from unittest.mock import AsyncMock, MagicMock, patch
+from unittest.mock import AsyncMock, MagicMock
 
 import httpx
 import pytest
@@ -16,7 +16,6 @@ from src.adapters.llm.exceptions import (
     LLMConnectionError,
     LLMResponseParseError,
     LLMServerError,
-    LLMStreamError,
     LLMTimeoutError,
 )
 from src.adapters.llm.lmstudio_client import LMStudioClient
