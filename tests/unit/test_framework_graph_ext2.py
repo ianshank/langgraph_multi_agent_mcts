@@ -541,7 +541,6 @@ class TestBuildGraph:
                 builder.build_graph()
 
         # Verify ADK node was added
-        [str(c) for c in mock_workflow.add_node.call_args_list]
         node_names = [c[0][0] for c in mock_workflow.add_node.call_args_list]
         assert "adk_deep_search" in node_names
 

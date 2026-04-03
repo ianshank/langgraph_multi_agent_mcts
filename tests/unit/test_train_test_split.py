@@ -207,10 +207,11 @@ class TestStratifiedSplitter:
         # Both domains should appear in each split
         train_domains = {s.domain for s in result.train}
         val_domains = {s.domain for s in result.validation}
-        {s.domain for s in result.test}
+        test_domains = {s.domain for s in result.test}
         assert "math" in train_domains
         assert "science" in train_domains
         assert "math" in val_domains or "science" in val_domains
+        assert "math" in test_domains or "science" in test_domains
 
     def test_stratified_split_empty(self):
         splitter = StratifiedSplitter()

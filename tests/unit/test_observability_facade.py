@@ -452,8 +452,6 @@ class TestFacadeDecoratorsExtended:
                 failing()
 
             # Should have been called with success=False label
-            mock_counter.call_args[1].get("labels", mock_counter.call_args[0][-1] if len(mock_counter.call_args[0]) > 1 else {})
-            # Verify the counter was called
             assert mock_counter.called
 
 
