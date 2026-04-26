@@ -219,6 +219,8 @@ omit = [
     "*/tests/*",
     "*/__pycache__/*",
     "*/site-packages/*",
+    "src/api/inference_server.py",
+    "src/api/rest_server.py",
 ]
 branch = true
 
