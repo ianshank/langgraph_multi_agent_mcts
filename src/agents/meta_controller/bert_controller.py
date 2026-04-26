@@ -6,6 +6,7 @@ for parameter-efficient fine-tuning. The controller converts agent state feature
 text and uses a sequence classification model to predict the optimal agent.
 """
 
+import os
 import warnings
 from typing import Any
 
@@ -154,7 +155,8 @@ class BERTMetaController(AbstractMetaController):
             self.device = torch.device(device)
 
         # Store configuration parameters
-        self.model_name = model_name if model_name is not None else self.DEFAULT_MODEL_NAME
+        # Resolution order: explicit arg > BERT_MODEL_NAME env var > class default.
+        self.model_name = model_name or os.environ.get("BERT_MODEL_NAME", self.DEFAULT_MODEL_NAME)
         self.lora_r = lora_r
         self.lora_alpha = lora_alpha
         self.lora_dropout = lora_dropout
