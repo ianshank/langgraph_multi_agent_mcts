@@ -272,8 +272,12 @@ class MetaControllerTrainingOrchestrator:
             self._model = self._model.to(self._device)
 
     def _create_bert_controller(self) -> nn.Module:
-        """Create BERT-based meta-controller."""
-        # Try to import project-specific BERT controller
+        """Create BERT-based meta-controller.
+
+        Falls back to a simple BERT-like classifier when the BERT controller
+        cannot be imported (ImportError) or when its pretrained weights are
+        unreachable (OSError, e.g. offline CI environments).
+        """
         try:
             from src.agents.meta_controller.bert_controller import BERTMetaController
 
@@ -282,8 +286,8 @@ class MetaControllerTrainingOrchestrator:
                 seed=getattr(self.config, "seed", 42),
                 lora_dropout=self.config.dropout,
             )
-        except ImportError:
-            # Fallback to a simple BERT-like classifier
+        except (ImportError, OSError) as exc:
+            logger.warning("Falling back to simple BERT-like classifier (cannot load pretrained: %s)", exc)
             return nn.Sequential(
                 nn.Linear(768, self.config.hidden_dim),
                 nn.ReLU(),
