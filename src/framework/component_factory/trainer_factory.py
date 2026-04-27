@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from src.config.settings import Settings, get_settings
 from src.observability.logging import StructuredLogger, get_structured_logger
@@ -18,8 +18,6 @@ if TYPE_CHECKING:
     from src.framework.mcts.neural_mcts import NeuralMCTS
     from src.training.agent_trainer import HRMTrainer, SelfPlayEvaluator, TRMTrainer
     from src.training.replay_buffer import AugmentedReplayBuffer, PrioritizedReplayBuffer, ReplayBuffer
-
-T = TypeVar("T")
 
 
 class TrainerFactory:

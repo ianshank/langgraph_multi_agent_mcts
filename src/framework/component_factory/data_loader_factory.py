@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from src.config.settings import Settings, get_settings
 from src.observability.logging import StructuredLogger, get_structured_logger
@@ -11,10 +11,7 @@ from src.observability.logging import StructuredLogger, get_structured_logger
 from .configs import DataLoaderConfig
 
 if TYPE_CHECKING:
-
     from src.data.dataset_loader import CombinedDatasetLoader, DABStepLoader, PRIMUSLoader
-
-T = TypeVar("T")
 
 
 class DataLoaderFactory:

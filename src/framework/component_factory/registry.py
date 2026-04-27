@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, TypeVar
 
 from src.config.settings import Settings, get_settings
 from src.observability.logging import StructuredLogger, get_structured_logger
@@ -11,12 +10,6 @@ from src.observability.logging import StructuredLogger, get_structured_logger
 from .data_loader_factory import DataLoaderFactory
 from .metrics_factory import MetricsFactory
 from .trainer_factory import TrainerFactory
-
-if TYPE_CHECKING:
-
-    pass
-
-T = TypeVar("T")
 
 
 class ComponentRegistry:

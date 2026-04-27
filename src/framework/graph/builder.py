@@ -19,9 +19,11 @@ try:
     from langgraph.checkpoint.memory import MemorySaver
     from langgraph.graph import END, StateGraph
 except ImportError:
-    # Stubs for development without LangGraph installed
+    # Stubs for development without LangGraph installed.
+    # END must match langgraph.graph.END's actual value so visualization
+    # comparisons against "__end__" still match in the stubbed path.
     StateGraph = None
-    END = "END"
+    END = "__end__"
     MemorySaver = None
 
 # Import new MCTS modules

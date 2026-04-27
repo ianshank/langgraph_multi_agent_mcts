@@ -4,15 +4,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, TypeVar
+from typing import Any
 
 from src.config.settings import Settings
-
-if TYPE_CHECKING:
-
-    pass
-
-T = TypeVar("T")
 
 
 @dataclass

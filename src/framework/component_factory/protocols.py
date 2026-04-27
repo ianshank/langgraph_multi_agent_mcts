@@ -2,13 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Protocol, TypeVar, runtime_checkable
-
-if TYPE_CHECKING:
-
-    pass
-
-T = TypeVar("T")
+from typing import Any, Protocol, runtime_checkable
 
 
 @runtime_checkable

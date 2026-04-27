@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import threading
-from typing import TYPE_CHECKING, Any, TypeVar, cast
+from typing import TYPE_CHECKING, Any, cast
 
 from src.config.settings import Settings, get_settings
 from src.observability.logging import StructuredLogger, get_structured_logger
@@ -11,11 +11,8 @@ from src.observability.logging import StructuredLogger, get_structured_logger
 from .configs import MetricsConfig
 
 if TYPE_CHECKING:
-
     from src.training.experiment_tracker import BraintrustTracker, UnifiedExperimentTracker, WandBTracker
     from src.training.performance_monitor import PerformanceMonitor
-
-T = TypeVar("T")
 
 
 class MetricsFactory:
@@ -118,7 +115,7 @@ class MetricsFactory:
         # Cache singleton if requested
         if use_singleton:
             with self._instance_lock:
-                self._monitor_instance = monitor
+                MetricsFactory._monitor_instance = monitor
 
         return monitor
 

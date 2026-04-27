@@ -17,9 +17,11 @@ try:
     from langgraph.checkpoint.memory import MemorySaver
     from langgraph.graph import END, StateGraph
 except ImportError:
-    # Stubs for development without LangGraph installed
+    # Stubs for development without LangGraph installed.
+    # END must match langgraph.graph.END's actual value so visualization
+    # comparisons against "__end__" still match in the stubbed path.
     StateGraph = None
-    END = "END"
+    END = "__end__"
     MemorySaver = None
 
 # Import new MCTS modules
@@ -74,11 +76,7 @@ except ImportError:
     ConstraintSystem = None  # type: ignore
     ConstraintConfig = None  # type: ignore
 
-from src.observability.logging import get_logger
-
 from .builder import GraphBuilder
-
-logger = get_logger(__name__)
 
 
 class IntegratedFramework:
@@ -431,7 +429,7 @@ class IntegratedFramework:
             {"source": "trm_agent", "target": "aggregate_results"},
             {"source": "mcts_simulator", "target": "aggregate_results"},
             {"source": "aggregate_results", "target": "evaluate_consensus"},
-            {"source": "synthesize", "target": "__end__"},
+            {"source": "synthesize", "target": END},
         ]
 
         # Add symbolic agent edge
@@ -545,7 +543,7 @@ class IntegratedFramework:
             # Handle special start/end nodes
             if source == "__start__":
                 lines.append(f"    START(( )) --> {target}")
-            elif target == "__end__":
+            elif target == END:
                 lines.append(f"    {source} --> END(( ))")
             else:
                 lines.append(f"    {source} --> {target}")
