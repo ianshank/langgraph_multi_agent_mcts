@@ -100,6 +100,7 @@ all = [
 
 [project.scripts]
 benchmark = "src.benchmark.cli:main"
+harness = "src.framework.harness.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/ianshank/langgraph_multi_agent_mcts"
@@ -212,6 +213,7 @@ markers = [
     "enterprise: Enterprise feature tests",
     "ma_due_diligence: M&A due diligence workflow tests",
     "selenium: Selenium browser automation tests",
+    "harness: Agent harness framework tests",
 ]
 
 [tool.coverage.run]
