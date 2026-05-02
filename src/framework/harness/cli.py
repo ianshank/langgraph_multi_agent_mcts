@@ -71,7 +71,7 @@ def _apply_settings_overrides(args: argparse.Namespace) -> HarnessSettings:
     return HarnessSettings()
 
 
-def _resolve_intent(args: argparse.Namespace) -> "str | dict[str, object]":
+def _resolve_intent(args: argparse.Namespace) -> str | dict[str, object]:
     if getattr(args, "spec", None):
         spec = SpecLoader().load(args.spec)
         return {
