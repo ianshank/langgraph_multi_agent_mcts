@@ -183,9 +183,7 @@ async def test_shell_correlation_id_read_from_contextvar(tmp_path: Path) -> None
         correlation_id="construction-time-fallback",  # superseded by contextvar
         allowlist=[sys.executable],
     )
-    out = await handler(
-        {"argv": [sys.executable, "-c", "import os; print(os.environ['STRATEGOS_CORRELATION_ID'])"]}
-    )
+    out = await handler({"argv": [sys.executable, "-c", "import os; print(os.environ['STRATEGOS_CORRELATION_ID'])"]})
     assert "cid-from-contextvar" in out
     assert "construction-time-fallback" not in out
 
