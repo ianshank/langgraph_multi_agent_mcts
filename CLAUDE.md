@@ -264,6 +264,31 @@ grep -r "api_key.*=.*['\"]sk-" src/ && echo "FAIL: Hardcoded keys!" || echo "OK"
 
 ---
 
+## Agent Harness Framework
+
+| Path | Purpose |
+|------|---------|
+| `src/framework/harness/settings.py` | `HarnessSettings` — `HARNESS_*` env vars |
+| `src/framework/harness/loop/runner.py` | `HarnessRunner` — six-phase deterministic loop |
+| `src/framework/harness/loop/facade.py` | `HarnessAgentAdapter` — `AsyncAgentBase` facade |
+| `src/framework/harness/memory/` | Append-only event log + compactor → `MEMORY.md` |
+| `src/framework/harness/tools/` | `AsyncToolExecutor` + builtins (file/shell/test/lint/types) |
+| `src/framework/harness/hooks/` | `HookChain` + secret/size/required-keys hooks |
+| `src/framework/harness/topology/` | Six topologies (pipeline, fan-out-in, expert pool, producer-reviewer, supervisor, hierarchical) |
+| `src/framework/harness/ralph/` | Spec-driven outer loop |
+| `src/framework/harness/replay/` | Record/replay cassettes + deterministic clock |
+| `src/framework/harness/cli.py` | `harness` console script (`run`, `dry-run`, `replay`, `validate-spec`) |
+| `AGENTS.md` (root) | Routing ledger for autonomous agents |
+
+CLI quick reference:
+
+```bash
+harness validate-spec spec.md      # parse-only schema check
+harness dry-run --spec spec.md     # plan only, no LLM calls
+harness run --spec spec.md         # full deterministic loop
+harness run --spec spec.md --ralph # outer Ralph loop
+```
+
 ## Getting Help
 
 - **Template (v2.0)**: See `MULTI_AGENT_MCTS_TEMPLATE.md` for comprehensive template with:
