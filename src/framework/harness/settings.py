@@ -131,9 +131,6 @@ class HarnessSettings(BaseSettings):
     # Hook chain
     HOOK_SHORT_CIRCUIT_DEFAULT: bool = Field(default=True)
 
-    # Verification
-    VERIFIER_FAIL_FAST: bool = Field(default=True)
-
     # Output
     OUTPUT_DIR: Path = Field(default=Path(".harness/runs"))
 

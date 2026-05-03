@@ -13,6 +13,7 @@ from collections.abc import Awaitable, Callable
 from src.framework.harness.context.compressor import EpisodicCompressor
 from src.framework.harness.protocols import MemoryStore
 from src.framework.harness.state import ContextPayload, HarnessState, Plan, Task
+from src.observability.logging import get_logger
 
 DEFAULT_SYSTEM_PROMPT = (
     "You are a careful, deterministic software engineer running inside an "
@@ -39,7 +40,7 @@ class DefaultContextInjector:
         self._system_prompt = system_prompt
         self._rag_provider = rag_provider
         self._spec_text = spec_text
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_logger(__name__)
 
     async def build(
         self,

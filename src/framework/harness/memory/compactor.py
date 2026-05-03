@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from src.framework.harness.memory.events import MemoryEvent, MemoryEventLog
+from src.observability.logging import get_logger
 
 
 class CompactorLockTimeout(RuntimeError):
@@ -92,7 +93,7 @@ class MemoryCompactor:
     index_path: Path
     lock_timeout_seconds: float = 10.0
     lock_path: Path = field(init=False)
-    logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
+    logger: logging.Logger = field(default_factory=lambda: get_logger(__name__))
     _async_lock: asyncio.Lock = field(default_factory=asyncio.Lock, init=False)
 
     def __post_init__(self) -> None:

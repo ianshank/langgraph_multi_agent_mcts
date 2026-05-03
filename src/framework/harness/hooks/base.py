@@ -15,6 +15,7 @@ from dataclasses import dataclass, field
 from src.framework.harness.outcomes import HookViolation
 from src.framework.harness.protocols import HookCost, hook_cost_rank
 from src.framework.harness.state import HarnessState
+from src.observability.logging import get_logger
 
 
 @dataclass
@@ -49,7 +50,7 @@ class BaseHook:
         self.name = name
         self.cost_class = cost_class
         self.short_circuit = short_circuit
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_logger(__name__)
 
     async def __call__(self, state: HarnessState) -> HookViolation | None:
         return await self.check(state)

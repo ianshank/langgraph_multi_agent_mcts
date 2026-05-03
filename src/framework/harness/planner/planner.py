@@ -19,13 +19,14 @@ from typing import Any
 
 from src.adapters.llm.base import LLMClient, LLMResponse
 from src.framework.harness.state import ContextPayload, Plan, PlanStep, Task
+from src.observability.logging import get_logger
 
 
 class HeuristicPlanner:
     """Build a plan from acceptance criteria without an LLM call."""
 
     def __init__(self, logger: logging.Logger | None = None) -> None:
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_logger(__name__)
 
     async def plan(self, task: Task, ctx: ContextPayload | None = None) -> Plan:
         """Map each acceptance criterion to a single plan step."""
@@ -64,7 +65,7 @@ class LLMPlanner:
     ) -> None:
         self._llm = llm
         self._max_tokens = max_tokens
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_logger(__name__)
         self._fallback = HeuristicPlanner(logger=self._logger)
 
     async def plan(self, task: Task, ctx: ContextPayload | None = None) -> Plan:

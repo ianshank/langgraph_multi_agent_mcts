@@ -15,6 +15,7 @@ from uuid import uuid4
 
 from src.framework.harness.settings import HarnessSettings
 from src.framework.harness.state import AcceptanceCriterion, Task
+from src.observability.logging import get_logger
 
 
 class DefaultIntentNormalizer:
@@ -31,7 +32,7 @@ class DefaultIntentNormalizer:
     """
 
     def __init__(self, logger: logging.Logger | None = None) -> None:
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_logger(__name__)
 
     async def normalize(self, raw: str | dict[str, Any], settings: HarnessSettings) -> Task:
         """Normalise ``raw`` into a :class:`Task`."""

@@ -23,6 +23,7 @@ from src.framework.harness.state import (
     Task,
     VerificationResult,
 )
+from src.observability.logging import get_logger
 
 
 @dataclass
@@ -36,7 +37,7 @@ class AcceptanceCriteriaVerifier:
 
     def __post_init__(self) -> None:
         if self.logger is None:
-            self.logger = logging.getLogger(__name__)
+            self.logger = get_logger(__name__)
 
     async def verify(
         self,
@@ -45,12 +46,15 @@ class AcceptanceCriteriaVerifier:
         plan: Plan | None,
     ) -> VerificationResult:
         if not task.acceptance_criteria:
-            # No criteria → accept iff at least one observation succeeded.
+            # No criteria → accept only when at least one observation exists
+            # AND every observation succeeded. This is intentionally strict:
+            # without explicit criteria, any partial failure should block
+            # acceptance so callers must opt in by satisfying the whole batch.
             passed = bool(observations) and all(o.success for o in observations)
             return VerificationResult(
                 passed=passed,
                 score=1.0 if passed else 0.0,
-                notes="no acceptance criteria defined; accepted on observation success",
+                notes="no acceptance criteria defined; accepted only when every observation succeeded",
             )
 
         haystack = "\n".join(o.payload for o in observations if o.success)

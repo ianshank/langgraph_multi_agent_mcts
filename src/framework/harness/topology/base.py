@@ -17,6 +17,7 @@ from typing import Any, Protocol, runtime_checkable
 
 from src.framework.harness.settings import AggregationPolicy
 from src.framework.harness.state import Task
+from src.observability.logging import get_logger
 
 
 @dataclass(frozen=True)
@@ -122,7 +123,7 @@ class BaseTopology:
     """Common scaffolding for the concrete topology implementations."""
 
     name: str
-    logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
+    logger: logging.Logger = field(default_factory=lambda: get_logger(__name__))
 
     async def run(  # pragma: no cover - subclasses override
         self,

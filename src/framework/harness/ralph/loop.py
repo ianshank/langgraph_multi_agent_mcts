@@ -26,6 +26,7 @@ from src.framework.harness.loop.runner import HarnessRunner, RunResult
 from src.framework.harness.outcomes import Terminal
 from src.framework.harness.ralph.completion import is_complete
 from src.framework.harness.settings import HarnessSettings
+from src.observability.logging import get_logger
 
 RalphStatus = Literal["accepted", "done", "stuck", "exhausted"]
 
@@ -47,7 +48,7 @@ class RalphLoop:
     runner: HarnessRunner
     settings: HarnessSettings
     spec_path: Path | None = None
-    logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
+    logger: logging.Logger = field(default_factory=lambda: get_logger(__name__))
 
     async def run(self) -> RalphResult:
         """Execute the outer loop. Returns the terminal status."""

@@ -21,6 +21,7 @@ from typing import Any, Literal
 
 from src.adapters.llm.base import LLMClient, LLMResponse, LLMToolResponse, ToolCall
 from src.framework.harness.replay.cassette import Cassette, hash_request
+from src.observability.logging import get_logger
 
 ReplayMode = Literal["record", "replay", "passthrough"]
 
@@ -46,7 +47,7 @@ class ReplayLLMClient:
 
     def __post_init__(self) -> None:
         if self.logger is None:
-            self.logger = logging.getLogger(__name__)
+            self.logger = get_logger(__name__)
         if self.mode in ("record", "passthrough") and self.inner is None:
             raise ValueError(f"ReplayLLMClient mode={self.mode!r} requires an inner client")
 
@@ -194,7 +195,7 @@ def make_replay_client(
 ) -> ReplayLLMClient:
     """Convenience factory that constructs the cassette path under ``cassette_dir``."""
     cassette = Cassette(path=cassette_dir / cassette_name)
-    return ReplayLLMClient(inner=inner, cassette=cassette, mode=mode, logger=logger or logging.getLogger(__name__))
+    return ReplayLLMClient(inner=inner, cassette=cassette, mode=mode, logger=logger or get_logger(__name__))
 
 
 __all__ = ["CassetteMiss", "ReplayLLMClient", "ReplayMode", "make_replay_client"]

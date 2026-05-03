@@ -17,6 +17,7 @@ from typing import Any
 from src.framework.agents.base import AgentContext, AgentResult, AsyncAgentBase
 from src.framework.harness.loop.runner import HarnessRunner, RunResult
 from src.framework.harness.outcomes import Terminal
+from src.observability.logging import get_logger
 
 
 class HarnessAgentAdapter(AsyncAgentBase):
@@ -31,7 +32,7 @@ class HarnessAgentAdapter(AsyncAgentBase):
     ) -> None:
         super().__init__(
             model_adapter=runner.llm,
-            logger=logger or logging.getLogger(__name__),
+            logger=logger or get_logger(__name__),
             name=name,
         )
         self._runner = runner

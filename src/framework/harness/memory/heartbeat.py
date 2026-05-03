@@ -12,6 +12,7 @@ import logging
 from dataclasses import dataclass, field
 
 from src.framework.harness.memory.markdown import MarkdownMemoryStore
+from src.observability.logging import get_logger
 
 
 @dataclass
@@ -21,7 +22,7 @@ class HeartbeatRunner:
     store: MarkdownMemoryStore
     interval_seconds: float
     enabled: bool = True
-    logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
+    logger: logging.Logger = field(default_factory=lambda: get_logger(__name__))
     _stop: asyncio.Event = field(default_factory=asyncio.Event)
     _task: asyncio.Task[None] | None = field(default=None, init=False)
 

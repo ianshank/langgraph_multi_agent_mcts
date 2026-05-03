@@ -16,10 +16,7 @@ from src.framework.harness.settings import HarnessSettings
 from src.framework.harness.state import Observation, ToolInvocation
 from src.framework.harness.tools.registry import ToolRegistry
 from src.framework.harness.tools.truncation import truncate_with_spillover
-
-
-class ToolExecutionTimeout(TimeoutError):
-    """Raised when a tool exceeds its configured timeout."""
+from src.observability.logging import get_logger
 
 
 class AsyncToolExecutor:
@@ -34,7 +31,7 @@ class AsyncToolExecutor:
     ) -> None:
         self._registry = registry
         self._settings = settings
-        self._logger = logger or logging.getLogger(__name__)
+        self._logger = logger or get_logger(__name__)
 
     def list_tools(self) -> list[str]:
         return self._registry.list_names()
@@ -128,4 +125,4 @@ class AsyncToolExecutor:
         return observation
 
 
-__all__ = ["AsyncToolExecutor", "ToolExecutionTimeout"]
+__all__ = ["AsyncToolExecutor"]

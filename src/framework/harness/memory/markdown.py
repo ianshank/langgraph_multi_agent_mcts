@@ -9,6 +9,7 @@ from typing import Any
 from src.framework.harness.memory.compactor import MemoryCompactor
 from src.framework.harness.memory.events import MemoryEvent, MemoryEventLog
 from src.framework.harness.settings import HarnessSettings
+from src.observability.logging import get_logger
 from src.utils.time_utils import utc_now
 
 
@@ -19,7 +20,7 @@ class MarkdownMemoryStore:
     settings: HarnessSettings
     log: MemoryEventLog = field(init=False)
     compactor: MemoryCompactor = field(init=False)
-    logger: logging.Logger = field(default_factory=lambda: logging.getLogger(__name__))
+    logger: logging.Logger = field(default_factory=lambda: get_logger(__name__))
 
     def __post_init__(self) -> None:
         episodic_dir = self.settings.episodic_dir()

@@ -19,6 +19,7 @@ Design notes:
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from collections.abc import Awaitable, Callable
@@ -52,7 +53,7 @@ from src.framework.harness.state import (
     Observation,
     ToolInvocation,
 )
-from src.observability.logging import get_correlation_id, set_correlation_id
+from src.observability.logging import get_correlation_id, get_logger, set_correlation_id
 
 
 @dataclass
@@ -92,7 +93,7 @@ class HarnessRunner:
 
     def __post_init__(self) -> None:
         if self.logger is None:
-            self.logger = logging.getLogger(__name__)
+            self.logger = get_logger(__name__)
 
     # ------------------------------------------------------------------
     # Public entry point
@@ -144,43 +145,63 @@ class HarnessRunner:
             budgets.iterations.consume(1)
             self._log("info", state, phase="iteration.begin", payload={})
 
-            # Pre-iteration hooks
-            hook_outcome = await self.hooks.run(state)
-            violation = self._first_short_circuit(hook_outcome)
-            if violation is not None:
-                outcome = violation
+            try:
+                outcome = await asyncio.wait_for(
+                    self._run_iteration(state, budgets),
+                    timeout=self.settings.ITERATION_TIMEOUT_SECONDS,
+                )
+            except TimeoutError:
+                self._log(
+                    "warning",
+                    state,
+                    phase="iteration.timeout",
+                    payload={"timeout_seconds": self.settings.ITERATION_TIMEOUT_SECONDS},
+                )
+                outcome = BudgetExhausted(
+                    budget="time",
+                    consumed=float(self.settings.ITERATION_TIMEOUT_SECONDS),
+                    limit=float(self.settings.ITERATION_TIMEOUT_SECONDS),
+                )
                 break
 
-            # Context
-            ctx_result = await self._context_phase(state)
-            budgets.tokens.consume(ctx_result.tokens_used)
-            if is_terminal(ctx_result.outcome):
-                outcome = ctx_result.outcome
-                break
-
-            # Reason (LLM call)
-            reason_result = await self._reason_phase(state)
-            budgets.tokens.consume(reason_result.tokens_used)
-            if is_terminal(reason_result.outcome):
-                outcome = reason_result.outcome
-                break
-            if isinstance(reason_result.outcome, Retryable):
-                self._log("warning", state, phase="reason.retryable", payload={"reason": reason_result.outcome.reason})
+            if isinstance(outcome, Continue):
                 continue
-
-            # Execute (tool dispatch)
-            exec_result = await self._execute_phase(state)
-            if is_terminal(exec_result.outcome):
-                outcome = exec_result.outcome
-                break
-
-            # Verify
-            verify_result = await self._verify_phase(state)
-            if is_terminal(verify_result.outcome):
-                outcome = verify_result.outcome
-                break
+            break
 
         return self._finalise(state, outcome, run_started)
+
+    async def _run_iteration(self, state: HarnessState, budgets: BudgetBundle) -> HarnessOutcome:
+        """One full Hooks → Context → Reason → Execute → Verify pass.
+
+        Returns the outcome for this iteration: ``Continue`` to loop again,
+        anything else to terminate. Wrapped in ``asyncio.wait_for`` by the
+        caller so a stuck phase can't hang the whole run past
+        ``ITERATION_TIMEOUT_SECONDS``.
+        """
+        hook_outcome = await self.hooks.run(state)
+        violation = self._first_short_circuit(hook_outcome)
+        if violation is not None:
+            return violation
+
+        ctx_result = await self._context_phase(state)
+        budgets.tokens.consume(ctx_result.tokens_used)
+        if is_terminal(ctx_result.outcome):
+            return ctx_result.outcome
+
+        reason_result = await self._reason_phase(state)
+        budgets.tokens.consume(reason_result.tokens_used)
+        if is_terminal(reason_result.outcome):
+            return reason_result.outcome
+        if isinstance(reason_result.outcome, Retryable):
+            self._log("warning", state, phase="reason.retryable", payload={"reason": reason_result.outcome.reason})
+            return Continue(note="reason retryable")
+
+        exec_result = await self._execute_phase(state)
+        if is_terminal(exec_result.outcome):
+            return exec_result.outcome
+
+        verify_result = await self._verify_phase(state)
+        return verify_result.outcome
 
     # ------------------------------------------------------------------
     # Phase implementations
