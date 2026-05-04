@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
@@ -182,3 +183,42 @@ async def test_unexpected_response_type_returns_failure_outcome() -> None:
     assert outcome.success is False
     assert outcome.error is not None
     assert "unexpected response type" in outcome.error
+
+
+# ---------------------------------------------------------------------------
+# Logging contract: INFO entry + done on success, WARNING on error.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_logs_info_on_start_and_done(caplog: pytest.LogCaptureFixture) -> None:
+    """Producer must emit start + done INFO records with task_id and confidence."""
+    from tests.unit.framework.harness.agents.test_llm_producer import (  # type: ignore[import-self]  # noqa: F401
+        _basic_task,
+    )
+
+    fake_response = LLMResponse(text="some draft body", finish_reason="stop")
+
+    class _Stub:
+        async def generate(self, **_kwargs: Any) -> LLMResponse:
+            return fake_response
+
+    agent = LLMProducerAgent(llm=_Stub())  # type: ignore[arg-type]
+    with caplog.at_level(logging.INFO, logger="harness.agent.producer"):
+        await agent.run(_basic_task())
+    messages = [r.getMessage() for r in caplog.records if r.name == "harness.agent.producer"]
+    assert any("producer.run start" in m for m in messages)
+    assert any("producer.run done" in m and "success=True" in m for m in messages)
+
+
+@pytest.mark.asyncio
+async def test_run_logs_warning_on_llm_error(caplog: pytest.LogCaptureFixture) -> None:
+    class _Boom:
+        async def generate(self, **_kwargs: Any) -> LLMResponse:
+            raise LLMTimeoutError("lmstudio", 5.0)
+
+    agent = LLMProducerAgent(llm=_Boom())  # type: ignore[arg-type]
+    with caplog.at_level(logging.WARNING, logger="harness.agent.producer"):
+        outcome = await agent.run(_basic_task())
+    assert outcome.success is False
+    assert any("LLM generate failed" in r.getMessage() for r in caplog.records)

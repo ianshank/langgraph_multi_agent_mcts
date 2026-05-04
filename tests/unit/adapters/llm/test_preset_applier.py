@@ -187,3 +187,37 @@ class TestApplyPresetFullExample:
         # Untouched.
         assert result["model"] == "x"
         assert result["messages"] == []
+
+
+# ---------------------------------------------------------------------------
+# Logging contract: apply_preset emits DEBUG records describing the merge.
+# ---------------------------------------------------------------------------
+
+
+def test_apply_preset_logs_debug_when_no_preset(caplog: pytest.LogCaptureFixture) -> None:
+    import logging as _logging
+
+    with caplog.at_level(_logging.DEBUG, logger="src.adapters.llm.preset_applier"):
+        apply_preset({"model": "x"}, None)
+    messages = [r.getMessage() for r in caplog.records if r.name == "src.adapters.llm.preset_applier"]
+    assert any("no preset supplied" in m for m in messages)
+
+
+def test_apply_preset_logs_what_was_applied(caplog: pytest.LogCaptureFixture) -> None:
+    import logging as _logging
+
+    preset = ModelPreset(
+        name="t",
+        name_pattern=r"t",
+        stop_tokens=("<|end|>",),
+        reasoning=True,
+        default_temperature=0.3,
+    )
+    with caplog.at_level(_logging.DEBUG, logger="src.adapters.llm.preset_applier"):
+        apply_preset({"model": "t"}, preset, reasoning_effort="medium")
+    messages = [r.getMessage() for r in caplog.records if r.name == "src.adapters.llm.preset_applier"]
+    text = " ".join(messages)
+    assert "preset=t" in text
+    assert "stop" in text
+    assert "temperature" in text
+    assert "reasoning" in text

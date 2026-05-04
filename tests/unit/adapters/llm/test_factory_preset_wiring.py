@@ -157,3 +157,48 @@ class TestNonLMStudioProviderUnaffected:
         assert call_kwargs["provider"] == "anthropic"
         assert "preset" not in call_kwargs
         assert "reasoning_effort" not in call_kwargs
+
+
+# ---------------------------------------------------------------------------
+# Logging contract: factory must emit INFO when a preset is auto-attached.
+# ---------------------------------------------------------------------------
+
+
+def test_factory_logs_info_when_preset_auto_detected(caplog: pytest.LogCaptureFixture) -> None:
+    import logging as _logging
+
+    settings = MagicMock()
+    settings.LLM_PROVIDER = "lmstudio"
+    settings.LMSTUDIO_PRESET = None
+    settings.LMSTUDIO_REASONING_EFFORT = None
+    settings.HTTP_TIMEOUT_SECONDS = 30
+    settings.HTTP_MAX_RETRIES = 3
+
+    factory = LLMClientFactory(settings=settings)
+    with patch("src.adapters.llm.create_client") as mock_create:
+        mock_create.return_value = MagicMock(spec=LMStudioClient)
+        with caplog.at_level(_logging.INFO, logger="src.framework.factories"):
+            factory.create(model="phi-4-reasoning-q4")
+
+    messages = [r.getMessage() for r in caplog.records if r.name == "src.framework.factories"]
+    assert any("preset attached" in m and "phi4" in m for m in messages)
+
+
+def test_factory_logs_debug_when_no_preset_match(caplog: pytest.LogCaptureFixture) -> None:
+    import logging as _logging
+
+    settings = MagicMock()
+    settings.LLM_PROVIDER = "lmstudio"
+    settings.LMSTUDIO_PRESET = None
+    settings.LMSTUDIO_REASONING_EFFORT = None
+    settings.HTTP_TIMEOUT_SECONDS = 30
+    settings.HTTP_MAX_RETRIES = 3
+
+    factory = LLMClientFactory(settings=settings)
+    with patch("src.adapters.llm.create_client") as mock_create:
+        mock_create.return_value = MagicMock(spec=LMStudioClient)
+        with caplog.at_level(_logging.DEBUG, logger="src.framework.factories"):
+            factory.create(model="some-unknown-model")
+
+    messages = [r.getMessage() for r in caplog.records if r.name == "src.framework.factories"]
+    assert any("preset not attached" in m for m in messages)

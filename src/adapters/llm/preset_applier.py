@@ -20,11 +20,14 @@ Merge rules (see :func:`apply_preset` docstring for full detail):
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from src.adapters.llm.model_presets import ModelPreset, ReasoningEffort
 
 __all__ = ["apply_preset"]
+
+_logger = logging.getLogger(__name__)
 
 
 def _union_stops(
@@ -86,7 +89,10 @@ def apply_preset(
     result: dict[str, Any] = dict(payload)
 
     if preset is None:
+        _logger.debug("apply_preset: no preset supplied; returning passthrough copy")
         return result
+
+    applied: list[str] = []
 
     # ------------------------------------------------------------------
     # Extra params: lowest precedence — don't overwrite existing keys.
@@ -94,6 +100,7 @@ def apply_preset(
     for key, value in preset.extra_params.items():
         if key not in result:
             result[key] = value
+            applied.append(f"extra:{key}")
 
     # ------------------------------------------------------------------
     # Stop tokens: union, dedupe, preserve order (preset first).
@@ -102,6 +109,7 @@ def apply_preset(
         merged_stops = _union_stops(result.get("stop"), preset.stop_tokens)
         if merged_stops:
             result["stop"] = merged_stops
+            applied.append("stop")
 
     # ------------------------------------------------------------------
     # Temperature: only apply preset default when caller did not specify
@@ -109,11 +117,20 @@ def apply_preset(
     # ------------------------------------------------------------------
     if user_temperature is None and preset.default_temperature is not None and result.get("temperature") is None:
         result["temperature"] = preset.default_temperature
+        applied.append("temperature")
 
     # ------------------------------------------------------------------
     # Reasoning: forward only when both the preset and caller agree.
     # ------------------------------------------------------------------
     if preset.reasoning and reasoning_effort is not None:
         result["reasoning"] = {"effort": reasoning_effort}
+        applied.append("reasoning")
 
+    _logger.debug(
+        "apply_preset: preset=%s applied=%s user_temperature=%s reasoning_effort=%s",
+        preset.name,
+        applied or ["<none>"],
+        user_temperature,
+        reasoning_effort,
+    )
     return result

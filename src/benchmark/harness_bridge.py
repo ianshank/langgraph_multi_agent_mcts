@@ -20,6 +20,7 @@ adapter trivially testable and avoids hidden filesystem coupling.
 
 from __future__ import annotations
 
+import logging
 from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
@@ -30,12 +31,25 @@ from src.benchmark.tasks.models import BenchmarkTask
 from src.benchmark.tasks.task_sets import ALL_TASKS
 from src.framework.harness.state import AcceptanceCriterion, Task
 
+_logger = logging.getLogger(__name__)
+
 # Template lives next to the harness — one parametric file used for
 # every benchmark task. Resolved relative to *this* module so it works
 # regardless of the CWD or how the package is installed.
 DEFAULT_TEMPLATE_PATH: Path = (
     Path(__file__).resolve().parents[1] / "framework" / "harness" / "specs" / "benchmark_task_template.md"
 )
+
+# Number of known task ids to surface in the ``KeyError`` message when
+# ``lookup`` fails. Kept small so the error stays readable; overrideable
+# only by editing the constant (callers that need the full list can
+# enumerate ``ALL_TASKS`` directly).
+_LOOKUP_ERROR_PREVIEW_LIMIT: int = 10
+
+# Minimum length of the markdown code fence that wraps the goal body.
+# Three is the spec minimum; we grow beyond it only when the input
+# itself contains a longer run of backticks.
+_MIN_FENCE_BACKTICKS: int = 3
 
 
 @dataclass
@@ -79,7 +93,7 @@ class BenchmarkTaskAdapter:
                 "benchmark_description": bt.description,
             }
         )
-        return Task(
+        task = Task(
             id=bt.task_id,
             goal=bt.input_data,
             acceptance_criteria=criteria,
@@ -87,6 +101,17 @@ class BenchmarkTaskAdapter:
             metadata=merged_metadata,
             raw="",
         )
+        _logger.debug(
+            "BenchmarkTaskAdapter.to_task task_id=%s category=%s complexity=%s "
+            "criteria=%d constraints=%d goal_chars=%d",
+            bt.task_id,
+            bt.category.value,
+            bt.complexity.value,
+            len(criteria),
+            len(constraints),
+            len(bt.input_data),
+        )
+        return task
 
     def to_spec_text(self, bt: BenchmarkTask) -> str:
         """Render ``bt`` as markdown text compatible with :class:`SpecLoader`.
@@ -122,7 +147,8 @@ class BenchmarkTaskAdapter:
         for task in ALL_TASKS:
             if task.task_id.casefold() == needle:
                 return task
-        known = ", ".join(t.task_id for t in ALL_TASKS[:10])
+        known = ", ".join(t.task_id for t in ALL_TASKS[:_LOOKUP_ERROR_PREVIEW_LIMIT])
+        _logger.warning("BenchmarkTaskAdapter.lookup miss task_id=%r known_preview=%s", task_id, known)
         raise KeyError(f"Unknown benchmark task_id: {task_id!r}. Known: {known}")
 
     # ────────────────────────────── helpers ──────────────────────────
@@ -179,7 +205,7 @@ class BenchmarkTaskAdapter:
                 max_run = max(max_run, run)
             else:
                 run = 0
-        fence = "`" * max(3, max_run + 1)
+        fence = "`" * max(_MIN_FENCE_BACKTICKS, max_run + 1)
         return f"{fence}\n{goal}\n{fence}"
 
     @staticmethod

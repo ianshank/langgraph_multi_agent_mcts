@@ -162,9 +162,10 @@ class LLMReviewerAgent:
 
     async def run(self, task: Task) -> AgentOutcome:
         """Review the draft embedded in ``task`` and return a uniform outcome."""
+        user_message = render_reviewer_user_message(task)
         messages = [
             {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": render_reviewer_user_message(task)},
+            {"role": "user", "content": user_message},
         ]
         kwargs: dict[str, Any] = {
             "messages": messages,
@@ -174,10 +175,24 @@ class LLMReviewerAgent:
         if self.temperature is not None:
             kwargs["temperature"] = self.temperature
 
+        self.logger.info(
+            "reviewer.run start task_id=%s max_tokens=%d temperature=%s user_message_chars=%d",
+            task.id,
+            self.max_tokens,
+            "default" if self.temperature is None else f"{self.temperature:.3f}",
+            len(user_message),
+        )
+        self.logger.debug("reviewer.run user_message=%r", user_message)
+
         try:
             response = await self.llm.generate(**kwargs)
         except Exception as exc:  # noqa: BLE001
-            self.logger.warning("reviewer LLM generate failed: %s: %s", type(exc).__name__, exc)
+            self.logger.warning(
+                "reviewer.run task_id=%s LLM generate failed: %s: %s",
+                task.id,
+                type(exc).__name__,
+                exc,
+            )
             return AgentOutcome(
                 agent_name=self.name,
                 response="",
@@ -187,7 +202,11 @@ class LLMReviewerAgent:
             )
 
         if not isinstance(response, LLMResponse):
-            self.logger.warning("reviewer LLM returned unexpected type: %s", type(response).__name__)
+            self.logger.warning(
+                "reviewer.run task_id=%s LLM returned unexpected type: %s",
+                task.id,
+                type(response).__name__,
+            )
             return AgentOutcome(
                 agent_name=self.name,
                 response="",
@@ -205,6 +224,17 @@ class LLMReviewerAgent:
             confidence = float(score)
         else:
             confidence = _confidence_from_finish_reason(response.finish_reason)
+
+        self.logger.info(
+            "reviewer.run done task_id=%s decision=%s score=%s confidence=%.2f finish_reason=%s response_chars=%d",
+            task.id,
+            marker,
+            "n/a" if score is None else f"{float(score):.3f}",
+            confidence,
+            response.finish_reason,
+            len(text),
+        )
+        self.logger.debug("reviewer.run feedback=%r", parsed)
 
         return AgentOutcome(
             agent_name=self.name,

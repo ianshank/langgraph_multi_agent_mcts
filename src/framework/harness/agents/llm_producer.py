@@ -59,9 +59,10 @@ class LLMProducerAgent:
 
     async def run(self, task: Task) -> AgentOutcome:
         """Draft a response for ``task`` and return a uniform outcome."""
+        user_message = render_producer_user_message(task)
         messages = [
             {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": render_producer_user_message(task)},
+            {"role": "user", "content": user_message},
         ]
         kwargs: dict[str, Any] = {
             "messages": messages,
@@ -71,10 +72,26 @@ class LLMProducerAgent:
         if self.temperature is not None:
             kwargs["temperature"] = self.temperature
 
+        self.logger.info(
+            "producer.run start task_id=%s max_tokens=%d temperature=%s user_message_chars=%d",
+            task.id,
+            self.max_tokens,
+            "default" if self.temperature is None else f"{self.temperature:.3f}",
+            len(user_message),
+        )
+        # Full prompt at DEBUG so it does not bloat normal logs but is
+        # available when reproducing a problematic round.
+        self.logger.debug("producer.run user_message=%r", user_message)
+
         try:
             response = await self.llm.generate(**kwargs)
         except Exception as exc:  # noqa: BLE001 - surface as outcome, never raise
-            self.logger.warning("producer LLM generate failed: %s: %s", type(exc).__name__, exc)
+            self.logger.warning(
+                "producer.run task_id=%s LLM generate failed: %s: %s",
+                task.id,
+                type(exc).__name__,
+                exc,
+            )
             return AgentOutcome(
                 agent_name=self.name,
                 response="",
@@ -86,7 +103,11 @@ class LLMProducerAgent:
         if not isinstance(response, LLMResponse):
             # ``stream=False`` should always yield ``LLMResponse``; treat
             # anything else as a contract violation and return failure.
-            self.logger.warning("producer LLM returned unexpected type: %s", type(response).__name__)
+            self.logger.warning(
+                "producer.run task_id=%s LLM returned unexpected type: %s",
+                task.id,
+                type(response).__name__,
+            )
             return AgentOutcome(
                 agent_name=self.name,
                 response="",
@@ -96,11 +117,22 @@ class LLMProducerAgent:
             )
 
         text = response.text or ""
+        confidence = _confidence_from_finish_reason(response.finish_reason)
+        success = bool(text.strip())
+        self.logger.info(
+            "producer.run done task_id=%s success=%s finish_reason=%s response_chars=%d confidence=%.2f usage=%s",
+            task.id,
+            success,
+            response.finish_reason,
+            len(text),
+            confidence,
+            response.usage or {},
+        )
         return AgentOutcome(
             agent_name=self.name,
             response=text,
-            confidence=_confidence_from_finish_reason(response.finish_reason),
-            success=bool(text.strip()),
+            confidence=confidence,
+            success=success,
             metadata={
                 "finish_reason": response.finish_reason,
                 "usage": dict(response.usage),

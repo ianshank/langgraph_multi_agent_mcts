@@ -136,18 +136,34 @@ class LLMClientFactory:
 
         if "preset" not in result:
             preset = None
+            preset_source = "none"
             preset_name_override = getattr(self.settings, "LMSTUDIO_PRESET", None)
             if preset_name_override:
                 preset = get_preset_by_name(preset_name_override)
+                if preset is not None:
+                    preset_source = f"settings:{preset_name_override}"
             if preset is None:
                 preset = get_preset(model)
+                if preset is not None:
+                    preset_source = f"model_match:{model!r}"
             if preset is not None:
                 result["preset"] = preset
+                self.logger.info(
+                    "LMStudio preset attached: name=%s source=%s",
+                    preset.name,
+                    preset_source,
+                )
+            else:
+                self.logger.debug(
+                    "LMStudio preset not attached: no override and no model match (model=%r)",
+                    model,
+                )
 
         if "reasoning_effort" not in result:
             effort = getattr(self.settings, "LMSTUDIO_REASONING_EFFORT", None)
             if effort is not None:
                 result["reasoning_effort"] = effort
+                self.logger.debug("LMStudio reasoning_effort=%s applied from settings", effort)
 
         return result
 

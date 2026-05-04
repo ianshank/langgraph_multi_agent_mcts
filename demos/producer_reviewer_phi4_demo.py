@@ -142,6 +142,14 @@ async def run_pipeline(
     Raises:
         KeyError: when ``task_id`` does not match any known benchmark task.
     """
+    logger.info(
+        "run_pipeline start task_id=%s rounds=%d producer_max_tokens=%s " "reviewer_max_tokens=%s temperature=%s",
+        task_id,
+        rounds,
+        producer_max_tokens,
+        reviewer_max_tokens,
+        temperature,
+    )
     adapter = BenchmarkTaskAdapter()
     bt = adapter.lookup(task_id)
     task = adapter.to_task(bt)
@@ -156,7 +164,15 @@ async def run_pipeline(
     producer = LLMProducerAgent(**producer_kwargs)  # type: ignore[arg-type]
     reviewer = LLMReviewerAgent(**reviewer_kwargs)  # type: ignore[arg-type]
     topology = ProducerReviewerTopology(name="producer_reviewer", max_rounds=rounds)
-    return await topology.run(task, [producer, reviewer])
+    outcome = await topology.run(task, [producer, reviewer])
+    logger.info(
+        "run_pipeline done task_id=%s success=%s confidence=%.3f winner=%s",
+        task_id,
+        outcome.success,
+        outcome.confidence,
+        outcome.agent_name,
+    )
+    return outcome
 
 
 def _outcome_to_payload(outcome: AgentOutcome) -> dict[str, object]:

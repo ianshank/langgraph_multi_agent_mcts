@@ -358,3 +358,31 @@ def test_template_path_resolves_relative_to_module() -> None:
     assert DEFAULT_TEMPLATE_PATH.is_file()
     text = DEFAULT_TEMPLATE_PATH.read_text(encoding="utf-8")
     assert "$task_id" in text
+
+
+# ─────────────────────────── logging contract ───────────────────────────
+
+
+def test_to_task_emits_debug_log(caplog: pytest.LogCaptureFixture) -> None:
+    """`to_task` must emit a DEBUG record with the task id and shape counts."""
+    import logging as _logging
+
+    adapter = BenchmarkTaskAdapter()
+    with caplog.at_level(_logging.DEBUG, logger="src.benchmark.harness_bridge"):
+        adapter.to_task(TASK_A1_CODE_REVIEW)
+    messages = [r.getMessage() for r in caplog.records if r.name == "src.benchmark.harness_bridge"]
+    assert any("to_task" in m and "task_id=A1" in m for m in messages)
+
+
+def test_lookup_miss_emits_warning_log(caplog: pytest.LogCaptureFixture) -> None:
+    """A failing `lookup` must log a WARNING with the offending id and a preview."""
+    import logging as _logging
+
+    adapter = BenchmarkTaskAdapter()
+    with caplog.at_level(_logging.WARNING, logger="src.benchmark.harness_bridge"):
+        with pytest.raises(KeyError):
+            adapter.lookup("ZZZZ-not-real")
+    warning_records = [
+        r for r in caplog.records if r.name == "src.benchmark.harness_bridge" and r.levelno == _logging.WARNING
+    ]
+    assert any("lookup miss" in r.getMessage() for r in warning_records)

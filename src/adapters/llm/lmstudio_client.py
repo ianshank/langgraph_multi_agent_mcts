@@ -126,7 +126,7 @@ class LMStudioClient(BaseLLMClient):
         except Exception:
             return False
 
-    async def list_models(self) -> list[dict]:
+    async def list_models(self) -> list[dict[str, Any]]:
         """
         List available models on the LM Studio server.
 
@@ -162,11 +162,11 @@ class LMStudioClient(BaseLLMClient):
     async def generate(
         self,
         *,
-        messages: list[dict] | None = None,
+        messages: list[dict[str, Any]] | None = None,
         prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-        tools: list[dict] | None = None,
+        tools: list[dict[str, Any]] | None = None,
         stream: bool = False,
         stop: list[str] | None = None,
         **kwargs: Any,
@@ -216,11 +216,11 @@ class LMStudioClient(BaseLLMClient):
     async def _generate_non_stream(
         self,
         *,
-        messages: list[dict] | None = None,
+        messages: list[dict[str, Any]] | None = None,
         prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-        tools: list[dict] | None = None,
+        tools: list[dict[str, Any]] | None = None,
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> LLMResponse:
@@ -314,11 +314,11 @@ class LMStudioClient(BaseLLMClient):
     async def _generate_stream(
         self,
         *,
-        messages: list[dict] | None = None,
+        messages: list[dict[str, Any]] | None = None,
         prompt: str | None = None,
         temperature: float | None = None,
         max_tokens: int | None = None,
-        tools: list[dict] | None = None,  # noqa: ARG002
+        tools: list[dict[str, Any]] | None = None,  # noqa: ARG002
         stop: list[str] | None = None,
         **kwargs: Any,
     ) -> AsyncIterator[str]:

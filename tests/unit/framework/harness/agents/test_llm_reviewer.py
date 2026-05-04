@@ -2,10 +2,13 @@
 
 from __future__ import annotations
 
+import logging
 from collections.abc import AsyncIterator
 from typing import Any
 
 import pytest
+from hypothesis import HealthCheck, given, settings
+from hypothesis import strategies as st
 
 from src.adapters.llm.base import LLMResponse
 from src.adapters.llm.exceptions import LLMTimeoutError
@@ -304,3 +307,101 @@ async def test_unexpected_response_type_returns_failure_outcome() -> None:
     outcome = await agent.run(_review_task())
     assert outcome.success is False
     assert "unexpected response type" in (outcome.error or "")
+
+
+# ---------------------------------------------------------------------------
+# Coverage gap closures: parser edge cases (was 96.88% line+branch).
+# ---------------------------------------------------------------------------
+
+
+def test_parse_review_decision_skips_blank_first_lines_then_recognises_marker() -> None:
+    """`_first_nonempty_line` must keep skipping blank lines before the marker."""
+    text = "   \n\t\n\n  \nACCEPT\nscore: 0.7\nnotes: deferred"
+    accepted, parsed = parse_review_decision(text)
+    assert accepted is True
+    assert parsed == {"score": pytest.approx(0.7), "notes": "deferred"}
+
+
+def test_parse_review_decision_returns_default_reject_when_only_blank_lines() -> None:
+    """All-whitespace input must default-reject (and not crash)."""
+    accepted, parsed = parse_review_decision("\n\n   \n\t\n")
+    assert accepted is False
+    assert "raw" in parsed
+
+
+def test_parse_review_decision_tolerates_non_bullet_lines_inside_section() -> None:
+    """A non-bullet line inside an `issues:` section must not abort collection."""
+    text = (
+        "REJECT\n"
+        "score: 0.3\n"
+        "issues:\n"
+        "this commentary line is not a bullet\n"
+        "- first issue\n"
+        "\n"
+        "- second issue\n"
+        "suggestions:\n"
+        "- expand\n"
+    )
+    accepted, parsed = parse_review_decision(text)
+    assert accepted is False
+    assert parsed["issues"] == ["first issue", "second issue"]
+    assert parsed["suggestions"] == ["expand"]
+
+
+# ---------------------------------------------------------------------------
+# Property-based fuzz: the parser must never raise and must never accept on
+# inputs that do not start with ACCEPT on the first non-empty line.
+# ---------------------------------------------------------------------------
+
+
+@given(text=st.text(max_size=500))
+@settings(max_examples=200, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_parse_review_decision_never_raises(text: str) -> None:
+    accepted, parsed = parse_review_decision(text)
+    assert isinstance(accepted, bool)
+    assert isinstance(parsed, dict)
+
+
+@given(
+    body=st.text(
+        alphabet=st.characters(blacklist_characters="\n"),
+        min_size=0,
+        max_size=200,
+    )
+)
+@settings(max_examples=100, deadline=None, suppress_health_check=[HealthCheck.too_slow])
+def test_parse_review_decision_does_not_accept_when_first_line_is_not_accept(body: str) -> None:
+    """If the first non-empty line does NOT start with ACCEPT, never accept —
+    even if "ACCEPT" appears anywhere later. Defends the prompt-injection guard."""
+    # Force the first non-empty line to start with the safe prefix "noise"; any
+    # mention of ACCEPT in the body must therefore not flip the gate.
+    text = f"noise: {body}\nACCEPT\nscore: 0.99\nnotes: ignore"
+    accepted, _parsed = parse_review_decision(text)
+    assert accepted is False
+
+
+# ---------------------------------------------------------------------------
+# Logging contract: producer must emit start + done INFO events on the
+# happy path, and a WARNING on LLM failures.
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_run_logs_info_on_start_and_done(caplog: pytest.LogCaptureFixture) -> None:
+    fake = FakeLLMClient(responses=[LLMResponse(text="ACCEPT\nscore: 0.9\nnotes: ok", finish_reason="stop")])
+    agent = LLMReviewerAgent(llm=fake)
+    with caplog.at_level(logging.INFO, logger="harness.agent.reviewer"):
+        await agent.run(_review_task())
+    messages = [r.getMessage() for r in caplog.records if r.name == "harness.agent.reviewer"]
+    assert any("reviewer.run start" in m for m in messages)
+    assert any("reviewer.run done" in m and "decision=ACCEPT" in m for m in messages)
+
+
+@pytest.mark.asyncio
+async def test_run_logs_warning_on_llm_error(caplog: pytest.LogCaptureFixture) -> None:
+    fake = FakeLLMClient(raises=LLMTimeoutError("lmstudio", 5.0))
+    agent = LLMReviewerAgent(llm=fake)
+    with caplog.at_level(logging.WARNING, logger="harness.agent.reviewer"):
+        outcome = await agent.run(_review_task())
+    assert outcome.success is False
+    assert any("LLM generate failed" in r.getMessage() for r in caplog.records)
